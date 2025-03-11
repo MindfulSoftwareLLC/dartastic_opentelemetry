@@ -1,0 +1,19 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: localhost:4316  # Use different port for collector
+
+processors:
+  batch:
+
+exporters:
+  file:
+    path: test/testing_utils/spans.json
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [file]
