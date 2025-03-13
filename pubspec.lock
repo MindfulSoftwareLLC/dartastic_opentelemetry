@@ -182,14 +182,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
-  intl:
-    dependency: transitive
-    description:
-      name: intl
-      sha256: d6f56758b7d3014a48af9701c085700aac781a92a87a62b1333b46d8879661cf
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.19.0"
   io:
     dependency: transitive
     description:
@@ -265,12 +257,11 @@ packages:
   opentelemetry_api:
     dependency: "direct main"
     description:
-      path: "."
-      ref: HEAD
-      resolved-ref: "2e8d8d41a1856f367a8b2b28a3c791ff96000558"
-      url: "https://github.com/MindfulSoftwareLLC/opentelemetry_api.git"
-    source: git
-    version: "1.0.0"
+      name: opentelemetry_api
+      sha256: "204ffd4bc8d002463df30567c319c20152db4e8573d2e34fc3b95779037f3f50"
+      url: "https://dartastic-dart-services-6djqlrsgkq-uc.a.run.app"
+    source: hosted
+    version: "1.0.1"
   package_config:
     dependency: transitive
     description:

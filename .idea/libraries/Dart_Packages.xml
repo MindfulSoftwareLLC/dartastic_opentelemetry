@@ -163,13 +163,6 @@
             </list>
           </value>
         </entry>
-        <entry key="intl">
-          <value>
-            <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/intl-0.19.0/lib" />
-            </list>
-          </value>
-        </entry>
         <entry key="io">
           <value>
             <list>
@@ -236,7 +229,7 @@
         <entry key="opentelemetry_api">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/git/opentelemetry_api-2e8d8d41a1856f367a8b2b28a3c791ff96000558//lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/dartastic-dart-services-6djqlrsgkq-uc.a.run.app/opentelemetry_api-1.0.1/lib" />
             </list>
           </value>
         </entry>
@@ -446,7 +439,7 @@
       </option>
     </properties>
     <CLASSES>
-      <root url="file://$USER_HOME$/.pub-cache/git/opentelemetry_api-2e8d8d41a1856f367a8b2b28a3c791ff96000558//lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/dartastic-dart-services-6djqlrsgkq-uc.a.run.app/opentelemetry_api-1.0.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/_fe_analyzer_shared-79.0.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/analyzer-7.2.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/args-2.6.0/lib" />
@@ -469,7 +462,6 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/http2-2.3.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/http_multi_server-3.2.2/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/http_parser-4.1.2/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/intl-0.19.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/io-1.0.5/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/js-0.7.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/lints-5.1.1/lib" />
