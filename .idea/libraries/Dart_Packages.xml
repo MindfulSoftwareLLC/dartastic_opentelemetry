@@ -236,7 +236,7 @@
         <entry key="opentelemetry_api">
           <value>
             <list>
-              <option value="$PROJECT_DIR$/../opentelemetry_api/lib" />
+              <option value="$USER_HOME$/.pub-cache/git/opentelemetry_api-2e8d8d41a1856f367a8b2b28a3c791ff96000558//lib" />
             </list>
           </value>
         </entry>
@@ -355,7 +355,7 @@
         <entry key="synchronized">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/synchronized-3.3.0+3/lib" />
+              <option value="$USER_HOME$/.pub-cache/hosted/pub.dev/synchronized-3.3.1/lib" />
             </list>
           </value>
         </entry>
@@ -446,6 +446,7 @@
       </option>
     </properties>
     <CLASSES>
+      <root url="file://$USER_HOME$/.pub-cache/git/opentelemetry_api-2e8d8d41a1856f367a8b2b28a3c791ff96000558//lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/_fe_analyzer_shared-79.0.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/analyzer-7.2.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/args-2.6.0/lib" />
@@ -494,7 +495,7 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/stack_trace-1.12.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/stream_channel-2.1.4/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/string_scanner-1.4.1/lib" />
-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/synchronized-3.3.0+3/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/synchronized-3.3.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/term_glyph-1.2.2/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/test-1.25.14/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/test_api-0.7.4/lib" />
@@ -508,7 +509,6 @@
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/webkit_inspection_protocol-1.2.1/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/yaml-3.1.3/lib" />
       <root url="file://$PROJECT_DIR$/../../../flutter/bin/cache/dart-sdk/pkg/_macros/lib" />
-      <root url="file://$PROJECT_DIR$/../opentelemetry_api/lib" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

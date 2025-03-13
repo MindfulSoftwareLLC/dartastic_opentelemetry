@@ -3,6 +3,14 @@
 Dartastic is an [OpenTelemetry](https://opentelemetry.io/) SDK to add 
 standard observability to Dart aund Flutter applications.
 
+
+## Why OpenTelemetry?
+
+OpenTelemetry (OTel) is the second most active Cloud Native Computing Foundation (CNCF) project, after Kubernetes. Why?
+The future-proof OTel observability standard breaks proprietary locks observability and enables standard-based
+interoperability.  OpenTelemetry libraries are available for dozens of languages and platforms, and now,
+for Dart and Flutter.  The industry's movement from proprietary observability to the OTel standard is happening rapidly.
+
 ## Features
 
 - 🚀 **Friendly API**: An easy to use, discoverable, immutable, typesafe API that feels familiar to Dart developers.
