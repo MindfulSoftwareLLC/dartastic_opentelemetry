@@ -11,11 +11,9 @@ dependencies:
   meta: ^1.16.0
   grpc: ^3.2.4
   opentelemetry_api:
-    hosted:
-      name: opentelemetry_api
-      url: https://dartastic-dart-services-6djqlrsgkq-uc.a.run.app
-    version:
-      1.0.1
+    git:
+      url: https://github.com/MindfulSoftwareLLC/opentelemetry_api.git
+      ref: main
   protobuf: ^3.1.0
   fixnum: ^1.1.1
   synchronized: ^3.3.1
