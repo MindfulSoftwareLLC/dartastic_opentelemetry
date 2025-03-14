@@ -20,6 +20,12 @@
       "languageVersion": "3.3"
     },
     {
+      "name": "archive",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/archive-3.6.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
       "name": "args",
       "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/args-2.6.0",
       "packageUri": "lib/",
@@ -111,9 +117,9 @@
     },
     {
       "name": "grpc",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/grpc-4.0.1",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/grpc-3.2.4",
       "packageUri": "lib/",
-      "languageVersion": "3.2"
+      "languageVersion": "3.0"
     },
     {
       "name": "http",
@@ -201,7 +207,7 @@
     },
     {
       "name": "opentelemetry_api",
-      "rootUri": "file:///Users/mbushe/.pub-cache/git/opentelemetry_api-4de882a19f9222d6d815c4dab8c4933cd2ce35b6/",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/dartastic-dart-services-6djqlrsgkq-uc.a.run.app/opentelemetry_api-1.0.1",
       "packageUri": "lib/",
       "languageVersion": "3.6"
     },
@@ -386,7 +392,7 @@
       "languageVersion": "3.0"
     }
   ],
-  "generated": "2025-03-13T21:30:04.003675Z",
+  "generated": "2025-03-14T13:49:13.972948Z",
   "generator": "pub",
   "generatorVersion": "3.7.0",
   "flutterRoot": "file:///Users/mbushe/dev/flutter",

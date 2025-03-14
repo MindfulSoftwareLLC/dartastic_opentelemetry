@@ -9,11 +9,15 @@ environment:
 
 dependencies:
   meta: ^1.16.0
-  grpc: ^4.0.1
+  grpc: ^3.2.4
   opentelemetry_api:
-    git: https://github.com/MindfulSoftwareLLC/opentelemetry_api.git
+    hosted:
+      name: opentelemetry_api
+      url: https://dartastic-dart-services-6djqlrsgkq-uc.a.run.app
+    version:
+      1.0.1
   protobuf: ^3.1.0
-  fixnum: ^1.1.0
+  fixnum: ^1.1.1
   synchronized: ^3.3.1
 
 dev_dependencies:
