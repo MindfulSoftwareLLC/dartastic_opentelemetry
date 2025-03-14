@@ -1,6 +1,6 @@
 name: dartastic_opentelemetry
 description: Dartastic.io's OpenTelemetry SDK for Dart
-version: 1.0.0
+version: 1.0.1
 repository: https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry.git
 homepage: https://dartastic.io
 
