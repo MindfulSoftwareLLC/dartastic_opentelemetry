@@ -1,8 +1,10 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+import 'dart:math' as math;
 import 'package:opentelemetry_api/opentelemetry_api.dart';
-import 'sampler.dart';
+
+import '../../../dartastic_opentelemetry.dart';
 
 /// A sampler that samples traces based on a probability defined by the ratio of
 /// traces that should be sampled. The ratio must be in the range [0.0, 1.0].
@@ -10,37 +12,32 @@ import 'sampler.dart';
 /// Uses the lowest 8 bytes of the trace ID to make a sampling decision.
 class TraceIdRatioSampler implements Sampler {
   final double ratio;
-  final double _upperBound;
 
   @override
   String get description => 'TraceIdRatioSampler{$ratio}';
 
   /// Creates a TraceIdRatioSampler with the given ratio.
   /// [ratio] must be in the range [0.0, 1.0].
-  TraceIdRatioSampler(this.ratio) : _upperBound = _calculateUpperBound(ratio) {
+  TraceIdRatioSampler(this.ratio) {
     if (ratio < 0.0 || ratio > 1.0) {
       throw ArgumentError('ratio must be in range [0.0, 1.0]');
     }
   }
 
-  static double _calculateUpperBound(double ratio) {
-    // Use max uint64 value: 18446744073709551615
-    // Bitshift operation needs parentheses: (1 << 64) - 1
-    // But we'll use a known constant instead for precision
-    const maxUint64 = 18446744073709551615.0;
-    return ratio * maxUint64;
-  }
+  /// Converts a trace ID to a value between 0.0 and 1.0 for sampling decisions.
+  /// Uses the lowest 8 bytes (16 hex characters) of the trace ID as per the specification.
+  double _traceIdToValue(String traceId) {
+  // Get the last 16 hex chars (8 bytes) of trace ID
+  final lastBytes = traceId.substring(math.max(0, traceId.length - 16));
 
-  double _traceIdToDouble(String traceId) {
-    // Use last 16 chars (8 bytes) of trace ID
-    final lastBytes = traceId.substring(traceId.length - 16);
-    
-    // Parse hex string to integer with BigInt to avoid precision issues
-    final bigIntValue = BigInt.parse(lastBytes, radix: 16);
-    
-    // Convert to double ensuring we don't lose precision
-    // We're using a ratio comparison, so relative precision is maintained
-    return bigIntValue.toDouble();
+  // Parse hex string to integer with BigInt to avoid precision issues
+  final value = BigInt.parse(lastBytes, radix: 16);
+
+  // Maximum possible value for 8 bytes (64 bits) is 2^64 - 1
+  final maxValue = BigInt.parse('ffffffffffffffff', radix: 16);
+
+  // Convert to a double between 0.0 and 1.0
+  return value.toDouble() / maxValue.toDouble();
   }
 
   @override
@@ -68,9 +65,11 @@ class TraceIdRatioSampler implements Sampler {
       );
     }
 
-    // Convert trace ID to number and compare with upper bound
-    final idValue = _traceIdToDouble(traceId);
-    final shouldSample = idValue < _upperBound;
+    // Convert trace ID to a value between 0.0 and 1.0
+    final value = _traceIdToValue(traceId);
+
+    // If the value is less than our ratio, we should sample
+    final shouldSample = value < ratio;
 
     return SamplingResult(
       decision: shouldSample

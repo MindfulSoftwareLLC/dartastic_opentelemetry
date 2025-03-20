@@ -110,12 +110,12 @@ class OTelLog {
     }
   }
 
-  /// Log a span with an optional message.
+  /// Log an export message
   static void logExport(String message) {
     if (isLogExport()) {
       final timestamp = DateTime.now().toIso8601String();
       String msg = message;
-      exportLogFunction!('[$timestamp] [metric] $msg ');
+      exportLogFunction!('[$timestamp] [export] $msg ');
     }
   }
 

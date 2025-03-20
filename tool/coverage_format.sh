@@ -19,7 +19,7 @@ echo "Formatting coverage data..."
 dart run coverage:format_coverage \
   --lcov \
   --in=coverage \
-  --ignore-files='lib/proto/.*,**/*.pb.dart,**/*.pbenum.dart,**/*.pbserver.dart,**/*.pbjson.dart' \
+  --ignore-files='lib/proto/.*,**/*.pb.dart,**/*.pbenum.dart,**/*.pbserver.dart,**/*.pbgrpc.dart,**/*.pbjson.dart' \
   --out=coverage/lcov.info \
   --report-on=lib \
   --check-ignore

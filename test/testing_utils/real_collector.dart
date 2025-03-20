@@ -239,6 +239,7 @@ class RealCollector {
 
   /// Get all spans from the exported data
   Future<List<Map<String, dynamic>>> getSpans() async {
+    print('Reading spans from: $_outputPath');
     if (!File(_outputPath).existsSync()) {
       print('Output file does not exist: $_outputPath');
       return [];
@@ -300,9 +301,13 @@ class RealCollector {
         continue;
       }
 
+      // Print attribute structure for debugging
+      print('Processing attribute: key=$key, valueMap=$valueMap');
+
       // Extract the actual value based on its type
       if (valueMap['stringValue'] != null) {
         result[key] = valueMap['stringValue'];
+        print('  Parsed as string: ${result[key]}');
       } else if (valueMap['intValue'] != null) {
         var intVal = valueMap['intValue'];
         // Ensure numeric types are preserved
@@ -311,6 +316,7 @@ class RealCollector {
         } else {
           result[key] = int.tryParse(intVal.toString()) ?? intVal;
         }
+        print('  Parsed as int: ${result[key]}');
       } else if (valueMap['doubleValue'] != null) {
         var doubleVal = valueMap['doubleValue'];
         if (doubleVal is num) {
@@ -318,6 +324,7 @@ class RealCollector {
         } else {
           result[key] = double.tryParse(doubleVal.toString()) ?? doubleVal;
         }
+        print('  Parsed as double: ${result[key]}');
       } else if (valueMap['boolValue'] != null) {
         var boolVal = valueMap['boolValue'];
         if (boolVal is bool) {
@@ -327,6 +334,9 @@ class RealCollector {
         } else {
           result[key] = boolVal;
         }
+        print('  Parsed as bool: ${result[key]}');
+      } else {
+        print('  No value found for attribute $key, keys: ${valueMap.keys.join(', ')}');
       }
     }
 
@@ -466,6 +476,24 @@ class RealCollector {
 
       // Log the raw attribute structure for debugging
       print('  Raw attributes structure: ${span['attributes']}');
+
+      // Dump all attribute keys to help debugging
+      if (attributes != null) {
+        print('  Expected attribute keys: ${attributes.keys.join(', ')}');
+        print('  Actual attribute keys: ${allAttrs.keys.join(', ')}');
+        
+        // Check for missing keys
+        for (final key in attributes.keys) {
+          if (!allAttrs.containsKey(key)) {
+            print('  Attribute $key is missing. Expected: ${attributes[key]}');
+          }
+        }
+      }
+    }
+    
+    // For more reliable span matching, try to find the first span when expecting a name
+    if (name != null && spans.isNotEmpty && spans.length == 1) {
+      print('Single span found with name: ${spans[0]['name']}, expected: $name');
     }
 
     final matching = spans.where((span) {

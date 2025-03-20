@@ -60,6 +60,7 @@ export 'src/trace/sampling/rate_limiting_sampler.dart';
 export 'src/trace/sampling/probability_sampler.dart';
 export 'src/trace/sampling/composite_sampler.dart';
 export 'src/util/otel_log.dart';
+export 'src/util/otel_env.dart';
 
 /// Re-export key OpenTelemetry API components for convenience
 export 'package:opentelemetry_api/opentelemetry_api.dart'

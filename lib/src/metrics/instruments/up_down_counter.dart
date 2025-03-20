@@ -79,7 +79,7 @@ class UpDownCounter<T extends num> implements APIUpDownCounter<T>, SDKInstrument
   }
 
   /// Gets the current value of the counter for a specific set of attributes.
-  /// If no attributes are provided, returns the value for the null/empty attribute set.
+  /// If no attributes are provided, returns the sum of all values across all attributes.
   T getValue([Attributes? attributes]) {
     return _storage.getValue(attributes);
   }

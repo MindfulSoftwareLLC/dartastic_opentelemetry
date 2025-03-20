@@ -28,77 +28,50 @@ class SumStorage<T extends num> extends PointStorage<T> {
   /// For asynchronous counters (Observable), this should be the absolute value.
   @override
   void record(T value, [Attributes? attributes]) {
-    // Check constraints
+    // Check constraints for monotonic counters
     if (isMonotonic && value < 0) {
       print('Warning: Negative value $value provided to monotonic sum storage. '
             'This will be ignored.');
       return;
     }
 
-    // Find matching attributes or create a new entry
-    var existingKey = _findMatchingKey(attributes);
-    if (existingKey != null) {
-      // For synchronous counters, add to the existing value
-      // For asynchronous counters, this would replace the value instead
-      _points[existingKey]!.add(value);
+    // Check if we already have an entry for these attributes
+    if (_points.containsKey(attributes)) {
+      // Add to existing data point
+      _points[attributes]!.add(value);
     } else {
-      // Create new point with the given attributes (can be null)
+      // Create new data point
       _points[attributes] = _SumPointData(
         value: value,
         lastUpdateTime: DateTime.now(),
       );
     }
   }
-  
-  /// Finds a key in the points map that equals the given key
-  Attributes? _findMatchingKey(Attributes? keyToFind) {
-    // Handle null key case specially
-    if (keyToFind == null) {
-      return _points.keys.firstWhere(
-        (key) => key == null,
-        orElse: () => null,
-      );
-    }
-    
-    // Handle non-null key case
-    for (final existingKey in _points.keys) {
-      if (existingKey == keyToFind) { // Using the == operator which should call equals
-        return existingKey;
-      }
-    }
-    return null;
-  }
 
   /// Gets the current value for the given attributes.
   /// If no attributes are provided, returns the sum across all attribute sets.
   @override
   T getValue([Attributes? attributes]) {
+    num result;
+    
     if (attributes == null) {
-      // For null attributes, return the sum across all attribute sets
-      // to be consistent with the tests and expected behavior
-      final num totalSum = _points.values.fold<num>(0, (sum, data) => sum + data.value);
-      
-      // Convert to the appropriate generic type
-      if (T == int) {
-        return totalSum.toInt() as T;
-      } else if (T == double) {
-        return totalSum.toDouble() as T;
-      } else {
-        return totalSum as T;
-      }
+      // Sum of all values across all attribute sets
+      result = _points.values.fold<num>(0, (sum, data) => sum + data.value);
+    } else if (_points.containsKey(attributes)) {
+      // Return the value for the specific attributes
+      result = _points[attributes]!.value;
     } else {
-      // For specific attributes, find the matching key
-      var existingKey = _findMatchingKey(attributes);
-      final num value = existingKey != null ? _points[existingKey]!.value : 0;
-      
-      // Convert to the appropriate generic type
-      if (T == int) {
-        return value.toInt() as T;
-      } else if (T == double) {
-        return value.toDouble() as T;
-      } else {
-        return value as T;
-      }
+      // No entry for these attributes
+      result = 0;
+    }
+    
+    // Convert to the appropriate generic type
+    if (T == int) {
+      return result.toInt() as T;
+    } else if (T == double) {
+      return result.toDouble() as T;
+    } else {
+      return result as T;
     }
   }
 
@@ -131,10 +104,8 @@ class SumStorage<T extends num> extends PointStorage<T> {
   /// Adds an exemplar to a specific point.
   @override
   void addExemplar(Exemplar exemplar, [Attributes? attributes]) {
-    // Find matching attributes
-    var existingKey = _findMatchingKey(attributes);
-    if (existingKey != null) {
-      _points[existingKey]!.exemplars.add(exemplar);
+    if (_points.containsKey(attributes)) {
+      _points[attributes]!.exemplars.add(exemplar);
     }
   }
 }
@@ -166,4 +137,7 @@ class _SumPointData {
     value = newValue;
     lastUpdateTime = DateTime.now();
   }
+  
+  @override
+  String toString() => 'SumPointData(value: $value)';
 }

@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:meta/meta.dart';
 import 'package:opentelemetry_api/opentelemetry_api.dart';
+import 'util/otel_env.dart';
 
 /// The [OTel] is the OpenTelemettry SDK entrypoint.
 /// The [initialize] method must be called first. Internally it sets the
@@ -131,10 +132,17 @@ class OTel {
     OTel.defaultTracerName = tracerName ?? _defaultTracerName;
     OTel.defaultTracerVersion = tracerVersion;
     OTel.dartasticApiKey = dartasticApiKey;
+    // Initialize logging from environment variables if needed
+    initializeLogging();
+
     OTelFactory.otelFactory = factoryFactory(
         apiEndpoint: endpoint,
         apiServiceName: serviceName,
         apiServiceVersion: serviceVersion);
+
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('OTel initialized with endpoint: $endpoint, service: $serviceName');
+    }
 
     var serviceResourceAttributes = {
       'service.name': serviceName,
@@ -603,6 +611,18 @@ class OTel {
       throw StateError('initialize() must be called first.');
     }
     return _otelFactory = OTelFactory.otelFactory! as OTelSDKFactory;
+  }
+
+  /// Initialize logging based on environment variables, if not already initialized.
+  /// This can be called separately from initialize(), but initialize() will
+  /// call it automatically if not already done.
+  static void initializeLogging() {
+    // Initialize log settings from environment variables
+    OTelEnv.initializeLogging();
+
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('OTel logging initialized');
+    }
   }
 
   /// Reset API state (only public for testing)

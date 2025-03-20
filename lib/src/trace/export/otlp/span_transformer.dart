@@ -45,6 +45,15 @@ class OtlpSpanTransformer {
         });
       }
 
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('Extracting resource attributes for export:');
+        resourceAttrs.toList().forEach((attr) {
+          if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+            OTelLog.debug('  ${attr.key}: ${attr.value}');
+          }
+        });
+      }
+
       // Create resource
       final protoResource = proto.Resource()
         ..attributes.addAll(transformAttributeMap(resourceAttrs));
@@ -178,6 +187,7 @@ class OtlpSpanTransformer {
         break;
       case SpanStatusCode.Error:
         otlpStatus.code = proto.Status_StatusCode.STATUS_CODE_ERROR;
+        // TODO The OTel spec requires the description for error statuses
         if (description != null) {
           otlpStatus.message = description;
         }

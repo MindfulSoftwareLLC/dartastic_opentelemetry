@@ -1,6 +1,7 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:opentelemetry_api/opentelemetry_api.dart';
 
 /// Implementation of the APIObservableResult interface.
@@ -11,10 +12,12 @@ class ObservableResult<T extends num> implements APIObservableResult<T> {
   void observe(T value, [Attributes? attributes]) {
     // Make sure we have a valid OTelFactory
     if (OTelFactory.otelFactory == null) {
-      print('Warning: OTelFactory.otelFactory is null in ObservableResult.observe');
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('Warning: OTelFactory.otelFactory is null in ObservableResult.observe');
+      }
       return;
     }
-    
+
     // Add the measurement
     final measurement = OTelFactory.otelFactory!.createMeasurement<T>(value, attributes);
     _measurements.add(measurement);

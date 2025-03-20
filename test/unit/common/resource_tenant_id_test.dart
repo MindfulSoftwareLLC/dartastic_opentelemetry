@@ -12,7 +12,7 @@ import 'package:dartastic_opentelemetry/src/trace/export/otlp/otlp_grpc_span_exp
 import 'package:dartastic_opentelemetry/src/trace/export/otlp/otlp_grpc_span_exporter_config.dart';
 import 'package:test/test.dart';
 
-import '../testing_utils/real_collector.dart';
+import '../../testing_utils/real_collector.dart';
 
 void main() {
   group('Resource Tenant ID Test', () {

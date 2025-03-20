@@ -1,6 +1,8 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+import 'dart:math';
+
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:opentelemetry_api/opentelemetry_api.dart';
 import 'package:test/test.dart';
@@ -108,12 +110,16 @@ void main() {
 
       int sampledCount = 0;
       const totalRuns = 1000;
+      final random = Random();
 
-      // Generate trace IDs with a simple pattern that should appear random for sampling
+      // Generate truly random trace IDs for accurate sampling distribution
       for (int i = 0; i < totalRuns; i++) {
-        // Use timestamp + iteration to generate "random" trace IDs
-        final timestamp = DateTime.now().microsecondsSinceEpoch.toRadixString(16);
-        final traceId = timestamp.padRight(32, '0');
+        // Create a random trace ID using random bytes
+        final buffer = StringBuffer();
+        for (int j = 0; j < 32; j++) {
+          buffer.write(random.nextInt(16).toRadixString(16)); // Random hex digit
+        }
+        final traceId = buffer.toString();
 
         final result = sampler.shouldSample(
           parentContext: parentContext,
@@ -132,6 +138,7 @@ void main() {
       // Check if the sampling rate is roughly within expected bounds
       // Allow for some statistical variation (±10%)
       final samplingRate = sampledCount / totalRuns;
+      print('Sampled $sampledCount out of $totalRuns traces (rate: $samplingRate)');
       expect(samplingRate, closeTo(0.3, 0.1));
     });
   });
