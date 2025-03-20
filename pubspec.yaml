@@ -11,9 +11,10 @@ dependencies:
   meta: ^1.16.0
   grpc: ^3.2.4
   opentelemetry_api:
-    git:
-      url: https://github.com/MindfulSoftwareLLC/opentelemetry_api.git
-      ref: main
+    path: ../opentelemetry_api
+#    git:
+#      url: https://github.com/MindfulSoftwareLLC/opentelemetry_api.git
+#      ref: main
   protobuf: ^3.1.0
   fixnum: ^1.1.1
   synchronized: ^3.3.1

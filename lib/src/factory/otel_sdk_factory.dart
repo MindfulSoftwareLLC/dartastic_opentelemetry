@@ -45,7 +45,7 @@ class OTelSDKFactory extends OTelAPIFactory {
   APITracerProvider tracerProvider({
     required String endpoint,
     String serviceName = "@dart/opentelemetry_api",
-    String? serviceVersion = '1.11.0.0',
+    String? serviceVersion,
     Resource? resource
   }) {
     return SDKTracerProviderCreate.create(
@@ -61,7 +61,7 @@ class OTelSDKFactory extends OTelAPIFactory {
   APIMeterProvider meterProvider({
     required String endpoint,
     String serviceName = "@dart/opentelemetry_api",
-    String? serviceVersion = '1.11.0.0',
+    String? serviceVersion,
     Resource? resource
   }) {
     return SDKMeterProviderCreate.create(

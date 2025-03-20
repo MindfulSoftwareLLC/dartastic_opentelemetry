@@ -11,37 +11,39 @@ import 'instruments/observable_counter.dart';
 import 'instruments/observable_up_down_counter.dart';
 import 'instruments/observable_gauge.dart';
 
+part 'meter_create.dart';
+
 /// Meter is the SDK implementation of APIMeter.
 ///
 /// It is responsible for creating and managing instruments for recording metrics.
 class Meter implements APIMeter {
   /// The underlying API Meter.
-  final APIMeter _apiMeter;
+  final APIMeter _delegate;
 
   /// The MeterProvider that created this Meter.
   final MeterProvider _provider;
 
   /// Create a new Meter instance.
-  Meter({
-    required APIMeter apiMeter,
+  Meter._({
+    required APIMeter delegate,
     required MeterProvider provider,
-  }) : _apiMeter = apiMeter,
+  }) : _delegate = delegate,
        _provider = provider;
 
   @override
-  String get name => _apiMeter.name;
+  String get name => _delegate.name;
 
   @override
-  String? get version => _apiMeter.version;
+  String? get version => _delegate.version;
 
   @override
-  String? get schemaUrl => _apiMeter.schemaUrl;
+  String? get schemaUrl => _delegate.schemaUrl;
 
   @override
-  Attributes? get attributes => _apiMeter.attributes;
+  Attributes? get attributes => _delegate.attributes;
 
   @override
-  bool get enabled => _apiMeter.enabled && _provider.enabled;
+  bool get enabled => _delegate.enabled && _provider.enabled;
 
   /// Gets the MeterProvider that created this Meter.
   MeterProvider get provider => _provider;
@@ -49,7 +51,7 @@ class Meter implements APIMeter {
   @override
   APICounter<T> createCounter<T extends num>({required String name, String? unit, String? description}) {
     // First call the API implementation to get the API object
-    final apiCounter = _apiMeter.createCounter<T>(name: name, unit: unit, description: description);
+    final apiCounter = _delegate.createCounter<T>(name: name, unit: unit, description: description);
 
     // Now wrap it with our SDK implementation
     return Counter<T>(
@@ -61,7 +63,7 @@ class Meter implements APIMeter {
   @override
   APIUpDownCounter<T> createUpDownCounter<T extends num>({required String name, String? unit, String? description}) {
     // First call the API implementation to get the API object
-    final apiCounter = _apiMeter.createUpDownCounter<T>(name: name, unit: unit, description: description);
+    final apiCounter = _delegate.createUpDownCounter<T>(name: name, unit: unit, description: description);
 
     // Now wrap it with our SDK implementation
     return UpDownCounter<T>(
@@ -73,7 +75,7 @@ class Meter implements APIMeter {
   @override
   APIHistogram<T> createHistogram<T extends num>({required String name, String? unit, String? description, List<double>? boundaries}) {
     // First call the API implementation to get the API object
-    final apiHistogram = _apiMeter.createHistogram<T>(
+    final apiHistogram = _delegate.createHistogram<T>(
       name: name,
       unit: unit,
       description: description,
@@ -91,7 +93,7 @@ class Meter implements APIMeter {
   @override
   APIGauge<T> createGauge<T extends num>({required String name, String? unit, String? description}) {
     // First call the API implementation to get the API object
-    final apiGauge = _apiMeter.createGauge<T>(name: name, unit: unit, description: description);
+    final apiGauge = _delegate.createGauge<T>(name: name, unit: unit, description: description);
 
     // Now wrap it with our SDK implementation
     return Gauge<T>(
@@ -103,7 +105,7 @@ class Meter implements APIMeter {
   @override
   APIObservableCounter<T> createObservableCounter<T extends num>({required String name, String? unit, String? description, ObservableCallback? callback}) {
     // First call the API implementation to get the API object
-    final apiCounter = _apiMeter.createObservableCounter<T>(
+    final apiCounter = _delegate.createObservableCounter<T>(
       name: name,
       unit: unit,
       description: description,
@@ -120,7 +122,7 @@ class Meter implements APIMeter {
   @override
   APIObservableUpDownCounter<T> createObservableUpDownCounter<T extends num>({required String name, String? unit, String? description, ObservableCallback? callback}) {
     // First call the API implementation to get the API object
-    final apiCounter = _apiMeter.createObservableUpDownCounter<T>(
+    final apiCounter = _delegate.createObservableUpDownCounter<T>(
       name: name,
       unit: unit,
       description: description,
@@ -137,7 +139,7 @@ class Meter implements APIMeter {
   @override
   APIObservableGauge<T> createObservableGauge<T extends num>({required String name, String? unit, String? description, ObservableCallback? callback}) {
     // First call the API implementation to get the API object
-    final apiGauge = _apiMeter.createObservableGauge<T>(
+    final apiGauge = _delegate.createObservableGauge<T>(
       name: name,
       unit: unit,
       description: description,

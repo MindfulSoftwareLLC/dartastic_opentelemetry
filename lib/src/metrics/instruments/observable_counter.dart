@@ -24,7 +24,7 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
   final SumStorage _storage = SumStorage(isMonotonic: true);
 
   /// The last observed values, used for delta calculations.
-  final Map<Attributes, num> _lastValues = {};
+  final Map<Attributes, T> _lastValues = {};
 
   /// Creates a new ObservableCounter instance.
   ObservableCounter({
@@ -52,9 +52,9 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
   List<ObservableCallback> get callbacks => _apiCounter.callbacks;
 
   @override
-  APICallbackRegistration registerCallback(ObservableCallback callback) {
+  APICallbackRegistration addCallback(ObservableCallback callback) {
     // Register with the API implementation first
-    final registration = _apiCounter.registerCallback(callback);
+    final registration = _apiCounter.addCallback(callback);
 
     // Return a registration that also unregisters from our list
     return _ObservableCounterCallbackRegistration(
@@ -76,13 +76,13 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
 
   /// Collects measurements from all registered callbacks.
   @override
-  List<Measurement> collect() {
+  List<Measurement<T>> collect() {
     if (!enabled) {
       return [];
     }
 
     final result = <Measurement>[];
-    final observableResult = ObservableResultImpl();
+    final observableResult = ObservableResult();
 
     // Call all callbacks
     for (final callback in callbacks) {
@@ -101,7 +101,7 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
 
           // For observable counters, we need to calculate deltas
           final key = measurement.attributes;
-          final lastValue = _lastValues[key] ?? 0;
+          final T lastValue = _lastValues[key] ?? 0 as T;
 
           // If the new value is less than the last value, we assume a reset occurred
           if (value < lastValue) {
@@ -110,16 +110,16 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
             result.add(measurement);
           } else {
             // Calculate delta
-            final delta = value - lastValue;
+            final T delta = value - lastValue as T;
             if (delta > 0) {
               _storage.record(delta, measurement.attributes);
               // Add a new measurement with the delta value
-              result.add(Measurement(delta, measurement.attributes));
+              result.add(OTelFactory.otelFactory!.createMeasurement<T>(delta, measurement.attributes));
             }
           }
 
           // Update last value
-          _lastValues[key] = value;
+          _lastValues[key] = value as T;
         }
       } catch (e) {
         print('Error collecting measurements from ObservableCounter callback: $e');

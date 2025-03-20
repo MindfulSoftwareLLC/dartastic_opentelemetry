@@ -243,7 +243,7 @@
         <entry key="opentelemetry_api">
           <value>
             <list>
-              <option value="$USER_HOME$/.pub-cache/hosted/dartastic-dart-services-6djqlrsgkq-uc.a.run.app/opentelemetry_api-1.0.1/lib" />
+              <option value="$USER_HOME$/.pub-cache/git/opentelemetry_api-4de882a19f9222d6d815c4dab8c4933cd2ce35b6//lib" />
             </list>
           </value>
         </entry>
@@ -453,7 +453,7 @@
       </option>
     </properties>
     <CLASSES>
-      <root url="file://$USER_HOME$/.pub-cache/hosted/dartastic-dart-services-6djqlrsgkq-uc.a.run.app/opentelemetry_api-1.0.1/lib" />
+      <root url="file://$USER_HOME$/.pub-cache/git/opentelemetry_api-4de882a19f9222d6d815c4dab8c4933cd2ce35b6//lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/_fe_analyzer_shared-79.0.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/analyzer-7.2.0/lib" />
       <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/archive-3.6.1/lib" />

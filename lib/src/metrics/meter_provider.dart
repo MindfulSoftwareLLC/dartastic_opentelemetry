@@ -85,7 +85,7 @@ class MeterProvider implements APIMeterProvider {
         version: version, schemaUrl: schemaUrl, attributes: attributes);
 
     // Wrap it with our SDK implementation
-    final meter = Meter(
+    final meter = MeterCreate.create(
       apiMeter: apiMeter,
       provider: this,
     );

@@ -25,7 +25,7 @@ class SumStorage extends PointStorage {
 
   /// Records a measurement with the given attributes.
   @override
-  void record(num value, Attributes attributes) {
+  void record(num value, [Attributes? attributes]) {
     // Check constraints
     if (isMonotonic && value < 0) {
       print('Warning: Negative value $value provided to monotonic sum storage. '
@@ -37,11 +37,13 @@ class SumStorage extends PointStorage {
       // Update existing point
       _points[attributes]!.add(value);
     } else {
-      // Create new point
-      _points[attributes] = _SumPointData(
-        value: value,
-        lastUpdateTime: DateTime.now(),
-      );
+      if (attributes != null) {
+        // Create new point
+        _points[attributes] = _SumPointData(
+          value: value,
+          lastUpdateTime: DateTime.now(),
+        );
+      }
     }
   }
 
