@@ -66,9 +66,7 @@ class Counter<T extends num> implements APICounter<T>, BaseInstrument {
 
     // Check for negative values
     if (value < 0) {
-      print('Warning: Negative value $value provided to Counter $name. '
-            'Counters only support non-negative values.');
-      return;
+      throw ArgumentError('Counter value must be non-negative');
     }
 
     // Only record if enabled

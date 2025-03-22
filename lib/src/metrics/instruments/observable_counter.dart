@@ -5,7 +5,7 @@ import 'package:opentelemetry_api/opentelemetry_api.dart';
 import '../meter.dart';
 import '../data/metric_point.dart';
 import '../storage/sum_storage.dart';
-import '../observe/observable_result_impl.dart';
+import '../observe/observable_result.dart';
 
 /// ObservableCounter is an asynchronous instrument that reports monotonically
 /// increasing values when observed.
@@ -52,7 +52,7 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
   List<ObservableCallback> get callbacks => _apiCounter.callbacks;
 
   @override
-  APICallbackRegistration addCallback(ObservableCallback callback) {
+  APICallbackRegistration<T> addCallback(ObservableCallback<T> callback) {
     // Register with the API implementation first
     final registration = _apiCounter.addCallback(callback);
 
@@ -62,6 +62,11 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
       counter: this,
       callback: callback,
     );
+  }
+  
+  @override
+  void removeCallback(ObservableCallback<T> callback) {
+    _apiCounter.removeCallback(callback);
   }
 
   /// Gets the current value of the counter for a specific set of attributes.
@@ -81,26 +86,21 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
       return [];
     }
 
-    final result = <Measurement>[];
-    final observableResult = ObservableResult();
+    final result = <Measurement<T>>[];
+    final observableResult = ObservableResult<T>();
 
     // Call all callbacks
     for (final callback in callbacks) {
       try {
         // Call the callback with the observable result
-        callback(observableResult);
+        callback(observableResult as APIObservableResult<T>);
 
         // Process the measurements from the observable result
         for (final measurement in observableResult.measurements) {
           // Type checking for the generic parameter
           final value = measurement.value;
-          if (T != dynamic && value is! T) {
-            print('Warning: Value must be of type $T, got ${value.runtimeType}. Skipping measurement.');
-            continue;
-          }
-
           // For observable counters, we need to calculate deltas
-          final key = measurement.attributes;
+          final key = measurement.attributes ?? OTelFactory.otelFactory!.attributes();
           final T lastValue = _lastValues[key] ?? 0 as T;
 
           // If the new value is less than the last value, we assume a reset occurred
@@ -119,7 +119,7 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
           }
 
           // Update last value
-          _lastValues[key] = value as T;
+          _lastValues[key] = value;
         }
       } catch (e) {
         print('Error collecting measurements from ObservableCounter callback: $e');
@@ -147,15 +147,15 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
 }
 
 /// Wrapper for APICallbackRegistration that also handles our internal state.
-class _ObservableCounterCallbackRegistration implements APICallbackRegistration {
+class _ObservableCounterCallbackRegistration implements APICallbackRegistration<T> {
   /// The API registration.
-  final APICallbackRegistration apiRegistration;
+  final APICallbackRegistration<T> apiRegistration;
 
   /// The counter this registration is for.
   final ObservableCounter counter;
 
   /// The callback that was registered.
-  final ObservableCallback callback;
+  final ObservableCallback<T> callback;
 
   _ObservableCounterCallbackRegistration({
     required this.apiRegistration,

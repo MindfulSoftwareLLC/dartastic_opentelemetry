@@ -5,7 +5,7 @@ import 'package:opentelemetry_api/opentelemetry_api.dart';
 import '../meter.dart';
 import '../data/metric_point.dart';
 import '../storage/gauge_storage.dart';
-import '../observe/observable_result_impl.dart';
+import '../observe/observable_result.dart';
 
 /// ObservableGauge is an asynchronous instrument which reports non-additive value(s)
 /// when the instrument is being observed.
@@ -48,9 +48,9 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
   List<ObservableCallback> get callbacks => _apiGauge.callbacks;
 
   @override
-  APICallbackRegistration registerCallback(ObservableCallback callback) {
+  APICallbackRegistration<T> addCallback(ObservableCallback<T> callback) {
     // Register with the API implementation first
-    final registration = _apiGauge.registerCallback(callback);
+    final registration = _apiGauge.addCallback(callback);
 
     // Return a registration that also unregisters from our list
     return _ObservableGaugeCallbackRegistration(
@@ -58,6 +58,11 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
       gauge: this,
       callback: callback,
     );
+  }
+  
+  @override
+  void removeCallback(ObservableCallback<T> callback) {
+    _apiGauge._removeCallback(callback);
   }
 
   /// Gets the current value of the gauge for a specific set of attributes.
@@ -71,19 +76,19 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
 
   /// Collects measurements from all registered callbacks.
   @override
-  List<Measurement> collect() {
+  List<Measurement<T>> collect() {
     if (!enabled) {
       return [];
     }
 
     final result = <Measurement>[];
-    final observableResult = ObservableResultImpl();
+    final observableResult = ObservableResult<T>();
 
     // Call all callbacks
     for (final callback in callbacks) {
       try {
         // Call the callback with the observable result
-        callback(observableResult);
+        callback(observableResult as APIObservableResult<T>);
 
         // Process the measurements from the observable result
         for (final measurement in observableResult.measurements) {
@@ -95,7 +100,7 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
           }
 
           // For observable gauges, we just record the latest value
-          _storage.record(value, measurement.attributes);
+          _storage.record(value, measurement.attributes ?? OTelFactory.otelFactory!.attributes());
           result.add(measurement);
         }
       } catch (e) {
@@ -121,15 +126,15 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
 }
 
 /// Wrapper for APICallbackRegistration that also handles our internal state.
-class _ObservableGaugeCallbackRegistration implements APICallbackRegistration {
+class _ObservableGaugeCallbackRegistration implements APICallbackRegistration<T> {
   /// The API registration.
-  final APICallbackRegistration apiRegistration;
+  final APICallbackRegistration<T> apiRegistration;
 
   /// The gauge this registration is for.
   final ObservableGauge gauge;
 
   /// The callback that was registered.
-  final ObservableCallback callback;
+  final ObservableCallback<T> callback;
 
   _ObservableGaugeCallbackRegistration({
     required this.apiRegistration,

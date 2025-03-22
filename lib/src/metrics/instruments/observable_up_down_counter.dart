@@ -5,7 +5,7 @@ import 'package:opentelemetry_api/opentelemetry_api.dart';
 import '../meter.dart';
 import '../data/metric_point.dart';
 import '../storage/sum_storage.dart';
-import '../observe/observable_result_impl.dart';
+import '../observe/observable_result.dart';
 
 /// ObservableUpDownCounter is an asynchronous instrument that reports additive
 /// values when observed.
@@ -24,7 +24,7 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
   final SumStorage _storage = SumStorage(isMonotonic: false);
 
   /// The last observed values, used for delta calculations.
-  final Map<Attributes, num> _lastValues = {};
+  final Map<Attributes, T> _lastValues = {};
 
   /// Creates a new ObservableUpDownCounter instance.
   ObservableUpDownCounter({
@@ -52,9 +52,9 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
   List<ObservableCallback> get callbacks => _apiCounter.callbacks;
 
   @override
-  APICallbackRegistration registerCallback(ObservableCallback callback) {
+  APICallbackRegistration<T> addCallback(ObservableCallback<T> callback) {
     // Register with the API implementation first
-    final registration = _apiCounter.registerCallback(callback);
+    final registration = _apiCounter.addCallback(callback);
 
     // Return a registration that also unregisters from our list
     return _ObservableUpDownCounterCallbackRegistration(
@@ -62,6 +62,11 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
       counter: this,
       callback: callback,
     );
+  }
+  
+  @override
+  void removeCallback(ObservableCallback<T> callback) {
+    _apiCounter._removeCallback(callback);
   }
 
   /// Gets the current value of the counter for a specific set of attributes.
@@ -76,38 +81,33 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
 
   /// Collects measurements from all registered callbacks.
   @override
-  List<Measurement> collect() {
+  List<Measurement<T>> collect() {
     if (!enabled) {
       return [];
     }
 
-    final result = <Measurement>[];
-    final observableResult = ObservableResultImpl();
+    final result = <Measurement<T>>[];
+    final observableResult = ObservableResult<T>();
 
     // Call all callbacks
     for (final callback in callbacks) {
       try {
         // Call the callback with the observable result
-        callback(observableResult);
+        callback(observableResult as APIObservableResult<T>);
 
         // Process the measurements from the observable result
         for (final measurement in observableResult.measurements) {
           // Type checking for the generic parameter
-          final value = measurement.value;
-          if (T != dynamic && value is! T) {
-            print('Warning: Value must be of type $T, got ${value.runtimeType}. Skipping measurement.');
-            continue;
-          }
-
+          final  value = measurement.value;
           // For observable up-down counters, we need to calculate deltas
-          final key = measurement.attributes;
+          final key = measurement.attributes ?? OTelFactory.otelFactory!.attributes();
           if (_lastValues.containsKey(key)) {
             // Calculate delta from last observation
-            final lastValue = _lastValues[key]!;
-            final delta = value - lastValue;
+            final T lastValue = _lastValues[key]!;
+            final T delta = _subtractNumeric(value, lastValue);
             _storage.record(delta, measurement.attributes);
             // Add a new measurement with the delta value
-            result.add(Measurement(delta, measurement.attributes));
+            result.add(OTelFactory.otelFactory!.createMeasurement<T>(delta, measurement.attributes));
           } else {
             // First observation, use the full value
             _storage.record(value, measurement.attributes);
@@ -123,6 +123,20 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
     }
 
     return result;
+  }
+
+  /// Helper method to subtract numeric values while preserving the generic type T.
+  /// This properly handles both int and double types.
+  T _subtractNumeric(num a, num b) {
+    if (T == int) {
+      return (a.toInt() - b.toInt()) as T;
+    } else if (T == double) {
+      return (a.toDouble() - b.toDouble()) as T;
+    } else {
+      // For any other numeric type, default to the standard subtraction
+      // and cast the result to T
+      return (a - b) as T;
+    }
   }
 
   /// Gets the current points for this counter.
@@ -143,15 +157,15 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
 }
 
 /// Wrapper for APICallbackRegistration that also handles our internal state.
-class _ObservableUpDownCounterCallbackRegistration implements APICallbackRegistration {
+class _ObservableUpDownCounterCallbackRegistration implements APICallbackRegistration<T> {
   /// The API registration.
-  final APICallbackRegistration apiRegistration;
+  final APICallbackRegistration<T> apiRegistration;
 
   /// The counter this registration is for.
   final ObservableUpDownCounter counter;
 
   /// The callback that was registered.
-  final ObservableCallback callback;
+  final ObservableCallback<T> callback;
 
   _ObservableUpDownCounterCallbackRegistration({
     required this.apiRegistration,

@@ -18,5 +18,6 @@ class ObservableResult<T extends num> implements APIObservableResult<T> {
   }
 
   /// Returns all measurements recorded by this result.
+  @override
   List<Measurement<T>> get measurements => List.unmodifiable(_measurements);
 }

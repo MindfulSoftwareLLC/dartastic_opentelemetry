@@ -15,27 +15,23 @@ part 'tracer_provider_create.dart';
 class TracerProvider implements APITracerProvider {
   final Map<String, Tracer> _tracers = {};
   final List<SpanProcessor> _spanProcessors = [];
-  final APITracerProvider _delegate;
+  final APITracerProvider delegate;
   Resource? resource;
-  Sampler? _sampler;
-
-  Sampler? get sampler => _sampler;
-  set sampler(Sampler? value) => _sampler = value;
+  Sampler? sampler;
 
   @override
-  bool get isShutdown => _delegate.isShutdown;
+  bool get isShutdown => delegate.isShutdown;
 
   @override
   set isShutdown(bool value) {
-    _delegate.isShutdown = value;
+    delegate.isShutdown = value;
   }
 
   TracerProvider._({
-    required APITracerProvider delegate,
+    required this.delegate,
     this.resource,
     Sampler? sampler,
-  }) : _delegate = delegate,
-       _sampler = sampler {
+  }) {
     if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Created with resource: $resource, sampler: $sampler');
   }
 
@@ -51,7 +47,7 @@ class TracerProvider implements APITracerProvider {
 
       // Clear cached tracers
       _tracers.clear();
-      await _delegate.shutdown();
+      await delegate.shutdown();
       isShutdown = true;
     }
     return isShutdown;
@@ -72,7 +68,7 @@ class TracerProvider implements APITracerProvider {
     return _tracers.putIfAbsent(
         key,
         () => SDKTracerCreate.create(
-          delegate: _delegate.getTracer(
+          delegate: delegate.getTracer(
             name,
             version: version,
             schemaUrl: schemaUrl,
@@ -98,35 +94,35 @@ class TracerProvider implements APITracerProvider {
       List.unmodifiable(_spanProcessors);
 
   @override
-  String get endpoint => _delegate.endpoint;
+  String get endpoint => delegate.endpoint;
 
   @override
   set endpoint(String value) {
-    _delegate.endpoint = value;
+    delegate.endpoint = value;
   }
 
   @override
-  String get serviceName => _delegate.serviceName;
+  String get serviceName => delegate.serviceName;
 
   @override
   set serviceName(String value) {
-    _delegate.serviceName = value;
+    delegate.serviceName = value;
   }
 
   @override
-  String? get serviceVersion => _delegate.serviceVersion;
+  String? get serviceVersion => delegate.serviceVersion;
 
   @override
   set serviceVersion(String? value) {
-    _delegate.serviceVersion = value;
+    delegate.serviceVersion = value;
   }
 
   @override
-  bool get enabled => _delegate.enabled;
+  bool get enabled => delegate.enabled;
 
   @override
   set enabled(bool value) {
-    _delegate.enabled = value;
+    delegate.enabled = value;
   }
 
   /// Flushes all the span processors

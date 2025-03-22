@@ -5,8 +5,8 @@
 part of 'meter.dart';
 
 /// Factory for creating SDKMeterProvider instances
-class SDKMeterCreate {
-  static APIMeter create({
+class MeterCreate {
+  static Meter create({
     required APIMeter delegate,
     required MeterProvider provider,
   }) {

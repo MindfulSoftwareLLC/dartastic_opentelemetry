@@ -28,7 +28,7 @@ export 'src/metrics/meter.dart';
 export 'src/metrics/meter_provider.dart';
 export 'src/metrics/metric_exporter.dart';
 export 'src/metrics/metric_reader.dart';
-export 'src/metrics/observe/observable_result_impl.dart';
+export 'src/metrics/observe/observable_result.dart';
 export 'src/metrics/storage/gauge_storage.dart';
 export 'src/metrics/storage/histogram_storage.dart';
 export 'src/metrics/storage/point_storage.dart';

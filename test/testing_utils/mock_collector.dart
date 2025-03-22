@@ -19,7 +19,6 @@ class _MockTraceService extends TraceServiceBase {
   final List<proto.ResourceSpans> _spans;
   final MockCollectorBehavior? _behavior;
   final MockCollector _collector;
-  bool _preserveSpanNames = true;
 
   _MockTraceService(this._spans, this._behavior, this._collector);
 

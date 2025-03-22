@@ -56,7 +56,7 @@ class Tracer implements APITracer {
   @override
   Span createSpan({
     required String name,
-    required SpanContext spanContext,
+    SpanContext? spanContext,
     APISpan? parentSpan,
     SpanKind kind = SpanKind.internal,
     Attributes? attributes,
@@ -64,6 +64,7 @@ class Tracer implements APITracer {
     List<SpanEvent>? spanEvents,
     DateTime? startTime,
     bool? isRecording = true,
+    Context? context,
   }) {
     if (OTelLog.isDebug()) OTelLog.debug('Tracer: Creating span with name: $name, kind: $kind');
 
@@ -152,6 +153,74 @@ class Tracer implements APITracer {
     }
 
     return sdkSpan;
+  }
+  
+  @override
+  T recordSpan<T>({
+    required String name,
+    required T Function() fn,
+    SpanKind kind = SpanKind.internal,
+    Attributes? attributes,
+  }) {
+    final span = startSpan(name, kind: kind, attributes: attributes);
+    try {
+      return fn();
+    } catch (e, stackTrace) {
+      span.recordException(e, stackTrace: stackTrace);
+      span.setStatus(SpanStatusCode.Error, e.toString());
+      rethrow;
+    } finally {
+      span.end();
+    }
+  }
+
+  @override
+  Future<T> recordSpanAsync<T>({
+    required String name,
+    required Future<T> Function() fn,
+    SpanKind kind = SpanKind.internal,
+    Attributes? attributes,
+  }) async {
+    final span = startSpan(name, kind: kind, attributes: attributes);
+    try {
+      return await fn();
+    } catch (e, stackTrace) {
+      span.recordException(e, stackTrace: stackTrace);
+      span.setStatus(SpanStatusCode.Error, e.toString());
+      rethrow;
+    } finally {
+      span.end();
+    }
+  }
+  
+  @override
+  T startActiveSpan<T>({
+    required String name,
+    required T Function(APISpan span) fn,
+    SpanKind kind = SpanKind.internal,
+    Attributes? attributes,
+  }) {
+    final span = startSpan(name, kind: kind, attributes: attributes);
+    try {
+      return _delegate.withSpan(span, () => fn(span));
+    } finally {
+      span.end();
+    }
+  }
+
+  @override
+  Future<T> startActiveSpanAsync<T>({
+    required String name,
+    required Future<T> Function(APISpan span) fn,
+    SpanKind kind = SpanKind.internal,
+    Attributes? attributes,
+  }) async {
+    final span = startSpan(name, kind: kind, attributes: attributes);
+    try {
+      return await _delegate.withSpanAsync(span, () => fn(span));
+    } finally {
+      span.end();
+    }
   }
 
 }

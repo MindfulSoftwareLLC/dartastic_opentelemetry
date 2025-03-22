@@ -175,6 +175,9 @@ class Span implements APISpan {
 
   @override
   InstrumentationScope get instrumentationScope => _delegate.instrumentationScope;
+  
+  @override
+  SpanContext? get parentSpanContext => _delegate.parentSpanContext;
 
 
   @override

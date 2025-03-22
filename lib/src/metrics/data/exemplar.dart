@@ -51,7 +51,7 @@ class Exemplar {
   }) {
     // Determine which attributes are filtered out
     final filteredAttrs = _filterAttributes(
-      measurement.attributes,
+      measurement.attributes ?? OTelFactory.otelFactory!.attributes(),
       aggregationAttributes
     );
 

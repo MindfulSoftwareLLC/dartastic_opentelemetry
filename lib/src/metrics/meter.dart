@@ -103,7 +103,7 @@ class Meter implements APIMeter {
   }
 
   @override
-  APIObservableCounter<T> createObservableCounter<T extends num>({required String name, String? unit, String? description, ObservableCallback? callback}) {
+  APIObservableCounter<T> createObservableCounter<T extends num>({required String name, String? unit, String? description, ObservableCallback<T>? callback}) {
     // First call the API implementation to get the API object
     final apiCounter = _delegate.createObservableCounter<T>(
       name: name,
@@ -120,7 +120,7 @@ class Meter implements APIMeter {
   }
 
   @override
-  APIObservableUpDownCounter<T> createObservableUpDownCounter<T extends num>({required String name, String? unit, String? description, ObservableCallback? callback}) {
+  APIObservableUpDownCounter<T> createObservableUpDownCounter<T extends num>({required String name, String? unit, String? description, ObservableCallback<T>? callback}) {
     // First call the API implementation to get the API object
     final apiCounter = _delegate.createObservableUpDownCounter<T>(
       name: name,
@@ -137,7 +137,7 @@ class Meter implements APIMeter {
   }
 
   @override
-  APIObservableGauge<T> createObservableGauge<T extends num>({required String name, String? unit, String? description, ObservableCallback? callback}) {
+  APIObservableGauge<T> createObservableGauge<T extends num>({required String name, String? unit, String? description, ObservableCallback<T>? callback}) {
     // First call the API implementation to get the API object
     final apiGauge = _delegate.createObservableGauge<T>(
       name: name,

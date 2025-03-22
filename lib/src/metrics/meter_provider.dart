@@ -14,10 +14,10 @@ part 'meter_provider_create.dart';
 /// configuring the metric pipeline via MetricReaders and Views.
 class MeterProvider implements APIMeterProvider {
   /// The underlying API MeterProvider.
-  final APIMeterProvider _apiMeterProvider;
+  final APIMeterProvider delegate;
 
   /// The resource associated with this MeterProvider.
-  Resource? _resource;
+  Resource? resource;
 
   /// List of metric readers associated with this MeterProvider.
   final List<MetricReader> _metricReaders = [];
@@ -27,48 +27,41 @@ class MeterProvider implements APIMeterProvider {
 
   /// Create a new MeterProvider instance.
   MeterProvider._({
-    required APIMeterProvider delegate,
-    Resource? resource,
-  }) : _apiMeterProvider = delegate,
-      _resource = resource {
+    required this.delegate,
+    this.resource,
+  }) {
     if (OTelLog.isDebug()) OTelLog.debug('MeterProvider: Created with resource: $resource');
   }
 
   @override
-  String get endpoint => _apiMeterProvider.endpoint;
+  String get endpoint => delegate.endpoint;
 
   @override
-  set endpoint(String value) => _apiMeterProvider.endpoint = value;
+  set endpoint(String value) => delegate.endpoint = value;
 
   @override
-  String get serviceName => _apiMeterProvider.serviceName;
+  String get serviceName => delegate.serviceName;
 
   @override
-  set serviceName(String value) => _apiMeterProvider.serviceName = value;
+  set serviceName(String value) => delegate.serviceName = value;
 
   @override
-  String? get serviceVersion => _apiMeterProvider.serviceVersion;
+  String? get serviceVersion => delegate.serviceVersion;
 
   @override
-  set serviceVersion(String? value) => _apiMeterProvider.serviceVersion = value;
+  set serviceVersion(String? value) => delegate.serviceVersion = value;
 
   @override
-  bool get enabled => _apiMeterProvider.enabled;
+  bool get enabled => delegate.enabled;
 
   @override
-  set enabled(bool value) => _apiMeterProvider.enabled = value;
+  set enabled(bool value) => delegate.enabled = value;
 
   @override
-  bool get isShutdown => _apiMeterProvider.isShutdown;
+  bool get isShutdown => delegate.isShutdown;
 
   @override
-  set isShutdown(bool value) => _apiMeterProvider.isShutdown = value;
-
-  /// Gets the resource associated with this MeterProvider.
-  Resource? get resource => _resource;
-
-  /// Sets the resource associated with this MeterProvider.
-  set resource(Resource? value) => _resource = value;
+  set isShutdown(bool value) => delegate.isShutdown = value;
 
   @override
   APIMeter getMeter({required String name, String? version, String? schemaUrl, Attributes? attributes}) {
@@ -81,12 +74,12 @@ class MeterProvider implements APIMeterProvider {
     }
 
     // Call the API implementation first
-    final apiMeter = _apiMeterProvider.getMeter(name: name,
+    final apiMeter = delegate.getMeter(name: name,
         version: version, schemaUrl: schemaUrl, attributes: attributes);
 
     // Wrap it with our SDK implementation
     final meter = MeterCreate.create(
-      apiMeter: apiMeter,
+      delegate: apiMeter,
       provider: this,
     );
 
@@ -239,7 +232,7 @@ class MeterProvider implements APIMeterProvider {
     _views.clear();
 
     // Finally call the underlying API implementation
-    await _apiMeterProvider.shutdown();
+    await delegate.shutdown();
 
     return success;
   }
