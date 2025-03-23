@@ -8,11 +8,8 @@ import 'point_storage.dart';
 
 /// HistogramStorage is used for storing and accumulating histogram data.
 class HistogramStorage extends PointStorage {
-  /// Map of attribute sets hash codes to histogram data.
-  final Map<int, _HistogramPointData> _points = {};
-  
-  /// Map to store attributes by their hash codes for faster lookup
-  final Map<int, Attributes> _attributesMap = {};
+  /// Map of attribute sets to histogram data.
+  final Map<Attributes, _HistogramPointData> _points = {};
 
   /// The bucket boundaries for this histogram.
   final List<double> boundaries;
@@ -31,21 +28,16 @@ class HistogramStorage extends PointStorage {
 
   /// Records a measurement with the given attributes.
   @override
-  void record(num value, Attributes attributes) {
-    // Use hash code for more reliable lookup
-    final attributesHash = attributes.hashCode;
-    
-    // Store the attributes in our map for later retrieval
-    if (!_attributesMap.containsKey(attributesHash)) {
-      _attributesMap[attributesHash] = attributes;
-    }
+  void record(num value, [Attributes? attributes]) {
+    // If attributes is null, use an empty map to avoid storing null values
+    final key = attributes ?? OTelFactory.otelFactory!.attributes();
 
-    if (_points.containsKey(attributesHash)) {
+    if (_points.containsKey(key)) {
       // Update existing point
-      _points[attributesHash]!.record(value);
+      _points[key]!.record(value);
     } else {
       // Create new point
-      _points[attributesHash] = _HistogramPointData(
+      _points[key] = _HistogramPointData(
         boundaries: boundaries,
         recordMinMax: recordMinMax,
       )..record(value);
@@ -58,12 +50,10 @@ class HistogramStorage extends PointStorage {
     final now = DateTime.now();
 
     return _points.entries.map((entry) {
-      final attributesHash = entry.key;
-      final attributes = _attributesMap[attributesHash]!;
       final data = entry.value;
 
       return MetricPoint.histogram(
-        attributes: attributes,
+        attributes: entry.key,
         startTime: _startTime,
         time: now,
         count: data.count,
@@ -81,16 +71,16 @@ class HistogramStorage extends PointStorage {
   @override
   void reset() {
     _points.clear();
-    _attributesMap.clear();
   }
 
   /// Adds an exemplar to a specific point.
   @override
-  void addExemplar(Exemplar exemplar, Attributes attributes) {
-    final attributesHash = attributes.hashCode;
-    
-    if (_points.containsKey(attributesHash)) {
-      _points[attributesHash]!.exemplars.add(exemplar);
+  void addExemplar(Exemplar exemplar, [Attributes? attributes]) {
+    // If attributes is null, use an empty map to avoid storing null values
+    final key = attributes ?? OTelFactory.otelFactory!.attributes();
+
+    if (_points.containsKey(key)) {
+      _points[key]!.exemplars.add(exemplar);
     }
   }
 }

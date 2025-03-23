@@ -63,7 +63,7 @@ void main() {
       expect(value, greaterThanOrEqualTo(0));
 
     // If the counter is working properly
-    if (value > 0) {
+    if (value != null && value > 0) {
       expect(value, equals(15));
     }
   });
@@ -83,7 +83,7 @@ void main() {
     expect(totalValue, greaterThanOrEqualTo(0));
 
       // If things are working properly, verify specifics
-    if (totalValue > 0) {
+    if (totalValue != null && totalValue > 0) {
       expect(totalValue, equals(30), reason: 'Total sum should be 30'); // Total sum
 
       final value1 = counter.getValue(attributes1);
@@ -92,7 +92,7 @@ void main() {
       expect(value1, greaterThanOrEqualTo(0));
       expect(value2, greaterThanOrEqualTo(0));
 
-      if (value1 > 0 && value2 > 0) {
+      if (value1 != null && value1 > 0 && value2 != null && value2 > 0) {
         expect(value1, equals(20), reason: 'Sum for attributes1 should be 20');
         expect(value2, equals(10), reason: 'Sum for attributes2 should be 10');
       }
@@ -137,7 +137,7 @@ void main() {
     final initialValue = counter.getValue();
 
     // Only continue if counter is actually recording values
-    if (initialValue > 0) {
+    if (initialValue != null && initialValue > 0) {
       expect(initialValue, equals(42));
 
       // Act

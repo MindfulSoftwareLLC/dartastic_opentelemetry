@@ -2,7 +2,6 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'package:opentelemetry_api/opentelemetry_api.dart';
-import '../../otel.dart';
 import '../meter.dart';
 import '../data/metric_point.dart';
 import '../storage/histogram_storage.dart';

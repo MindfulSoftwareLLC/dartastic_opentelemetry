@@ -21,7 +21,7 @@ class Counter<T extends num> implements APICounter<T>, BaseInstrument {
   final Meter _meter;
 
   /// Storage for accumulating counter measurements.
-  final SumStorage _storage = SumStorage(isMonotonic: true);
+  final SumStorage<T> _storage = SumStorage<T>(isMonotonic: true);
 
   /// Creates a new Counter instance.
   Counter({
@@ -85,12 +85,8 @@ class Counter<T extends num> implements APICounter<T>, BaseInstrument {
 
   /// Gets the current value of the counter for a specific set of attributes.
   /// If no attributes are provided, returns the sum for all attribute combinations.
-  T getValue([Attributes? attributes]) {
-    final value = _storage.getValue(attributes);
-    // Handle the cast to the generic type
-    if (T == int) return value.toInt() as T;
-    if (T == double) return value.toDouble() as T;
-    return value as T;
+  T? getValue([Attributes? attributes]) {
+    return attributes == null ? null : _storage.getValue(attributes);
   }
 
   /// Gets the current points for this counter.

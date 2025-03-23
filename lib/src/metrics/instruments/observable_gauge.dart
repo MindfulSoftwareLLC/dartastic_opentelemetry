@@ -3,11 +3,6 @@
 
 import 'package:opentelemetry_api/opentelemetry_api.dart';
 import '../../../dartastic_opentelemetry.dart';
-import '../meter.dart';
-import '../data/metric_point.dart';
-import '../storage/gauge_storage.dart';
-import '../observe/observable_result.dart';
-import 'base_instrument.dart';
 
 /// ObservableGauge is an asynchronous instrument which reports non-additive value(s)
 /// when the instrument is being observed.

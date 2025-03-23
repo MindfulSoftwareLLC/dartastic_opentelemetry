@@ -8,7 +8,7 @@ import '../data/exemplar.dart';
 /// PointStorage is the base class for all metric storage implementations.
 abstract class PointStorage<T extends num> {
   /// Records a measurement with the given attributes.
-  void record(T value, Attributes attributes);
+  void record(T value, [Attributes? attributes]);
 
   /// Collects the current set of metric points.
   List<MetricPoint> collectPoints();
@@ -17,5 +17,5 @@ abstract class PointStorage<T extends num> {
   void reset();
 
   /// Adds an exemplar to a specific point.
-  void addExemplar(Exemplar exemplar, Attributes attributes);
+  void addExemplar(Exemplar exemplar, [Attributes? attributes]);
 }
