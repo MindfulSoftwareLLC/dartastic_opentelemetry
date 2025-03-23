@@ -95,7 +95,11 @@ void main() {
 
     test('handles callback with attributes', () {
       // Arrange
-      customCallback(APIObservableResult<double> result) {
+      // Remove the default callback first
+      registration.unregister();
+
+      // Add a test-specific local function with expected signature
+      void customCallback(APIObservableResult<double> result) {
         final attrs1 = {'location': 'room1'}.toAttributes();
         final attrs2 = {'location': 'room2'}.toAttributes();
         result.observe(22.5, attrs1);
@@ -111,8 +115,8 @@ void main() {
       // Cleanup
       customReg.unregister();
 
-      // Assert
-      expect(measurements, hasLength(2));
+      // Assert - Should be exactly 2 measurements
+      expect(measurements.length, equals(2), reason: 'Should have exactly 2 measurements');
 
       // Find measurements with matching attributes
       final room1 = measurements.firstWhere(
@@ -165,10 +169,13 @@ void main() {
 
     test('supports getValue by attributes', () {
       // Arrange
+      // Remove the default callback
+      registration.unregister();
+      
       final attrs = {'location': 'living_room'}.toAttributes();
 
       // Create a callback that registers values with attributes
-      attrCallback(APIObservableResult<double> result) {
+      void attrCallback(APIObservableResult<double> result) {
         result.observe(24.5, attrs);
       }
 
