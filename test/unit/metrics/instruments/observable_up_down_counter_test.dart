@@ -101,16 +101,17 @@ void main() {
     });
 
     test('handles callback with attributes', () {
-      // Arrange - Remove the existing callback first to avoid interference
-      registration.unregister();
-
-      customCallback(APIObservableResult<int> result) {
+      // Add a test-specific local function with expected signature
+      void customCallback(APIObservableResult<int> result) {
         final attrs1 = {'service': 'auth'}.toAttributes();
         final attrs2 = {'service': 'database'}.toAttributes();
         result.observe(5, attrs1);
         result.observe(10, attrs2);
       }
 
+      // Arrange - Remove the existing callback first to avoid interference
+      registration.unregister();
+      
       // Register a new callback with attributes
       final customReg = observableCounter.addCallback(customCallback);
 
@@ -120,8 +121,8 @@ void main() {
       // Cleanup
       customReg.unregister();
 
-      // Assert
-      expect(measurements, hasLength(2));
+      // Assert - Should be exactly 2 measurements
+      expect(measurements.length, equals(2), reason: 'Should have exactly 2 measurements');
 
       // Find measurements with matching attributes
       final auth = measurements.firstWhere(
@@ -198,7 +199,7 @@ void main() {
       final attrs = {'service': 'api'}.toAttributes();
 
       // Create a callback that registers values with attributes
-      attrCallback(APIObservableResult<int> result) {
+      void attrCallback(APIObservableResult<int> result) {
         result.observe(8, attrs);
         result.observe(12); // Without attributes
       }
@@ -220,27 +221,27 @@ void main() {
     });
 
     test('metrics can be exported through the reader', () async {
-      // Arrange
-      // First make sure the meter provider is enabled
-      expect(meterProvider.enabled, isTrue, reason: 'MeterProvider must be enabled for metrics export');
-
+    // Arrange
+    // First make sure the meter provider is enabled
+    expect(meterProvider.enabled, isTrue, reason: 'MeterProvider must be enabled for metrics export');
+      
       callbackValue = 50;
       // Collect measurements and verify we get measurements
       final measurements = observableCounter.collect();
       expect(measurements, isNotEmpty, reason: 'Should have measurements from collect()');
-
+      
       // Act - Force flush to trigger export
       await reader.forceFlush();
 
       // Assert
       // Get exported metrics and dump for debugging
       final exportedMetrics = exporter.exportedMetrics;
-
+      
       print('Exported metrics count: ${exportedMetrics.length}');
       for (var metric in exportedMetrics) {
         print('- ${metric.name}: ${metric.type}, ${metric.unit}');
       }
-
+      
       expect(exportedMetrics, isNotEmpty, reason: 'Should have exported metrics after forceFlush()');
 
       // Find our metric

@@ -113,10 +113,15 @@ class Meter implements APIMeter {
     );
 
     // Now wrap it with our SDK implementation
-    return ObservableCounter<T>(
+    final counter = ObservableCounter<T>(
       apiCounter: apiCounter,
       meter: this,
     );
+    
+    // Register the instrument with the meter provider
+    _provider.registerInstrument(name, counter);
+    
+    return counter;
   }
 
   @override
@@ -130,10 +135,15 @@ class Meter implements APIMeter {
     );
 
     // Now wrap it with our SDK implementation
-    return ObservableUpDownCounter<T>(
+    final counter = ObservableUpDownCounter<T>(
       apiCounter: apiCounter,
       meter: this,
     );
+    
+    // Register the instrument with the meter provider
+    _provider.registerInstrument(name, counter);
+    
+    return counter;
   }
 
   @override
@@ -147,9 +157,14 @@ class Meter implements APIMeter {
     );
 
     // Now wrap it with our SDK implementation
-    return ObservableGauge<T>(
+    final gauge = ObservableGauge<T>(
       apiGauge: apiGauge,
       meter: this,
     );
+    
+    // Register the instrument with the meter provider
+    _provider.registerInstrument(name, gauge);
+    
+    return gauge;
   }
 }

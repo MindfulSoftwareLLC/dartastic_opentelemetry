@@ -25,6 +25,7 @@ void main() {
     }
 
     setUp(() async {
+      await OTel.reset();
       // Reset counters
       callbackCounter = 0;
       callbackValue = 0.0;
@@ -32,7 +33,6 @@ void main() {
       // Create in-memory exporter and reader
       exporter = MemoryMetricExporter();
       reader = MemoryMetricReader(exporter: exporter);
-
       // Initialize OpenTelemetry with in-memory metric exporter
       await OTel.initialize(
         endpoint: 'http://localhost:4318',

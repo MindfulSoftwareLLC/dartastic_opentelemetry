@@ -28,10 +28,7 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, BaseI
     required APIObservableCounter<T> apiCounter,
     required Meter meter,
   }) : _apiCounter = apiCounter,
-       _meter = meter {
-    // Register this instrument with the meter provider for metric collection
-    _meter.provider.registerInstrument(_meter.name, this);
-  }
+       _meter = meter;
 
   @override
   String get name => _apiCounter.name;
@@ -159,13 +156,13 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, BaseI
 
     // Create the metric to export
     return [
-      Metric(
+      Metric.sum(
         name: name,
         description: description,
         unit: unit,
-        type: MetricType.sum,
         temporality: AggregationTemporality.cumulative,
         points: points,
+        isMonotonic: true,  // Counters are monotonic
       )
     ];
   }

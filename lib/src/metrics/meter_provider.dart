@@ -136,8 +136,8 @@ class MeterProvider implements APIMeterProvider {
   /// Registers an instrument with this provider
   ///
   /// This allows the provider to track all active instruments for metrics collection
-  void registerInstrument(String meterName, BaseInstrument instrument) {
-    final meterKey = meterName;
+  void registerInstrument(String instrumentName, BaseInstrument instrument) {
+    final meterKey = instrument.meter.name;
     if (!_instruments.containsKey(meterKey)) {
       _instruments[meterKey] = {};
     }
@@ -145,7 +145,7 @@ class MeterProvider implements APIMeterProvider {
     _instruments[meterKey]!.add(instrument);
 
     if (OTelLog.isLogMetrics()) {
-      OTelLog.logMetric('MeterProvider: Registered instrument "${instrument.name}" for meter "$meterName"');
+      OTelLog.logMetric('MeterProvider: Registered instrument "${instrument.name}" for meter "${instrument.meter.name}"');
     }
   }
 

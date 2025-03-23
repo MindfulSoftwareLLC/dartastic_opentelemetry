@@ -2,17 +2,19 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'package:opentelemetry_api/opentelemetry_api.dart';
+import '../../../dartastic_opentelemetry.dart';
 import '../meter.dart';
 import '../data/metric_point.dart';
 import '../storage/gauge_storage.dart';
 import '../observe/observable_result.dart';
+import 'base_instrument.dart';
 
 /// ObservableGauge is an asynchronous instrument which reports non-additive value(s)
 /// when the instrument is being observed.
 ///
 /// An ObservableGauge is used to asynchronously measure a non-additive current value
 /// that cannot be calculated synchronously.
-class ObservableGauge<T extends num> implements APIObservableGauge<T> {
+class ObservableGauge<T extends num> implements APIObservableGauge<T>, BaseInstrument {
   /// The underlying API ObservableGauge.
   final APIObservableGauge<T> _apiGaugeDelegate;
 
@@ -40,7 +42,7 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
 
   @override
   bool get enabled {
-    return _meter.provider.enabled;
+   return _meter.provider.enabled;
   }
 
   @override
@@ -113,6 +115,32 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
     }
 
     return result;
+  }
+
+  /// Collects metrics for the SDK metric export.
+  ///
+  /// This is called by the MeterProvider during metric collection.
+  @override
+  List<Metric> collectMetrics() {
+    if (!enabled) {
+      return [];
+    }
+
+    // Get the points from storage
+    final points = collectPoints();
+    if (points.isEmpty) {
+      return [];
+    }
+
+    // Create the metric to export
+    return [
+      Metric.gauge(
+        name: name,
+        description: description,
+        unit: unit,
+        points: points,
+      )
+    ];
   }
 
   /// Gets the current points for this gauge.
