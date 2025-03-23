@@ -43,7 +43,7 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
   String? get description => _apiCounter.description;
 
   @override
-  bool get enabled => _apiCounter.enabled && _meter.enabled;
+  bool get enabled => _apiCounter.enabled && _meter.enabled && _meter.provider.enabled;
 
   @override
   APIMeter get meter => _meter;
@@ -87,18 +87,20 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
     }
 
     final result = <Measurement<T>>[];
-    final observableResult = ObservableResult<T>();
 
     // Call all callbacks
     for (final callback in callbacks) {
       try {
+        // Create a new observable result for each callback
+        final observableResult = ObservableResult<T>();
+        
         // Call the callback with the observable result
         callback(observableResult as APIObservableResult<T>);
 
         // Process the measurements from the observable result
         for (final measurement in observableResult.measurements) {
           // Type checking for the generic parameter
-          final  value = measurement.value;
+          final value = measurement.value;
           // For observable up-down counters, we need to calculate deltas
           final key = measurement.attributes ?? OTelFactory.otelFactory!.attributes();
           if (_lastValues.containsKey(key)) {
@@ -142,6 +144,10 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
   /// Gets the current points for this counter.
   /// This is used by the SDK to collect metrics.
   List<MetricPoint> collectPoints() {
+    if (!enabled) {
+      return [];
+    }
+    
     // First collect new measurements
     collect();
 

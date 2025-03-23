@@ -16,11 +16,12 @@ class GaugeStorage extends PointStorage {
 
   /// Records a measurement with the given attributes.
   @override
-  void record(num value, Attributes attributes) {
-    final key = attributes;
+  void record(num value, [Attributes? attributes]) {
+    // Normalize attributes to avoid null issues
+    final normalizedAttributes = attributes ?? OTelFactory.otelFactory!.attributes();
 
     // Always update with the latest value
-    _points[key] = _GaugePointData(
+    _points[normalizedAttributes] = _GaugePointData(
       value: value,
       updateTime: DateTime.now(),
     );
@@ -28,9 +29,14 @@ class GaugeStorage extends PointStorage {
 
   /// Gets the current value for the given attributes.
   /// Returns 0 if no value has been recorded for these attributes.
-  num getValue(Attributes attributes) {
-    final key = attributes;
-    return _points[key]?.value ?? 0;
+  num getValue([Attributes? attributes]) {
+    if (attributes == null) {
+      // For gauges without attributes, we return the average of all values
+      // This is a heuristic - you might want to change this behavior based on requirements
+      if (_points.isEmpty) return 0;
+      return _points.values.fold<num>(0, (sum, point) => sum + point.value) / _points.length;
+    }
+    return _points[attributes]?.value ?? 0;
   }
 
   /// Collects the current set of metric points.
@@ -61,10 +67,8 @@ class GaugeStorage extends PointStorage {
   /// Adds an exemplar to a specific point.
   @override
   void addExemplar(Exemplar exemplar, Attributes attributes) {
-    final key = attributes;
-
-    if (_points.containsKey(key)) {
-      _points[key]!.exemplars.add(exemplar);
+    if (_points.containsKey(attributes)) {
+      _points[attributes]!.exemplars.add(exemplar);
     }
   }
 }

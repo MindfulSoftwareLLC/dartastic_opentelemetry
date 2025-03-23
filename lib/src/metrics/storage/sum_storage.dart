@@ -33,17 +33,18 @@ class SumStorage extends PointStorage {
       return;
     }
 
-    if (_points.containsKey(attributes)) {
+    // Normalize attributes to avoid null issues
+    final normalizedAttributes = attributes ?? OTelFactory.otelFactory!.attributes();
+    
+    if (_points.containsKey(normalizedAttributes)) {
       // Update existing point
-      _points[attributes]!.add(value);
+      _points[normalizedAttributes]!.add(value);
     } else {
-      if (attributes != null) {
-        // Create new point
-        _points[attributes] = _SumPointData(
-          value: value,
-          lastUpdateTime: DateTime.now(),
-        );
-      }
+      // Create new point
+      _points[normalizedAttributes] = _SumPointData(
+        value: value,
+        lastUpdateTime: DateTime.now(),
+      );
     }
   }
 
@@ -55,8 +56,7 @@ class SumStorage extends PointStorage {
       return _points.values.fold<num>(0, (sum, point) => sum + point.value);
     } else {
       // Get specific point
-      final key = attributes;
-      return _points[key]?.value ?? 0;
+      return _points[attributes]?.value ?? 0;
     }
   }
 
@@ -86,10 +86,8 @@ class SumStorage extends PointStorage {
   /// Adds an exemplar to a specific point.
   @override
   void addExemplar(Exemplar exemplar, Attributes attributes) {
-    final key = attributes;
-
-    if (_points.containsKey(key)) {
-      _points[key]!.exemplars.add(exemplar);
+    if (_points.containsKey(attributes)) {
+      _points[attributes]!.exemplars.add(exemplar);
     }
   }
 }

@@ -39,7 +39,7 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
   String? get description => _apiGaugeDelegate.description;
 
   @override
-  bool get enabled => _apiGaugeDelegate.enabled && _meter.enabled;
+  bool get enabled => _apiGaugeDelegate.enabled && _meter.enabled && _meter.provider.enabled;
 
   @override
   APIMeter get meter => _meter;
@@ -66,7 +66,8 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
   }
 
   /// Gets the current value of the gauge for a specific set of attributes.
-  T getValue(Attributes attributes) {
+  /// If no attributes are provided, returns a summary value (average) for all attribute combinations.
+  T getValue([Attributes? attributes]) {
     final value = _storage.getValue(attributes);
     // Handle the cast to the generic type
     if (T == int) return value.toInt() as T;
@@ -82,11 +83,13 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
     }
 
     final result = <Measurement<T>>[];
-    final observableResult = ObservableResult<T>();
 
     // Call all callbacks
     for (final callback in callbacks) {
       try {
+        // Create a new observable result for each callback
+        final observableResult = ObservableResult<T>();
+        
         // Call the callback with the observable result
         callback(observableResult as APIObservableResult<T>);
 
@@ -110,6 +113,10 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
   /// Gets the current points for this gauge.
   /// This is used by the SDK to collect metrics.
   List<MetricPoint> collectPoints() {
+    if (!enabled) {
+      return [];
+    }
+    
     // For gauges, we don't keep historical data, so first clear the storage
     _storage.reset();
 

@@ -87,11 +87,8 @@ class MemoryMetricReader implements MetricReader {
       // Collect metrics
       final data = await collect();
       
-      // Export metrics
-      if (data.metrics.isNotEmpty) {
-        return await _exporter.export(data);
-      }
-      return true;
+      // Export metrics regardless if empty or not for testing purposes
+      return await _exporter.export(data);
     } catch (e) {
       print('Error during MemoryMetricReader forceFlush: $e');
       return false;
