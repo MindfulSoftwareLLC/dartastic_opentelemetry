@@ -1,25 +1,39 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+import 'dart:io';
+
 import 'package:test/test.dart';
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry/proto/opentelemetry_proto_dart.dart' as proto;
 
-import '../testing_utils/mock_collector.dart';
+import '../testing_utils/real_collector.dart';
 
 void main() {
-  late MockCollector collector;
+  late RealCollector collector;
   late TracerProvider tracerProvider;
   late Tracer tracer;
   final testPort = 4320; // Use unique port
+  final testDir = Directory.current.path;
+  final configPath = '$testDir/test/testing_utils/otelcol-config.yaml';
+  final outputPath = '$testDir/test/testing_utils/spans.json';
 
   setUp(() async {
+    // Ensure output file exists and is empty
+    File(outputPath).writeAsStringSync('');
+
+    // Start collector with configuration that exports to file
+    collector = RealCollector(
+      port: testPort,
+      configPath: configPath,
+      outputPath: outputPath,
+    );
+    await collector.start();
+
+    // Reset and initialize OTel
     await OTel.reset();
     await OTel.initialize(
       endpoint: 'http://localhost:$testPort',
       serviceName: 'test-service');
-    collector = MockCollector(port: testPort);
-    await collector.start();
 
     tracerProvider = OTel.tracerProvider();
 
@@ -39,7 +53,7 @@ void main() {
     // Ensure proper cleanup order
     await tracerProvider.shutdown();
     await collector.stop();
-    collector.clear(); // Explicitly clear spans
+    await collector.clear();
 
     // Add delay to ensure port is freed
     await Future.delayed(Duration(milliseconds: 100));
@@ -65,7 +79,7 @@ void main() {
     await collector.waitForSpans(1);
 
     print('Verifying span attributes...');
-    collector.assertSpanExists(
+    await collector.assertSpanExists(
       name: 'test-span',
       attributes: {
         'string.key': 'value',
@@ -88,12 +102,13 @@ void main() {
     print('Waiting for error status span...');
     await collector.waitForSpans(1);
 
-    print('Verifying error status...');
-    collector.assertSpanExists(
-      name: 'status-test-span',
-      status: proto.Status_StatusCode.STATUS_CODE_ERROR,
-      statusMessage: statusDescription,
-    );
+    // Get spans and verify the status
+    final spans = await collector.getSpans();
+    expect(spans, isNotEmpty);
+    expect(spans.first['status'], isNotNull);
+    expect(spans.first['status']['code'], equals(2)); // 2 corresponds to ERROR
+    expect(spans.first['status']['message'], equals(statusDescription));
+
     print('Status test completed');
   });
 }
