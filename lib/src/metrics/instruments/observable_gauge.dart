@@ -47,7 +47,7 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
   APIMeter get meter => _meter;
 
   @override
-  List<ObservableCallback> get callbacks => _apiGaugeDelegate.callbacks;
+  List<ObservableCallback<T>> get callbacks => _apiGaugeDelegate.callbacks;
 
   @override
   APICallbackRegistration<T> addCallback(ObservableCallback<T> callback) {

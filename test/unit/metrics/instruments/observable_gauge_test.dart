@@ -95,12 +95,12 @@ void main() {
 
     test('handles callback with attributes', () {
       // Arrange
-      final customCallback = (APIObservableResult<double> result) {
+      customCallback(APIObservableResult<double> result) {
         final attrs1 = {'location': 'room1'}.toAttributes();
         final attrs2 = {'location': 'room2'}.toAttributes();
         result.observe(22.5, attrs1);
         result.observe(24.3, attrs2);
-      };
+      }
 
       // Register a new callback with attributes
       final customReg = observableGauge.addCallback(customCallback);
@@ -168,9 +168,9 @@ void main() {
       final attrs = {'location': 'living_room'}.toAttributes();
 
       // Create a callback that registers values with attributes
-      final attrCallback = (APIObservableResult<double> result) {
+      attrCallback(APIObservableResult<double> result) {
         result.observe(24.5, attrs);
-      };
+      }
 
       // Register the callback and collect
       final attrReg = observableGauge.addCallback(attrCallback);

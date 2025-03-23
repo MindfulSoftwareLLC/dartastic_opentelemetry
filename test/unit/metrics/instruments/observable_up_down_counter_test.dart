@@ -32,7 +32,7 @@ void main() {
       // Create in-memory exporter and reader
       exporter = MemoryMetricExporter();
       reader = MemoryMetricReader(exporter: exporter);
-      
+
       // Initialize OpenTelemetry with in-memory metric exporter
       await OTel.initialize(
         endpoint: 'http://localhost:4318',
@@ -40,7 +40,7 @@ void main() {
         metricReader: reader,
         enableMetrics: true
       );
-      
+
       // Explicitly ensure metrics are enabled
       OTel.meterProvider().enabled = true;
 
@@ -62,7 +62,7 @@ void main() {
     tearDown(() async {
       // Reset the counter to clean state
       observableCounter.reset();
-      
+
       // Clean up
       registration.unregister();
       await reader.shutdown();
@@ -90,7 +90,7 @@ void main() {
       // Arrange
       callbackValue = 42;
       callbackCounter = 0;  // Explicitly reset counter just before test
-      
+
       // Act - This will trigger the callback
       final measurements = observableCounter.collect();
 
@@ -103,13 +103,13 @@ void main() {
     test('handles callback with attributes', () {
       // Arrange - Remove the existing callback first to avoid interference
       registration.unregister();
-      
-      final customCallback = (APIObservableResult<int> result) {
+
+      customCallback(APIObservableResult<int> result) {
         final attrs1 = {'service': 'auth'}.toAttributes();
         final attrs2 = {'service': 'database'}.toAttributes();
         result.observe(5, attrs1);
         result.observe(10, attrs2);
-      };
+      }
 
       // Register a new callback with attributes
       final customReg = observableCounter.addCallback(customCallback);
@@ -198,10 +198,10 @@ void main() {
       final attrs = {'service': 'api'}.toAttributes();
 
       // Create a callback that registers values with attributes
-      final attrCallback = (APIObservableResult<int> result) {
+      attrCallback(APIObservableResult<int> result) {
         result.observe(8, attrs);
         result.observe(12); // Without attributes
-      };
+      }
 
       // Register the callback and collect
       final attrReg = observableCounter.addCallback(attrCallback);
@@ -223,24 +223,24 @@ void main() {
       // Arrange
       // First make sure the meter provider is enabled
       expect(meterProvider.enabled, isTrue, reason: 'MeterProvider must be enabled for metrics export');
-      
+
       callbackValue = 50;
       // Collect measurements and verify we get measurements
       final measurements = observableCounter.collect();
       expect(measurements, isNotEmpty, reason: 'Should have measurements from collect()');
-      
+
       // Act - Force flush to trigger export
       await reader.forceFlush();
 
       // Assert
       // Get exported metrics and dump for debugging
       final exportedMetrics = exporter.exportedMetrics;
-      
+
       print('Exported metrics count: ${exportedMetrics.length}');
       for (var metric in exportedMetrics) {
         print('- ${metric.name}: ${metric.type}, ${metric.unit}');
       }
-      
+
       expect(exportedMetrics, isNotEmpty, reason: 'Should have exported metrics after forceFlush()');
 
       // Find our metric

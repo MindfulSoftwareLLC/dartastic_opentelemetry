@@ -13,7 +13,7 @@ void main() {
       await OTel.reset();
       await OTel.initialize(serviceName: 'test-service');
       tracerProvider = OTel.tracerProvider();
-      tracer = tracerProvider.getTracer('test-tracer') as Tracer;
+      tracer = tracerProvider.getTracer('test-tracer');
     });
 
     tearDown(() async {

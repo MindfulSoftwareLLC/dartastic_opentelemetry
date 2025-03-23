@@ -95,12 +95,12 @@ void main() {
 
     test('handles callback with attributes', () {
       // Arrange
-      final customCallback = (APIObservableResult<int> result) {
+      customCallback(APIObservableResult<int> result) {
         final attrs1 = {'key1': 'value1'}.toAttributes();
         final attrs2 = {'key2': 'value2'}.toAttributes();
         result.observe(5, attrs1);
         result.observe(10, attrs2);
-      };
+      }
 
       // Register a new callback with attributes
       final customReg = observableCounter.addCallback(customCallback);

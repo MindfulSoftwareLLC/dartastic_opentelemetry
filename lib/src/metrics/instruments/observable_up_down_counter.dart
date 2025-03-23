@@ -2,11 +2,7 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'package:opentelemetry_api/opentelemetry_api.dart';
-import '../meter.dart';
-import '../data/metric_point.dart';
-import '../storage/sum_storage.dart';
-import '../observe/observable_result.dart';
-import 'base_instrument.dart';
+import '../../../dartastic_opentelemetry.dart';
 
 /// ObservableUpDownCounter is an asynchronous instrument that reports additive
 /// values when observed.
@@ -32,7 +28,10 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
     required APIObservableUpDownCounter<T> apiCounter,
     required Meter meter,
   }) : _apiCounter = apiCounter,
-       _meter = meter;
+       _meter = meter {
+    // Register this instrument with the meter provider for metric collection
+    _meter.provider.registerInstrument(_meter.name, this);
+  }
 
   @override
   String get name => _apiCounter.name;
@@ -92,7 +91,7 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
 
     final result = <Measurement<T>>[];
     final callbackList = List<ObservableCallback<T>>.from(callbacks);
-    
+
     // Return early if no callbacks registered
     if (callbackList.isEmpty) {
       return result;
@@ -163,6 +162,34 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
 
     // Then return points from storage
     return _storage.collectPoints();
+  }
+
+  /// Collects metrics for the SDK metric export.
+  ///
+  /// This is called by the MeterProvider during metric collection.
+  @override
+  List<Metric> collectMetrics() {
+    if (!enabled) {
+      return [];
+    }
+
+    // Get the points from storage
+    final points = collectPoints();
+    if (points.isEmpty) {
+      return [];
+    }
+
+    // Create the metric to export
+    return [
+      Metric(
+        name: name,
+        description: description,
+        unit: unit,
+        type: MetricType.sum,
+        temporality: AggregationTemporality.cumulative,
+        points: points,
+      )
+    ];
   }
 
   /// Resets the counter. This is only used for Delta temporality.

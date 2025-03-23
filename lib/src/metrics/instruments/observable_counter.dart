@@ -2,10 +2,7 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'package:opentelemetry_api/opentelemetry_api.dart';
-import '../meter.dart';
-import '../data/metric_point.dart';
-import '../storage/sum_storage.dart';
-import '../observe/observable_result.dart';
+import '../../../dartastic_opentelemetry.dart';
 
 /// ObservableCounter is an asynchronous instrument that reports monotonically
 /// increasing values when observed.
@@ -13,7 +10,7 @@ import '../observe/observable_result.dart';
 /// An ObservableCounter is used to measure monotonically increasing values
 /// where measurements are made by a callback function. For example, CPU time,
 /// bytes received, or number of operations.
-class ObservableCounter<T extends num> implements APIObservableCounter<T> {
+class ObservableCounter<T extends num> implements APIObservableCounter<T>, BaseInstrument {
   /// The underlying API ObservableCounter.
   final APIObservableCounter<T> _apiCounter;
 
@@ -31,7 +28,10 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
     required APIObservableCounter<T> apiCounter,
     required Meter meter,
   }) : _apiCounter = apiCounter,
-       _meter = meter;
+       _meter = meter {
+    // Register this instrument with the meter provider for metric collection
+    _meter.provider.registerInstrument(_meter.name, this);
+  }
 
   @override
   String get name => _apiCounter.name;
@@ -44,6 +44,7 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
 
   @override
   bool get enabled {
+    // In the SDK, metrics are enabled based on the meter provider's enabled state
     return _meter.provider.enabled;
   }
 
@@ -51,7 +52,7 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
   APIMeter get meter => _meter;
 
   @override
-  List<ObservableCallback> get callbacks => _apiCounter.callbacks;
+  List<ObservableCallback<T>> get callbacks => _apiCounter.callbacks;
 
   @override
   APICallbackRegistration<T> addCallback(ObservableCallback<T> callback) {
@@ -92,6 +93,11 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
 
     // Get a snapshot of callbacks to avoid concurrent modification issues
     final callbacksSnapshot = List<ObservableCallback<T>>.from(callbacks);
+
+    // Return early if no callbacks registered
+    if (callbacksSnapshot.isEmpty) {
+      return result;
+    }
 
     // Call all callbacks
     for (final callback in callbacksSnapshot) {
@@ -134,6 +140,34 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
     }
 
     return result;
+  }
+
+  /// Collects metrics for the SDK metric export.
+  ///
+  /// This is called by the MeterProvider during metric collection.
+  @override
+  List<Metric> collectMetrics() {
+    if (!enabled) {
+      return [];
+    }
+
+    // Get the points from storage
+    final points = collectPoints();
+    if (points.isEmpty) {
+      return [];
+    }
+
+    // Create the metric to export
+    return [
+      Metric(
+        name: name,
+        description: description,
+        unit: unit,
+        type: MetricType.sum,
+        temporality: AggregationTemporality.cumulative,
+        points: points,
+      )
+    ];
   }
 
   /// Gets the current points for this counter.
