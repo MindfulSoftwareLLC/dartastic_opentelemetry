@@ -32,7 +32,7 @@ void main() {
       // Create in-memory exporter and reader
       exporter = MemoryMetricExporter();
       reader = MemoryMetricReader(exporter: exporter);
-
+      
       // Initialize OpenTelemetry with in-memory metric exporter
       await OTel.initialize(
         endpoint: 'http://localhost:4318',
@@ -40,6 +40,9 @@ void main() {
         metricReader: reader,
         enableMetrics: true
       );
+      
+      // Explicitly ensure metrics are enabled
+      OTel.meterProvider().enabled = true;
 
       // Get a meter provider and create a meter
       meterProvider = OTel.meterProvider();
@@ -57,6 +60,9 @@ void main() {
     });
 
     tearDown(() async {
+      // Reset the counter to clean state
+      observableCounter.reset();
+      
       // Clean up
       registration.unregister();
       await reader.shutdown();
@@ -83,7 +89,8 @@ void main() {
     test('registers and receives callbacks', () {
       // Arrange
       callbackValue = 42;
-
+      callbackCounter = 0;  // Explicitly reset counter just before test
+      
       // Act - This will trigger the callback
       final measurements = observableCounter.collect();
 
@@ -94,7 +101,9 @@ void main() {
     });
 
     test('handles callback with attributes', () {
-      // Arrange
+      // Arrange - Remove the existing callback first to avoid interference
+      registration.unregister();
+      
       final customCallback = (APIObservableResult<int> result) {
         final attrs1 = {'service': 'auth'}.toAttributes();
         final attrs2 = {'service': 'database'}.toAttributes();
@@ -212,25 +221,40 @@ void main() {
 
     test('metrics can be exported through the reader', () async {
       // Arrange
+      // First make sure the meter provider is enabled
+      expect(meterProvider.enabled, isTrue, reason: 'MeterProvider must be enabled for metrics export');
+      
       callbackValue = 50;
-      observableCounter.collect();
-
+      // Collect measurements and verify we get measurements
+      final measurements = observableCounter.collect();
+      expect(measurements, isNotEmpty, reason: 'Should have measurements from collect()');
+      
       // Act - Force flush to trigger export
       await reader.forceFlush();
 
       // Assert
+      // Get exported metrics and dump for debugging
       final exportedMetrics = exporter.exportedMetrics;
-      expect(exportedMetrics, isNotEmpty);
+      
+      print('Exported metrics count: ${exportedMetrics.length}');
+      for (var metric in exportedMetrics) {
+        print('- ${metric.name}: ${metric.type}, ${metric.unit}');
+      }
+      
+      expect(exportedMetrics, isNotEmpty, reason: 'Should have exported metrics after forceFlush()');
 
       // Find our metric
-      final metric = exportedMetrics.firstWhere(
-        (m) => m.name == 'test-observable-up-down-counter',
-        orElse: () => throw TestFailure('Metric not found in exported metrics')
-      );
+      try {
+        final metric = exportedMetrics.firstWhere(
+          (m) => m.name == 'test-observable-up-down-counter',
+        );
 
-      expect(metric.unit, equals('connections'));
-      expect(metric.type, equals(MetricType.sum));
-      expect(metric.description, equals('A test observable up-down counter'));
+        expect(metric.unit, equals('connections'));
+        expect(metric.type, equals(MetricType.sum));
+        expect(metric.description, equals('A test observable up-down counter'));
+      } catch (e) {
+        fail('Expected metric not found in exported metrics: $e');
+      }
     });
   });
 }

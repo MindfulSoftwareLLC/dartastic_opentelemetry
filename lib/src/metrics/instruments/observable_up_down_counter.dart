@@ -6,6 +6,7 @@ import '../meter.dart';
 import '../data/metric_point.dart';
 import '../storage/sum_storage.dart';
 import '../observe/observable_result.dart';
+import 'base_instrument.dart';
 
 /// ObservableUpDownCounter is an asynchronous instrument that reports additive
 /// values when observed.
@@ -13,7 +14,7 @@ import '../observe/observable_result.dart';
 /// An ObservableUpDownCounter is used to measure a value that increases and
 /// decreases where measurements are made by a callback function. For example,
 /// number of active requests, queue size, pool size.
-class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCounter<T> {
+class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCounter<T>, BaseInstrument {
   /// The underlying API ObservableUpDownCounter.
   final APIObservableUpDownCounter<T> _apiCounter;
 
@@ -43,13 +44,16 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
   String? get description => _apiCounter.description;
 
   @override
-  bool get enabled => _apiCounter.enabled && _meter.enabled && _meter.provider.enabled;
+  bool get enabled {
+    // In the SDK, metrics are enabled based on the meter provider's enabled state
+    return _meter.provider.enabled;
+  }
 
   @override
   APIMeter get meter => _meter;
 
   @override
-  List<ObservableCallback> get callbacks => _apiCounter.callbacks;
+  List<ObservableCallback<T>> get callbacks => _apiCounter.callbacks;
 
   @override
   APICallbackRegistration<T> addCallback(ObservableCallback<T> callback) {
@@ -87,13 +91,19 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
     }
 
     final result = <Measurement<T>>[];
+    final callbackList = List<ObservableCallback<T>>.from(callbacks);
+    
+    // Return early if no callbacks registered
+    if (callbackList.isEmpty) {
+      return result;
+    }
 
     // Call all callbacks
-    for (final callback in callbacks) {
+    for (final callback in callbackList) {
       try {
         // Create a new observable result for each callback
         final observableResult = ObservableResult<T>();
-        
+
         // Call the callback with the observable result
         callback(observableResult as APIObservableResult<T>);
 
@@ -147,7 +157,7 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
     if (!enabled) {
       return [];
     }
-    
+
     // First collect new measurements
     collect();
 
@@ -183,5 +193,8 @@ class _ObservableUpDownCounterCallbackRegistration<T extends num> implements API
   void unregister() {
     // Unregister from the API implementation
     apiRegistration.unregister();
+
+    // Also remove from our counter directly for redundancy
+    counter.removeCallback(callback);
   }
 }

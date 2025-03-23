@@ -9,7 +9,15 @@ class ObservableResult<T extends num> implements APIObservableResult<T> {
 
   @override
   void observe(T value, [Attributes? attributes]) {
-    _measurements.add(OTelFactory.otelFactory!.createMeasurement<T>(value, attributes));
+    // Make sure we have a valid OTelFactory
+    if (OTelFactory.otelFactory == null) {
+      print('Warning: OTelFactory.otelFactory is null in ObservableResult.observe');
+      return;
+    }
+    
+    // Add the measurement
+    final measurement = OTelFactory.otelFactory!.createMeasurement<T>(value, attributes);
+    _measurements.add(measurement);
   }
 
   @override

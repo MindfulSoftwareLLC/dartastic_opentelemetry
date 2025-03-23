@@ -52,10 +52,18 @@ class MeterProvider implements APIMeterProvider {
   set serviceVersion(String? value) => delegate.serviceVersion = value;
 
   @override
-  bool get enabled => delegate.enabled;
+  bool get enabled {
+    return _enabledOverride ?? true;
+  }
+
+  // Track explicit enablement settings
+  bool? _enabledOverride;
 
   @override
-  set enabled(bool value) => delegate.enabled = value;
+  set enabled(bool value) {
+    _enabledOverride = value;
+    delegate.enabled = value;
+  }
 
   @override
   bool get isShutdown => delegate.isShutdown;

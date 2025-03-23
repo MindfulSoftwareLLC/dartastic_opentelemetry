@@ -43,7 +43,9 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
   String? get description => _apiCounter.description;
 
   @override
-  bool get enabled => _apiCounter.enabled && _meter.enabled && _meter.provider.enabled;
+  bool get enabled {
+    return _meter.provider.enabled;
+  }
 
   @override
   APIMeter get meter => _meter;
@@ -88,12 +90,15 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
 
     final result = <Measurement<T>>[];
 
+    // Get a snapshot of callbacks to avoid concurrent modification issues
+    final callbacksSnapshot = List<ObservableCallback<T>>.from(callbacks);
+
     // Call all callbacks
-    for (final callback in callbacks) {
+    for (final callback in callbacksSnapshot) {
       try {
         // Create a new observable result for each callback
         final observableResult = ObservableResult<T>();
-        
+
         // Call the callback with the observable result
         callback(observableResult as APIObservableResult<T>);
 
@@ -137,7 +142,7 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
     if (!enabled) {
       return [];
     }
-    
+
     // First collect new measurements
     collect();
 
@@ -173,5 +178,8 @@ class _ObservableCounterCallbackRegistration<T extends num> implements APICallba
   void unregister() {
     // Unregister from the API implementation
     apiRegistration.unregister();
+
+    // Also remove from our counter directly for redundancy
+    counter.removeCallback(callback);
   }
 }

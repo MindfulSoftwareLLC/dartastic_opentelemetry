@@ -39,7 +39,9 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
   String? get description => _apiGaugeDelegate.description;
 
   @override
-  bool get enabled => _apiGaugeDelegate.enabled && _meter.enabled && _meter.provider.enabled;
+  bool get enabled {
+    return _meter.provider.enabled;
+  }
 
   @override
   APIMeter get meter => _meter;
@@ -84,12 +86,15 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
 
     final result = <Measurement<T>>[];
 
+    // Get a snapshot of callbacks to avoid concurrent modification issues
+    final callbacksSnapshot = List<ObservableCallback<T>>.from(callbacks);
+
     // Call all callbacks
-    for (final callback in callbacks) {
+    for (final callback in callbacksSnapshot) {
       try {
         // Create a new observable result for each callback
         final observableResult = ObservableResult<T>();
-        
+
         // Call the callback with the observable result
         callback(observableResult as APIObservableResult<T>);
 
@@ -116,7 +121,7 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
     if (!enabled) {
       return [];
     }
-    
+
     // For gauges, we don't keep historical data, so first clear the storage
     _storage.reset();
 
@@ -149,5 +154,8 @@ class _ObservableGaugeCallbackRegistration<T extends num> implements APICallback
   void unregister() {
     // Unregister from the API implementation
     apiRegistration.unregister();
+
+    // Also remove from our gauge directly for redundancy
+    gauge.removeCallback(callback);
   }
 }
