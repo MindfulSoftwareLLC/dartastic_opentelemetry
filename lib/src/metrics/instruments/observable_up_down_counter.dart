@@ -63,10 +63,10 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
       callback: callback,
     );
   }
-  
+
   @override
   void removeCallback(ObservableCallback<T> callback) {
-    _apiCounter._removeCallback(callback);
+    _apiCounter.removeCallback(callback);
   }
 
   /// Gets the current value of the counter for a specific set of attributes.
@@ -157,12 +157,12 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
 }
 
 /// Wrapper for APICallbackRegistration that also handles our internal state.
-class _ObservableUpDownCounterCallbackRegistration implements APICallbackRegistration<T> {
+class _ObservableUpDownCounterCallbackRegistration<T extends num> implements APICallbackRegistration<T> {
   /// The API registration.
   final APICallbackRegistration<T> apiRegistration;
 
   /// The counter this registration is for.
-  final ObservableUpDownCounter counter;
+  final ObservableUpDownCounter<T> counter;
 
   /// The callback that was registered.
   final ObservableCallback<T> callback;

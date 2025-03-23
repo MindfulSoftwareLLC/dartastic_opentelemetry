@@ -14,7 +14,7 @@ import '../observe/observable_result.dart';
 /// that cannot be calculated synchronously.
 class ObservableGauge<T extends num> implements APIObservableGauge<T> {
   /// The underlying API ObservableGauge.
-  final APIObservableGauge<T> _apiGauge;
+  final APIObservableGauge<T> _apiGaugeDelegate;
 
   /// The Meter that created this ObservableGauge.
   final Meter _meter;
@@ -26,43 +26,43 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
   ObservableGauge({
     required APIObservableGauge<T> apiGauge,
     required Meter meter,
-  }) : _apiGauge = apiGauge,
+  }) : _apiGaugeDelegate = apiGauge,
        _meter = meter;
 
   @override
-  String get name => _apiGauge.name;
+  String get name => _apiGaugeDelegate.name;
 
   @override
-  String? get unit => _apiGauge.unit;
+  String? get unit => _apiGaugeDelegate.unit;
 
   @override
-  String? get description => _apiGauge.description;
+  String? get description => _apiGaugeDelegate.description;
 
   @override
-  bool get enabled => _apiGauge.enabled && _meter.enabled;
+  bool get enabled => _apiGaugeDelegate.enabled && _meter.enabled;
 
   @override
   APIMeter get meter => _meter;
 
   @override
-  List<ObservableCallback> get callbacks => _apiGauge.callbacks;
+  List<ObservableCallback> get callbacks => _apiGaugeDelegate.callbacks;
 
   @override
   APICallbackRegistration<T> addCallback(ObservableCallback<T> callback) {
     // Register with the API implementation first
-    final registration = _apiGauge.addCallback(callback);
+    final registration = _apiGaugeDelegate.addCallback(callback);
 
-    // Return a registration that also unregisters from our list
-    return _ObservableGaugeCallbackRegistration(
+    // Return a registration that handles unregistering properly
+    return _ObservableGaugeCallbackRegistration<T>(
       apiRegistration: registration,
       gauge: this,
       callback: callback,
     );
   }
-  
+
   @override
   void removeCallback(ObservableCallback<T> callback) {
-    _apiGauge._removeCallback(callback);
+      _apiGaugeDelegate.removeCallback(callback);
   }
 
   /// Gets the current value of the gauge for a specific set of attributes.
@@ -81,7 +81,7 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
       return [];
     }
 
-    final result = <Measurement>[];
+    final result = <Measurement<T>>[];
     final observableResult = ObservableResult<T>();
 
     // Call all callbacks
@@ -94,10 +94,6 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
         for (final measurement in observableResult.measurements) {
           // Type checking for the generic parameter
           final value = measurement.value;
-          if (T != dynamic && value is! T) {
-            print('Warning: Value must be of type $T, got ${value.runtimeType}. Skipping measurement.');
-            continue;
-          }
 
           // For observable gauges, we just record the latest value
           _storage.record(value, measurement.attributes ?? OTelFactory.otelFactory!.attributes());
@@ -126,12 +122,12 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T> {
 }
 
 /// Wrapper for APICallbackRegistration that also handles our internal state.
-class _ObservableGaugeCallbackRegistration implements APICallbackRegistration<T> {
+class _ObservableGaugeCallbackRegistration<T extends num> implements APICallbackRegistration<T> {
   /// The API registration.
   final APICallbackRegistration<T> apiRegistration;
 
   /// The gauge this registration is for.
-  final ObservableGauge gauge;
+  final ObservableGauge<T> gauge;
 
   /// The callback that was registered.
   final ObservableCallback<T> callback;

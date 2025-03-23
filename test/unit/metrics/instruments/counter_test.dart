@@ -14,11 +14,11 @@ void main() {
     setUp(() {
       // Initialize OpenTelemetry
       OTel.initialize(endpoint: 'http://localhost:4318');
-      
+
       // Get a meter provider and create a meter
-      meterProvider = OTel.meterProvider() as MeterProvider;
+      meterProvider = OTel.meterProvider();
       meter = meterProvider.getMeter(name: 'test-meter') as Meter;
-      
+
       // Create a counter
       counter = meter.createCounter<int>(
         name: 'test-counter',
@@ -50,7 +50,7 @@ void main() {
       // Act
       counter.add(5);
       counter.add(10);
-      
+
       // Assert
       expect(counter.getValue(), equals(15));
     });
@@ -59,12 +59,12 @@ void main() {
       // Arrange
       final attributes1 = {'key1': 'value1'}.toAttributes();
       final attributes2 = {'key1': 'value2'}.toAttributes();
-      
+
       // Act
       counter.add(5, attributes1);
       counter.add(10, attributes2);
       counter.add(15, attributes1);
-      
+
       // Assert
       expect(counter.getValue(), equals(30)); // Total sum
       expect(counter.getValue(attributes1), equals(20)); // Sum for attributes1
@@ -82,10 +82,10 @@ void main() {
     test('collects metrics', () {
       // Arrange
       counter.add(42);
-      
+
       // Act
       final metrics = counter.collectMetrics();
-      
+
       // Assert
       expect(metrics, hasLength(1));
       expect(metrics[0].name, equals('test-counter'));
@@ -100,10 +100,10 @@ void main() {
       // Arrange
       counter.add(42);
       expect(counter.getValue(), equals(42));
-      
+
       // Act
       counter.reset();
-      
+
       // Assert
       expect(counter.getValue(), equals(0));
     });

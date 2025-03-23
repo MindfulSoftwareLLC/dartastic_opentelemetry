@@ -47,11 +47,41 @@ class Tracer implements APITracer {
   @override
   bool get enabled => _enabled;
 
+  @override
+  APISpan? get currentSpan => _delegate.currentSpan;
+
   set enabled(bool enable) => _enabled = enable;
 
   get provider => _provider;
 
   Resource? get resource => _provider.resource;
+
+  @override
+  T withSpan<T>(APISpan span, T Function() fn) {
+    return _delegate.withSpan(span, fn);
+  }
+
+  @override
+  Future<T> withSpanAsync<T>(APISpan span, Future<T> Function() fn) {
+    return _delegate.withSpanAsync(span, fn);
+  }
+
+  @override
+  APISpan startSpanWithContext({
+    required String name,
+    required Context context,
+    SpanKind kind = SpanKind.internal,
+    Attributes? attributes,
+  }) {
+    final span = startSpan(
+      name,
+      context: context,
+      kind: kind,
+      attributes: attributes,
+    );
+    Context.current = context.setCurrentSpan(span);
+    return span;
+  }
 
   @override
   Span createSpan({
@@ -78,6 +108,7 @@ class Tracer implements APITracer {
       startTime: startTime,
       spanEvents: spanEvents,
       isRecording: isRecording,
+      context: context,
     );
 
     return SDKSpanCreate.create(
@@ -222,5 +253,4 @@ class Tracer implements APITracer {
       span.end();
     }
   }
-
 }

@@ -57,13 +57,13 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
     final registration = _apiCounter.addCallback(callback);
 
     // Return a registration that also unregisters from our list
-    return _ObservableCounterCallbackRegistration(
+    return _ObservableCounterCallbackRegistration<T>(
       apiRegistration: registration,
       counter: this,
       callback: callback,
     );
   }
-  
+
   @override
   void removeCallback(ObservableCallback<T> callback) {
     _apiCounter.removeCallback(callback);
@@ -147,12 +147,12 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T> {
 }
 
 /// Wrapper for APICallbackRegistration that also handles our internal state.
-class _ObservableCounterCallbackRegistration implements APICallbackRegistration<T> {
+class _ObservableCounterCallbackRegistration<T extends num> implements APICallbackRegistration<T> {
   /// The API registration.
   final APICallbackRegistration<T> apiRegistration;
 
   /// The counter this registration is for.
-  final ObservableCounter counter;
+  final ObservableCounter<T> counter;
 
   /// The callback that was registered.
   final ObservableCallback<T> callback;
