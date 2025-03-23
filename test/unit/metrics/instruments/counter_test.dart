@@ -141,7 +141,7 @@ void main() {
       expect(initialValue, equals(42));
 
       // Act
-        counter.reset();
+      counter.reset();
 
       // Assert
       expect(counter.getValue(), equals(0));

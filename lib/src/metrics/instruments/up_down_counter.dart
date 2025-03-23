@@ -68,8 +68,11 @@ class UpDownCounter<T extends num> implements APIUpDownCounter<T>, BaseInstrumen
     // Only record if enabled
     if (!enabled) return;
 
+    // Use empty attributes if null
+    final attrs = attributes ?? OTel.attributes();
+
     // Record the measurement in our storage
-    _storage.record(value, attributes ?? OTel.attributes());
+    _storage.record(value, attrs);
   }
 
   @override
@@ -82,7 +85,10 @@ class UpDownCounter<T extends num> implements APIUpDownCounter<T>, BaseInstrumen
   /// Gets the current value of the counter for a specific set of attributes.
   /// If no attributes are provided, returns the sum for all attribute combinations.
   T getValue([Attributes? attributes]) {
-    final value = _storage.getValue(attributes);
+    // Use empty attributes if null
+    final attrs = attributes ?? OTel.attributes();
+    
+    final value = _storage.getValue(attrs);
     // Handle the cast to the generic type
     if (T == int) return value.toInt() as T;
     if (T == double) return value.toDouble() as T;

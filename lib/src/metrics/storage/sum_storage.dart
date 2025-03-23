@@ -8,9 +8,12 @@ import 'point_storage.dart';
 
 /// SumStorage is used for storing and accumulating sum-based metrics
 /// like Counter and UpDownCounter.
-class SumStorage extends PointStorage {
+class SumStorage<T extends num> extends PointStorage {
   /// Map of attribute sets to accumulated values.
-  final Map<Attributes, _SumPointData> _points = {};
+  final Map<int, _SumPointData> _points = {};
+
+  /// Map to store attributes by their hash codes for faster lookup
+  final Map<int, Attributes> _attributesMap = {};
 
   /// Whether the sum is monotonic (only increases).
   final bool isMonotonic;
@@ -25,7 +28,7 @@ class SumStorage extends PointStorage {
 
   /// Records a measurement with the given attributes.
   @override
-  void record(num value, [Attributes? attributes]) {
+  void record(num value, Attributes attributes) {
     // Check constraints
     if (isMonotonic && value < 0) {
       print('Warning: Negative value $value provided to monotonic sum storage. '
@@ -33,15 +36,20 @@ class SumStorage extends PointStorage {
       return;
     }
 
-    // Normalize attributes to avoid null issues
-    final normalizedAttributes = attributes ?? OTelFactory.otelFactory!.attributes();
-    
-    if (_points.containsKey(normalizedAttributes)) {
+    // Use hash code for more reliable lookup
+    final attributesHash = attributes.hashCode;
+
+    // Store the attributes in our map for later retrieval
+    if (!_attributesMap.containsKey(attributesHash)) {
+      _attributesMap[attributesHash] = attributes;
+    }
+
+    if (_points.containsKey(attributesHash)) {
       // Update existing point
-      _points[normalizedAttributes]!.add(value);
+      _points[attributesHash]!.add(value);
     } else {
       // Create new point
-      _points[normalizedAttributes] = _SumPointData(
+      _points[attributesHash] = _SumPointData(
         value: value,
         lastUpdateTime: DateTime.now(),
       );
@@ -50,14 +58,11 @@ class SumStorage extends PointStorage {
 
   /// Gets the current value for the given attributes.
   /// If no attributes are provided, returns the sum of all values.
-  num getValue([Attributes? attributes]) {
-    if (attributes == null) {
-      // Sum all points
-      return _points.values.fold<num>(0, (sum, point) => sum + point.value);
-    } else {
-      // Get specific point
-      return _points[attributes]?.value ?? 0;
-    }
+  T getValue(Attributes attributes) {
+    final attributesHash = attributes.hashCode;
+
+    // Get specific point
+    return _points[attributesHash]?.value ?? 0;
   }
 
   /// Collects the current set of metric points.
@@ -66,8 +71,11 @@ class SumStorage extends PointStorage {
     final now = DateTime.now();
 
     return _points.entries.map((entry) {
+      final attributesHash = entry.key;
+      final attributes = _attributesMap[attributesHash]!;
+
       return MetricPoint.sum(
-        attributes: entry.key,
+        attributes: attributes,
         startTime: _startTime,
         time: now,
         value: entry.value.value,
@@ -86,8 +94,10 @@ class SumStorage extends PointStorage {
   /// Adds an exemplar to a specific point.
   @override
   void addExemplar(Exemplar exemplar, Attributes attributes) {
-    if (_points.containsKey(attributes)) {
-      _points[attributes]!.exemplars.add(exemplar);
+    final attributesHash = attributes.hashCode;
+
+    if (_points.containsKey(attributesHash)) {
+      _points[attributesHash]!.exemplars.add(exemplar);
     }
   }
 }

@@ -8,20 +8,28 @@ import 'point_storage.dart';
 
 /// GaugeStorage is used for storing the last recorded value for each set of attributes.
 class GaugeStorage extends PointStorage {
-  /// Map of attribute sets to gauge data.
-  final Map<Attributes, _GaugePointData> _points = {};
+  /// Map of attribute sets to gauge data by hash code.
+  final Map<int, _GaugePointData> _points = {};
+
+  /// Map to store attributes by their hash codes for faster lookup
+  final Map<int, Attributes> _attributesMap = {};
 
   /// Creates a new GaugeStorage instance.
   GaugeStorage();
 
   /// Records a measurement with the given attributes.
   @override
-  void record(num value, [Attributes? attributes]) {
-    // Normalize attributes to avoid null issues
-    final normalizedAttributes = attributes ?? OTelFactory.otelFactory!.attributes();
+  void record(num value, Attributes attributes) {
+    // Use hash code for more reliable lookup
+    final attributesHash = attributes.hashCode;
+
+    // Store the attributes in our map for later retrieval
+    if (!_attributesMap.containsKey(attributesHash)) {
+      _attributesMap[attributesHash] = attributes;
+    }
 
     // Always update with the latest value
-    _points[normalizedAttributes] = _GaugePointData(
+    _points[attributesHash] = _GaugePointData(
       value: value,
       updateTime: DateTime.now(),
     );
@@ -45,10 +53,12 @@ class GaugeStorage extends PointStorage {
     final now = DateTime.now();
 
     return _points.entries.map((entry) {
+      final attributesHash = entry.key;
+      final attributes = _attributesMap[attributesHash]!;
       final data = entry.value;
 
       return MetricPoint.gauge(
-        attributes: entry.key,
+        attributes: attributes,
         startTime: data.updateTime, // For gauges, start time is the update time
         time: now,
         value: data.value,
@@ -67,8 +77,10 @@ class GaugeStorage extends PointStorage {
   /// Adds an exemplar to a specific point.
   @override
   void addExemplar(Exemplar exemplar, Attributes attributes) {
-    if (_points.containsKey(attributes)) {
-      _points[attributes]!.exemplars.add(exemplar);
+    final attributesHash = attributes.hashCode;
+
+    if (_points.containsKey(attributesHash)) {
+      _points[attributesHash]!.exemplars.add(exemplar);
     }
   }
 }

@@ -69,7 +69,7 @@ class Gauge<T extends num> implements APIGauge<T>, BaseInstrument {
     if (!enabled) return;
 
     // Record the measurement in our storage
-    _storage.record(value, attributes ?? OTel.attributes());
+    _storage.record(value, attributes);
   }
 
   @override
