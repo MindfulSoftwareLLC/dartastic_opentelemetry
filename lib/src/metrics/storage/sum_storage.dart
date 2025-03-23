@@ -49,18 +49,16 @@ class SumStorage<T extends num> extends PointStorage<T> {
   }
 
   /// Gets the current value for the given attributes.
-  /// If no attributes are provided, returns the sum of all values.
+  /// If no attributes are provided, returns the value for null attributes (if any).
   @override
   T getValue([Attributes? attributes]) {
     final num value;
     
-    if (attributes == null) {
-      // Sum all points
-      value = _points.values.fold<num>(0, (sum, point) => sum + point.value);
-    } else {
-      // Get specific point
-      value = _points[attributes]?.value ?? 0;
-    }
+    // If attributes is null, use an empty attribute set to match what we'd do in record()
+    final key = attributes ?? OTelFactory.otelFactory!.attributes();
+    
+    // Get the specific point
+    value = _points[key]?.value ?? 0;
     
     // Convert to the appropriate generic type
     if (T == int) {

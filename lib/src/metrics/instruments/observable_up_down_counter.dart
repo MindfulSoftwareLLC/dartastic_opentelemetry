@@ -70,7 +70,7 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
   }
 
   /// Gets the current value of the counter for a specific set of attributes.
-  /// If no attributes are provided, returns the sum for all attribute combinations.
+  /// If no attributes are provided, returns the value for the null/empty attribute set.
   T getValue([Attributes? attributes]) {
     final value = _storage.getValue(attributes);
     // Handle the cast to the generic type
@@ -109,18 +109,13 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
           final value = measurement.value;
           // For observable up-down counters, we need to calculate deltas
           final key = measurement.attributes ?? OTelFactory.otelFactory!.attributes();
-          if (_lastValues.containsKey(key)) {
-            // Calculate delta from last observation
-            final T lastValue = _lastValues[key]!;
-            final T delta = _subtractNumeric(value, lastValue);
-            _storage.record(delta, measurement.attributes);
-            // Add a new measurement with the delta value
-            result.add(OTelFactory.otelFactory!.createMeasurement<T>(delta, measurement.attributes));
-          } else {
-            // First observation, use the full value
-            _storage.record(value, measurement.attributes);
-            result.add(measurement);
-          }
+          // Properly handle the generic type for first observation
+          final T lastValue = (_lastValues[key] ?? 
+              (T == int ? 0 : 0.0)) as T;
+          final T delta = _subtractNumeric(value, lastValue);
+          _storage.record(delta, measurement.attributes);
+          // Add a new measurement with the delta value
+          result.add(OTelFactory.otelFactory!.createMeasurement<T>(delta, measurement.attributes));
 
           // Update last value
           _lastValues[key] = value;

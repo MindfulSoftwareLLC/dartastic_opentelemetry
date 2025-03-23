@@ -33,17 +33,11 @@ class GaugeStorage<T extends num> extends PointStorage<T> {
   T getValue([Attributes? attributes]) {
     final num value;
     
-    if (attributes == null) {
-      // For gauges without attributes, we return the average of all values
-      // This is a heuristic - you might want to change this behavior based on requirements
-      if (_points.isEmpty) {
-        value = 0;
-      } else {
-        value = _points.values.fold<num>(0, (sum, point) => sum + point.value) / _points.length;
-      }
-    } else {
-      value = _points[attributes]?.value ?? 0;
-    }
+    // If attributes is null, use an empty attribute set to match what we'd do in record()
+    final key = attributes ?? OTelFactory.otelFactory!.attributes();
+    
+    // Get the specific point
+    value = _points[key]?.value ?? 0;
     
     // Convert to the appropriate generic type
     if (T == int) {

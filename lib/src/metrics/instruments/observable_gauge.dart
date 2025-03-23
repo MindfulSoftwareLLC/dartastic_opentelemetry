@@ -65,7 +65,7 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T>, BaseInstr
   }
 
   /// Gets the current value of the gauge for a specific set of attributes.
-  /// If no attributes are provided, returns a summary value (average) for all attribute combinations.
+  /// If no attributes are provided, returns the value for the null/empty attribute set.
   T getValue([Attributes? attributes]) {
     final value = _storage.getValue(attributes);
     // Handle the cast to the generic type

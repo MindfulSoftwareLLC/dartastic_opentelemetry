@@ -111,7 +111,9 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, BaseI
           final value = measurement.value;
           // For observable counters, we need to calculate deltas
           final key = measurement.attributes ?? OTelFactory.otelFactory!.attributes();
-          final T lastValue = _lastValues[key] ?? 0 as T;
+          // Properly handle the generic type
+          final T lastValue = (_lastValues[key] ?? 
+              (T == int ? 0 : 0.0)) as T;
 
           // If the new value is less than the last value, we assume a reset occurred
           if (value < lastValue) {
@@ -119,8 +121,9 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, BaseI
             _storage.record(value, measurement.attributes);
             result.add(measurement);
           } else {
-            // Calculate delta
-            final T delta = value - lastValue as T;
+            // Calculate delta with proper type handling
+            final num rawDelta = value - lastValue;
+            final T delta = (T == int ? rawDelta.toInt() : rawDelta.toDouble()) as T;
             if (delta > 0) {
               _storage.record(delta, measurement.attributes);
               // Add a new measurement with the delta value

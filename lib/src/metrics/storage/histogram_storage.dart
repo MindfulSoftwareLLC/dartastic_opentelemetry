@@ -45,19 +45,17 @@ class HistogramStorage<T extends num> extends PointStorage<T> {
   }
 
   /// Gets the current value for the given attributes.
-  /// For histograms, this returns the sum of all recorded values.
+  /// For histograms, this returns the sum of all recorded values for the attribute set.
   @override
   T getValue([Attributes? attributes]) {
     // For histograms, "value" is usually the sum
     final num value;
     
-    if (attributes == null) {
-      // Sum all points
-      value = _points.values.fold<num>(0, (sum, point) => sum + point.sum);
-    } else {
-      // Get specific point
-      value = _points[attributes]?.sum ?? 0;
-    }
+    // If attributes is null, use an empty attribute set to match what we'd do in record()
+    final key = attributes ?? OTelFactory.otelFactory!.attributes();
+    
+    // Get the specific point
+    value = _points[key]?.sum ?? 0;
     
     // Convert to the appropriate generic type
     if (T == int) {

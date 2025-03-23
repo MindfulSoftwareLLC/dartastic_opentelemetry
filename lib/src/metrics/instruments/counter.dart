@@ -84,7 +84,7 @@ class Counter<T extends num> implements APICounter<T>, BaseInstrument {
   }
 
   /// Gets the current value of the counter for a specific set of attributes.
-  /// If no attributes are provided, returns the sum for all attribute combinations.
+  /// If no attributes are provided, returns the value for the null/empty attribute set.
   T getValue([Attributes? attributes]) {
     return _storage.getValue(attributes);
   }
