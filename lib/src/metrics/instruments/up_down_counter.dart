@@ -21,7 +21,7 @@ class UpDownCounter<T extends num> implements APIUpDownCounter<T>, BaseInstrumen
   final Meter _meter;
 
   /// Storage for accumulating up-down counter measurements.
-  final SumStorage _storage = SumStorage(isMonotonic: false);
+  final SumStorage<T> _storage = SumStorage<T>(isMonotonic: false);
 
   /// Creates a new UpDownCounter instance.
   UpDownCounter({
@@ -68,11 +68,8 @@ class UpDownCounter<T extends num> implements APIUpDownCounter<T>, BaseInstrumen
     // Only record if enabled
     if (!enabled) return;
 
-    // Use empty attributes if null
-    final attrs = attributes ?? OTel.attributes();
-
     // Record the measurement in our storage
-    _storage.record(value, attrs);
+    _storage.record(value, attributes);
   }
 
   @override
@@ -85,14 +82,7 @@ class UpDownCounter<T extends num> implements APIUpDownCounter<T>, BaseInstrumen
   /// Gets the current value of the counter for a specific set of attributes.
   /// If no attributes are provided, returns the sum for all attribute combinations.
   T getValue([Attributes? attributes]) {
-    // Use empty attributes if null
-    final attrs = attributes ?? OTel.attributes();
-    
-    final value = _storage.getValue(attrs);
-    // Handle the cast to the generic type
-    if (T == int) return value.toInt() as T;
-    if (T == double) return value.toDouble() as T;
-    return value as T;
+    return _storage.getValue(attributes);
   }
 
   /// Gets the current points for this counter.

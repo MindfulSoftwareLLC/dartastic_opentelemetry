@@ -73,7 +73,7 @@ class Counter<T extends num> implements APICounter<T>, BaseInstrument {
     if (!enabled) return;
 
     // Record the measurement in our storage
-    _storage.record(value, attributes ?? OTel.attributes());
+    _storage.record(value, attributes);
   }
 
   @override
@@ -85,8 +85,8 @@ class Counter<T extends num> implements APICounter<T>, BaseInstrument {
 
   /// Gets the current value of the counter for a specific set of attributes.
   /// If no attributes are provided, returns the sum for all attribute combinations.
-  T? getValue([Attributes? attributes]) {
-    return attributes == null ? null : _storage.getValue(attributes);
+  T getValue([Attributes? attributes]) {
+    return _storage.getValue(attributes);
   }
 
   /// Gets the current points for this counter.

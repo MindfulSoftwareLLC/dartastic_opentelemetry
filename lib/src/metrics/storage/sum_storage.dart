@@ -25,7 +25,7 @@ class SumStorage<T extends num> extends PointStorage<T> {
 
   /// Records a measurement with the given attributes.
   @override
-  void record(num value, [Attributes? attributes]) {
+  void record(T value, [Attributes? attributes]) {
     // Check constraints
     if (isMonotonic && value < 0) {
       print('Warning: Negative value $value provided to monotonic sum storage. '
@@ -50,13 +50,25 @@ class SumStorage<T extends num> extends PointStorage<T> {
 
   /// Gets the current value for the given attributes.
   /// If no attributes are provided, returns the sum of all values.
+  @override
   T getValue([Attributes? attributes]) {
+    final num value;
+    
     if (attributes == null) {
       // Sum all points
-      return _points.values.fold<num>(0, (sum, point) => sum + point.value) as T;
+      value = _points.values.fold<num>(0, (sum, point) => sum + point.value);
     } else {
       // Get specific point
-      return _points[attributes]?.value as T ?? 0 as T;
+      value = _points[attributes]?.value ?? 0;
+    }
+    
+    // Convert to the appropriate generic type
+    if (T == int) {
+      return value.toInt() as T;
+    } else if (T == double) {
+      return value.toDouble() as T;
+    } else {
+      return value as T;
     }
   }
 

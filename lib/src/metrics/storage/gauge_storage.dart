@@ -7,7 +7,7 @@ import '../data/exemplar.dart';
 import 'point_storage.dart';
 
 /// GaugeStorage is used for storing the last recorded value for each set of attributes.
-class GaugeStorage extends PointStorage {
+class GaugeStorage<T extends num> extends PointStorage<T> {
   /// Map of attribute sets to gauge data.
   final Map<Attributes, _GaugePointData> _points = {};
 
@@ -16,7 +16,7 @@ class GaugeStorage extends PointStorage {
 
   /// Records a measurement with the given attributes.
   @override
-  void record(num value, [Attributes? attributes]) {
+  void record(T value, [Attributes? attributes]) {
     // If attributes is null, use an empty map to avoid storing null values
     final key = attributes ?? OTelFactory.otelFactory!.attributes();
 
@@ -29,14 +29,30 @@ class GaugeStorage extends PointStorage {
 
   /// Gets the current value for the given attributes.
   /// Returns 0 if no value has been recorded for these attributes.
-  num getValue([Attributes? attributes]) {
+  @override
+  T getValue([Attributes? attributes]) {
+    final num value;
+    
     if (attributes == null) {
       // For gauges without attributes, we return the average of all values
       // This is a heuristic - you might want to change this behavior based on requirements
-      if (_points.isEmpty) return 0;
-      return _points.values.fold<num>(0, (sum, point) => sum + point.value) / _points.length;
+      if (_points.isEmpty) {
+        value = 0;
+      } else {
+        value = _points.values.fold<num>(0, (sum, point) => sum + point.value) / _points.length;
+      }
+    } else {
+      value = _points[attributes]?.value ?? 0;
     }
-    return _points[attributes]?.value ?? 0;
+    
+    // Convert to the appropriate generic type
+    if (T == int) {
+      return value.toInt() as T;
+    } else if (T == double) {
+      return value.toDouble() as T;
+    } else {
+      return value as T;
+    }
   }
 
   /// Collects the current set of metric points.

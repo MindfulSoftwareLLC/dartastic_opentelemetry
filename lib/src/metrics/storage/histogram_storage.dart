@@ -7,7 +7,7 @@ import '../data/exemplar.dart';
 import 'point_storage.dart';
 
 /// HistogramStorage is used for storing and accumulating histogram data.
-class HistogramStorage extends PointStorage {
+class HistogramStorage<T extends num> extends PointStorage<T> {
   /// Map of attribute sets to histogram data.
   final Map<Attributes, _HistogramPointData> _points = {};
 
@@ -28,7 +28,7 @@ class HistogramStorage extends PointStorage {
 
   /// Records a measurement with the given attributes.
   @override
-  void record(num value, [Attributes? attributes]) {
+  void record(T value, [Attributes? attributes]) {
     // If attributes is null, use an empty map to avoid storing null values
     final key = attributes ?? OTelFactory.otelFactory!.attributes();
 
@@ -41,6 +41,31 @@ class HistogramStorage extends PointStorage {
         boundaries: boundaries,
         recordMinMax: recordMinMax,
       )..record(value);
+    }
+  }
+
+  /// Gets the current value for the given attributes.
+  /// For histograms, this returns the sum of all recorded values.
+  @override
+  T getValue([Attributes? attributes]) {
+    // For histograms, "value" is usually the sum
+    final num value;
+    
+    if (attributes == null) {
+      // Sum all points
+      value = _points.values.fold<num>(0, (sum, point) => sum + point.sum);
+    } else {
+      // Get specific point
+      value = _points[attributes]?.sum ?? 0;
+    }
+    
+    // Convert to the appropriate generic type
+    if (T == int) {
+      return value.toInt() as T;
+    } else if (T == double) {
+      return value.toDouble() as T;
+    } else {
+      return value as T;
     }
   }
 
