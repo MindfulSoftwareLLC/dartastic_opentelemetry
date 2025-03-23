@@ -20,7 +20,7 @@ class Histogram<T extends num> implements APIHistogram<T>, BaseInstrument {
   final Meter _meter;
 
   /// Storage for accumulating histogram measurements.
-  final HistogramStorage _storage;
+  final HistogramStorage<T> _storage;
 
   /// Creates a new Histogram instance.
   Histogram({
@@ -89,6 +89,12 @@ class Histogram<T extends num> implements APIHistogram<T>, BaseInstrument {
     // Just convert to Attributes and call record
     final attributes = attributeMap.isEmpty ? null : attributeMap.toAttributes();
     record(value, attributes);
+  }
+
+  /// Gets the current sum for the given attributes.
+  /// If no attributes are provided, returns the sum for the null/empty attribute set.
+  T getValue([Attributes? attributes]) {
+    return _storage.getValue(attributes);
   }
 
   /// Gets the current points for this histogram.
