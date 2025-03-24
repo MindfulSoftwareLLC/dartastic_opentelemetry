@@ -21,6 +21,18 @@ class RealCollector {
 
   /// Start the collector
   Future<void> start() async {
+    // First, ensure any existing ports are cleared
+    await _killExistingProcesses();
+    
+    // Ensure output directory exists
+    final outputDir = File(_outputPath).parent;
+    if (!await outputDir.exists()) {
+      await outputDir.create(recursive: true);
+    }
+    
+    // Ensure output file exists and is empty
+    await File(_outputPath).writeAsString('');
+
     final execPath = '${Directory.current.path}/test/testing_utils/otelcol';
     // Verify the binary exists and has execute permissions
     final collectorFile = File(execPath);
@@ -41,42 +53,59 @@ class RealCollector {
       print('Error checking collector permissions: $e');
     }
 
+    // Create temporary config file with port substitution
+    final tempConfigPath = '${Directory.current.path}/test/testing_utils/otelcol-config-${port}.yaml';
+    final configContent = await File(_configPath).readAsString();
+    final updatedConfig = configContent.replaceAll('127.0.0.1:4316', '127.0.0.1:$port');
+    await File(tempConfigPath).writeAsString(updatedConfig);
+
     // Start collector with our config
     try {
-      print('Starting collector with config: $_configPath');
+      print('Starting collector with config: $tempConfigPath');
       _process = await Process.start(
         execPath,
-        ['--config', _configPath],
+        ['--config', tempConfigPath],
       );
       print('Collector started with process ID: ${_process!.pid}');
     } catch (e) {
       print('Error starting collector: $e');
+      File(tempConfigPath).deleteSync();
       rethrow;
     }
+
+    // Create completer to signal when collector is ready
+    final readyCompleter = Completer<bool>();
+    bool hasServiceStarted = false;
 
     // Listen for output/errors for debugging
     _process!.stdout.transform(utf8.decoder).listen((line) {
       print('Collector stdout: $line');
       if (line.contains('invalid configuration')) {
-        throw Exception('Collector config error: $line');
+        readyCompleter.completeError(Exception('Collector config error: $line'));
+      }
+      if (line.contains('Everything is ready') && !hasServiceStarted) {
+        hasServiceStarted = true;
+        readyCompleter.complete(true);
       }
     });
+    
     _process!.stderr.transform(utf8.decoder).listen((line) {
       print('Collector stderr: $line');
+      if (line.contains('Everything is ready') && !hasServiceStarted) {
+        hasServiceStarted = true;
+        readyCompleter.complete(true);
+      }
     });
 
-    // Wait for collector to start and verify it's running
+    // Wait for collector to be ready or timeout
     bool started = false;
-    for (int i = 0; i < 10; i++) {
-      await Future.delayed(Duration(milliseconds: 300));
-      try {
-        // Check if process is still running
-        if (_process != null && _process!.pid > 0) {
-          started = true;
-          break;
-        }
-      } catch (e) {
-        print('Error checking collector process: $e');
+    try {
+      started = await readyCompleter.future.timeout(Duration(seconds: 5));
+    } catch (e) {
+      print('Timed out waiting for collector to be ready: $e');
+      // Check if process is still running
+      if (_process != null && _process!.pid > 0) {
+        started = true;
       }
     }
     
@@ -85,7 +114,15 @@ class RealCollector {
     }
     
     print('Collector started successfully');
-    await Future.delayed(Duration(seconds: 1));
+    // Clean up temp config file
+    try {
+      File(tempConfigPath).deleteSync();
+    } catch (e) {
+      // Ignore errors deleting temp file
+    }
+    
+    // Allow some time for the collector to stabilize
+    await Future.delayed(Duration(seconds: 2));
   }
 
   /// Stop the collector
@@ -117,15 +154,44 @@ class RealCollector {
     }
   }
 
+  /// Kill any existing processes that might be using our ports
+  Future<void> _killExistingProcesses() async {
+    try {
+      // Find and kill processes using our gRPC port
+      final result = await Process.run('lsof', ['-i', ':$port']);
+      if (result.stdout.toString().isNotEmpty) {
+        final lines = result.stdout.toString().split('\n');
+        for (var line in lines.skip(1)) { // Skip header line
+          final parts = line.trim().split(RegExp(r'\s+'));
+          if (parts.length >= 2) {
+            final pid = parts[1];
+            if (pid.isNotEmpty) {
+              print('Killing process $pid using port $port');
+              await Process.run('kill', ['-9', pid]);
+            }
+          }
+        }
+      }
+      
+      // Wait a moment for ports to be released
+      await Future.delayed(Duration(seconds: 1));
+    } catch (e) {
+      print('Error killing existing processes: $e');
+      // Continue anyway
+    }
+  }
+
   /// Get all spans from the exported data
   Future<List<Map<String, dynamic>>> getSpans() async {
     if (!File(_outputPath).existsSync()) {
+      print('Output file does not exist: $_outputPath');
       return [];
     }
 
     try {
       final content = await File(_outputPath).readAsString();
       if (content.isEmpty) {
+        print('Output file is empty');
         return [];
       }
       
@@ -192,8 +258,13 @@ class RealCollector {
   }
 
   Future<void> waitForSpans(int count, {Duration? timeout}) async {
-    final deadline = DateTime.now().add(timeout ?? Duration(seconds: 10));
+    final deadline = DateTime.now().add(timeout ?? Duration(seconds: 15));
     var attempts = 0;
+    
+    // Ensure output file exists
+    if (!File(_outputPath).existsSync()) {
+      await File(_outputPath).writeAsString('');
+    }
     
     while (DateTime.now().isBefore(deadline)) {
       attempts++;
@@ -218,11 +289,15 @@ class RealCollector {
         if (size > 0) {
           // File has content but we couldn't parse spans, try to read it directly
           final content = await file.readAsString();
-          print('Output file content: $content');
+          if (content.length < 1000) { // Only print if not too large
+            print('Output file content: $content');
+          } else {
+            print('Output file content is too large to print (${content.length} bytes)');
+          }
         }
         
         // If file exists but is empty after multiple attempts, it might be an issue with collector
-        if (size == 0 && attempts > 5) {
+        if (size == 0 && attempts > 3) {
           print('Output file is empty after multiple attempts, checking collector status...');
           // Check if collector is still running
           bool isRunning = _process != null;
@@ -240,7 +315,11 @@ class RealCollector {
           if (!isRunning) {
             print('Collector process is not running, restarting...');
             try {
+              await stop(); // Ensure clean stop first
+              await Future.delayed(Duration(seconds: 1)); // Wait for resources to be freed
               await start();
+              // Make sure the file is cleared after restart
+              await File(_outputPath).writeAsString('');
               // Allow collector to initialize
               await Future.delayed(Duration(seconds: 2));
             } catch (e) {
@@ -250,8 +329,8 @@ class RealCollector {
         }
       }
       
-      // Gradually increase delay between attempts
-      final delayMs = 100 * (1 << (attempts ~/ 3).clamp(0, 6)); // Max ~6.4 seconds between attempts
+      // Gradually increase delay between attempts but keep it reasonable
+      final delayMs = 250 * (1 << (attempts ~/ 3).clamp(0, 4)); // Max ~4 seconds between attempts
       await Future.delayed(Duration(milliseconds: delayMs));
     }
 

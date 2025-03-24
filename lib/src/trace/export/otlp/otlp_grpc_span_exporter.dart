@@ -111,7 +111,7 @@ class OtlpGrpcSpanExporter implements SpanExporter {
   Future<void> _ensureChannel() async {
     if (_isShutdown) {
       if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Not ensuring channel - exporter is shut down');
-      return;
+      throw StateError('Exporter is shutdown');
     }
     
     if (_initialized && _channel != null && _traceService != null) {
@@ -217,19 +217,33 @@ class OtlpGrpcSpanExporter implements SpanExporter {
   }
 
   Future<void> _export(List<Span> spans) async {
+    if (_isShutdown) {
+      throw StateError('Exporter is shutdown, cannot export spans');
+    }
+    
     if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Attempting to export ${spans.length} spans to ${_config.endpoint}');
 
     var attempts = 0;
     final maxAttempts = _config.maxRetries + 1; // Initial attempt + retries
 
-    while (attempts < maxAttempts) {
+    while (attempts < maxAttempts && !_isShutdown) {
       try {
+        // Throw if shutdown happened during retry delay
+        if (_isShutdown) {
+          throw StateError('Exporter was shut down during retry');
+        }
+        
         await _tryExport(spans);
         if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Successfully exported spans');
         return;
       } on GrpcError catch (e, stackTrace) {
         if (OTelLog.isError()) OTelLog.error('OtlpGrpcSpanExporter: gRPC error during export: ${e.code} - ${e.message}');
         if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
+
+        // Check if the exporter was shut down while we were waiting
+        if (_isShutdown) {
+          throw StateError('Exporter was shut down during export');
+        }
 
         if (!_retryableStatusCodes.contains(e.code)) {
           if (OTelLog.isError()) OTelLog.error('OtlpGrpcSpanExporter: Non-retryable gRPC error (${e.code}), stopping retry attempts');
@@ -244,11 +258,19 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         final delay = _calculateJitteredDelay(attempts);
         if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Retrying export after ${delay.inMilliseconds}ms...');
         await Future.delayed(delay);
-        _setupChannel();
+        if (!_isShutdown) { // Only recreate channel if not shut down
+          _setupChannel();
+        }
         attempts++;
       } catch (e, stackTrace) {
         if (OTelLog.isError()) OTelLog.error('OtlpGrpcSpanExporter: Unexpected error during export: $e');
         if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
+        
+        // Check if we should stop retrying due to shutdown
+        if (_isShutdown) {
+          throw StateError('Exporter was shut down during export');
+        }
+        
         if (attempts >= maxAttempts - 1) {
           rethrow;
         }
@@ -256,7 +278,9 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         final delay = _calculateJitteredDelay(attempts);
         if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Retrying export after ${delay.inMilliseconds}ms...');
         await Future.delayed(delay);
-        _setupChannel();
+        if (!_isShutdown) { // Only recreate channel if not shut down
+          _setupChannel();
+        }
         attempts++;
       }
     }
@@ -292,7 +316,19 @@ class OtlpGrpcSpanExporter implements SpanExporter {
       await Future.delayed(Duration(milliseconds: 250));
       
       if (_channel != null) {
-        await _channel!.shutdown();
+        try {
+          await _channel!.shutdown();
+        } catch (e) {
+          if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Error shutting down channel: $e');
+        }
+        
+        try {
+          // Try to terminate if shutdown didn't work
+          _channel!.terminate();
+        } catch (e) {
+          if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Error terminating channel: $e');
+        }
+        
         // Wait for channel to shut down gracefully
         await Future.delayed(Duration(milliseconds: 250));
       }

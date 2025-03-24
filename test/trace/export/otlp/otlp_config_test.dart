@@ -154,17 +154,17 @@ void main() {
       expect(config.endpoint, equals('localhost:4317'));
 
       config = OtlpGrpcExporterConfig(endpoint: 'http://localhost:4317');
-      expect(config.endpoint, equals('localhost:4317'));
+      expect(config.endpoint, equals('http://localhost:4317'));
 
       config = OtlpGrpcExporterConfig(endpoint: 'https://collector:4317');
-      expect(config.endpoint, equals('collector:4317'));
+      expect(config.endpoint, equals('https://collector:4317'));
       expect(config.insecure, isFalse);
 
       config = OtlpGrpcExporterConfig(
         endpoint: 'https://collector:4317',
         insecure: true,
       );
-      expect(config.endpoint, equals('collector:4317'));
+      expect(config.endpoint, equals('https://collector:4317'));
       expect(config.insecure, isTrue);
     });
 

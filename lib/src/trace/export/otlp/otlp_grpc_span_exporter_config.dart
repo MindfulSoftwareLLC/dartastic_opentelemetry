@@ -55,19 +55,47 @@ class OtlpGrpcExporterConfig {
     if (endpoint.isEmpty) {
       throw ArgumentError('Endpoint cannot be empty');
     }
+    
+    // Handle common localhost variants
+    endpoint = endpoint.trim();
+    final lcEndpoint = endpoint.toLowerCase();
+    if (lcEndpoint == 'localhost' || lcEndpoint == '127.0.0.1') {
+      return '$endpoint:4317'; // Add default port if missing
+    }
 
+    // Try to parse as URI first
     try {
-      final uri = Uri.parse(endpoint);
+      Uri? uri;
+      if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
+        uri = Uri.parse(endpoint);
+      } else {
+        // Try adding http:// prefix if missing
+        uri = Uri.parse('http://$endpoint');
+      }
+      
       if (uri.host.isEmpty) {
         throw ArgumentError('Invalid endpoint format: $endpoint');
       }
+      
+      // If port is missing, add default port
+      if (uri.port == 0 || uri.port == 80 || uri.port == 443) {
+        final scheme = uri.scheme == 'https' ? 'https' : 'http';
+        return '$scheme://${uri.host}:4317';
+      }
+      
       return endpoint;
     } catch (e) {
+      // Try parsing as host:port
       final parts = endpoint.split(':');
-      if (parts.length != 2 || parts[0].isEmpty || int.tryParse(parts[1]) == null) {
-        throw ArgumentError('Invalid endpoint format: $endpoint');
+      if (parts.length == 1 && parts[0].isNotEmpty) {
+        // Only host provided, add default port
+        return '${parts[0]}:4317';
+      } else if (parts.length == 2 && parts[0].isNotEmpty && int.tryParse(parts[1]) != null) {
+        // Host and port provided
+        return endpoint;
       }
-      return endpoint;
+      
+      throw ArgumentError('Invalid endpoint format: $endpoint. Expected format: "host:port" or a valid URI');
     }
   }
 
