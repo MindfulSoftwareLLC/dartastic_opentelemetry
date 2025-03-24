@@ -17,8 +17,8 @@ class GaugeStorage<T extends num> extends PointStorage<T> {
   /// Records a measurement with the given attributes.
   @override
   void record(T value, [Attributes? attributes]) {
-    // If attributes is null, use an empty map to avoid storing null values
-    final key = attributes ?? OTelFactory.otelFactory!.attributes();
+    // Create a normalized key for lookup
+    final key = attributes ?? _emptyAttributes();
 
     // Always update with the latest value
     _points[key] = _GaugePointData(
@@ -26,18 +26,26 @@ class GaugeStorage<T extends num> extends PointStorage<T> {
       updateTime: DateTime.now(),
     );
   }
+  
+  /// Helper to get empty attributes safely
+  Attributes _emptyAttributes() {
+    // If OTelFactory is not initialized yet, create an empty attributes directly
+    if (OTelFactory.otelFactory == null) {
+      return OTelAPI.attributes(); // Use the API's static method instead
+    }
+    return OTelFactory.otelFactory!.attributes();
+  }
 
   /// Gets the current value for the given attributes.
   /// Returns 0 if no value has been recorded for these attributes.
   @override
   T getValue([Attributes? attributes]) {
-    final num value;
+    // Create a normalized key for lookup
+    final key = attributes ?? _emptyAttributes();
     
-    // If attributes is null, use an empty attribute set to match what we'd do in record()
-    final key = attributes ?? OTelFactory.otelFactory!.attributes();
-    
-    // Get the specific point
-    value = _points[key]?.value ?? 0;
+    // Find matching attributes
+    var existingKey = _findMatchingKey(key);
+    final num value = existingKey != null ? _points[existingKey]!.value : 0;
     
     // Convert to the appropriate generic type
     if (T == int) {
@@ -47,6 +55,16 @@ class GaugeStorage<T extends num> extends PointStorage<T> {
     } else {
       return value as T;
     }
+  }
+  
+  /// Finds a key in the points map that equals the given key
+  Attributes? _findMatchingKey(Attributes key) {
+    for (final existingKey in _points.keys) {
+      if (existingKey == key) { // Using the == operator which should call equals
+        return existingKey;
+      }
+    }
+    return null;
   }
 
   /// Collects the current set of metric points.
@@ -77,11 +95,13 @@ class GaugeStorage<T extends num> extends PointStorage<T> {
   /// Adds an exemplar to a specific point.
   @override
   void addExemplar(Exemplar exemplar, [Attributes? attributes]) {
-    // If attributes is null, use an empty map to avoid storing null values
-    final key = attributes ?? OTelFactory.otelFactory!.attributes();
+    // Create a normalized key for lookup
+    final key = attributes ?? _emptyAttributes();
     
-    if (_points.containsKey(key)) {
-      _points[key]!.exemplars.add(exemplar);
+    // Find matching attributes
+    var existingKey = _findMatchingKey(key);
+    if (existingKey != null) {
+      _points[existingKey]!.exemplars.add(exemplar);
     }
   }
 }

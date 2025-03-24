@@ -29,12 +29,14 @@ class HistogramStorage<T extends num> extends PointStorage<T> {
   /// Records a measurement with the given attributes.
   @override
   void record(T value, [Attributes? attributes]) {
-    // If attributes is null, use an empty map to avoid storing null values
-    final key = attributes ?? OTelFactory.otelFactory!.attributes();
+    // Create a normalized key for lookup
+    final key = attributes ?? _emptyAttributes();
 
-    if (_points.containsKey(key)) {
+    // Find matching attributes
+    var existingKey = _findMatchingKey(key);
+    if (existingKey != null) {
       // Update existing point
-      _points[key]!.record(value);
+      _points[existingKey]!.record(value);
     } else {
       // Create new point
       _points[key] = _HistogramPointData(
@@ -43,19 +45,36 @@ class HistogramStorage<T extends num> extends PointStorage<T> {
       )..record(value);
     }
   }
+  
+  /// Helper to get empty attributes safely
+  Attributes _emptyAttributes() {
+    // If OTelFactory is not initialized yet, create an empty attributes directly
+    if (OTelFactory.otelFactory == null) {
+      return OTelAPI.attributes(); // Use the API's static method instead
+    }
+    return OTelFactory.otelFactory!.attributes();
+  }
+  
+  /// Finds a key in the points map that equals the given key
+  Attributes? _findMatchingKey(Attributes key) {
+    for (final existingKey in _points.keys) {
+      if (existingKey == key) { // Using the == operator which should call equals
+        return existingKey;
+      }
+    }
+    return null;
+  }
 
   /// Gets the current value for the given attributes.
   /// For histograms, this returns the sum of all recorded values for the attribute set.
   @override
   T getValue([Attributes? attributes]) {
-    // For histograms, "value" is usually the sum
-    final num value;
+    // Create a normalized key for lookup
+    final key = attributes ?? _emptyAttributes();
     
-    // If attributes is null, use an empty attribute set to match what we'd do in record()
-    final key = attributes ?? OTelFactory.otelFactory!.attributes();
-    
-    // Get the specific point
-    value = _points[key]?.sum ?? 0;
+    // Find matching attributes
+    var existingKey = _findMatchingKey(key);
+    final num value = existingKey != null ? _points[existingKey]!.sum : 0;
     
     // Convert to the appropriate generic type
     if (T == int) {
@@ -99,11 +118,13 @@ class HistogramStorage<T extends num> extends PointStorage<T> {
   /// Adds an exemplar to a specific point.
   @override
   void addExemplar(Exemplar exemplar, [Attributes? attributes]) {
-    // If attributes is null, use an empty map to avoid storing null values
-    final key = attributes ?? OTelFactory.otelFactory!.attributes();
-
-    if (_points.containsKey(key)) {
-      _points[key]!.exemplars.add(exemplar);
+    // Create a normalized key for lookup
+    final key = attributes ?? _emptyAttributes();
+    
+    // Find matching attributes
+    var existingKey = _findMatchingKey(key);
+    if (existingKey != null) {
+      _points[existingKey]!.exemplars.add(exemplar);
     }
   }
 }
