@@ -52,13 +52,26 @@ void main() {
     });
 
     tearDown(() async {
-      // Ensure proper cleanup order
-      await tracerProvider.shutdown();
-      await collector.stop();
-      await collector.clear();
-
-      // Add delay to ensure port is freed
-      await Future.delayed(Duration(milliseconds: 100));
+      try {
+        // First ensure the tracer provider flushes any pending spans
+        await tracerProvider.forceFlush();
+        
+        // Add delay to ensure spans are exported
+        await Future.delayed(Duration(milliseconds: 500));
+        
+        // Now shutdown the tracer provider
+        await tracerProvider.shutdown();
+        
+        // Wait before stopping the collector to ensure it has time to process spans
+        await Future.delayed(Duration(milliseconds: 500));
+      } finally {
+        // Always stop the collector and clean up
+        await collector.stop();
+        await collector.clear();
+        
+        // Add delay to ensure port is freed
+        await Future.delayed(Duration(milliseconds: 500));
+      }
     });
 
     test('withSpan executes code with an active span', () async {
