@@ -12,21 +12,21 @@ class CompositeExporter extends SpanExporter {
   @override
   Future<void> export(List<Span> spans) async {
     for (var exporter in spanExporters) {
-      exporter.export(spans);
+      await exporter.export(spans);
     }
   }
 
   @override
   Future<void> forceFlush() async {
     for (var exporter in spanExporters) {
-      exporter.forceFlush();
+      await exporter.forceFlush();
     }
   }
 
   @override
   Future<void> shutdown() async {
     for (var exporter in spanExporters) {
-      exporter.shutdown();
+      await exporter.shutdown();
     }
   }
 }

@@ -20,7 +20,8 @@ void main() {
     late TracerProvider tracerProvider;
     late Tracer tracer;
     final testPort = 4316; // Use the same port in collector config
-    final testDir = Directory.current.path;
+    // Using absolute path to avoid issues with current directory
+  final testDir = '/Users/mbushe/dev/mf/otel/dartastic_opentelemetry';
     final configPath = '$testDir/test/testing_utils/otelcol-config.yaml';
     final outputPath = '$testDir/test/testing_utils/spans.json';
     final backupOutputPath = '$testDir/test/testing_utils/fallback_spans.json';

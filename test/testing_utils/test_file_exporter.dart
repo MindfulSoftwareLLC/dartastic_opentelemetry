@@ -33,14 +33,25 @@ class TestFileExporter implements SpanExporter {
 
   @override
   Future<void> export(List<Span> spans) async {
+    print('TestFileExporter: export called with ${spans.length} spans');
     if (_isShutdown) {
       if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Cannot export - exporter is shut down');
+      print('TestFileExporter: Cannot export - exporter is shut down');
       throw StateError('Exporter is shutdown');
     }
 
     if (spans.isEmpty) {
       if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: No spans to export');
+      print('TestFileExporter: No spans to export');
       return;
+    }
+    
+    // Debug information about the spans
+    for (var span in spans) {
+      print('TestFileExporter: Exporting span ${span.name} with ID ${span.spanContext.spanId} and traceID ${span.spanContext.traceId}');
+      print('TestFileExporter:   isRecording: ${span.isRecording}');
+      print('TestFileExporter:   status: ${span.status}');
+      print('TestFileExporter:   endTime: ${span.endTime}');
     }
 
     try {
@@ -67,6 +78,11 @@ class TestFileExporter implements SpanExporter {
 
       // Use sync operations to guarantee it gets written
       file.writeAsStringSync(newContent, mode: FileMode.append, flush: true);
+      
+      // Verify file was written
+      final fileSize = file.lengthSync();
+      print('TestFileExporter: Wrote ${newContent.length} bytes to file. File size is now $fileSize bytes');
+      print('TestFileExporter: File path: ${file.absolute.path}');
 
       if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Successfully exported ${spans.length} spans');
     } catch (e, stackTrace) {

@@ -27,8 +27,10 @@ class SimpleSpanProcessor implements SpanProcessor {
 
   @override
   Future<void> onEnd(Span span) async {
+    f (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: onEnd called for span ${span.name} with ID ${span.spanContext.spanId}');
     if (_isShutdown) {
       if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Skipping export - processor is shutdown');
+      print('SimpleSpanProcessor: Skipping export - processor is shutdown');
       return;
     }
 
@@ -50,9 +52,9 @@ class SimpleSpanProcessor implements SpanProcessor {
 
       // Directly await the export for better reliability in tests
       try {
-        if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Awaiting export completion');
+        if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Awaiting export completion for span ${span.name}');
         await pendingExport;
-        if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Successfully exported span ${span.spanContext.spanId}');
+        if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Successfully exported span ${span.name} with ID ${span.spanContext.spanId}');
       } catch (e, stackTrace) {
         if (OTelLog.isError()) {
           OTelLog.error('SimpleSpanProcessor: Export error while processing span ${span.spanContext.spanId}: $e');
