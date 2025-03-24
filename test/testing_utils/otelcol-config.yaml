@@ -13,11 +13,11 @@ receivers:
 
 processors:
   batch:
-    # Send spans immediately for testing - much more aggressive settings
+    # Send spans immediately for testing
     timeout: 100ms
     send_batch_size: 1
     send_batch_max_size: 10
-    max_queue_size: 100
+    # max_queue_size is not valid, removed
 
 exporters:
   file:

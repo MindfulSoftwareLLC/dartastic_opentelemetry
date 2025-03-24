@@ -1,12 +1,14 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:test/test.dart';
 
 import '../testing_utils/real_collector.dart';
+import '../testing_utils/test_file_exporter.dart';
 
 void main() {
   // Enable debug logging
@@ -32,7 +34,7 @@ void main() {
         if (OTelLog.isDebug()) OTelLog.debug('Successfully got ${spans.length} spans from collector');
       } catch (e) {
         if (OTelLog.isDebug()) OTelLog.debug('Error waiting for spans from collector: $e');
-        
+
         // Try getting any spans that might be there
         try {
           spans = await collector.getSpans();
@@ -41,22 +43,37 @@ void main() {
           if (OTelLog.isDebug()) OTelLog.debug('Error getting spans from collector: $e');
         }
       }
-      
+
       // If collector has no spans, check backup file
       if (spans.isEmpty) {
         if (OTelLog.isDebug()) OTelLog.debug('No spans from collector, checking backup file');
         final backupFile = File(backupOutputPath);
+
+        // If backup file exists and has content, parse it and check for spans
         if (backupFile.existsSync()) {
           final content = backupFile.readAsStringSync();
           if (content.isNotEmpty) {
-            if (OTelLog.isDebug()) OTelLog.debug('Found backup file with content');
-            // For our test, we only need to verify that spans are being exported somewhere
-            expect(content.isNotEmpty, isTrue, reason: 'Expected content in backup file');
-            return;
+            if (OTelLog.isDebug()) OTelLog.debug('Found backup file with content: \n$content');
+
+            // Try to parse the JSON
+            try {
+              // Parse the JSON
+              final jsonContent = jsonDecode(content);
+              if (jsonContent is List) {
+                // Backup file should contain at least one span batch
+                expect(jsonContent.isNotEmpty, isTrue, reason: 'Expected non-empty span list in backup file');
+                return;
+              }
+            } catch (e) {
+              if (OTelLog.isDebug()) OTelLog.debug('Error parsing backup file JSON: $e');
+              // Fall back to basic content check
+              expect(content.isNotEmpty, isTrue, reason: 'Expected content in backup file');
+              return;
+            }
           }
         }
       }
-      
+
       // If we're here, we should have spans from the collector
       expect(spans.isNotEmpty, isTrue, reason: 'Expected at least one span to be exported');
     }
@@ -100,13 +117,13 @@ void main() {
           insecure: true,
         ),
       );
-      
+
       // Create a file exporter as a backup
       final fileExporter = TestFileExporter(backupOutputPath);
-      
+
       // Use a composite exporter with both
       final compositeExporter = CompositeExporter([grpcExporter, fileExporter]);
-      
+
       // Create the processor with our composite exporter
       final processor = SimpleSpanProcessor(compositeExporter);
       tracerProvider.addSpanProcessor(processor);
@@ -169,7 +186,7 @@ void main() {
 
       // Assert
       expect(result, equals('test-with-span'));
-      
+
       // Verify span was exported
       await verifySpanExported('test-with-span');
     });
@@ -192,7 +209,7 @@ void main() {
 
       // Assert
       expect(result, equals('test-with-span-async'));
-      
+
       // Verify span was exported
       await verifySpanExported('test-with-span-async');
     });
@@ -210,7 +227,7 @@ void main() {
 
       // Assert
       expect(span.name, equals('context-span'));
-      
+
       // Verify span was exported
       await verifySpanExported('context-span');
     });
@@ -226,7 +243,7 @@ void main() {
 
       // Assert
       expect(result, equals('success'));
-      
+
       // Verify span was exported
       await verifySpanExported('auto-record-span');
     });
@@ -243,7 +260,7 @@ void main() {
 
       // Assert
       expect(result, equals('async success'));
-      
+
       // Verify span was exported
       await verifySpanExported('async-record-span');
     });
@@ -259,7 +276,7 @@ void main() {
         ),
         throwsException,
       );
-      
+
       // Verify span was exported
       await verifySpanExported('error-span');
     });
@@ -278,7 +295,7 @@ void main() {
 
       // Assert
       expect(result, equals('active span success'));
-      
+
       // Verify span was exported
       await verifySpanExported('active-span');
     });
@@ -300,7 +317,7 @@ void main() {
 
       // Assert
       expect(result, equals('active async span success'));
-      
+
       // Verify span was exported
       await verifySpanExported('active-async-span');
     });
