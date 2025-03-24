@@ -129,4 +129,27 @@ class OTelLog {
 
   static void error(String message) => log(LogLevel.error, message);
 
+  static void enableTraceLogging() {
+    currentLevel = LogLevel.trace;
+  }
+
+  static void enableDebugLogging() {
+    currentLevel = LogLevel.debug;
+  }
+
+  static void enableInfoLogging() {
+    currentLevel = LogLevel.info;
+  }
+
+  static void enableWarnLogging() {
+    currentLevel = LogLevel.warn;
+  }
+
+  static void enableErrorLogging() {
+    currentLevel = LogLevel.error;
+  }
+
+  static void enableFatalLogging() {
+    currentLevel = LogLevel.fatal;
+  }
 }

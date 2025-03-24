@@ -60,6 +60,7 @@ class TracerProvider implements APITracerProvider {
     Attributes? attributes,
     Sampler? sampler,
   }) {
+    if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Getting tracer with name: $name, version: $version, schemaUrl: $schemaUrl');
     if (isShutdown) {
       throw StateError('TracerProvider has been shut down');
     }

@@ -55,12 +55,30 @@ class Tracer implements APITracer {
 
   @override
   T withSpan<T>(APISpan span, T Function() fn) {
-    return _delegate.withSpan(span, fn);
+    if (OTelLog.isDebug()) OTelLog.debug('Tracer: withSpan called with span ${span.name}, spanId: ${span.spanContext.spanId}');
+    final originalContext = Context.current;
+    try {
+      Context.current = originalContext.setCurrentSpan(span);
+      if (OTelLog.isDebug()) OTelLog.debug('Tracer: Context set with span ${span.name}');
+      return fn();
+    } finally {
+      Context.current = originalContext;
+      if (OTelLog.isDebug()) OTelLog.debug('Tracer: withSpan completed for span ${span.name}');
+    }
   }
 
   @override
-  Future<T> withSpanAsync<T>(APISpan span, Future<T> Function() fn) {
-    return _delegate.withSpanAsync(span, fn);
+  Future<T> withSpanAsync<T>(APISpan span, Future<T> Function() fn) async {
+    if (OTelLog.isDebug()) OTelLog.debug('Tracer: withSpanAsync called with span ${span.name}, spanId: ${span.spanContext.spanId}');
+    final originalContext = Context.current;
+    try {
+      Context.current = originalContext.setCurrentSpan(span);
+      if (OTelLog.isDebug()) OTelLog.debug('Tracer: Context set with span ${span.name} for async operation');
+      return await fn();
+    } finally {
+      Context.current = originalContext;
+      if (OTelLog.isDebug()) OTelLog.debug('Tracer: withSpanAsync completed for span ${span.name}');
+    }
   }
 
   @override

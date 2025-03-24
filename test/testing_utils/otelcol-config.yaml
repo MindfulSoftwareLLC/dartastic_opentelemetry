@@ -1,8 +1,15 @@
+extensions:
+  health_check:
+  pprof:
+    endpoint: 127.0.0.1:1888
+  zpages:
+    endpoint: 127.0.0.1:55679
+
 receivers:
   otlp:
     protocols:
       grpc:
-        endpoint: localhost:4316  # Use different port for collector
+        endpoint: 127.0.0.1:4316  # Use different port for collector
 
 processors:
   batch:
@@ -12,6 +19,7 @@ exporters:
     path: test/testing_utils/spans.json
 
 service:
+  extensions: [pprof, zpages, health_check]
   pipelines:
     traces:
       receivers: [otlp]
