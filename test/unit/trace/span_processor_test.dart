@@ -51,51 +51,82 @@ void main() {
       await OTel.reset();
     });
 
-    test('exports span on end', () async {
+
+
+    test('exports span on end even when isRecording is false', () async {
+      OTelLog.enableDebugLogging();
+      // Create the processor
       final processor = SimpleSpanProcessor(exporter);
+
+      // Register the processor with the tracer provider
+      tracerProvider.addSpanProcessor(processor);
+
+      // Create and end a span
       final span = tracer.startSpan(
-        'test-span',
-        kind:SpanKind.internal,
+        'test-span-recording',
+        kind: SpanKind.internal,
       );
 
-      await processor.onStart(span, null);
-      expect(exporter.exportedSpans, isEmpty);
+      // Verify that isRecording is true before ending
+      expect(span.isRecording, isTrue, reason: 'Span should be recording before end()');
 
+      // End the span
       span.end();
-      await processor.onEnd(span);
 
+      // Verify that isRecording is false after ending
+      expect(span.isRecording, isFalse, reason: 'Span should NOT be recording after end()');
+
+      // Wait a bit for async operations to complete
+      await Future.delayed(Duration(milliseconds: 100));
+
+      // Check that the span was exported despite isRecording being false
       expect(exporter.exportedSpans, hasLength(1));
-      expect(exporter.exportedSpans.first, equals(span));
+      expect(exporter.exportedSpans.first.name, equals('test-span-recording'));
     });
 
     test('handles exporter errors gracefully', () async {
+      // Create the processor with error flag set
       final processor = SimpleSpanProcessor(exporter);
       exporter.forceError = true;
 
+      // Register the processor with the tracer provider
+      tracerProvider.addSpanProcessor(processor);
+
+      // Create and end a span - this should not throw despite the exporter having an error
       final span = tracer.startSpan(
         'test-span',
-        kind:SpanKind.internal,
-        parentSpan: null,
+        kind: SpanKind.internal,
       );
 
       // Should not throw
       span.end();
-      await processor.onEnd(span);
+
+      // Wait a bit for async operations to complete
+      await Future.delayed(Duration(milliseconds: 100));
     });
 
     test('stops exporting after shutdown', () async {
+      // Create the processor
       final processor = SimpleSpanProcessor(exporter);
-      final span = tracer.startSpan(
-        'test-span',
-        kind:SpanKind.internal,
-        parentSpan: null,
-      );
 
+      // Register the processor with the tracer provider
+      tracerProvider.addSpanProcessor(processor);
+
+      // Shutdown the processor
       await processor.shutdown();
 
-      span.end();
-      await processor.onEnd(span);
+      // Create and end a span after shutdown
+      final span = tracer.startSpan(
+        'test-span',
+        kind: SpanKind.internal,
+      );
 
+      span.end();
+
+      // Wait a bit for async operations to complete
+      await Future.delayed(Duration(milliseconds: 100));
+
+      // Verify no spans were exported after shutdown
       expect(exporter.exportedSpans, isEmpty);
       expect(exporter._isShutdown, isTrue);
     });
@@ -119,26 +150,26 @@ void main() {
     });
 
     test('batches spans for export', () async {
+      // Create the batch processor
       final processor = BatchSpanProcessor(exporter);
 
+      // Register the processor with the tracer provider
+      tracerProvider.addSpanProcessor(processor);
+
+      // Create and end multiple spans
       final spans = List.generate(3, (index) {
         final span = tracer.startSpan(
           'test-span-$index',
-          kind:SpanKind.internal,
-          parentSpan: null,
+          kind: SpanKind.internal,
         );
         span.end();
         return span;
       });
 
-      // Add spans to processor
-      for (final span in spans) {
-        await processor.onEnd(span);
-      }
-
       // Force flush to ensure spans are exported
       await processor.forceFlush();
 
+      // Verify spans were exported
       expect(exporter.exportedSpans, hasLength(3));
       for (var i = 0; i < 3; i++) {
         expect(
@@ -149,34 +180,45 @@ void main() {
     });
 
     test('handles export timeout', () async {
+      // Create the batch processor with error flag set
       final processor = BatchSpanProcessor(exporter);
-
       exporter.forceError = true;
 
+      // Register the processor with the tracer provider
+      tracerProvider.addSpanProcessor(processor);
+
+      // Create and end a span
       final span = tracer.startSpan(
         'test-span',
-        kind:SpanKind.internal,
-        parentSpan: null,
+        kind: SpanKind.internal,
       );
       span.end();
 
       // Should not throw
-      await processor.onEnd(span);
       await processor.forceFlush();
     });
 
     test('handles shutdown correctly', () async {
+      // Create the batch processor
       final processor = BatchSpanProcessor(exporter);
 
+      // Register the processor with the tracer provider
+      tracerProvider.addSpanProcessor(processor);
+
+      // Create and end a span
       final span = tracer.startSpan(
         'test-span',
-        kind:SpanKind.internal,
+        kind: SpanKind.internal,
       );
       span.end();
 
-      await processor.onEnd(span);
+      // Wait a bit for async processing
+      await Future.delayed(Duration(milliseconds: 100));
+
+      // Shutdown the processor
       await processor.shutdown();
 
+      // Verify exporter was shut down
       expect(exporter._isShutdown, isTrue);
     });
   });

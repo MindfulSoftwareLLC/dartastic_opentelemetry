@@ -1,0 +1,1 @@
+[{"name":"active-async-span","spanId":"a38f67042e5eb76b","traceId":"a6aa4469f98827e448bd9d5e40ccf3d8","kind":"SpanKind.internal","startTime":"2025-03-24T20:46:23.022162","endTime":"2025-03-24T20:46:23.035047","status":"SpanStatusCode.Ok","attributes":{},"isEnded":true}]

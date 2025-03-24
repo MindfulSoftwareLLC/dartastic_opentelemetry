@@ -1,0 +1,1 @@
+[{"name":"auto-record-span","spanId":"b4f9875a662ed03e","traceId":"50a0c0926e0bdbc0e649e386ae8717a2","kind":"SpanKind.internal","startTime":"2025-03-24T20:45:13.555737","endTime":"2025-03-24T20:45:13.556241","status":"SpanStatusCode.Ok","attributes":{},"isEnded":true}]

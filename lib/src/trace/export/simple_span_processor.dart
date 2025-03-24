@@ -34,11 +34,6 @@ class SimpleSpanProcessor implements SpanProcessor {
       return;
     }
 
-    if (!span.isRecording) {
-      if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Skipping export - span is not recording');
-      return;
-    }
-
     // Verify the span has a valid end time
     if (span.endTime == null) {
       if (OTelLog.isWarn()) OTelLog.warn('SimpleSpanProcessor: Span ${span.name} with ID ${span.spanContext.spanId} has no end time, which suggests it may not be properly ended');
