@@ -1,1 +1,1 @@
-[[{"name":"active-async-span","spanId":"b1bc6ff827fba250","traceId":"6f393c5ab032e50d8d5d885b645adccc","kind":"SpanKind.internal","startTime":"2025-03-24T21:02:05.676072","endTime":"2025-03-24T21:02:05.688589","status":"SpanStatusCode.Ok","attributes":{},"isEnded":true}]]
+[[{"name":"active-async-span","spanId":"419190404146162f","traceId":"ef1e7eae4a0fe2848e87693f876df33e","kind":"SpanKind.internal","startTime":"2025-03-24T21:08:43.561303","endTime":"2025-03-24T21:08:43.574230","status":"SpanStatusCode.Ok","attributes":{},"isEnded":true}]]
