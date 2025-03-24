@@ -16,7 +16,7 @@ void main() {
     late RealCollector collector;
     late TracerProvider tracerProvider;
     late Tracer tracer;
-    final testPort = 4322; // Use unique port
+    final testPort = 4316; // Use the same port in collector config
     final testDir = Directory.current.path;
     final configPath = '$testDir/test/testing_utils/otelcol-config.yaml';
     final outputPath = '$testDir/test/testing_utils/spans.json';

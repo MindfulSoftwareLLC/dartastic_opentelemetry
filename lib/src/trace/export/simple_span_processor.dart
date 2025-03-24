@@ -45,15 +45,16 @@ class SimpleSpanProcessor implements SpanProcessor {
       final Future<void> pendingExport = _spanExporter.export(spanToExport);
       _pendingExports.add(pendingExport);
 
-      // Use unawaited to avoid blocking - we'll still track it in _pendingExports
-      pendingExport.then((_) {
+      // Directly await the export for better reliability in tests
+      try {
+        await pendingExport;
         if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Successfully exported span ${span.spanContext.spanId}');
-      }).catchError((e, stackTrace) {
+      } catch (e, stackTrace) {
         if (OTelLog.isError()) OTelLog.error('SimpleSpanProcessor: Export error while processing span ${span.spanContext.spanId}: $e');
         if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
-      }).whenComplete(() {
+      } finally {
         _pendingExports.remove(pendingExport);
-      });
+      }
     } catch (e, stackTrace) {
       if (OTelLog.isError()) OTelLog.error('SimpleSpanProcessor: Failed to start export for span ${span.spanContext.spanId}: $e');
       if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
