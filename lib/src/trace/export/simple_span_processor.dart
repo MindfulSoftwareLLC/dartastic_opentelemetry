@@ -85,8 +85,6 @@ class SimpleSpanProcessor implements SpanProcessor {
     }
 
     if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Shutting down - waiting for ${_pendingExports.length} pending exports');
-    if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Shutting down - waiting for ${_pendingExports.length} pending exports');
-
     _isShutdown = true;
 
     try {
@@ -96,7 +94,7 @@ class SimpleSpanProcessor implements SpanProcessor {
           await Future.wait(_pendingExports);
           if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: All pending exports completed');
         } catch (e) {
-          if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Error waiting for pending exports: $e');
+          if (OTelLog.isError()) OTelLog.error('SimpleSpanProcessor: Error waiting for pending exports: $e');
         }
       }
 
@@ -105,16 +103,15 @@ class SimpleSpanProcessor implements SpanProcessor {
         await _spanExporter.shutdown();
         if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Exporter shutdown complete');
       } catch (e) {
-        if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Error shutting down exporter: $e');
+        if (OTelLog.isError()) OTelLog.error('SimpleSpanProcessor: Error shutting down exporter: $e');
       }
 
       if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Shutdown complete');
-      if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Shutdown complete');
     } catch (e, stackTrace) {
-      if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Error during shutdown: $e');
-      if (OTelLog.isDebug()) OTelLog.debug('Stack trace: $stackTrace');
-      if (OTelLog.isError()) OTelLog.error('SimpleSpanProcessor: Error during shutdown: $e');
-      if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
+      if (OTelLog.isError()) {
+        OTelLog.error('SimpleSpanProcessor: Error during shutdown: $e');
+        OTelLog.error('Stack trace: $stackTrace');
+      }
     }
   }
 
@@ -125,7 +122,6 @@ class SimpleSpanProcessor implements SpanProcessor {
       return;
     }
 
-    if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Force flushing with ${_pendingExports.length} pending exports');
     if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Force flushing - waiting for ${_pendingExports.length} pending exports');
 
     try {
@@ -144,12 +140,11 @@ class SimpleSpanProcessor implements SpanProcessor {
       }
 
       if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Force flush complete');
-      if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Force flush complete');
     } catch (e, stackTrace) {
-      if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Error during force flush: $e');
-      if (OTelLog.isDebug()) OTelLog.debug('Stack trace: $stackTrace');
-      if (OTelLog.isError()) OTelLog.error('SimpleSpanProcessor: Error during force flush: $e');
-      if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
+      if (OTelLog.isError()) {
+        OTelLog.error('SimpleSpanProcessor: Error during force flush: $e');
+        OTelLog.error('Stack trace: $stackTrace');
+      }
     }
   }
 }

@@ -81,8 +81,9 @@ class OtlpGrpcSpanExporter implements SpanExporter {
             credentials: _config.insecure ?
             const ChannelCredentials.insecure() :
             const ChannelCredentials.secure(),
-            idleTimeout: null, // Disable idle timeout to keep connection alive
             connectTimeout: Duration(seconds: 5),
+            // Keep connection alive better
+          idleTimeout: Duration(seconds: 30),
             codecRegistry: CodecRegistry(codecs: const [
               GzipCodec(),
               IdentityCodec(),
