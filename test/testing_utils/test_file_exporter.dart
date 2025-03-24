@@ -80,8 +80,11 @@ class TestFileExporter implements SpanExporter {
         };
       }).toList();
 
+      // Wrap spans in a batch array to match expected format: [[span1, span2, ...], ...]
+      final batchedSpans = [jsonSpans];
+
       // Write to file, appending new spans
-      String newContent = jsonEncode(jsonSpans) + '\n';
+      String newContent = jsonEncode(batchedSpans) + '\n';
 
       // Use sync operations to guarantee it gets written
       file.writeAsStringSync(newContent, mode: FileMode.append, flush: true);

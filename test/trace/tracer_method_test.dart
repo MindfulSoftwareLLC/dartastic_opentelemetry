@@ -323,19 +323,41 @@ void main() {
     });
 
     test('recordSpan captures exceptions and sets error status', () async {
+      // Add an identifier to ensure we can uniquely identify this span
+      final uniqueSpanName = 'error-span-${DateTime.now().millisecondsSinceEpoch}';
+      print('\n********** Using unique span name: $uniqueSpanName **********\n');
+      
+      try {
+        // Clear any existing spans before the test
+        File(outputPath).writeAsStringSync('');
+        File(backupOutputPath).writeAsStringSync('');
+        await collector.clear();
+      } catch (e) {
+        print('Error clearing spans: $e');
+      }
+
       // Act & Assert
       expect(
         () => tracer.recordSpan(
-          name: 'error-span',
+          name: uniqueSpanName,
           fn: () {
-            throw Exception('Test error');
+            throw Exception('Test error in recordSpan');
           },
         ),
         throwsException,
       );
 
+      // Add a short delay to ensure spans have time to be processed
+      await Future.delayed(Duration(milliseconds: 500));
+      
+      // Manually force flush the tracer provider
+      await tracerProvider.forceFlush();
+      
+      // Add another delay
+      await Future.delayed(Duration(milliseconds: 500));
+
       // Verify span was exported
-      await verifySpanExported('error-span');
+      await verifySpanExported(uniqueSpanName);
     });
 
     test('startActiveSpan activates span during execution', () async {
