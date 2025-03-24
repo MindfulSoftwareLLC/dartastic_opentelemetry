@@ -15,7 +15,7 @@ class OTel {
   static Sampler? _defaultSampler;
   static Resource? defaultResource;
   static String?
-  dartasticApiKey; //TODO - just API key or add headers for apiKey?
+      dartasticApiKey; //TODO - just API key or add headers for apiKey?
   static const defaultServiceName = "@dart/dartastic_opentelemetry";
   static const String _defaultTracerName = 'dartastic';
   static String defaultTracerName = _defaultTracerName;
@@ -135,7 +135,6 @@ class OTel {
         apiServiceName: serviceName,
         apiServiceVersion: serviceVersion);
 
-
     var serviceResourceAttributes = {
       'service.name': serviceName,
       'service.version': serviceVersion,
@@ -144,7 +143,7 @@ class OTel {
       serviceResourceAttributes['tenant_id'] = tenantId;
     }
     Resource mergedResource =
-    OTel.resource(OTel.attributesFromMap(serviceResourceAttributes));
+        OTel.resource(OTel.attributesFromMap(serviceResourceAttributes));
     if (detectPlatformResources) {
       final resourceDetector = PlatformResourceDetector.create();
       var platformResource = await resourceDetector.detect();
@@ -165,39 +164,39 @@ class OTel {
         ),
       );
       spanProcessor = BatchSpanProcessor(
-      //TODO - flag console
-      CompositeExporter([exporter, ConsoleExporter()]),
-      BatchSpanProcessorConfig(
-      maxQueueSize: 2048,
-      scheduleDelay: Duration(seconds: 1),
-      maxExportBatchSize: 512,
-      ),
-      );
-      }
-
-      // Create and configure TracerProvider
-      OTel.tracerProvider().addSpanProcessor(spanProcessor);
-
-  // Configure metrics if enabled
-  if (enableMetrics) {
-    // If no explicit metric exporter is provided, create one with the same endpoint
-    if (metricExporter == null && metricReader == null) {
-      MetricsConfiguration.configureMeterProvider(
-        endpoint: endpoint,
-        secure: secure,
-        resource: OTel.defaultResource,
-      );
-    } else {
-      // Use the provided exporter and/or reader
-      MetricsConfiguration.configureMeterProvider(
-        endpoint: endpoint,
-        secure: secure,
-        metricExporter: metricExporter,
-        metricReader: metricReader,
-        resource: OTel.defaultResource,
+        //TODO - flag console
+        CompositeExporter([exporter, ConsoleExporter()]),
+        BatchSpanProcessorConfig(
+          maxQueueSize: 2048,
+          scheduleDelay: Duration(seconds: 1),
+          maxExportBatchSize: 512,
+        ),
       );
     }
-  }
+
+    // Create and configure TracerProvider
+    OTel.tracerProvider().addSpanProcessor(spanProcessor);
+
+    // Configure metrics if enabled
+    if (enableMetrics) {
+      // If no explicit metric exporter is provided, create one with the same endpoint
+      if (metricExporter == null && metricReader == null) {
+        MetricsConfiguration.configureMeterProvider(
+          endpoint: endpoint,
+          secure: secure,
+          resource: OTel.defaultResource,
+        );
+      } else {
+        // Use the provided exporter and/or reader
+        MetricsConfiguration.configureMeterProvider(
+          endpoint: endpoint,
+          secure: secure,
+          metricExporter: metricExporter,
+          metricReader: metricReader,
+          resource: OTel.defaultResource,
+        );
+      }
+    }
   }
 
   /// Create a [Resource] with the provided [Attributes] and [schemaUrl] //TODO Attributes optional
@@ -224,7 +223,6 @@ class OTel {
     }
     return context;
   }
-
 
   /// Gets a TracerProvider.  If name is null, this returns
   /// the global default [TracerProvider], which shares the
@@ -256,7 +254,8 @@ class OTel {
   /// [endpoint] optionally use a different endpoint than global
   /// [serviceName] optionally override the default instrumentation scope name
   /// [serviceVersion] optionally override the default instrumentation scope version
-  static TracerProvider addTracerProvider(String name, {
+  static TracerProvider addTracerProvider(
+    String name, {
     String? endpoint,
     String? serviceName,
     String? serviceVersion,
@@ -274,15 +273,18 @@ class OTel {
   /// flow down from the OTel defaults to the [Tracer]s created by the
   /// [TracerProvider] and the [Span]s created by those tracers
   static Tracer tracer() {
-    return tracerProvider()
-        .getTracer(defaultTracerName, version: defaultTracerVersion,);
+    return tracerProvider().getTracer(
+      defaultTracerName,
+      version: defaultTracerVersion,
+    );
   }
 
   /// Adds or replaces a named meter provider
   /// [endpoint] optionally use a different endpoint than global
   /// [serviceName] optionally override the default instrumentation scope name
   /// [serviceVersion] optionally override the default instrumentation scope version
-  static MeterProvider addMeterProvider(String name, {
+  static MeterProvider addMeterProvider(
+    String name, {
     String? endpoint,
     String? serviceName,
     String? serviceVersion,
@@ -302,18 +304,21 @@ class OTel {
   /// flow down from the OTel defaults to the [Meter]s created by the
   /// [MeterProvider].
   static Meter meter([String? name]) {
-    return meterProvider().getMeter(name: name ?? defaultTracerName, version: defaultTracerVersion) as Meter;
+    return meterProvider().getMeter(
+        name: name ?? defaultTracerName,
+        version: defaultTracerVersion) as Meter;
   }
 
   /// The API MUST implement methods to create a SpanContext. These methods
   /// SHOULD be the only way to create a SpanContext. This functionality MUST be
   /// fully implemented in the API, and SHOULD NOT be overridable.
-  static SpanContext spanContext({TraceId? traceId,
-    SpanId? spanId,
-    SpanId? parentSpanId,
-    TraceFlags? traceFlags,
-    TraceState? traceState,
-    bool? isRemote}) {
+  static SpanContext spanContext(
+      {TraceId? traceId,
+      SpanId? spanId,
+      SpanId? parentSpanId,
+      TraceFlags? traceFlags,
+      TraceState? traceState,
+      bool? isRemote}) {
     return OTelAPI.spanContext(
       traceId: traceId ?? OTel.traceId(),
       spanId: spanId ?? OTel.spanId(),
@@ -397,15 +402,15 @@ class OTel {
   }
 
   /// Create a string list attribute key
-  static Attribute<List<String>> attributeStringList(String name,
-      List<String> value) {
+  static Attribute<List<String>> attributeStringList(
+      String name, List<String> value) {
     _getAndCacheOtelFactory();
     return _otelFactory!.attributeStringList(name, value);
   }
 
   /// Create a boolean list attribute key
-  static Attribute<List<bool>> attributeBoolList(String name,
-      List<bool> value) {
+  static Attribute<List<bool>> attributeBoolList(
+      String name, List<bool> value) {
     _getAndCacheOtelFactory();
     return _otelFactory!.attributeBoolList(name, value);
   }
@@ -417,8 +422,8 @@ class OTel {
   }
 
   /// Create a double list attribute key
-  static Attribute<List<double>> attributeDoubleList(String name,
-      List<double> value) {
+  static Attribute<List<double>> attributeDoubleList(
+      String name, List<double> value) {
     _getAndCacheOtelFactory();
     return _otelFactory!.attributeDoubleList(name, value);
   }
@@ -433,7 +438,8 @@ class OTel {
   static Attributes attributes([List<Attribute>? entries]) {
     // Cheating here since Attributes is unlikely to be overriden in a
     // factory and is often called before initialize
-    return _otelFactory == null ? AttributesCreate.create(entries ?? [])
+    return _otelFactory == null
+        ? AttributesCreate.create(entries ?? [])
         : _otelFactory!.attributes(entries);
   }
 
@@ -473,8 +479,7 @@ class OTel {
     _getAndCacheOtelFactory();
     if (traceId.length != TraceId.traceIdLength) {
       throw ArgumentError(
-          'Trace ID must be exactly ${TraceId
-              .traceIdLength} bytes, got ${traceId.length} bytes');
+          'Trace ID must be exactly ${TraceId.traceIdLength} bytes, got ${traceId.length} bytes');
     }
     return OTelFactory.otelFactory!.traceId(traceId);
   }
