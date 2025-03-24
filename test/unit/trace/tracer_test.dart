@@ -172,6 +172,7 @@ void main() {
             throw Exception('Test error');
           },
         );
+        // ignore: dead_code
         fail('Expected exception to be propagated');
       } catch (e) {
         // Exception should propagate out

@@ -37,7 +37,11 @@ class OtlpGrpcSpanExporter implements SpanExporter {
       if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Not setting up channel - exporter is shut down');
       return;
     }
+    
+    if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Setting up gRPC channel with endpoint ${_config.endpoint}');
+    
     if (_channel != null) {
+      if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Shutting down existing channel first');
       try {
         // Attempt graceful shutdown but don't block on it
         try {
@@ -88,7 +92,13 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         _permanentChannel = true;
       }
 
-      _traceService = proto.TraceServiceClient(_channel!);
+      try {
+        _traceService = proto.TraceServiceClient(_channel!);
+        if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Successfully created TraceServiceClient');
+      } catch (e) {
+        if (OTelLog.isError()) OTelLog.error('OtlpGrpcSpanExporter: Failed to create TraceServiceClient: $e');
+        rethrow;
+      }
       if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Successfully created gRPC channel and trace service');
     } catch (e, stackTrace) {
       if (OTelLog.isError()) OTelLog.error(('OtlpGrpcSpanExporter: Failed to setup gRPC channel: $e'));
@@ -128,6 +138,14 @@ class OtlpGrpcSpanExporter implements SpanExporter {
     if (OTelLog.isLogSpans()) {
       OTelLog.logSpans(spans, "Exporting spans.");
     }
+    
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('OtlpGrpcSpanExporter: Preparing to export ${spans.length} spans');
+      for (var span in spans) {
+        OTelLog.debug('  Span: ${span.name}, spanId: ${span.spanContext.spanId}, traceId: ${span.spanContext.traceId}');
+      }
+    }
+    
     if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Transforming ${spans.length} spans');
     final request = OtlpSpanTransformer.transformSpans(spans);
     if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Successfully transformed spans');
@@ -159,12 +177,18 @@ class OtlpGrpcSpanExporter implements SpanExporter {
 
     if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Sending export request to ${_config.endpoint}');
     try {
+      if (_traceService == null) {
+        throw StateError('Trace service is null, channel may not be properly initialized');
+      }
+      
       final response = await _traceService!.export(request, options: options);
       if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Export request completed successfully');
       if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Response: $response');
     } catch (e, stackTrace) {
-      if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Export request failed: $e');
-      if (OTelLog.isDebug()) OTelLog.debug('Stack trace: $stackTrace');
+      if (OTelLog.isError()) {
+        OTelLog.error('OtlpGrpcSpanExporter: Export request failed: $e');
+        OTelLog.error('Stack trace: $stackTrace');
+      }
       rethrow;
     }
   }

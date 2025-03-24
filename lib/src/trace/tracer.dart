@@ -94,15 +94,15 @@ class Tracer implements APITracer {
       kind: kind,
       attributes: attributes,
     );
-    
+
     // Set the span in the context we were given
     final updatedContext = context.setCurrentSpan(span);
-    
+
     // Also update the current global context if needed
     if (Context.current == context) {
       Context.current = updatedContext;
     }
-    
+
     return span;
   }
 
@@ -161,9 +161,7 @@ class Tracer implements APITracer {
       // If an explicit context was provided, check for a span
       if (context.span != null) {
         // Use the span from the context as parent (if no explicit parent span)
-        if (effectiveParentSpan == null) {
-          effectiveParentSpan = context.span;
-        }
+        effectiveParentSpan ??= context.span;
       }
       // Always check for span context in the context
       parentContext = context.spanContext;

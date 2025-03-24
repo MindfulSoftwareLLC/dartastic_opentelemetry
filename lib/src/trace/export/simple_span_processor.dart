@@ -42,22 +42,31 @@ class SimpleSpanProcessor implements SpanProcessor {
     try {
       // Create a copy of the span list to avoid concurrent modification issues
       final spanToExport = [span];
+      if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Created list of spans to export');
+      
       final Future<void> pendingExport = _spanExporter.export(spanToExport);
       _pendingExports.add(pendingExport);
+      if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Added export to pending exports list');
 
       // Directly await the export for better reliability in tests
       try {
+        if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Awaiting export completion');
         await pendingExport;
         if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Successfully exported span ${span.spanContext.spanId}');
       } catch (e, stackTrace) {
-        if (OTelLog.isError()) OTelLog.error('SimpleSpanProcessor: Export error while processing span ${span.spanContext.spanId}: $e');
-        if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
+        if (OTelLog.isError()) {
+          OTelLog.error('SimpleSpanProcessor: Export error while processing span ${span.spanContext.spanId}: $e');
+          OTelLog.error('Stack trace: $stackTrace');
+        }
       } finally {
         _pendingExports.remove(pendingExport);
+        if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Removed export from pending list');
       }
     } catch (e, stackTrace) {
-      if (OTelLog.isError()) OTelLog.error('SimpleSpanProcessor: Failed to start export for span ${span.spanContext.spanId}: $e');
-      if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
+      if (OTelLog.isError()) {
+        OTelLog.error('SimpleSpanProcessor: Failed to start export for span ${span.spanContext.spanId}: $e');
+        OTelLog.error('Stack trace: $stackTrace');
+      }
     }
   }
 

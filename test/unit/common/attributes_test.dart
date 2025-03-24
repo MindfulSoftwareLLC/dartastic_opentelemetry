@@ -87,7 +87,7 @@ void main() {
       expect(value, equals(10));
 
       // Case 3: Make sure null is properly converted to empty consistently
-      final nullConverted = null ?? OTelFactory.otelFactory!.attributes();
+      final nullConverted = OTelFactory.otelFactory!.attributes();
       expect(storage.containsKey(nullConverted), isTrue);
     });
   });

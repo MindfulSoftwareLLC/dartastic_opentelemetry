@@ -295,6 +295,7 @@ class RealCollector {
       if (spans.length == 1 && name != null) {
         final actualName = spans.first['name'];
         throw StateError(
+            // ignore: prefer_adjacent_string_concatenation
             'No matching span found with name "$name". Found span named "$actualName" instead. ' +
             'Consider updating the test to use the correct span name.');
       }
