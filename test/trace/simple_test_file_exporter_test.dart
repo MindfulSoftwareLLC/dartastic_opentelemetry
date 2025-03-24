@@ -25,24 +25,12 @@ void main() {
         dir.createSync(recursive: true);
       }
 
-      // Make sure output file exists and is empty
+      // Make sure output file exists and is completely empty
       final file = File(outputPath);
-      if (file.existsSync()) {
-        file.writeAsStringSync('');
-      } else {
-        file.createSync();
-      }
-
+      file.writeAsStringSync(''); // Always empty the file
+      
       // Create the exporter
       exporter = TestFileExporter(outputPath);
-
-      // Test writing directly to file to verify permissions
-      try {
-        file.writeAsStringSync('Test content', mode: FileMode.append);
-        print('Successfully wrote test content to file');
-      } catch (e) {
-        print('Error writing test content to file: $e');
-      }
 
       // Initialize OTel
       await OTel.reset();
@@ -99,21 +87,22 @@ void main() {
       // Verify the content can be parsed as JSON
       try {
         final json = jsonDecode(content);
-        expect(json, isA<List>(), reason: 'Expected JSON to be a list');
+        expect(json, isA<List>(), reason: 'Expected JSON to be a list of batches');
 
         // Verify span data exists
         expect(json.isNotEmpty, isTrue, reason: 'Expected non-empty JSON array');
 
-        // If we have a span, check its properties
-        if (json is List && json.isNotEmpty) {
-          final firstItem = json[0];
-          if (firstItem is Map) {
-            expect(firstItem.containsKey('name'), isTrue, reason: 'Expected span to have a name');
-            expect(firstItem.containsKey('spanId'), isTrue, reason: 'Expected span to have a spanId');
-            expect(firstItem.containsKey('traceId'), isTrue, reason: 'Expected span to have a traceId');
-          } else {
-            // For now just check it's not empty
-            expect(firstItem, isNotNull);
+        // If we have a batch, check the first span properties
+        if (json.isNotEmpty) {
+          final firstBatch = json[0];
+          expect(firstBatch, isA<List>(), reason: 'Expected batch to be a list of spans');
+          
+          if (firstBatch.isNotEmpty) {
+            final span = firstBatch[0];
+            expect(span, isA<Map>(), reason: 'Expected span to be a map');
+            expect(span['name'], equals('test-span'), reason: 'Expected span name to match');
+            expect(span['attributes'], isNotNull, reason: 'Expected span to have attributes');
+            expect(span['attributes']['test.key'], equals('test.value'), reason: 'Expected attribute to be set');
           }
         }
       } catch (e) {
