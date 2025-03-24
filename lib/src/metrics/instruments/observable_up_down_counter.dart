@@ -70,9 +70,18 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
   }
 
   /// Gets the current value of the counter for a specific set of attributes.
-  /// If no attributes are provided, returns the value for the null/empty attribute set.
+  /// If no attributes are provided, returns the sum of all recorded values.
   T getValue([Attributes? attributes]) {
-    final value = _storage.getValue(attributes);
+    final num value;
+    
+    if (attributes == null) {
+      // For no attributes, sum all points
+      value = _storage.collectPoints().fold<num>(0, (sum, point) => sum + point.value);
+    } else {
+      // For specific attributes, get that value
+      value = _storage.getValue(attributes);
+    }
+    
     // Handle the cast to the generic type
     if (T == int) return value.toInt() as T;
     if (T == double) return value.toDouble() as T;
