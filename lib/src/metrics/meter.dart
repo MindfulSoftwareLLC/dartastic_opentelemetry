@@ -43,7 +43,7 @@ class Meter implements APIMeter {
   Attributes? get attributes => _delegate.attributes;
 
   @override
-  bool get enabled => _delegate.enabled && _provider.enabled;
+  bool get enabled => _provider.enabled;
 
   /// Gets the MeterProvider that created this Meter.
   MeterProvider get provider => _provider;
@@ -117,10 +117,10 @@ class Meter implements APIMeter {
       apiCounter: apiCounter,
       meter: this,
     );
-    
+
     // Register the instrument with the meter provider
     _provider.registerInstrument(name, counter);
-    
+
     return counter;
   }
 
@@ -139,10 +139,10 @@ class Meter implements APIMeter {
       apiCounter: apiCounter,
       meter: this,
     );
-    
+
     // Register the instrument with the meter provider
     _provider.registerInstrument(name, counter);
-    
+
     return counter;
   }
 
@@ -161,10 +161,10 @@ class Meter implements APIMeter {
       apiGauge: apiGauge,
       meter: this,
     );
-    
+
     // Register the instrument with the meter provider
     _provider.registerInstrument(name, gauge);
-    
+
     return gauge;
   }
 }
