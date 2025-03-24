@@ -32,7 +32,56 @@ class OtlpGrpcSpanExporter implements SpanExporter {
   bool _permanentChannel = false;
   bool _initialized = false;
 
-  void _setupChannel() {
+  /// Cleanup the gRPC channel and release resources
+  Future<void> _cleanupChannel() async {
+    if (_channel != null) {
+      if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Shutting down existing channel');
+      
+      try {
+        // First try a graceful shutdown
+        try {
+          if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Attempting graceful channel shutdown');
+          await _channel!.shutdown();
+          await Future.delayed(Duration(milliseconds: 100)); // Brief delay for shutdown to complete
+        } catch (e) {
+          if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Error during graceful shutdown: $e');
+        }
+        
+        // Then try to terminate to ensure cleanup
+        try {
+          if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Terminating channel');
+          _channel!.terminate();
+          await Future.delayed(Duration(milliseconds: 100)); // Brief delay for termination to complete
+        } catch (e) {
+          if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Error terminating channel: $e');
+        }
+      } catch (e) {
+        if (OTelLog.isError()) {
+          OTelLog.error('OtlpGrpcSpanExporter: Error shutting down existing channel: $e');
+        }
+      }
+      
+      // Set to null to allow garbage collection
+      _channel = null;
+      _traceService = null;
+      
+      // Force garbage collection if possible
+      try {
+        // In Dart, we can't directly force garbage collection,
+        // but we can suggest it by setting variables to null and
+        // creating some memory pressure
+        List<int> temp = [];
+        for (int i = 0; i < 1000; i++) {
+          temp.add(i);
+        }
+        temp.clear();
+      } catch (e) {
+        // Ignore any errors
+      }
+    }
+  }
+
+  Future<void> _setupChannel() async {
     if (_isShutdown) {
       if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Not setting up channel - exporter is shut down');
       return;
@@ -40,22 +89,9 @@ class OtlpGrpcSpanExporter implements SpanExporter {
     
     if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Setting up gRPC channel with endpoint ${_config.endpoint}');
     
-    if (_channel != null) {
-      if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Shutting down existing channel first');
-      try {
-        // Attempt graceful shutdown but don't block on it
-        try {
-          _channel?.shutdown();
-        } catch (e) {
-          if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Error shutting down existing channel: $e');
-        }
-      } catch (e) {
-        if (OTelLog.isError()) {
-          OTelLog.error('OtlpGrpcSpanExporter: Error shutting down existing channel: $e');
-        }
-      }
-    }
-
+    // First, clean up any existing channel
+    await _cleanupChannel();
+    
     String host;
     int port;
 
@@ -120,7 +156,7 @@ class OtlpGrpcSpanExporter implements SpanExporter {
     
     _initialized = true;
     if (_channel == null || _traceService == null) {
-      _setupChannel();
+      await _setupChannel();
     }
   }
 
@@ -171,9 +207,15 @@ class OtlpGrpcSpanExporter implements SpanExporter {
       }
     }
 
+    // Add compression header if configured
+    final headers = Map<String, String>.from(_config.headers);
+    if (_config.compression) {
+      headers['grpc-encoding'] = 'gzip';
+    }
+
     final CallOptions options = CallOptions(
       timeout: _config.timeout,
-      metadata: _config.headers,
+      metadata: headers,
     );
 
     if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Sending export request to ${_config.endpoint}');
@@ -190,6 +232,18 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         OTelLog.error('OtlpGrpcSpanExporter: Export request failed: $e');
         OTelLog.error('Stack trace: $stackTrace');
       }
+      
+      // If we have a channel error, try to recreate it
+      if (e is GrpcError && 
+          (e.code == StatusCode.unavailable || 
+           e.code == StatusCode.unknown || 
+           e.code == StatusCode.internal)) {
+        if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Channel error detected, recreating channel');
+        // Force channel recreation
+        await _cleanupChannel();
+        _initialized = false;
+      }
+      
       rethrow;
     }
   }
@@ -259,7 +313,7 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Retrying export after ${delay.inMilliseconds}ms...');
         await Future.delayed(delay);
         if (!_isShutdown) { // Only recreate channel if not shut down
-          _setupChannel();
+          await _setupChannel();
         }
         attempts++;
       } catch (e, stackTrace) {
@@ -279,18 +333,34 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Retrying export after ${delay.inMilliseconds}ms...');
         await Future.delayed(delay);
         if (!_isShutdown) { // Only recreate channel if not shut down
-          _setupChannel();
+          await _setupChannel();
         }
         attempts++;
       }
     }
   }
 
+  /// Force flush any pending spans
   @override
   Future<void> forceFlush() async {
-    // No buffering in this exporter, so nothing to flush
     if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Force flush requested');
-    return;
+    if (_isShutdown) {
+      if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Exporter is already shut down, nothing to flush');
+      return;
+    }
+    
+    // Wait for any pending export operations to complete
+    if (_pendingExports.isNotEmpty) {
+      if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Waiting for ${_pendingExports.length} pending exports to complete');
+      try {
+        await Future.wait(_pendingExports);
+        if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: All pending exports completed');
+      } catch (e) {
+        if (OTelLog.isError()) OTelLog.error('OtlpGrpcSpanExporter: Error during force flush: $e');
+      }
+    } else {
+      if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: No pending exports to flush');
+    }
   }
 
   @override
@@ -311,34 +381,9 @@ class OtlpGrpcSpanExporter implements SpanExporter {
       }
     }
 
-    try {
-      // Short delay before closing the channel to allow pending operations to complete
-      await Future.delayed(Duration(milliseconds: 250));
-      
-      if (_channel != null) {
-        try {
-          await _channel!.shutdown();
-        } catch (e) {
-          if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Error shutting down channel: $e');
-        }
-        
-        try {
-          // Try to terminate if shutdown didn't work
-          _channel!.terminate();
-        } catch (e) {
-          if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Error terminating channel: $e');
-        }
-        
-        // Wait for channel to shut down gracefully
-        await Future.delayed(Duration(milliseconds: 250));
-      }
-    } catch (e) {
-      if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Error during channel shutdown: $e');
-    }
-
-    _channel = null;
-    _traceService = null;
+    // Clean up channel resources
+    await _cleanupChannel();
+    
     if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Shutdown complete');
   }
-
 }

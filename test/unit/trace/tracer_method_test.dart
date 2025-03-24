@@ -8,8 +8,8 @@ import 'dart:io';
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:test/test.dart';
 
-import '../testing_utils/real_collector.dart';
-import '../testing_utils/test_file_exporter.dart';
+import '../../testing_utils/real_collector.dart';
+import '../../testing_utils/test_file_exporter.dart';
 
 void main() {
   // Enable debug logging
@@ -25,7 +25,7 @@ void main() {
     final configPath = '$testDir/test/testing_utils/otelcol-config.yaml';
     final outputPath = '$testDir/test/testing_utils/spans.json';
     final backupOutputPath = '$testDir/test/testing_utils/fallback_spans.json';
-    
+
     // Print paths for debugging
     print('Using paths:');
     print('  Config path: $configPath');
@@ -95,7 +95,7 @@ void main() {
                   }
                   if (foundExpectedSpan) break;
                 }
-                
+
                 // Backup file should contain at least one span batch
                 expect(jsonContent.isNotEmpty, isTrue, reason: 'Expected non-empty span list in backup file');
                 expect(foundExpectedSpan, isTrue, reason: 'Expected to find span named $expectedSpanName in backup file');
@@ -105,7 +105,7 @@ void main() {
               if (OTelLog.isDebug()) OTelLog.debug('Error parsing backup file JSON: $e');
               print('Error parsing backup file: $e');
               // Fall back to basic content check
-              expect(content.contains(expectedSpanName), isTrue, 
+              expect(content.contains(expectedSpanName), isTrue,
                   reason: 'Expected backup file to contain span named $expectedSpanName');
               return;
             }
@@ -119,10 +119,10 @@ void main() {
 
       // If we're here, we should have spans from the collector
       expect(spans.isNotEmpty, isTrue, reason: 'Expected at least one span to be exported');
-      
+
       // Check if any span has the expected name
       final matchingSpans = spans.where((span) => span['name'] == expectedSpanName).toList();
-      expect(matchingSpans.isNotEmpty, isTrue, 
+      expect(matchingSpans.isNotEmpty, isTrue,
           reason: 'Expected to find a span named $expectedSpanName, found: ${spans.map((s) => s['name']).join(', ')}');
     }
 
@@ -277,7 +277,7 @@ void main() {
         name: 'context-span',
         context: customContext,
       );
-      
+
       // End the span explicitly - this is crucial for exporting the span
       span.end();
 
@@ -326,7 +326,7 @@ void main() {
       // Add an identifier to ensure we can uniquely identify this span
       final uniqueSpanName = 'error-span-${DateTime.now().millisecondsSinceEpoch}';
       print('\n********** Using unique span name: $uniqueSpanName **********\n');
-      
+
       try {
         // Clear any existing spans before the test
         File(outputPath).writeAsStringSync('');
@@ -349,10 +349,10 @@ void main() {
 
       // Add a short delay to ensure spans have time to be processed
       await Future.delayed(Duration(milliseconds: 500));
-      
+
       // Manually force flush the tracer provider
       await tracerProvider.forceFlush();
-      
+
       // Add another delay
       await Future.delayed(Duration(milliseconds: 500));
 

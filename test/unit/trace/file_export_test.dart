@@ -6,7 +6,7 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
-import '../testing_utils/test_file_exporter.dart';
+import '../../testing_utils/test_file_exporter.dart';
 
 void main() {
   group('File Export Test', () {
@@ -92,7 +92,7 @@ void main() {
           return result;
         },
       );
-      
+
       // Must manually end the span - this is key for it to be exported
       span.end();
 
@@ -109,10 +109,10 @@ void main() {
       if (!file.existsSync()) {
         fail('Expected output file does not exist');
       }
-      
+
       final fileContent = file.readAsStringSync();
       print('File content: $fileContent');
-      
+
       if (fileContent.isEmpty) {
         fail('File content is empty - no spans were exported');
       }
@@ -121,14 +121,14 @@ void main() {
         // Parse JSON and check for span - handling the new batched format
         final List<dynamic> batches = jsonDecode(fileContent);
         print('Found ${batches.length} batches in file');
-        
+
         expect(batches, isNotEmpty, reason: 'Expected at least one batch of spans');
-        
+
         bool found = false;
         // Iterate through batches
         for (final batch in batches) {
           expect(batch, isA<List>(), reason: 'Expected batch to be a list of spans');
-          
+
           // Iterate through spans in the batch
           for (final span in batch) {
             print('Found span: ${span['name']}');
@@ -137,7 +137,7 @@ void main() {
               break;
             }
           }
-          
+
           if (found) break;
         }
 
@@ -166,7 +166,7 @@ void main() {
           return result;
         },
       );
-      
+
       // Must manually end the span - this is key for it to be exported
       span.end();
 
@@ -186,14 +186,14 @@ void main() {
         // Parse JSON and check for span - handling the new batched format
         final List<dynamic> batches = jsonDecode(fileContent);
         print('Found ${batches.length} batches in file');
-        
+
         expect(batches, isNotEmpty, reason: 'Expected at least one batch of spans');
-        
+
         bool found = false;
         // Iterate through batches
         for (final batch in batches) {
           expect(batch, isA<List>(), reason: 'Expected batch to be a list of spans');
-          
+
           // Iterate through spans in the batch
           for (final spanData in batch) {
             print('Found span: ${spanData['name']}');
@@ -202,7 +202,7 @@ void main() {
               break;
             }
           }
-          
+
           if (found) break;
         }
 
@@ -239,14 +239,14 @@ void main() {
         // Parse JSON and check for span - handling the new batched format
         final List<dynamic> batches = jsonDecode(fileContent);
         print('Found ${batches.length} batches in file');
-        
+
         expect(batches, isNotEmpty, reason: 'Expected at least one batch of spans');
-        
+
         bool found = false;
         // Iterate through batches
         for (final batch in batches) {
           expect(batch, isA<List>(), reason: 'Expected batch to be a list of spans');
-          
+
           // Iterate through spans in the batch
           for (final spanData in batch) {
             print('Found span: ${spanData['name']}');
@@ -255,7 +255,7 @@ void main() {
               break;
             }
           }
-          
+
           if (found) break;
         }
 

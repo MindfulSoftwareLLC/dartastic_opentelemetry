@@ -4,8 +4,8 @@
 import 'dart:io';
 import 'package:test/test.dart';
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import '../testing_utils/real_collector.dart';
-import '../testing_utils/test_file_exporter.dart';
+import '../../testing_utils/real_collector.dart';
+import '../../testing_utils/test_file_exporter.dart';
 
 void main() {
   group('Simple Span Export', () {

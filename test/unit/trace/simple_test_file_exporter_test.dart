@@ -7,7 +7,7 @@ import 'dart:io';
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:test/test.dart';
 
-import '../testing_utils/test_file_exporter.dart';
+import '../../testing_utils/test_file_exporter.dart';
 
 void main() {
   group('Simple TestFileExporter Test', () {
@@ -28,7 +28,7 @@ void main() {
       // Make sure output file exists and is completely empty
       final file = File(outputPath);
       file.writeAsStringSync(''); // Always empty the file
-      
+
       // Create the exporter
       exporter = TestFileExporter(outputPath);
 
@@ -96,7 +96,7 @@ void main() {
         if (json.isNotEmpty) {
           final firstBatch = json[0];
           expect(firstBatch, isA<List>(), reason: 'Expected batch to be a list of spans');
-          
+
           if (firstBatch.isNotEmpty) {
             final span = firstBatch[0];
             expect(span, isA<Map>(), reason: 'Expected span to be a map');
