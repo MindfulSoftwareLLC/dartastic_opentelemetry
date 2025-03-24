@@ -12,7 +12,7 @@ import 'base_instrument.dart';
 ///
 /// A Gauge is used to measure a non-additive value that represents the current
 /// state, such as temperature, memory usage, or CPU utilization.
-class Gauge<T extends num> implements APIGauge<T>, BaseInstrument {
+class Gauge<T extends num> implements APIGauge<T>, SDKInstrument {
   /// The underlying API Gauge.
   final APIGauge<T> _apiGauge;
 

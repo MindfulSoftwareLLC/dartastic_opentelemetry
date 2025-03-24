@@ -131,12 +131,12 @@ class MeterProvider implements APIMeterProvider {
   final Map<String, Meter> _meters = {};
 
   /// Registry of active instruments across all meters
-  final Map<String, Set<BaseInstrument>> _instruments = {};
+  final Map<String, Set<SDKInstrument>> _instruments = {};
 
   /// Registers an instrument with this provider
   ///
   /// This allows the provider to track all active instruments for metrics collection
-  void registerInstrument(String instrumentName, BaseInstrument instrument) {
+  void registerInstrument(String instrumentName, SDKInstrument instrument) {
     final meterKey = instrument.meter.name;
     if (!_instruments.containsKey(meterKey)) {
       _instruments[meterKey] = {};

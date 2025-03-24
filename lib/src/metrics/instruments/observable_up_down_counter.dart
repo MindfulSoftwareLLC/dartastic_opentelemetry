@@ -10,7 +10,7 @@ import '../../../dartastic_opentelemetry.dart';
 /// An ObservableUpDownCounter is used to measure a value that increases and
 /// decreases where measurements are made by a callback function. For example,
 /// number of active requests, queue size, pool size.
-class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCounter<T>, BaseInstrument {
+class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCounter<T>, SDKInstrument {
   /// The underlying API ObservableUpDownCounter.
   final APIObservableUpDownCounter<T> _apiCounter;
 
@@ -73,7 +73,7 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
   /// If no attributes are provided, returns the sum of all recorded values.
   T getValue([Attributes? attributes]) {
     final num value;
-    
+
     if (attributes == null) {
       // For no attributes, sum all points
       value = _storage.collectPoints().fold<num>(0, (sum, point) => sum + point.value);
@@ -81,7 +81,7 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
       // For specific attributes, get that value
       value = _storage.getValue(attributes);
     }
-    
+
     // Handle the cast to the generic type
     if (T == int) return value.toInt() as T;
     if (T == double) return value.toDouble() as T;
@@ -119,7 +119,7 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
           // For observable up-down counters, we need to calculate deltas
           final key = measurement.attributes ?? OTelFactory.otelFactory!.attributes();
           // Properly handle the generic type for first observation
-          final T lastValue = (_lastValues[key] ?? 
+          final T lastValue = (_lastValues[key] ??
               (T == int ? 0 : 0.0)) as T;
           final T delta = _subtractNumeric(value, lastValue);
           _storage.record(delta, measurement.attributes);

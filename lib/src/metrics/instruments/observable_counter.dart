@@ -10,7 +10,7 @@ import '../../../dartastic_opentelemetry.dart';
 /// An ObservableCounter is used to measure monotonically increasing values
 /// where measurements are made by a callback function. For example, CPU time,
 /// bytes received, or number of operations.
-class ObservableCounter<T extends num> implements APIObservableCounter<T>, BaseInstrument {
+class ObservableCounter<T extends num> implements APIObservableCounter<T>, SDKInstrument {
   /// The underlying API ObservableCounter.
   final APIObservableCounter<T> _apiCounter;
 
@@ -73,7 +73,7 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, BaseI
   /// If no attributes are provided, returns the sum of all recorded values.
   T getValue([Attributes? attributes]) {
     final num value;
-    
+
     if (attributes == null) {
       // For no attributes, sum all points
       value = _storage.collectPoints().fold<num>(0, (sum, point) => sum + point.value);
@@ -81,7 +81,7 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, BaseI
       // For specific attributes, get that value
       value = _storage.getValue(attributes);
     }
-    
+
     // Handle the cast to the generic type
     if (T == int) return value.toInt() as T;
     if (T == double) return value.toDouble() as T;
@@ -121,7 +121,7 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, BaseI
           // For observable counters, we need to calculate deltas
           final key = measurement.attributes ?? OTelFactory.otelFactory!.attributes();
           // Properly handle the generic type
-          final T lastValue = (_lastValues[key] ?? 
+          final T lastValue = (_lastValues[key] ??
               (T == int ? 0 : 0.0)) as T;
 
           // If the new value is less than the last value, we assume a reset occurred

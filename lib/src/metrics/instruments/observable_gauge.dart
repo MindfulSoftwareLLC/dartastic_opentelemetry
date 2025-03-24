@@ -9,7 +9,7 @@ import '../../../dartastic_opentelemetry.dart';
 ///
 /// An ObservableGauge is used to asynchronously measure a non-additive current value
 /// that cannot be calculated synchronously.
-class ObservableGauge<T extends num> implements APIObservableGauge<T>, BaseInstrument {
+class ObservableGauge<T extends num> implements APIObservableGauge<T>, SDKInstrument {
   /// The underlying API ObservableGauge.
   final APIObservableGauge<T> _apiGaugeDelegate;
 
@@ -68,7 +68,7 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T>, BaseInstr
   /// If no attributes are provided, returns the average of all recorded values.
   T getValue([Attributes? attributes]) {
     final num value;
-    
+
     if (attributes == null) {
       // For gauges without attributes, we return the average of all values
       final points = _storage.collectPoints();
@@ -81,7 +81,7 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T>, BaseInstr
       // For specific attributes, get that value
       value = _storage.getValue(attributes);
     }
-    
+
     // Handle the cast to the generic type
     if (T == int) return value.toInt() as T;
     if (T == double) return value.toDouble() as T;

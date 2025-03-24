@@ -12,7 +12,7 @@ import 'base_instrument.dart';
 ///
 /// A Histogram is used to measure a distribution of values, such as request durations,
 /// response sizes, or latencies.
-class Histogram<T extends num> implements APIHistogram<T>, BaseInstrument {
+class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
   /// The underlying API Histogram.
   final APIHistogram<T> _apiHistogram;
 

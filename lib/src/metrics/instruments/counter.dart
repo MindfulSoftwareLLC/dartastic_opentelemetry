@@ -13,7 +13,7 @@ import 'base_instrument.dart';
 ///
 /// A Counter is used to measure a non-negative, monotonically increasing value.
 /// For example, request count, items placed in a queue, bytes sent.
-class Counter<T extends num> implements APICounter<T>, BaseInstrument {
+class Counter<T extends num> implements APICounter<T>, SDKInstrument {
   /// The underlying API Counter.
   final APICounter<T> _apiCounter;
 
@@ -42,7 +42,7 @@ class Counter<T extends num> implements APICounter<T>, BaseInstrument {
   String? get description => _apiCounter.description;
 
   @override
-  bool get enabled => _apiCounter.enabled && _meter.enabled;
+  bool get enabled => _meter.enabled;
 
   @override
   APIMeter get meter => _meter;

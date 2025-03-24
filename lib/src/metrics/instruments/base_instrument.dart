@@ -8,7 +8,7 @@ import '../../../dartastic_opentelemetry.dart';
 /// BaseInstrument is the base class for all metric instruments.
 ///
 /// It provides common functionality for collecting metrics from instruments.
-abstract class BaseInstrument {
+abstract class SDKInstrument {
   /// The name of the instrument
   String get name;
 

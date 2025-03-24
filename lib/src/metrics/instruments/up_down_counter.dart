@@ -13,7 +13,7 @@ import 'base_instrument.dart';
 ///
 /// An UpDownCounter is used to measure a value that increases and decreases.
 /// For example, the number of active requests, queue size, pool size.
-class UpDownCounter<T extends num> implements APIUpDownCounter<T>, BaseInstrument {
+class UpDownCounter<T extends num> implements APIUpDownCounter<T>, SDKInstrument {
   /// The underlying API UpDownCounter.
   final APIUpDownCounter<T> _apiCounter;
 
