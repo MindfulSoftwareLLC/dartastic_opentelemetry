@@ -55,37 +55,32 @@ class OtlpGrpcExporterConfig {
     if (endpoint.isEmpty) {
       throw ArgumentError('Endpoint cannot be empty');
     }
-    
-    // Handle common localhost variants
+
+    // Handle common localhost variants and validate basic format
     endpoint = endpoint.trim();
+
+    // First check for invalid formats
+    if (endpoint.contains(' ')) {
+      throw ArgumentError('Endpoint cannot contain spaces: $endpoint');
+    }
+
+    // Check for specific invalid formats that might parse but are invalid
+    if (endpoint.contains(':port')) {
+      throw ArgumentError('Invalid port specification in endpoint: $endpoint');
+    }
+
     final lcEndpoint = endpoint.toLowerCase();
     if (lcEndpoint == 'localhost' || lcEndpoint == '127.0.0.1') {
       return '$endpoint:4317'; // Add default port if missing
     }
 
-    // Try to parse as URI first
-    try {
-      Uri? uri;
-      if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
-        uri = Uri.parse(endpoint);
-      } else {
-        // Try adding http:// prefix if missing
-        uri = Uri.parse('http://$endpoint');
-      }
-      
-      if (uri.host.isEmpty) {
-        throw ArgumentError('Invalid endpoint format: $endpoint');
-      }
-      
-      // If port is missing, add default port
-      if (uri.port == 0 || uri.port == 80 || uri.port == 443) {
-        final scheme = uri.scheme == 'https' ? 'https' : 'http';
-        return '$scheme://${uri.host}:4317';
-      }
-      
+    // Special case for full URLs (always valid in our context)
+    if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
       return endpoint;
-    } catch (e) {
-      // Try parsing as host:port
+    }
+
+    // Try to parse as URI or host:port
+    try {
       final parts = endpoint.split(':');
       if (parts.length == 1 && parts[0].isNotEmpty) {
         // Only host provided, add default port
@@ -98,7 +93,12 @@ class OtlpGrpcExporterConfig {
         // Host and port provided
         return endpoint;
       }
-      
+
+      throw ArgumentError('Invalid endpoint format: $endpoint. Expected format: "host:port" or a valid URI');
+    } catch (e) {
+      if (e is ArgumentError) rethrow; // Re-throw our own errors
+
+      // Any other parsing error
       throw ArgumentError('Invalid endpoint format: $endpoint. Expected format: "host:port" or a valid URI');
     }
   }

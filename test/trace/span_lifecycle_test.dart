@@ -6,7 +6,7 @@ import 'dart:io';
 import 'package:test/test.dart';
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
-import '../../testing_utils/real_collector.dart';
+import '../testing_utils/real_collector.dart';
 
 void main() {
   late RealCollector collector;

@@ -20,7 +20,7 @@ void main() {
 
   setUp(() async {
     await OTel.reset();
-    await OTel.initialize();
+    await OTel.initialize(serviceName: 'test-service', serviceVersion: '1.0.0');
     tracerProvider = OTel.tracerProvider();
     tracer = tracerProvider!.getTracer('test');
   });
