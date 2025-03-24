@@ -287,10 +287,11 @@ class Tracer implements APITracer {
     }
 
     // Always create a new span context with a new span ID
+    // For root spans, ensure we set an invalid parent span ID (zeros)
     final newSpanContext = OTel.spanContext(
       traceId: traceId,
       spanId: OTel.spanId(),  // Always generate a new span ID
-      parentSpanId: parentSpanId,
+      parentSpanId: parentSpanId ?? OTel.spanIdInvalid(),  // Use invalid span ID for root spans
       traceFlags: traceFlags,
     );
 

@@ -224,7 +224,9 @@ void main() {
     test('creates root span when no parent context available', () {
       final span = tracer.startSpan('root');
 
-      expect(span.spanContext.parentSpanId.toString(), equals('0' * 16));
+      // Verify the parent span ID is zero-filled (invalid)
+      expect(span.spanContext.parentSpanId, isNotNull);
+      expect(span.spanContext.parentSpanId.toString(), equals('0000000000000000'));
       expect(span.spanContext.traceId.isValid, isTrue);
       expect(span.spanContext.spanId.isValid, isTrue);
     });
