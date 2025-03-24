@@ -171,7 +171,8 @@ void main() {
       final resourceDetector = PlatformResourceDetector.create();
       var platformResource = await resourceDetector.detect();
 
-      // Merge resources - tenant_id and service.name should take precedence if there's a conflict
+      // Important: merge platform resource into tenant resource, not vice versa
+      // This ensures tenant_id takes precedence
       final combinedResource = platformResource.merge(tenantIdResource);
 
       // Set as default resource
@@ -251,8 +252,13 @@ void main() {
         'tenant_id': '987654321',
       }));
 
-      // Merge resources
-      final mergedResource = serviceResource.merge(tenantResource);
+      // Get platform resources
+      final resourceDetector = PlatformResourceDetector.create();
+      final platformResource = await resourceDetector.detect();
+      
+      // Merge resources - platform first, then service, then tenant_id
+      // The order is critical: tenant_id must be merged last to take precedence
+      final mergedResource = platformResource.merge(serviceResource).merge(tenantResource);
       OTel.defaultResource = mergedResource;
 
       // Create exporter and processor
@@ -281,9 +287,16 @@ void main() {
     test('tenant_id is overridden when merged with higher priority resource',
         () async {
       // First set a default resource with tenant_id
-      OTel.defaultResource = OTel.resource(OTel.attributesFromMap({
+      final originalTenantResource = OTel.resource(OTel.attributesFromMap({
         'tenant_id': 'original-tenant',
       }));
+      
+      // Get platform resource
+      final resourceDetector = PlatformResourceDetector.create();
+      final platformResource = await resourceDetector.detect();
+      
+      // Merge platform and original tenant
+      OTel.defaultResource = platformResource.merge(originalTenantResource);
 
       // Then create a new resource with a different tenant_id
       final newResource = OTel.resource(OTel.attributesFromMap({
@@ -291,7 +304,7 @@ void main() {
       }));
 
       // Override the default resource
-      OTel.defaultResource = newResource;
+      OTel.defaultResource = OTel.defaultResource!.merge(newResource);
 
       // Create exporter and processor
       final spanProcessor = BatchSpanProcessor(exporter);
@@ -355,10 +368,19 @@ void main() {
       // Detect platform resources
       var platformResource = await resourceDetector.detect();
 
-      // Merge resources - first merge platform with service, then add tenant_id
-      // This order ensures both service.name and tenant_id are present
-      OTel.defaultResource =
-          platformResource.merge(serviceResource).merge(tenantIdResource);
+      // Merge resources - careful with order!
+      // First platform and service resource are merged
+      var mergedBaseResource = platformResource.merge(serviceResource);
+      // Then tenant_id resource is merged last to ensure it takes precedence
+      OTel.defaultResource = mergedBaseResource.merge(tenantIdResource);
+      
+      // Print debug for resource attributes
+      if (OTel.defaultResource != null) {
+        print('Default resource attributes for example pattern:');
+        OTel.defaultResource!.attributes.toList().forEach((attr) {
+          print('  ${attr.key}: ${attr.value}');
+        });
+      }
 
       // Create a batch processor that exports spans
       final spanProcessor = BatchSpanProcessor(

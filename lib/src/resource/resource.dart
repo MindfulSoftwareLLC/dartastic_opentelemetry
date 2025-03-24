@@ -7,6 +7,8 @@ import 'package:dartastic_opentelemetry/src/otel.dart';
 import 'package:meta/meta.dart';
 import 'package:opentelemetry_api/opentelemetry_api.dart';
 
+import '../util/otel_log.dart';
+
 part 'resource_create.dart';
 
 /// Represents a resource, which captures identifying information about the entities
@@ -55,6 +57,17 @@ class Resource {
       mergedSchemaUrl = other._schemaUrl;
     }
 
-    return Resource._(OTel.attributesFromMap(mergedMap), mergedSchemaUrl);
+    final result = Resource._(OTel.attributesFromMap(mergedMap), mergedSchemaUrl);
+
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('Resource merge result attributes:');
+      result._attributes.toList().forEach((attr) {
+        if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+          OTelLog.debug('  ${attr.key}: ${attr.value}');
+        }
+      });
+    }
+
+    return result;
   }
 }

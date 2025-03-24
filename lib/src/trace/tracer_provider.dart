@@ -8,6 +8,7 @@ import 'package:dartastic_opentelemetry/src/trace/span_processor.dart';
 import 'package:dartastic_opentelemetry/src/resource/resource.dart';
 import 'package:opentelemetry_api/opentelemetry_api.dart';
 
+import '../../dartastic_opentelemetry.dart';
 import '../util/otel_log.dart';
 
 part 'tracer_provider_create.dart';
@@ -32,7 +33,15 @@ class TracerProvider implements APITracerProvider {
     this.resource,
     Sampler? sampler,
   }) {
-    if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Created with resource: $resource, sampler: $sampler');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('TracerProvider: Created with resource: $resource, sampler: $sampler');
+      if (resource != null) {
+        OTelLog.debug('Resource attributes:');
+        resource!.attributes.toList().forEach((attr) {
+          OTelLog.debug('  ${attr.key}: ${attr.value}');
+        });
+      }
+    }
   }
 
   @override
@@ -84,6 +93,9 @@ class TracerProvider implements APITracerProvider {
       throw StateError('TracerProvider has been shut down');
     }
 
+    // Ensure resource is set before creating tracer
+    ensureResourceIsSet();
+
     final key = '$name:${version ?? ''}';
     return _tracers.putIfAbsent(
         key,
@@ -112,6 +124,24 @@ class TracerProvider implements APITracerProvider {
   /// Get all registered span processors
   List<SpanProcessor> get spanProcessors =>
       List.unmodifiable(_spanProcessors);
+
+  /// Makes sure the resource for this provider is properly set
+  void ensureResourceIsSet() {
+    if (resource == null) {
+      resource = OTel.defaultResource;
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('TracerProvider: Setting resource from default');
+        if (resource != null) {
+          OTelLog.debug('Resource attributes:');
+          resource!.attributes.toList().forEach((attr) {
+            if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+              OTelLog.debug('  ${attr.key}: ${attr.value}');
+            }
+          });
+        }
+      }
+    }
+  }
 
   @override
   String get endpoint => delegate.endpoint;

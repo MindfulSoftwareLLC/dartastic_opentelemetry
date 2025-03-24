@@ -1,0 +1,1 @@
+[[{"name":"record-span-test","spanId":"6155ce817cc4a454","traceId":"70fecb9e55f9ac0dcef1c8c006c9a09e","kind":"SpanKind.internal","startTime":"2025-03-25T00:31:56.048041","endTime":"2025-03-25T00:31:56.048171","status":"SpanStatusCode.Ok","attributes":{},"isEnded":true}]]

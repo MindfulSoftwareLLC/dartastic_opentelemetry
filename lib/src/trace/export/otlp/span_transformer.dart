@@ -35,6 +35,15 @@ class OtlpSpanTransformer {
       // Extract resource attributes from the span's resource
       final resource = spanList.first.resource;
       final resourceAttrs = resource?.attributes ?? OTel.createAttributes();
+      
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('Extracting resource attributes for export:');
+        resourceAttrs.toList().forEach((attr) {
+          if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+            OTelLog.debug('  ${attr.key}: ${attr.value}');
+          }
+        });
+      }
 
       // Create resource
       final protoResource = proto.Resource()
