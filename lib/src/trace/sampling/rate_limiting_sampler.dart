@@ -9,7 +9,7 @@ import 'sampler.dart';
 class RateLimitingSampler implements Sampler {
   final double _maxTracesPerSecond;
   final Duration _timeWindow;
-  int _tokenBalance;
+  double _tokenBalance;
   DateTime _lastTokenUpdate;
   late final Timer _tokenReplenishTimer;
 
@@ -24,7 +24,7 @@ class RateLimitingSampler implements Sampler {
     Duration timeWindow = const Duration(milliseconds: 100),
   })  : _maxTracesPerSecond = maxTracesPerSecond,
         _timeWindow = timeWindow,
-        _tokenBalance = 0,
+        _tokenBalance = 0.0,
         _lastTokenUpdate = DateTime.now() {
     if (maxTracesPerSecond <= 0) {
       throw ArgumentError('maxTracesPerSecond must be positive');
@@ -39,13 +39,14 @@ class RateLimitingSampler implements Sampler {
     _lastTokenUpdate = now;
 
     // Calculate how many tokens to add based on elapsed time and rate
-    final tokensToAdd = (_maxTracesPerSecond * elapsedSeconds).floor();
+    // Don't use floor() to ensure even small time periods add tokens
+    final tokensToAdd = _maxTracesPerSecond * elapsedSeconds;
 
     // Calculate max tokens based on rate and time window
-    final maxTokens = (_maxTracesPerSecond * _timeWindow.inMilliseconds / 1000).ceil();
+    final maxTokens = _maxTracesPerSecond * _timeWindow.inMilliseconds / 1000;
 
     // Update balance, ensuring we don't exceed max
-    _tokenBalance = (_tokenBalance + tokensToAdd).clamp(0, maxTokens);
+    _tokenBalance = (_tokenBalance + tokensToAdd).clamp(0.0, maxTokens);
   }
 
   @override
@@ -61,8 +62,8 @@ class RateLimitingSampler implements Sampler {
     _updateTokens();
 
     // If we have tokens available, sample the trace
-    if (_tokenBalance > 0) {
-      _tokenBalance--;
+    if (_tokenBalance >= 1.0) {
+      _tokenBalance -= 1.0;
       return const SamplingResult(
         decision: SamplingDecision.recordAndSample,
         source: SamplingDecisionSource.tracerConfig,

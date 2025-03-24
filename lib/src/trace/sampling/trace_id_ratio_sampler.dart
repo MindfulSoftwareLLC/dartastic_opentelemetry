@@ -25,17 +25,22 @@ class TraceIdRatioSampler implements Sampler {
 
   static double _calculateUpperBound(double ratio) {
     // Use max uint64 value: 18446744073709551615
-    return ratio * (1 << 64 - 1);
+    // Bitshift operation needs parentheses: (1 << 64) - 1
+    // But we'll use a known constant instead for precision
+    const maxUint64 = 18446744073709551615.0;
+    return ratio * maxUint64;
   }
 
   double _traceIdToDouble(String traceId) {
     // Use last 16 chars (8 bytes) of trace ID
     final lastBytes = traceId.substring(traceId.length - 16);
-    var value = 0.0;
-    for (var i = 0; i < lastBytes.length; i++) {
-      value = (value * 16) + int.parse(lastBytes[i], radix: 16);
-    }
-    return value;
+    
+    // Parse hex string to integer with BigInt to avoid precision issues
+    final bigIntValue = BigInt.parse(lastBytes, radix: 16);
+    
+    // Convert to double ensuring we don't lose precision
+    // We're using a ratio comparison, so relative precision is maintained
+    return bigIntValue.toDouble();
   }
 
   @override

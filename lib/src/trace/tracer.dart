@@ -4,6 +4,7 @@ import 'package:dartastic_opentelemetry/src/trace/sampling/sampler.dart';
 import 'package:dartastic_opentelemetry/src/trace/tracer_provider.dart';
 import 'package:opentelemetry_api/opentelemetry_api.dart';
 
+import '../../dartastic_opentelemetry.dart';
 import '../resource/resource.dart';
 import '../util/otel_log.dart';
 import 'span.dart';
@@ -180,15 +181,16 @@ class Tracer implements APITracer {
     // Get parent context from either the passed context or parent span
     SpanContext? parentContext;
     APISpan? effectiveParentSpan = parentSpan;
+    final effectiveContext = context ?? Context.current;
 
-    if (context != null) {
+    if (effectiveContext != Context.empty) {
       // If an explicit context was provided, check for a span
-      if (context.span != null) {
+      if (effectiveContext.span != null) {
         // Use the span from the context as parent (if no explicit parent span)
-        effectiveParentSpan ??= context.span;
+        effectiveParentSpan ??= effectiveContext.span;
       }
       // Always check for span context in the context
-      parentContext = context.spanContext;
+      parentContext = effectiveContext.spanContext;
     }
 
     // If no parentContext from context but we have a parentSpan, use its context
@@ -218,10 +220,45 @@ class Tracer implements APITracer {
     'Creating new root span context');
     }
 
+    // Apply sampling decision if we have a sampler
+    final traceIdStr = parentContext?.traceId?.toString() ?? OTel.traceId().toString();
+    bool shouldRecord = true;
+    if (sampler != null) {
+      final samplingResult = sampler.shouldSample(
+        parentContext: effectiveContext,
+        traceId: traceIdStr,
+        name: name,
+        spanKind: kind,
+        attributes: attributes,
+        links: links,
+      );
+
+      // Update the isRecording flag based on the sampling decision
+      shouldRecord = samplingResult.decision != SamplingDecision.drop;
+
+      // If we got additional attributes from the sampler, add them to our span attributes
+      if (samplingResult.attributes != null) {
+        if (attributes == null) {
+          attributes = samplingResult.attributes;
+        } else {
+          // Merge attributes
+          final newAttributes = attributes;
+          for (final attr in samplingResult.attributes!.all) {
+            newAttributes.addAttribute(attr);
+          }
+          attributes = newAttributes;
+        }
+      }
+
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('Sampling decision for span $name: ${samplingResult.decision}');
+      }
+    }
+
     // Create the delegate span with the validated context
     APISpan delegateSpan = _delegate.startSpan(
         name,
-        context: context,
+        context: effectiveContext,
         // Pass either the validated parentContext (if found) or the original spanContext
         spanContext: parentContext,
         // Pass the effective parent span (from either explicit parent or context)
@@ -229,7 +266,8 @@ class Tracer implements APITracer {
         kind: kind,
         attributes: attributes,
         links: links,
-        isRecording: isRecording
+        // Apply our sampling decision
+        isRecording: isRecording != null ? isRecording : shouldRecord
     );
 
     // Wrap it in our SDK span which will handle processing

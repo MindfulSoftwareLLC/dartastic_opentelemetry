@@ -10,7 +10,7 @@ import 'sampler.dart';
 /// meaning the same trace ID might get different decisions.
 class ProbabilitySampler implements Sampler {
   final double probability;
-  final Random _random;
+  late final Random _random;
 
   @override
   String get description => 'ProbabilitySampler{$probability}';
@@ -18,8 +18,9 @@ class ProbabilitySampler implements Sampler {
   /// Creates a probability sampler with the given probability.
   /// [probability] must be in range [0.0, 1.0].
   /// [seed] can be provided for deterministic sampling (mainly for testing).
-  ProbabilitySampler(this.probability, {int? seed})
-      : _random = Random(seed) {
+  ProbabilitySampler(this.probability, {int? seed}) {
+    // Initialize random with secure random if no seed provided
+    _random = seed != null ? Random(seed) : Random.secure();
     if (probability < 0.0 || probability > 1.0) {
       throw ArgumentError('probability must be in range [0.0, 1.0]');
     }

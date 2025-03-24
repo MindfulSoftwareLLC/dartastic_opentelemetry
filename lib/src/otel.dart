@@ -126,6 +126,7 @@ class OTel {
     }
     final factoryFactory =
         oTelFactoryCreationFunction ?? otelSDKFactoryFactoryFunction;
+    // Initialize with default sampler
     _defaultSampler = sampler ?? const AlwaysOnSampler();
     OTel.defaultTracerName = tracerName ?? _defaultTracerName;
     OTel.defaultTracerVersion = tracerVersion;

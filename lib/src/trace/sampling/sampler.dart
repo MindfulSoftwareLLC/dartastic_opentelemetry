@@ -50,7 +50,7 @@ abstract class Sampler {
   });
 }
 
-/// A sampler that always makes the same decision.
+/// A sampler that always samples every trace.
 class AlwaysOnSampler implements Sampler {
   @override
   String get description => 'AlwaysOnSampler';
@@ -68,6 +68,29 @@ class AlwaysOnSampler implements Sampler {
   }) {
     return const SamplingResult(
       decision: SamplingDecision.recordAndSample,
+      source: SamplingDecisionSource.tracerConfig,
+    );
+  }
+}
+
+/// A sampler that never samples any traces.
+class AlwaysOffSampler implements Sampler {
+  @override
+  String get description => 'AlwaysOffSampler';
+
+  const AlwaysOffSampler();
+
+  @override
+  SamplingResult shouldSample({
+    required Context parentContext,
+    required String traceId,
+    required String name,
+    required SpanKind spanKind,
+    required Attributes? attributes,
+    required List<SpanLink>? links,
+  }) {
+    return const SamplingResult(
+      decision: SamplingDecision.drop,
       source: SamplingDecisionSource.tracerConfig,
     );
   }

@@ -51,6 +51,8 @@ export 'src/trace/tracer.dart';
 export 'src/trace/tracer_provider.dart';
 export 'src/trace/sampling/sampler.dart';
 export 'src/trace/sampling/always_off_sampler.dart';
+export 'src/trace/sampling/always_on_sampler.dart';
+export 'src/trace/sampling/parent_based_sampler.dart';
 export 'src/trace/sampling/trace_id_ratio_sampler.dart';
 export 'src/trace/sampling/counting_sampler.dart';
 export 'src/trace/sampling/rate_limiting_sampler.dart';
