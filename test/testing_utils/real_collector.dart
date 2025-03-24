@@ -5,8 +5,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:dartastic_opentelemetry/src/util/otel_log.dart';
-
 /// Manages a real OpenTelemetry Collector instance for testing
 class RealCollector {
   final int port;
@@ -30,7 +28,7 @@ class RealCollector {
       throw StateError(
           'OpenTelemetry Collector not found at $execPath');
     }
-
+    
     // Make sure it's executable
     try {
       final stat = await collectorFile.stat();
@@ -81,11 +79,11 @@ class RealCollector {
         print('Error checking collector process: $e');
       }
     }
-
+    
     if (!started) {
       throw StateError('Failed to start collector properly');
     }
-
+    
     print('Collector started successfully');
     await Future.delayed(Duration(seconds: 1));
   }
@@ -102,7 +100,7 @@ class RealCollector {
         } catch (e) {
         // Ignore, just continue with force kill
         }
-
+        
         // Force kill if still running
         if (_process != null) {
         try {
@@ -125,30 +123,44 @@ class RealCollector {
       return [];
     }
 
-    final content = await File(_outputPath).readAsString();
-    final lines = content.split('\n').where((l) => l.isNotEmpty);
+    try {
+      final content = await File(_outputPath).readAsString();
+      if (content.isEmpty) {
+        return [];
+      }
+      
+      final lines = content.split('\n').where((l) => l.isNotEmpty);
+      
+      // Parse each line and extract spans
+      final allSpans = <Map<String, dynamic>>[];
+      for (final line in lines) {
+        try {
+          final data = json.decode(line) as Map<String, dynamic>;
+          // Extract spans from OTLP format
+          if (data.containsKey('resourceSpans')) {
+            for (final resourceSpan in data['resourceSpans'] as List) {
+              final resource = resourceSpan['resource'] as Map<String, dynamic>?;
+              final resourceAttrs = _parseAttributes(resource?['attributes'] as List?);
 
-    // Parse each line and extract spans
-    final allSpans = <Map<String, dynamic>>[];
-    for (final line in lines) {
-      final data = json.decode(line) as Map<String, dynamic>;
-      // Extract spans from OTLP format
-      if (data.containsKey('resourceSpans')) {
-        for (final resourceSpan in data['resourceSpans'] as List) {
-          final resource = resourceSpan['resource'] as Map<String, dynamic>?;
-          final resourceAttrs = _parseAttributes(resource?['attributes'] as List?);
-
-          for (final scopeSpans in resourceSpan['scopeSpans'] as List) {
-            for (final span in scopeSpans['spans'] as List) {
-              // Add resource attributes to each span
-              span['resourceAttributes'] = resourceAttrs;
-              allSpans.add(span as Map<String, dynamic>);
+              for (final scopeSpans in resourceSpan['scopeSpans'] as List) {
+                for (final span in scopeSpans['spans'] as List) {
+                  // Add resource attributes to each span
+                  span['resourceAttributes'] = resourceAttrs;
+                  allSpans.add(span as Map<String, dynamic>);
+                }
+              }
             }
           }
+        } catch (e) {
+          print('Error parsing line: $e\nLine: $line');
+          // Continue with other lines
         }
       }
+      return allSpans;
+    } catch (e) {
+      print('Error reading spans file: $e');
+      return [];
     }
-    return allSpans;
   }
 
   /// Parse OTLP attribute format into simple key-value pairs
@@ -179,31 +191,36 @@ class RealCollector {
     }
   }
 
-  /// Wait for a certain number of spans to be exported
   Future<void> waitForSpans(int count, {Duration? timeout}) async {
     final deadline = DateTime.now().add(timeout ?? Duration(seconds: 10));
     var attempts = 0;
-
+    
     while (DateTime.now().isBefore(deadline)) {
       attempts++;
       final spans = await getSpans();
       print('waitForSpans attempt $attempts: found ${spans.length} spans');
-
+      
       if (spans.length >= count) {
         print('waitForSpans: found required $count spans');
         return;
       }
-
+      
       // Check if file exists and has content
-      final exists = await File(_outputPath).exists();
+      final file = File(_outputPath);
+      final exists = await file.exists();
       if (!exists) {
         print('Output file does not exist');
         // Create empty file
-        await File(_outputPath).writeAsString('');
+        await file.writeAsString('');
       } else {
-        final size = await File(_outputPath).length();
+        final size = await file.length();
         print('Output file size: $size bytes');
-
+        if (size > 0) {
+          // File has content but we couldn't parse spans, try to read it directly
+          final content = await file.readAsString();
+          print('Output file content: $content');
+        }
+        
         // If file exists but is empty after multiple attempts, it might be an issue with collector
         if (size == 0 && attempts > 5) {
           print('Output file is empty after multiple attempts, checking collector status...');
@@ -211,7 +228,7 @@ class RealCollector {
           bool isRunning = _process != null;
           if (isRunning) {
             try {
-              // On Dart, we can't check process status directly, so we'll try a no-op signal
+              // On Dart, we can't check process status directly, so we'll try to get the pid
               final exitCode = _process!.pid;
               if (exitCode == 0) isRunning = false;
             } catch (e) {
@@ -219,7 +236,7 @@ class RealCollector {
               isRunning = false;
             }
           }
-
+          
           if (!isRunning) {
             print('Collector process is not running, restarting...');
             try {
@@ -232,7 +249,7 @@ class RealCollector {
           }
         }
       }
-
+      
       // Gradually increase delay between attempts
       final delayMs = 100 * (1 << (attempts ~/ 3).clamp(0, 6)); // Max ~6.4 seconds between attempts
       await Future.delayed(Duration(milliseconds: delayMs));
@@ -241,7 +258,7 @@ class RealCollector {
     // Final attempt to read spans
     final spans = await getSpans();
     throw TimeoutException(
-      'Timed out waiting for $count spans. '
+      'Timed out waiting for $count spans. ' 
       'Found ${spans.length} spans: ${spans.map((s) => s['name']).toList()}');
   }
 
@@ -253,32 +270,26 @@ class RealCollector {
     String? spanId,
   }) async {
     final spans = await getSpans();
-
-    if (OTelLog.isDebug()) {
-      OTelLog.debug('Looking for a span with name: $name');
-      for (var span in spans) {
-        OTelLog.debug(
-            'Found span: ${span['name']}, spanId: ${span['spanId']}, traceId: ${span['traceId']}');
-      }
+    
+    print('Looking for a span with name: $name');
+    for (var span in spans) {
+      print('Found span: ${span['name']}, spanId: ${span['spanId']}, traceId: ${span['traceId']}');
     }
-
+    
     final matching = spans.where((span) {
       if (name != null && span['name'] != name) {
-        if (OTelLog.isDebug()) {
-          OTelLog.debug(
-              'Span ${span['spanId']} has name "${span['name']}" which doesn\'t match expected "$name"');
-        }
+        print('Span ${span['spanId']} has name "${span['name']}" which doesn\'t match expected "$name"');
         return false;
       }
       if (traceId != null && span['traceId'] != traceId) return false;
       if (spanId != null && span['spanId'] != spanId) return false;
-
+      
       if (attributes != null) {
         // Check both span attributes and resource attributes
         final spanAttrs = _parseAttributes(span['attributes'] as List?);
         final resourceAttrs = span['resourceAttributes'] as Map<String, dynamic>?;
         final allAttrs = {...?resourceAttrs, ...spanAttrs};
-
+        
         for (final entry in attributes.entries) {
           if (allAttrs[entry.key] != entry.value) {
             print('Attribute mismatch for ${entry.key}: expected ${entry.value}, got ${allAttrs[entry.key]}');
@@ -286,7 +297,7 @@ class RealCollector {
           }
         }
       }
-
+      
       return true;
     }).toList();
 
@@ -295,11 +306,10 @@ class RealCollector {
       if (spans.length == 1 && name != null) {
         final actualName = spans.first['name'];
         throw StateError(
-            // ignore: prefer_adjacent_string_concatenation
             'No matching span found with name "$name". Found span named "$actualName" instead. ' +
             'Consider updating the test to use the correct span name.');
       }
-
+      
       final criteria = <String, dynamic>{
         if (name != null) 'name': name,
         if (attributes != null) 'attributes': attributes,

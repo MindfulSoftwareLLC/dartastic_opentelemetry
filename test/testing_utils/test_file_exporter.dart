@@ -3,21 +3,30 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'package:dartastic_opentelemetry/src/trace/export/span_exporter.dart';
 import 'package:dartastic_opentelemetry/src/trace/span.dart';
 import 'package:dartastic_opentelemetry/src/util/otel_log.dart';
-import 'package:dartastic_opentelemetry/src/trace/export/span_exporter.dart';
 
-/// A simple file-based SpanExporter for testing purposes.
+/// A simple file-based SpanExporter for debugging purposes.
 /// This exporter writes spans directly to a file in JSON format.
 class TestFileExporter implements SpanExporter {
   final String _filePath;
   bool _isShutdown = false;
 
   TestFileExporter(this._filePath) {
-    // Make sure file exists
+    // Make sure directory exists
+    final dir = File(_filePath).parent;
+    if (!dir.existsSync()) {
+      dir.createSync(recursive: true);
+    }
+
+    // Make sure file exists and is empty
     final file = File(_filePath);
     if (!file.existsSync()) {
-      file.createSync(recursive: true);
+      file.createSync();
+    } else {
+      // Clear the file
+      file.writeAsStringSync('');
     }
     if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Created with file path $_filePath');
   }
@@ -36,27 +45,29 @@ class TestFileExporter implements SpanExporter {
 
     try {
       final file = File(_filePath);
-      
+
       if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Exporting ${spans.length} spans to $_filePath');
-      
-      // Convert spans to JSON
+
+      // Convert spans to simplified JSON - avoiding properties that might not be accessible
       final jsonSpans = spans.map((span) {
         return {
           'name': span.name,
           'spanId': span.spanContext.spanId.toString(),
           'traceId': span.spanContext.traceId.toString(),
-          'kind': span.kind.index,
-          'startTime': span.startTime?.millisecondsSinceEpoch,
-          'endTime': span.endTime?.millisecondsSinceEpoch,
+          'kind': span.kind.toString(),
+          'startTime': span.startTime.toIso8601String(),
+          'endTime': span.endTime?.toIso8601String(),
           'status': span.status.toString(),
           'attributes': span.attributes?.toJson(),
         };
       }).toList();
-      
-      // Append to file
-      final jsonStr = json.encode(jsonSpans);
-      await file.writeAsString('$jsonStr\n', mode: FileMode.append);
-      
+
+      // Write to file, appending new spans
+      String newContent = jsonEncode(jsonSpans) + '\n';
+
+      // Use sync operations to guarantee it gets written
+      file.writeAsStringSync(newContent, mode: FileMode.append, flush: true);
+
       if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Successfully exported ${spans.length} spans');
     } catch (e, stackTrace) {
       if (OTelLog.isError()) {
@@ -69,8 +80,8 @@ class TestFileExporter implements SpanExporter {
 
   @override
   Future<void> forceFlush() async {
-    // Nothing to flush in file exporter
-    if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Force flush called (no-op)');
+    // No buffering in this exporter, so nothing to flush
+    if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Force flush requested (no-op)');
   }
 
   @override
@@ -78,8 +89,9 @@ class TestFileExporter implements SpanExporter {
     if (_isShutdown) {
       return;
     }
-    
+
     if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Shutting down');
     _isShutdown = true;
+    if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Shutdown complete');
   }
 }
