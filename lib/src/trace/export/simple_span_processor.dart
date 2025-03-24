@@ -36,14 +36,14 @@ class SimpleSpanProcessor implements SpanProcessor {
       if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Skipping export - span is not recording');
       return;
     }
-    
+
     if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Exporting span ${span.spanContext.spanId} with name ${span.name}');
-    
+
     try {
       // Create a copy of the span list to avoid concurrent modification issues
       final spanToExport = [span];
       if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Created list of spans to export');
-      
+
       final Future<void> pendingExport = _spanExporter.export(spanToExport);
       _pendingExports.add(pendingExport);
       if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Added export to pending exports list');
@@ -80,16 +80,39 @@ class SimpleSpanProcessor implements SpanProcessor {
   @override
   Future<void> shutdown() async {
     if (_isShutdown) {
+      if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Already shut down');
       return;
     }
+
     if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Shutting down - waiting for ${_pendingExports.length} pending exports');
+    if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Shutting down - waiting for ${_pendingExports.length} pending exports');
+
     _isShutdown = true;
 
     try {
-      await Future.wait(_pendingExports);
-      await _spanExporter.shutdown();
+      if (_pendingExports.isNotEmpty) {
+        if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Waiting for ${_pendingExports.length} pending exports to complete');
+        try {
+          await Future.wait(_pendingExports);
+          if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: All pending exports completed');
+        } catch (e) {
+          if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Error waiting for pending exports: $e');
+        }
+      }
+
+      try {
+        if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Shutting down exporter');
+        await _spanExporter.shutdown();
+        if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Exporter shutdown complete');
+      } catch (e) {
+        if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Error shutting down exporter: $e');
+      }
+
+      if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Shutdown complete');
       if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Shutdown complete');
     } catch (e, stackTrace) {
+      if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Error during shutdown: $e');
+      if (OTelLog.isDebug()) OTelLog.debug('Stack trace: $stackTrace');
       if (OTelLog.isError()) OTelLog.error('SimpleSpanProcessor: Error during shutdown: $e');
       if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
     }
@@ -98,13 +121,33 @@ class SimpleSpanProcessor implements SpanProcessor {
   @override
   Future<void> forceFlush() async {
     if (_isShutdown) {
+      if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Cannot force flush - processor is shut down');
       return;
     }
+
+    if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Force flushing with ${_pendingExports.length} pending exports');
     if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Force flushing - waiting for ${_pendingExports.length} pending exports');
+
     try {
-      await Future.wait(_pendingExports);
+      if (_pendingExports.isEmpty) {
+        if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: No pending exports to flush');
+        // If there are no pending exports, just force flush the exporter
+        await _spanExporter.forceFlush();
+      } else {
+        if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Waiting for ${_pendingExports.length} pending exports');
+        await Future.wait(_pendingExports);
+        if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: All pending exports completed');
+
+        // Also force flush the exporter
+        if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Force flushing exporter');
+        await _spanExporter.forceFlush();
+      }
+
+      if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Force flush complete');
       if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Force flush complete');
     } catch (e, stackTrace) {
+      if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Error during force flush: $e');
+      if (OTelLog.isDebug()) OTelLog.debug('Stack trace: $stackTrace');
       if (OTelLog.isError()) OTelLog.error('SimpleSpanProcessor: Error during force flush: $e');
       if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
     }

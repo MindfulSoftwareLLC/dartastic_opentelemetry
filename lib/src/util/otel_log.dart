@@ -119,36 +119,50 @@ class OTelLog {
     }
   }
 
+  /// Log a trace message
   static void trace(String message) => log(LogLevel.trace, message);
 
+  /// Log a debug message
   static void debug(String message) => log(LogLevel.debug, message);
 
+  /// Log info
   static void info(String message) => log(LogLevel.info, message);
 
+  /// Log a warn
   static void warn(String message) => log(LogLevel.warn, message);
 
+  /// Log an error
   static void error(String message) => log(LogLevel.error, message);
 
+  /// Log a fatal
+  static void fatal(String message) => log(LogLevel.fatal, message);
+
+  /// Set the log level to log everything
   static void enableTraceLogging() {
     currentLevel = LogLevel.trace;
   }
 
+  /// Set the log level to log debug, info, warn, error and fatal
   static void enableDebugLogging() {
     currentLevel = LogLevel.debug;
   }
 
+  /// Set the log level to log info, warn, error and fatal
   static void enableInfoLogging() {
     currentLevel = LogLevel.info;
   }
 
+  /// Set the log level to log warn, error and fatal
   static void enableWarnLogging() {
     currentLevel = LogLevel.warn;
   }
 
+  /// Set the log level to log error and fatal
   static void enableErrorLogging() {
     currentLevel = LogLevel.error;
   }
 
+  /// Set the log level to log only fatal
   static void enableFatalLogging() {
     currentLevel = LogLevel.fatal;
   }

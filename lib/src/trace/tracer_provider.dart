@@ -38,17 +38,36 @@ class TracerProvider implements APITracerProvider {
   @override
   Future<bool> shutdown() async {
     if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Shutting down with ${_spanProcessors.length} processors');
+    if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Shutting down with ${_spanProcessors.length} processors');
+
     if (!isShutdown) {
       // Shutdown all span processors
       for (final processor in _spanProcessors) {
+        if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Shutting down processor ${processor.runtimeType}');
         if (OTelLog.isDebug()) OTelLog.debug('SDKTracerProvider: Shutting down processor ${processor.runtimeType}');
-        await processor.shutdown();
+        try {
+          await processor.shutdown();
+          if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Successfully shut down processor ${processor.runtimeType}');
+        } catch (e) {
+          if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Error shutting down processor ${processor.runtimeType}: $e');
+        }
       }
 
       // Clear cached tracers
       _tracers.clear();
-      await delegate.shutdown();
+      if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Cleared cached tracers');
+
+      try {
+        await delegate.shutdown();
+        if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Delegate shutdown complete');
+      } catch (e) {
+        if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Error during delegate shutdown: $e');
+      }
+
       isShutdown = true;
+      if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Shutdown complete');
+    } else {
+      if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Already shut down');
     }
     return isShutdown;
   }
@@ -127,9 +146,24 @@ class TracerProvider implements APITracerProvider {
   }
 
   /// Flushes all the span processors
-  forceFlush() {
-    for (var spanProcessor in _spanProcessors) {
-      spanProcessor.forceFlush();
+  Future<void> forceFlush() async {
+    if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Force flushing ${_spanProcessors.length} processors');
+
+    if (isShutdown) {
+      if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Cannot force flush - provider is shut down');
+      return;
     }
+
+    for (var processor in _spanProcessors) {
+      try {
+        if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Flushing processor ${processor.runtimeType}');
+        await processor.forceFlush();
+        if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Successfully flushed processor ${processor.runtimeType}');
+      } catch (e) {
+        if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Error flushing processor ${processor.runtimeType}: $e');
+      }
+    }
+
+    if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Force flush complete');
   }
 }

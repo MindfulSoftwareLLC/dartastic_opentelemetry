@@ -537,20 +537,37 @@ class OTel {
   /// Reset API state (only public for testing)
   @visibleForTesting
   static Future<void> reset() async {
+    if (OTelLog.isDebug()) OTelLog.debug('OTel: Resetting state');
+
     // Shutdown any tracer providers to clean up span processors
     try {
       final tracerProvider = OTelAPI.tracerProvider() as TracerProvider;
-      await tracerProvider.shutdown();
+      if (OTelLog.isDebug()) OTelLog.debug('OTel: Shutting down tracer provider');
+      try {
+        await tracerProvider.forceFlush();
+        if (OTelLog.isDebug()) OTelLog.debug('OTel: Tracer provider flush complete');
+      } catch (e) {
+        if (OTelLog.isDebug()) OTelLog.debug('OTel: Error during tracer provider flush: $e');
+      }
+
+      try {
+        await tracerProvider.shutdown();
+        if (OTelLog.isDebug()) OTelLog.debug('OTel: Tracer provider shutdown complete');
+      } catch (e) {
+        if (OTelLog.isDebug()) OTelLog.debug('OTel: Error during tracer provider shutdown: $e');
+      }
     } catch (e) {
-      // Ignore errors during reset
+      if (OTelLog.isDebug()) OTelLog.debug('OTel: Error accessing tracer provider: $e');
     }
-    
+
     // Shutdown meter providers to clean up metric readers and exporters
     try {
       final meterProvider = OTelAPI.meterProvider() as MeterProvider;
+      if (OTelLog.isDebug()) OTelLog.debug('OTel: Shutting down meter provider');
       await meterProvider.shutdown();
+      if (OTelLog.isDebug()) OTelLog.debug('OTel: Meter provider shutdown complete');
     } catch (e) {
-      // Ignore errors during reset
+      if (OTelLog.isDebug()) OTelLog.debug('OTel: Error during meter provider shutdown: $e');
     }
 
     // Reset all static fields
@@ -558,15 +575,23 @@ class OTel {
     _defaultSampler = null;
     defaultResource = null;
     dartasticApiKey = null;
+    if (OTelLog.isDebug()) OTelLog.debug('OTel: Reset static fields');
 
     // Reset API state
-    // ignore: invalid_use_of_visible_for_testing_member
-    OTelAPI.reset();
+    try {
+      // ignore: invalid_use_of_visible_for_testing_member
+      OTelAPI.reset();
+      if (OTelLog.isDebug()) OTelLog.debug('OTel: Reset OTelAPI');
+    } catch (e) {
+      if (OTelLog.isDebug()) OTelLog.debug('OTel: Error resetting OTelAPI: $e');
+    }
 
     // Reset OTelFactory
     OTelFactory.otelFactory = null;
-    
+    if (OTelLog.isDebug()) OTelLog.debug('OTel: Reset OTelFactory');
+
     // Add a short delay to ensure resources are released
-    await Future.delayed(Duration(milliseconds: 50));
+    await Future.delayed(Duration(milliseconds: 250));
+    if (OTelLog.isDebug()) OTelLog.debug('OTel: Reset complete');
   }
 }

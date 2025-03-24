@@ -20,7 +20,6 @@ void main() {
     setUp(() async {
       print('=== Starting Simple Span Export Test ===');
       // Enable verbose logging
-      OTelLog.enableLogSpans();
       OTelLog.enableDebugLogging();
 
       // Clean state for each test
