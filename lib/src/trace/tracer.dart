@@ -76,7 +76,15 @@ class Tracer implements APITracer {
       kind: kind,
       attributes: attributes,
     );
-    Context.current = context.setCurrentSpan(span);
+    
+    // Set the span in the context we were given
+    final updatedContext = context.setCurrentSpan(span);
+    
+    // Also update the current global context if needed
+    if (Context.current == context) {
+      Context.current = updatedContext;
+    }
+    
     return span;
   }
 
@@ -245,7 +253,8 @@ class Tracer implements APITracer {
   }) {
     final span = startSpan(name, kind: kind, attributes: attributes);
     try {
-      return _delegate.withSpan(span, () => fn(span));
+      // Use our own withSpan to ensure proper context propagation
+      return withSpan(span, () => fn(span));
     } finally {
       span.end();
     }
@@ -260,7 +269,8 @@ class Tracer implements APITracer {
   }) async {
     final span = startSpan(name, kind: kind, attributes: attributes);
     try {
-      return await _delegate.withSpanAsync(span, () => fn(span));
+      // Use our own withSpanAsync to ensure proper context propagation
+      return await withSpanAsync(span, () => fn(span));
     } finally {
       span.end();
     }

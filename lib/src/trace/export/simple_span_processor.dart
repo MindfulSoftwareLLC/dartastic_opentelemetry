@@ -32,18 +32,30 @@ class SimpleSpanProcessor implements SpanProcessor {
       return;
     }
 
+    if (!span.isRecording) {
+      if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Skipping export - span is not recording');
+      return;
+    }
+    
+    if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Exporting span ${span.spanContext.spanId} with name ${span.name}');
+    
     try {
-      if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Exporting span ${span.spanContext.spanId} with name ${span.name}');
-      final Future<void> pendingExport = _spanExporter.export([span]);
+      // Create a copy of the span list to avoid concurrent modification issues
+      final spanToExport = [span];
+      final Future<void> pendingExport = _spanExporter.export(spanToExport);
       _pendingExports.add(pendingExport);
 
-      if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Awaiting export completion for span ${span.spanContext.spanId}');
-      await pendingExport;
-      if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Successfully exported span ${span.spanContext.spanId}');
-
-      _pendingExports.remove(pendingExport);
+      // Use unawaited to avoid blocking - we'll still track it in _pendingExports
+      pendingExport.then((_) {
+        if (OTelLog.isDebug()) OTelLog.debug('SimpleSpanProcessor: Successfully exported span ${span.spanContext.spanId}');
+      }).catchError((e, stackTrace) {
+        if (OTelLog.isError()) OTelLog.error('SimpleSpanProcessor: Export error while processing span ${span.spanContext.spanId}: $e');
+        if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
+      }).whenComplete(() {
+        _pendingExports.remove(pendingExport);
+      });
     } catch (e, stackTrace) {
-      if (OTelLog.isError()) OTelLog.error('SimpleSpanProcessor: Failed to export span: $e');
+      if (OTelLog.isError()) OTelLog.error('SimpleSpanProcessor: Failed to start export for span ${span.spanContext.spanId}: $e');
       if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
     }
   }

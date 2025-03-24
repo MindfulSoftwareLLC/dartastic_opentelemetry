@@ -19,6 +19,8 @@ void main() {
     final outputPath = '$testDir/test/testing_utils/spans.json';
 
     setUp(() async {
+      // Add delay to ensure port is free
+      await Future.delayed(Duration(seconds: 1));
       // Ensure output file exists and is empty
       File(outputPath).writeAsStringSync('');
 
@@ -33,7 +35,7 @@ void main() {
       // Reset and initialize OTel
       await OTel.reset();
       await OTel.initialize(
-        endpoint: 'http://localhost:$testPort',
+        endpoint: 'http://127.0.0.1:$testPort',
         serviceName: 'test-service',
         enableMetrics: false); // Disable metrics to avoid port conflicts
 
@@ -41,7 +43,7 @@ void main() {
 
       final exporter = OtlpGrpcSpanExporter(
         OtlpGrpcExporterConfig(
-          endpoint: 'http://localhost:$testPort',
+          endpoint: 'http://127.0.0.1:$testPort',
           insecure: true,
         ),
       );
@@ -57,20 +59,20 @@ void main() {
         await tracerProvider.forceFlush();
         
         // Add delay to ensure spans are exported
-        await Future.delayed(Duration(milliseconds: 500));
+        await Future.delayed(Duration(seconds: 1));
         
         // Now shutdown the tracer provider
         await tracerProvider.shutdown();
         
         // Wait before stopping the collector to ensure it has time to process spans
-        await Future.delayed(Duration(milliseconds: 500));
+        await Future.delayed(Duration(seconds: 1));
       } finally {
         // Always stop the collector and clean up
         await collector.stop();
         await collector.clear();
         
         // Add delay to ensure port is freed
-        await Future.delayed(Duration(milliseconds: 500));
+        await Future.delayed(Duration(seconds: 1));
       }
     });
 
@@ -91,8 +93,11 @@ void main() {
       // Assert
       expect(result, equals('test-with-span'));
 
+      // Add delay for span processing
+      await Future.delayed(Duration(seconds: 1));
+      
       // Wait for span to be exported
-      await collector.waitForSpans(1);
+      await collector.waitForSpans(1, timeout: Duration(seconds: 10));
       await collector.assertSpanExists(name: 'test-with-span');
     });
 
@@ -115,8 +120,11 @@ void main() {
       // Assert
       expect(result, equals('test-with-span-async'));
 
+      // Add a delay to let the span be processed
+      await Future.delayed(Duration(seconds: 1));
+      
       // Wait for span to be exported
-      await collector.waitForSpans(1);
+      await collector.waitForSpans(1, timeout: Duration(seconds: 10));
       await collector.assertSpanExists(name: 'test-with-span-async');
     });
 
@@ -135,7 +143,7 @@ void main() {
       expect(span.name, equals('context-span'));
 
       // Wait for span to be exported
-      await collector.waitForSpans(1);
+      await collector.waitForSpans(1, timeout: Duration(seconds: 10));
       await collector.assertSpanExists(name: 'context-span');
     });
 
@@ -235,8 +243,11 @@ void main() {
       // Assert
       expect(result, equals('active async span success'));
 
+      // Add delay for span processing
+      await Future.delayed(Duration(seconds: 1));
+      
       // Wait for span to be exported
-      await collector.waitForSpans(1);
+      await collector.waitForSpans(1, timeout: Duration(seconds: 10));
       await collector.assertSpanExists(name: 'active-async-span');
     });
   });

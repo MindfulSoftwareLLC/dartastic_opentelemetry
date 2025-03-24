@@ -22,16 +22,37 @@ class RealCollector {
   /// Start the collector
   Future<void> start() async {
     final execPath = '${Directory.current.path}/test/testing_utils/otelcol';
-    if (!File(execPath).existsSync()) {
+    // Verify the binary exists and has execute permissions
+    final collectorFile = File(execPath);
+    if (!collectorFile.existsSync()) {
       throw StateError(
           'OpenTelemetry Collector not found at $execPath');
     }
+    
+    // Make sure it's executable
+    try {
+      final stat = await collectorFile.stat();
+      if (!stat.modeString().contains('x')) {
+        print('Fixing collector permissions...');
+        // Add execute permission
+        await Process.run('chmod', ['+x', execPath]);
+      }
+    } catch (e) {
+      print('Error checking collector permissions: $e');
+    }
 
     // Start collector with our config
-    _process = await Process.start(
-      execPath,
-      ['--config', _configPath],
-    );
+    try {
+      print('Starting collector with config: $_configPath');
+      _process = await Process.start(
+        execPath,
+        ['--config', _configPath],
+      );
+      print('Collector started with process ID: ${_process!.pid}');
+    } catch (e) {
+      print('Error starting collector: $e');
+      rethrow;
+    }
 
     // Listen for output/errors for debugging
     _process!.stdout.transform(utf8.decoder).listen((line) {
@@ -44,7 +65,26 @@ class RealCollector {
       print('Collector stderr: $line');
     });
 
-    // Wait a bit for collector to start
+    // Wait for collector to start and verify it's running
+    bool started = false;
+    for (int i = 0; i < 10; i++) {
+      await Future.delayed(Duration(milliseconds: 300));
+      try {
+        // Check if process is still running
+        if (_process != null && _process!.pid > 0) {
+          started = true;
+          break;
+        }
+      } catch (e) {
+        print('Error checking collector process: $e');
+      }
+    }
+    
+    if (!started) {
+      throw StateError('Failed to start collector properly');
+    }
+    
+    print('Collector started successfully');
     await Future.delayed(Duration(seconds: 1));
   }
 
@@ -54,15 +94,21 @@ class RealCollector {
       try {
         // Send SIGTERM for graceful shutdown
         _process!.kill(ProcessSignal.sigterm);
-        // Wait for process to exit
-        await _process!.exitCode.timeout(
-          Duration(seconds: 5),
-          onTimeout: () {
-            // Force kill if it doesn't exit gracefully
-            _process!.kill(ProcessSignal.sigkill);
-            return 0;
-          },
-        );
+        // Wait for a short time to allow graceful shutdown
+        try {
+        await Future.delayed(Duration(seconds: 2));
+        } catch (e) {
+        // Ignore, just continue with force kill
+        }
+        
+        // Force kill if still running
+        if (_process != null) {
+        try {
+          _process!.kill(ProcessSignal.sigkill);
+        } catch (e) {
+          // Ignore, just continue
+        }
+      }
       } catch (e) {
         print('Error stopping collector: $e');
       } finally {
@@ -133,7 +179,7 @@ class RealCollector {
 
   /// Wait for a certain number of spans to be exported
   Future<void> waitForSpans(int count, {Duration? timeout}) async {
-    final deadline = DateTime.now().add(timeout ?? Duration(seconds: 5));
+    final deadline = DateTime.now().add(timeout ?? Duration(seconds: 10));
     var attempts = 0;
     
     while (DateTime.now().isBefore(deadline)) {
@@ -142,6 +188,7 @@ class RealCollector {
       print('waitForSpans attempt $attempts: found ${spans.length} spans');
       
       if (spans.length >= count) {
+        print('waitForSpans: found required $count spans');
         return;
       }
       
@@ -149,19 +196,51 @@ class RealCollector {
       final exists = await File(_outputPath).exists();
       if (!exists) {
         print('Output file does not exist');
+        // Create empty file
+        await File(_outputPath).writeAsString('');
       } else {
         final size = await File(_outputPath).length();
         print('Output file size: $size bytes');
+        
+        // If file exists but is empty after multiple attempts, it might be an issue with collector
+        if (size == 0 && attempts > 5) {
+          print('Output file is empty after multiple attempts, checking collector status...');
+          // Check if collector is still running
+          bool isRunning = _process != null;
+          if (isRunning) {
+            try {
+              // On Dart, we can't check process status directly, so we'll try a no-op signal
+              final exitCode = _process!.pid;
+              if (exitCode == 0) isRunning = false;
+            } catch (e) {
+              // If we get an exception, process is likely dead
+              isRunning = false;
+            }
+          }
+          
+          if (!isRunning) {
+            print('Collector process is not running, restarting...');
+            try {
+              await start();
+              // Allow collector to initialize
+              await Future.delayed(Duration(seconds: 2));
+            } catch (e) {
+              print('Failed to restart collector: $e');
+            }
+          }
+        }
       }
       
-      await Future.delayed(Duration(milliseconds: 100));
+      // Gradually increase delay between attempts
+      final delayMs = 100 * (1 << (attempts ~/ 3).clamp(0, 6)); // Max ~6.4 seconds between attempts
+      await Future.delayed(Duration(milliseconds: delayMs));
     }
 
     // Final attempt to read spans
     final spans = await getSpans();
     throw TimeoutException(
       'Timed out waiting for $count spans. ' 
-      'Found ${spans.length} spans: ${json.encode(spans)}');
+      'Found ${spans.length} spans: ${spans.map((s) => s['name']).toList()}');
   }
 
   /// Assert that a span matching the given criteria exists

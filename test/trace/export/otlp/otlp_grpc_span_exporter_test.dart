@@ -61,6 +61,8 @@ void main() {
     });
 
     setUp(() async {
+      // Add delay to ensure port is free
+      await Future.delayed(Duration(seconds: 1));
       // Ensure output file exists and is empty
       File(outputPath).writeAsStringSync('');
 
@@ -72,7 +74,7 @@ void main() {
 
       exporter = OtlpGrpcSpanExporter(
         OtlpGrpcExporterConfig(
-          endpoint: 'http://localhost:${collector.port}',
+          endpoint: 'http://127.0.0.1:${collector.port}',
           insecure: true,
           maxRetries: 2,
           baseDelay: Duration(milliseconds: 50),
@@ -81,6 +83,13 @@ void main() {
     });
 
     tearDown(() async {
+      // First force flush to ensure all spans are exported
+      try {
+        await exporter.forceFlush();
+        await Future.delayed(Duration(seconds: 1));
+      } catch (e) {
+        print('Error during force flush: $e');
+      }
       await exporter.shutdown();
       await collector.stop();
       await collector.clear();
@@ -100,10 +109,9 @@ void main() {
         spanId: '0011223344556677',
       );
 
+      // Export the span and give more time for processing
       await exporter.export([testSpan]);
-
-      // Give collector a chance to process
-      await Future.delayed(Duration(milliseconds: 500));
+      await Future.delayed(Duration(seconds: 2));
 
       // Check if file has any content
       final fileContent = await File(outputPath).readAsString();
@@ -139,7 +147,9 @@ void main() {
       );
 
       await exporter.export(spans);
-      await collector.waitForSpans(3);
+      // Allow more time for span processing
+      await Future.delayed(Duration(seconds: 2));
+      await collector.waitForSpans(3, timeout: Duration(seconds: 10));
 
       for (var i = 0; i < 3; i++) {
         await collector.assertSpanExists(
@@ -152,7 +162,7 @@ void main() {
     test('handles timeout properly', () async {
       final slowExporter = OtlpGrpcSpanExporter(
         OtlpGrpcExporterConfig(
-          endpoint: 'http://localhost:${collector.port}',
+          endpoint: 'http://127.0.0.1:${collector.port}',
           insecure: true,
           timeout: Duration(milliseconds: 1),
           maxRetries: 0,

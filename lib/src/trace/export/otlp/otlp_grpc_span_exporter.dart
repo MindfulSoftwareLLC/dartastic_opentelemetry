@@ -30,11 +30,21 @@ class OtlpGrpcSpanExporter implements SpanExporter {
   OtlpGrpcSpanExporter([OtlpGrpcExporterConfig? config])
       : _config = config ?? OtlpGrpcExporterConfig();
   bool _permanentChannel = false;
+  bool _initialized = false;
 
   void _setupChannel() {
+    if (_isShutdown) {
+      if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Not setting up channel - exporter is shut down');
+      return;
+    }
     if (_channel != null) {
       try {
-        _channel?.shutdown();
+        // Attempt graceful shutdown but don't block on it
+        try {
+          _channel?.shutdown();
+        } catch (e) {
+          if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Error shutting down existing channel: $e');
+        }
       } catch (e) {
         if (OTelLog.isError()) {
           OTelLog.error('OtlpGrpcSpanExporter: Error shutting down existing channel: $e');
@@ -46,15 +56,20 @@ class OtlpGrpcSpanExporter implements SpanExporter {
     int port;
 
     try {
-      final endpoint = _config.endpoint.replaceAll(RegExp(r'^(http://|https://)'), '');
+      final endpoint = _config.endpoint.trim().replaceAll(RegExp(r'^(http://|https://)'), '');
       final parts = endpoint.split(':');
-      host = parts[0].isEmpty ? 'localhost' : parts[0];
+      host = parts[0].isEmpty ? '127.0.0.1' : parts[0];
       port = parts.length > 1 ? int.parse(parts[1]) : 4317;
+      
+      // Replace localhost with 127.0.0.1 for more reliable connections
+      if (host == 'localhost') {
+        host = '127.0.0.1';
+      }
 
       if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Setting up gRPC channel to $host:$port');
 
-      // Create a permanent channel that won't change ports
-      if (!_permanentChannel) {
+      // Create a channel
+      if (_channel == null) {
         _channel = ClientChannel(
           host,
           port: port,
@@ -83,6 +98,16 @@ class OtlpGrpcSpanExporter implements SpanExporter {
   }
 
   Future<void> _ensureChannel() async {
+    if (_isShutdown) {
+      if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Not ensuring channel - exporter is shut down');
+      return;
+    }
+    
+    if (_initialized && _channel != null && _traceService != null) {
+      return;
+    }
+    
+    _initialized = true;
     if (_channel == null || _traceService == null) {
       _setupChannel();
     }
@@ -221,6 +246,7 @@ class OtlpGrpcSpanExporter implements SpanExporter {
 
   @override
   Future<void> shutdown() async {
+    if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Shutdown requested');
     if (_isShutdown) {
       return;
     }
@@ -237,7 +263,14 @@ class OtlpGrpcSpanExporter implements SpanExporter {
     }
 
     try {
-      await _channel?.shutdown();
+      // Short delay before closing the channel to allow pending operations to complete
+      await Future.delayed(Duration(milliseconds: 250));
+      
+      if (_channel != null) {
+        await _channel!.shutdown();
+        // Wait for channel to shut down gracefully
+        await Future.delayed(Duration(milliseconds: 250));
+      }
     } catch (e) {
       if (OTelLog.isDebug()) OTelLog.debug('OtlpGrpcSpanExporter: Error during channel shutdown: $e');
     }
