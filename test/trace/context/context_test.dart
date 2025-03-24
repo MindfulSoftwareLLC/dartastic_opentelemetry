@@ -118,7 +118,7 @@ void main() {
 
         final context =OTel.context(baggage: baggage);
 
-        print('\nContext operations debug:');
+        print('Context operations debug:');
         print('Original baggage: ${baggage.getAllEntries()}');
         print(
             'Using BaggageContextKey directly: ${context.baggage}');
@@ -153,7 +153,7 @@ void main() {
         final context2 =
             context1.copyWithBaggage(baggage2);
 
-        print('\nImmutability test debug:');
+        print('Immutability test debug:');
         print('Context1 baggage: ${context1.baggage!.getAllEntries()}');
         print('Context2 baggage: ${context2.baggage!.getAllEntries()}');
         print('Original baggage1: ${baggage1.getAllEntries()}');
@@ -286,6 +286,32 @@ void main() {
         final deserializedContext = Context.deserialize(serializedData);
 
         expect(deserializedContext.get(key), isNull);
+      });
+
+      test('serializes and deserializes multiple keys with the same name', () {
+        // Create two keys with the same name but different uniqueIds
+        final key1 = OTel.contextKey<String>('same-name');
+        final key2 = OTel.contextKey<String>('same-name');
+        
+        // Verify they are different keys despite same name
+        expect(key1 == key2, isFalse, reason: 'Keys with same name should be different objects due to different uniqueIds');
+        
+        // Create context with both keys
+        final originalContext = OTel.context()
+            .copyWith(key1, 'value1')
+            .copyWith(key2, 'value2');
+        
+        // Verify both values are accessible with their respective keys
+        expect(originalContext.get(key1), equals('value1'));
+        expect(originalContext.get(key2), equals('value2'));
+        
+        // Serialize and deserialize
+        final serializedData = originalContext.serialize();
+        final deserializedContext = Context.deserialize(serializedData);
+        
+        // Verify both values are still accessible
+        expect(deserializedContext.get(key1), equals('value1'));
+        expect(deserializedContext.get(key2), equals('value2'));
       });
     });
 
