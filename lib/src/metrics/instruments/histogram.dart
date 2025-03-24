@@ -52,7 +52,7 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
   String? get description => _apiHistogram.description;
 
   @override
-  bool get enabled => _apiHistogram.enabled && _meter.enabled;
+  bool get enabled => _meter.enabled;
 
   @override
   APIMeter get meter => _meter;

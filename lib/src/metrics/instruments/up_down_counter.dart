@@ -43,7 +43,7 @@ class UpDownCounter<T extends num> implements APIUpDownCounter<T>, SDKInstrument
   String? get description => _apiCounter.description;
 
   @override
-  bool get enabled => _apiCounter.enabled && _meter.enabled;
+  bool get enabled => _meter.enabled;
 
   @override
   APIMeter get meter => _meter;
@@ -65,8 +65,8 @@ class UpDownCounter<T extends num> implements APIUpDownCounter<T>, SDKInstrument
     // First use the API implementation (no-op by default)
     _apiCounter.add(value, attributes);
 
-    // Only record if enabled
-    if (!enabled) return;
+    // In the SDK, we only check the meter's enabled state
+    if (!_meter.enabled) return;
 
     // Record the measurement in our storage
     _storage.record(value, attributes);

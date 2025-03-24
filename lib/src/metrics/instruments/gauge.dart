@@ -42,7 +42,7 @@ class Gauge<T extends num> implements APIGauge<T>, SDKInstrument {
   String? get description => _apiGauge.description;
 
   @override
-  bool get enabled => _apiGauge.enabled && _meter.enabled;
+  bool get enabled => _meter.enabled;
 
   @override
   APIMeter get meter => _meter;
