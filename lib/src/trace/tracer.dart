@@ -1,6 +1,3 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
-
 library;
 
 import 'package:dartastic_opentelemetry/src/trace/sampling/sampler.dart';
@@ -132,10 +129,23 @@ class Tracer implements APITracer {
 
     // Get parent context from either the passed context or parent span
     SpanContext? parentContext;
+    APISpan? effectiveParentSpan = parentSpan;
+
     if (context != null) {
+      // If an explicit context was provided, check for a span
+      if (context.span != null) {
+        // Use the span from the context as parent (if no explicit parent span)
+        if (effectiveParentSpan == null) {
+          effectiveParentSpan = context.span;
+        }
+      }
+      // Always check for span context in the context
       parentContext = context.spanContext;
-    } else if (parentSpan != null) {
-      parentContext = parentSpan.spanContext;
+    }
+
+    // If no parentContext from context but we have a parentSpan, use its context
+    if (parentContext == null && effectiveParentSpan != null) {
+      parentContext = effectiveParentSpan.spanContext;
     }
 
     // If a span context was explicitly provided, use that
@@ -164,8 +174,10 @@ class Tracer implements APITracer {
     APISpan delegateSpan = _delegate.startSpan(
         name,
         context: context,
+        // Pass either the validated parentContext (if found) or the original spanContext
         spanContext: parentContext,
-        parentSpan: parentSpan,
+        // Pass the effective parent span (from either explicit parent or context)
+        parentSpan: effectiveParentSpan,
         kind: kind,
         attributes: attributes,
         links: links,
@@ -185,7 +197,7 @@ class Tracer implements APITracer {
 
     return sdkSpan;
   }
-  
+
   @override
   T recordSpan<T>({
     required String name,
@@ -223,7 +235,7 @@ class Tracer implements APITracer {
       span.end();
     }
   }
-  
+
   @override
   T startActiveSpan<T>({
     required String name,
