@@ -130,31 +130,62 @@ class RealCollector {
     if (_process != null) {
       try {
         // Send SIGTERM for graceful shutdown
+        print('Stopping collector with PID: ${_process!.pid}');
         _process!.kill(ProcessSignal.sigterm);
+        
         // Wait for a short time to allow graceful shutdown
         try {
-        await Future.delayed(Duration(seconds: 2));
+          await Future.delayed(Duration(seconds: 2));
         } catch (e) {
-        // Ignore, just continue with force kill
+          // Ignore, just continue with force kill
+        }
+        
+        // Check if process exited gracefully
+        bool isRunning = true;
+        try {
+          // Check if process has already exited
+          final exitCode = await _process!.exitCode.timeout(Duration(milliseconds: 100));
+          print('Collector exited with code: $exitCode');
+          isRunning = false;
+        } catch (e) {
+          // If timeout, process is still running
+          isRunning = true;
         }
         
         // Force kill if still running
-        if (_process != null) {
-        try {
-          _process!.kill(ProcessSignal.sigkill);
-        } catch (e) {
-          // Ignore, just continue
+        if (isRunning) {
+          print('Collector still running, force killing...');
+          try {
+            _process!.kill(ProcessSignal.sigkill);
+            await Future.delayed(Duration(milliseconds: 500));
+          } catch (e) {
+            print('Error force killing collector: $e');
+          }
         }
-      }
+        
+        // Find and kill any lingering processes by PID
+        if (_process != null) {
+          try {
+            final pid = _process!.pid;
+            await Process.run('kill', ['-9', '$pid']);
+          } catch (e) {
+            // Ignore errors here
+          }
+        }
       } catch (e) {
         print('Error stopping collector: $e');
       } finally {
         _process = null;
+        // Make sure to clean up by checking for any leftover processes
+        await _killExistingProcesses();
       }
+    } else {
+      // Even if we don't have a process reference, try to clean up
+      await _killExistingProcesses();
     }
   }
 
-  /// Kill any existing processes that might be using our ports
+  /// Kill any existing processes that might be using our ports or collector processes left behind
   Future<void> _killExistingProcesses() async {
     try {
       // Find and kill processes using our gRPC port
@@ -168,6 +199,28 @@ class RealCollector {
             if (pid.isNotEmpty) {
               print('Killing process $pid using port $port');
               await Process.run('kill', ['-9', pid]);
+            }
+          }
+        }
+      }
+      
+      // Find and kill any leftover otelcol processes
+      final psResult = await Process.run('ps', ['-ef']);
+      if (psResult.stdout.toString().isNotEmpty) {
+        final lines = psResult.stdout.toString().split('\n');
+        for (var line in lines) {
+          if (line.contains('otelcol')) {
+            final parts = line.trim().split(RegExp(r'\s+'));
+            if (parts.length >= 2) {
+              final pid = parts[1];
+              if (pid.isNotEmpty) {
+                print('Killing leftover otelcol process $pid');
+                // Use SIGTERM first for graceful shutdown
+                await Process.run('kill', [pid]);
+                await Future.delayed(Duration(milliseconds: 100));
+                // Then force kill if still running
+                await Process.run('kill', ['-9', pid]);
+              }
             }
           }
         }

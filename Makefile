@@ -1,8 +1,8 @@
 # Makefile for Dartastic OpenTelemetry SDK
 
-.PHONY: clean test coverage analyze format
+.PHONY: clean test test-safe coverage analyze format
 
-default: test
+default: test-safe
 
 # Clean project
 clean:
@@ -12,9 +12,14 @@ clean:
 	rm -f test.txt
 	dart pub get
 
-# Run all tests
+# Run all tests (may encounter memory issues)
 test:
 	dart test
+
+# Run tests safely in sequence for problematic tests
+test-safe:
+	chmod +x tool/run_tests.sh
+	./tool/run_tests.sh
 
 # Run tests with coverage
 coverage:

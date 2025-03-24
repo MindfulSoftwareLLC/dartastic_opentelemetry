@@ -1,0 +1,41 @@
+extensions:
+  health_check:
+    endpoint: 127.0.0.1:13133
+  pprof:
+    endpoint: 127.0.0.1:1888
+  zpages:
+    endpoint: 127.0.0.1:55679
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 127.0.0.1:4316  # Use different port for collector
+
+processors:
+  batch:
+    # Send spans immediately for testing
+    timeout: 100ms
+    send_batch_size: 1
+    send_batch_max_size: 10
+    # max_queue_size is not valid, removed
+
+exporters:
+  file:
+    path: test/testing_utils/spans.json
+    rotation:
+      max_megabytes: 5
+    flush_interval: 100ms
+  debug:
+    verbosity: detailed
+
+service:
+  telemetry:
+    logs:
+      level: debug
+  extensions: [pprof, zpages, health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [file, debug]

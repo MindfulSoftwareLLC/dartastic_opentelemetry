@@ -6,18 +6,33 @@ import 'package:test/test.dart';
 
 void main() {
   group('Sampling Integration', () {
-    setUp(() async {
-      //await OTel.initialize();
+    // Setup before all tests in the group
+    setUpAll(() async {
+      await OTel.reset();
     });
-
-    tearDown(() async {
+    
+    setUp(() async {
+      // This will create a fresh OTel instance before each test
       await OTel.reset();
     });
 
+    // Ensure cleanup after each test
+    tearDown(() async {
+      await OTel.reset();
+      // Add a small delay to allow for proper cleanup
+      await Future.delayed(Duration(milliseconds: 500));
+    });
+    
+    // Ensure final cleanup
+    tearDownAll(() async {
+      await OTel.reset();
+      // Add a delay to ensure everything is cleaned up
+      await Future.delayed(Duration(seconds: 1));
+    });
+
     test('sampling configuration is inherited through the hierarchy', () async {
-      // Initialize with default sampler
+      // Initialize with no endpoint to avoid collector communication
       await OTel.initialize(
-        endpoint: 'http://localhost:4317',
         serviceName: 'test-service',
         sampler: const AlwaysOnSampler(),
       );
@@ -43,11 +58,14 @@ void main() {
       // Verify custom tracer uses AlwaysOffSampler
       final customSpan = customTracer.startSpan('test-custom');
       expect(customSpan.spanContext.traceFlags.isSampled, isFalse);
+      
+      // End spans to release resources
+      defaultSpan.end();
+      customSpan.end();
     });
 
     test('tracer can override provider sampler', () async {
       await OTel.initialize(
-        endpoint: 'http://localhost:4317',
         serviceName: 'test-service',
         sampler: const AlwaysOnSampler(),
       );
@@ -62,11 +80,13 @@ void main() {
 
       final span = tracer.startSpan('test');
       expect(span.spanContext.traceFlags.isSampled, isFalse);
+      
+      // End span to release resources
+      span.end();
     });
 
     test('parent sampling decision is respected', () async {
       await OTel.initialize(
-        endpoint: 'http://localhost:4317',
         serviceName: 'test-service',
         sampler: ParentBasedSampler(const AlwaysOnSampler()),
       );
@@ -85,6 +105,10 @@ void main() {
         context: parentContext,
       );
       expect(child.spanContext.traceFlags.isSampled, isTrue);
+      
+      // End spans to release resources
+      child.end();
+      parent.end();
     });
   });
 }
