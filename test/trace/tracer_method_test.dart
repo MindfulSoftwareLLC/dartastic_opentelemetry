@@ -34,7 +34,8 @@ void main() {
       await OTel.reset();
       await OTel.initialize(
         endpoint: 'http://localhost:$testPort',
-        serviceName: 'test-service');
+        serviceName: 'test-service',
+        enableMetrics: false); // Disable metrics to avoid port conflicts
 
       tracerProvider = OTel.tracerProvider();
 

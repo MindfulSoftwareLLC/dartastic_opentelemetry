@@ -544,6 +544,14 @@ class OTel {
     } catch (e) {
       // Ignore errors during reset
     }
+    
+    // Shutdown meter providers to clean up metric readers and exporters
+    try {
+      final meterProvider = OTelAPI.meterProvider() as MeterProvider;
+      await meterProvider.shutdown();
+    } catch (e) {
+      // Ignore errors during reset
+    }
 
     // Reset all static fields
     _otelFactory = null;
@@ -557,5 +565,8 @@ class OTel {
 
     // Reset OTelFactory
     OTelFactory.otelFactory = null;
+    
+    // Add a short delay to ensure resources are released
+    await Future.delayed(Duration(milliseconds: 50));
   }
 }
