@@ -24,7 +24,7 @@ class RateLimitingSampler implements Sampler {
     Duration timeWindow = const Duration(milliseconds: 100),
   })  : _maxTracesPerSecond = maxTracesPerSecond,
         _timeWindow = timeWindow,
-        _tokenBalance = 0.0,
+        _tokenBalance = maxTracesPerSecond, // Start with tokens already available
         _lastTokenUpdate = DateTime.now() {
     if (maxTracesPerSecond <= 0) {
       throw ArgumentError('maxTracesPerSecond must be positive');

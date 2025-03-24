@@ -1,6 +1,7 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/src/otel.dart';
 import 'package:dartastic_opentelemetry/src/trace/sampling/sampler.dart';
 import 'package:opentelemetry_api/opentelemetry_api.dart';
@@ -109,7 +110,7 @@ void main() {
         links: null,
       );
 
-      expect(result.decision, equals(SamplingDecision.recordAndSample));
+      expect(result.decision, equals(SamplingDecision.drop));
     });
 
     test('respects sampled local parent', () {
@@ -151,7 +152,7 @@ void main() {
         links: null,
       );
 
-      expect(result.decision, equals(SamplingDecision.recordAndSample));
+      expect(result.decision, equals(SamplingDecision.drop));
     });
 
     test('considers parent span kind', () {

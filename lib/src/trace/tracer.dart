@@ -4,7 +4,7 @@ import 'package:dartastic_opentelemetry/src/trace/sampling/sampler.dart';
 import 'package:dartastic_opentelemetry/src/trace/tracer_provider.dart';
 import 'package:opentelemetry_api/opentelemetry_api.dart';
 
-import '../../dartastic_opentelemetry.dart';
+import '../otel.dart';
 import '../resource/resource.dart';
 import '../util/otel_log.dart';
 import 'span.dart';
@@ -167,15 +167,15 @@ class Tracer implements APITracer {
 
   @override
   Span startSpan(
-      String name, {
-        Context? context,
-        SpanContext? spanContext,
-        APISpan? parentSpan,
-        SpanKind kind = SpanKind.internal,
-        Attributes? attributes,
-        List<SpanLink>? links,
-        bool? isRecording = true}) {
-
+    String name, {
+    Context? context,
+    SpanContext? spanContext,
+    APISpan? parentSpan,
+    SpanKind kind = SpanKind.internal,
+    Attributes? attributes,
+    List<SpanLink>? links,
+    bool? isRecording = true,
+  }) {
     if (OTelLog.isDebug()) OTelLog.debug('Tracer: Starting span with name: $name, kind: $kind');
 
     // Get parent context from either the passed context or parent span
@@ -183,7 +183,7 @@ class Tracer implements APITracer {
     APISpan? effectiveParentSpan = parentSpan;
     final effectiveContext = context ?? Context.current;
 
-    if (effectiveContext != Context.empty) {
+    if (effectiveContext != Context.root) {
       // If an explicit context was provided, check for a span
       if (effectiveContext.span != null) {
         // Use the span from the context as parent (if no explicit parent span)
@@ -198,76 +198,112 @@ class Tracer implements APITracer {
       parentContext = effectiveParentSpan.spanContext;
     }
 
-    // If a span context was explicitly provided, use that
-    if (spanContext != null) {
-      if (parentContext != null && parentContext.isValid && spanContext.isValid) {
-        // Validate that trace IDs match if both contexts are valid
-        if (parentContext.traceId != spanContext.traceId) {
+    // Determine the trace ID to use
+    TraceId traceId;
+    if (spanContext != null && spanContext.traceId.isValid) {
+      // Use provided span context's trace ID if valid
+      traceId = spanContext.traceId;
+      
+      // Validate it against parent if both exist and are valid
+      if (parentContext != null && parentContext.isValid) {
+        if (parentContext.traceId != traceId) {
           throw ArgumentError(
-              // ignore: prefer_adjacent_string_concatenation
-              'Cannot create span with different trace ID than parent. ' +
-                  'Parent trace ID: ${parentContext.traceId}, ' +
-                  'Provided trace ID: ${spanContext.traceId}'
+            'Cannot create span with different trace ID than parent. '
+            'Parent trace ID: ${parentContext.traceId}, '
+            'Provided trace ID: $traceId'
           );
         }
       }
-      parentContext = spanContext;
+    } else if (parentContext != null && parentContext.isValid) {
+      // Inherit from parent if available
+      traceId = parentContext.traceId;
+    } else {
+      // Generate new trace ID for root span
+      traceId = OTel.traceId();
+    }
+
+    // Determine the parent span ID
+    SpanId? parentSpanId;
+    if (effectiveParentSpan != null && effectiveParentSpan.spanContext.isValid) {
+      // Use effective parent span's span ID
+      parentSpanId = effectiveParentSpan.spanContext.spanId;
+    } else if (parentContext != null && parentContext.isValid) {
+      // Use parent context's span ID
+      parentSpanId = parentContext.spanId;
+    }
+
+    // Inherit trace flags from parent if available
+    TraceFlags? traceFlags;
+    if (parentContext != null && parentContext.isValid) {
+      traceFlags = parentContext.traceFlags;
     }
 
     if (OTelLog.isDebug()) {
-      OTelLog.debug(parentContext != null ?
-    'Creating child context from parent: ${parentContext.traceId}' :
-    'Creating new root span context');
+      if (parentSpanId != null) {
+        OTelLog.debug('Creating child span: traceId=$traceId, parentSpanId=$parentSpanId');
+      } else {
+        OTelLog.debug('Creating root span: traceId=$traceId');
+      }
     }
 
     // Apply sampling decision if we have a sampler
-    final traceIdStr = parentContext?.traceId?.toString() ?? OTel.traceId().toString();
     bool shouldRecord = true;
     if (sampler != null) {
-      final samplingResult = sampler.shouldSample(
+      final samplingResult = sampler!.shouldSample(
         parentContext: effectiveContext,
-        traceId: traceIdStr,
+        traceId: traceId.toString(),
         name: name,
         spanKind: kind,
         attributes: attributes,
         links: links,
       );
-
+      
       // Update the isRecording flag based on the sampling decision
       shouldRecord = samplingResult.decision != SamplingDecision.drop;
-
-      // If we got additional attributes from the sampler, add them to our span attributes
+      
+      // Update trace flags based on sampling decision
+      if (traceFlags == null) {
+        traceFlags = OTel.traceFlags(shouldRecord ? TraceFlags.SAMPLED_FLAG : TraceFlags.NONE_FLAG);
+      } else if (shouldRecord && !traceFlags.isSampled) {
+        // Upgrade to sampled if necessary
+        traceFlags = OTel.traceFlags(TraceFlags.SAMPLED_FLAG);
+      } else if (!shouldRecord && traceFlags.isSampled) {
+        // Downgrade to not sampled if necessary
+        traceFlags = OTel.traceFlags(TraceFlags.NONE_FLAG);
+      }
+      
+      // Add sampler attributes if provided
       if (samplingResult.attributes != null) {
         if (attributes == null) {
           attributes = samplingResult.attributes;
         } else {
-          // Merge attributes
-          final newAttributes = attributes;
-          for (final attr in samplingResult.attributes!.all) {
-            newAttributes.addAttribute(attr);
-          }
-          attributes = newAttributes;
+          attributes = attributes.copyWithAttributes(samplingResult.attributes!);
         }
       }
-
+      
       if (OTelLog.isDebug()) {
         OTelLog.debug('Sampling decision for span $name: ${samplingResult.decision}');
       }
     }
 
-    // Create the delegate span with the validated context
+    // Always create a new span context with a new span ID
+    final newSpanContext = OTel.spanContext(
+      traceId: traceId,
+      spanId: OTel.spanId(),  // Always generate a new span ID
+      parentSpanId: parentSpanId,
+      traceFlags: traceFlags,
+    );
+
+    // Create the delegate span with our newly created span context
     APISpan delegateSpan = _delegate.startSpan(
-        name,
-        context: effectiveContext,
-        // Pass either the validated parentContext (if found) or the original spanContext
-        spanContext: parentContext,
-        // Pass the effective parent span (from either explicit parent or context)
-        parentSpan: effectiveParentSpan,
-        kind: kind,
-        attributes: attributes,
-        links: links,
-        // Apply our sampling decision
-        isRecording: isRecording != null ? isRecording : shouldRecord
+      name,
+      context: effectiveContext,
+      spanContext: newSpanContext,
+      parentSpan: effectiveParentSpan,
+      kind: kind,
+      attributes: attributes,
+      links: links,
+      isRecording: isRecording != null ? isRecording : shouldRecord
     );
 
     // Wrap it in our SDK span which will handle processing

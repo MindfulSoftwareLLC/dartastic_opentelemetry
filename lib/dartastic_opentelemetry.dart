@@ -50,6 +50,7 @@ export 'src/trace/span_processor.dart';
 export 'src/trace/tracer.dart';
 export 'src/trace/tracer_provider.dart';
 export 'src/trace/sampling/sampler.dart';
+// Only export the implementation files, not the duplicated classes in sampler.dart
 export 'src/trace/sampling/always_off_sampler.dart';
 export 'src/trace/sampling/always_on_sampler.dart';
 export 'src/trace/sampling/parent_based_sampler.dart';
