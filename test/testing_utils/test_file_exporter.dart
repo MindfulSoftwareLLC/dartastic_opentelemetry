@@ -50,8 +50,14 @@ class TestFileExporter implements SpanExporter {
     for (var span in spans) {
       print('TestFileExporter: Exporting span ${span.name} with ID ${span.spanContext.spanId} and traceID ${span.spanContext.traceId}');
       print('TestFileExporter:   isRecording: ${span.isRecording}');
+      print('TestFileExporter:   isEnded: ${span.isEnded}');
       print('TestFileExporter:   status: ${span.status}');
       print('TestFileExporter:   endTime: ${span.endTime}');
+      
+      // Check if the span is properly ended
+      if (!span.isEnded) {
+        print('TestFileExporter: WARNING - Span ${span.name} is not properly ended, which may cause export issues');
+      }
     }
 
     try {
@@ -70,6 +76,7 @@ class TestFileExporter implements SpanExporter {
           'endTime': span.endTime?.toIso8601String(),
           'status': span.status.toString(),
           'attributes': span.attributes?.toJson(),
+          'isEnded': span.isEnded,
         };
       }).toList();
 

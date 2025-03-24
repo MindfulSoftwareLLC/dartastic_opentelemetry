@@ -185,6 +185,11 @@ class Span implements APISpan {
     return  _delegate.toString();
   }
 
+  /// Returns whether this span context is valid
+  /// A span context is valid when it has a non-zero traceId and a non-zero spanId.
+  @override
+  bool get isValid => spanContext.isValid;
+
   @visibleForTesting
   @override
   // ignore: invalid_use_of_visible_for_testing_member

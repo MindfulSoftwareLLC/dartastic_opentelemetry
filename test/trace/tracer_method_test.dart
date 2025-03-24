@@ -25,6 +25,12 @@ void main() {
     final configPath = '$testDir/test/testing_utils/otelcol-config.yaml';
     final outputPath = '$testDir/test/testing_utils/spans.json';
     final backupOutputPath = '$testDir/test/testing_utils/fallback_spans.json';
+    
+    // Print paths for debugging
+    print('Using paths:');
+    print('  Config path: $configPath');
+    print('  Output path: $outputPath');
+    print('  Backup output path: $backupOutputPath');
 
     // Helper method to verify spans are exported
     Future<void> verifySpanExported(String expectedSpanName) async {
@@ -53,31 +59,71 @@ void main() {
 
         // If backup file exists and has content, parse it and check for spans
         if (backupFile.existsSync()) {
+          print('Backup file exists at: ${backupFile.absolute.path}');
           final content = backupFile.readAsStringSync();
           if (content.isNotEmpty) {
             if (OTelLog.isDebug()) OTelLog.debug('Found backup file with content: \n$content');
+            print('Backup file content: $content');
 
             // Try to parse the JSON
             try {
               // Parse the JSON
               final jsonContent = jsonDecode(content);
               if (jsonContent is List) {
+                print('Successfully parsed backup file JSON. Found ${jsonContent.length} span entries');
+                // Check if any of the spans match our expected name
+                bool foundExpectedSpan = false;
+                for (var spanBatch in jsonContent) {
+                  if (spanBatch is List) {
+                    for (var span in spanBatch) {
+                      print('Found span in backup file: ${span['name']}');
+                      if (span['name'] == expectedSpanName) {
+                        print('Found matching span: $expectedSpanName');
+                        foundExpectedSpan = true;
+                        break;
+                      }
+                    }
+                  } else {
+                    // Handle single span objects
+                    for (var span in spanBatch) {
+                      if (span['name'] == expectedSpanName) {
+                        print('Found matching span: $expectedSpanName');
+                        foundExpectedSpan = true;
+                        break;
+                      }
+                    }
+                  }
+                  if (foundExpectedSpan) break;
+                }
+                
                 // Backup file should contain at least one span batch
                 expect(jsonContent.isNotEmpty, isTrue, reason: 'Expected non-empty span list in backup file');
+                expect(foundExpectedSpan, isTrue, reason: 'Expected to find span named $expectedSpanName in backup file');
                 return;
               }
             } catch (e) {
               if (OTelLog.isDebug()) OTelLog.debug('Error parsing backup file JSON: $e');
+              print('Error parsing backup file: $e');
               // Fall back to basic content check
-              expect(content.isNotEmpty, isTrue, reason: 'Expected content in backup file');
+              expect(content.contains(expectedSpanName), isTrue, 
+                  reason: 'Expected backup file to contain span named $expectedSpanName');
               return;
             }
+          } else {
+            print('Backup file exists but is empty');
           }
+        } else {
+          print('Backup file does not exist at: ${backupFile.absolute.path}');
         }
       }
 
       // If we're here, we should have spans from the collector
       expect(spans.isNotEmpty, isTrue, reason: 'Expected at least one span to be exported');
+      
+      // Check if any span has the expected name
+      final matchingSpans = spans.where((span) => span['name'] == expectedSpanName).toList();
+      expect(matchingSpans.isNotEmpty, isTrue, 
+          reason: 'Expected to find a span named $expectedSpanName, found: ${spans.map((s) => s['name']).join(', ')}');
     }
 
     setUp(() async {
@@ -175,16 +221,19 @@ void main() {
     test('withSpan executes code with an active span', () async {
       // Arrange
       String result = '';
+      final span = tracer.startSpan('test-with-span');
 
       // Act
       tracer.withSpan(
-        tracer.startSpan('test-with-span'),
+        span,
         () {
           final currentSpan = tracer.currentSpan;
           result = currentSpan?.name ?? 'No active span';
           return result;
         },
       );
+      // End the span explicitly since withSpan doesn't end it
+      span.end();
 
       // Assert
       expect(result, equals('test-with-span'));
@@ -196,10 +245,11 @@ void main() {
     test('withSpanAsync executes async code with an active span', () async {
       // Arrange
       String result = '';
+      final span = tracer.startSpan('test-with-span-async');
 
       // Act
       await tracer.withSpanAsync(
-        tracer.startSpan('test-with-span-async'),
+        span,
         () async {
           // Simulate async work
           await Future.delayed(Duration(milliseconds: 10));
@@ -208,6 +258,8 @@ void main() {
           return result;
         },
       );
+      // End the span explicitly since withSpanAsync doesn't end it
+      span.end();
 
       // Assert
       expect(result, equals('test-with-span-async'));
@@ -225,10 +277,13 @@ void main() {
         name: 'context-span',
         context: customContext,
       );
+      
+      // End the span explicitly - this is crucial for exporting the span
       span.end();
 
       // Assert
       expect(span.name, equals('context-span'));
+      expect(span.isEnded, isTrue, reason: 'Span should be ended');
 
       // Verify span was exported
       await verifySpanExported('context-span');
