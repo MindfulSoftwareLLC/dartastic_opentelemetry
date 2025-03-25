@@ -81,7 +81,7 @@ class NetworkProxyService extends proto.TraceServiceBase {
 
 /// A gRPC proxy that can simulate network issues for testing.
 class NetworkProxy {
-  final int listenPort;
+  int listenPort;
   final String targetHost;
   final int targetPort;
 
@@ -95,6 +95,15 @@ class NetworkProxy {
   });
 
   Future<void> start() async {
+    if (_server != null) {
+      // If server is already running, stop it first
+      try {
+        await stop();
+      } catch (e) {
+        print('Error stopping existing proxy server: $e');
+      }
+    }
+    
     _service = NetworkProxyService(targetHost, targetPort);
     _server = grpc.Server.create(services: [_service]);
     await _server!.serve(port: listenPort);
@@ -102,8 +111,23 @@ class NetworkProxy {
   }
 
   Future<void> stop() async {
-    await _server?.shutdown();
-    await _service.shutdown();
+    if (_server != null) {
+      try {
+        await _server!.shutdown();
+        _server = null;
+        print('Network proxy stopped');
+      } catch (e) {
+        print('Error stopping proxy server: $e');
+        // Force cleanup if shutdown fails
+        _server = null;
+      }
+    }
+    
+    try {
+      await _service.shutdown();
+    } catch (e) {
+      print('Error stopping proxy service: $e');
+    }
   }
 
   void failNextRequests(int count, {int errorCode = grpc.StatusCode.unavailable}) {
