@@ -93,18 +93,18 @@ void main() {
       );
 
       // Verify each point's aggregated values
-      expect(point1.sum, equals(60.0));  // 10 + 20 + 30
-      expect(point1.count, equals(3));
+      expect(point1.histogram().sum, equals(60.0));  // 10 + 20 + 30
+      expect(point1.histogram().count, equals(3));
 
-      expect(point2.sum, equals(45.0));  // 5 + 15 + 25
-      expect(point2.count, equals(3));
+      expect(point2.histogram().sum, equals(45.0));  // 5 + 15 + 25
+      expect(point2.histogram().count, equals(3));
 
-      expect(point3.sum, equals(150.0)); // 50 + 100
-      expect(point3.count, equals(2));
+      expect(point3.histogram().sum, equals(150.0)); // 50 + 100
+      expect(point3.histogram().count, equals(2));
 
       // Verify histograms have buckets
-      expect(point1.buckets, isNotNull);
-      expect(point1.buckets.isNotEmpty, isTrue);
+      expect(point1.histogram().bucketCounts, isNotNull);
+      expect(point1.histogram().bucketCounts.isNotEmpty, isTrue);
     });
 
     test('Histogram with custom boundaries', () async {
@@ -139,20 +139,20 @@ void main() {
       final point = metric.points.first;
 
       // Verify aggregated values
-      expect(point.sum, equals(280.0)); // 5 + 15 + 35 + 75 + 150
-      expect(point.count, equals(5));
+      expect(point.histogram().sum, equals(280.0)); // 5 + 15 + 35 + 75 + 150
+      expect(point.histogram().count, equals(5));
 
       // Verify buckets match our expectations
       // Buckets should be length boundaries + 1 (for overflow bucket)
-      expect(point.buckets.length, equals(boundaries.length + 1));
+      expect(point.histogram().bucketCounts.length, equals(boundaries.length + 1));
 
       // Verify bucket counts
       // The buckets should have counts: [1, 1, 1, 1, 1]
-      expect(point.buckets[0], equals(1)); // ≤10 (contains 5.0)
-      expect(point.buckets[1], equals(1)); // >10, ≤20 (contains 15.0)
-      expect(point.buckets[2], equals(1)); // >20, ≤50 (contains 35.0)
-      expect(point.buckets[3], equals(1)); // >50, ≤100 (contains 75.0)
-      expect(point.buckets[4], equals(1)); // >100 (contains 150.0)
+      expect(point.histogram().bucketCounts[0], equals(1)); // ≤10 (contains 5.0)
+      expect(point.histogram().bucketCounts[1], equals(1)); // >10, ≤20 (contains 15.0)
+      expect(point.histogram().bucketCounts[2], equals(1)); // >20, ≤50 (contains 35.0)
+      expect(point.histogram().bucketCounts[3], equals(1)); // >50, ≤100 (contains 75.0)
+      expect(point.histogram().bucketCounts[4], equals(1)); // >100 (contains 150.0)
     });
 
     test('Histogram with integer values', () async {
@@ -178,8 +178,8 @@ void main() {
       final point = metric.points.first;
 
       // Verify values
-      expect(point.sum, equals(60.0)); // 10 + 20 + 30, note conversion to double
-      expect(point.count, equals(3));
+      expect(point.histogram().sum, equals(60.0)); // 10 + 20 + 30, note conversion to double
+      expect(point.histogram().count, equals(3));
     });
 
     test('Histogram with multiple collections', () async {
@@ -211,14 +211,14 @@ void main() {
       final point = metric.points.first;
 
       // Verify only the new values are present (assuming delta aggregation temporality)
-      expect(point.sum, equals(70.0)); // 30 + 40
-      expect(point.count, equals(2));
+      expect(point.histogram().sum, equals(70.0)); // 30 + 40
+      expect(point.histogram().count, equals(2));
     });
 
     test('Histogram with attributes', () async {
       // Create a histogram
       final histogram = meter.createHistogram<double>(
-        'attr_histogram',
+        name: 'attr_histogram',
       );
 
       // Create diverse attributes
@@ -257,14 +257,14 @@ void main() {
       );
 
       // Verify values
-      expect(point1.sum, equals(30.0)); // 10 + 20
-      expect(point1.count, equals(2));
+      expect(point1.histogram().sum, equals(30.0)); // 10 + 20
+      expect(point1.histogram().count, equals(2));
 
-      expect(point2.sum, equals(15.0));
-      expect(point2.count, equals(1));
+      expect(point2.histogram().sum, equals(15.0));
+      expect(point2.histogram().count, equals(1));
 
-      expect(point3.sum, equals(60.0)); // 25 + 35
-      expect(point3.count, equals(2));
+      expect(point3.histogram().sum, equals(60.0)); // 25 + 35
+      expect(point3.histogram().count, equals(2));
     });
   });
 }

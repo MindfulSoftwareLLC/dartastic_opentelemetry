@@ -22,8 +22,8 @@ void main() {
       // Create the composite exporter with both memory exporters
       compositeExporter = CompositeMetricExporter([exporter1, exporter2]);
 
-      // Create a metric reader that will use the composite exporter
-      metricReader = MemoryMetricReader(exporter: compositeExporter);
+      // Create a metric reader that will work with our test
+      metricReader = MemoryMetricReader();
 
       // Initialize OTel with the metric reader
       await OTel.initialize(
@@ -40,7 +40,7 @@ void main() {
     test('CompositeMetricExporter forwards metrics to all exporters', () async {
       // Create a meter and record some metrics
       final meter = OTel.meter('composite-test');
-      final counter = meter.createCounter(name: 'test_counter');
+      final counter = meter.createCounter<int>(name: 'test_counter');
 
       counter.add(5);
       counter.add(10, {'service': 'api'}.toAttributes());
@@ -82,17 +82,20 @@ void main() {
       // Clear previous metrics
       exporter1.clear();
 
-      // Create a metric reader that will use our composite exporter
-      final reader = MemoryMetricReader(exporter: compositeWithFailure);
+      // Create a metric reader directly for testing
+      final reader = MemoryMetricReader();
+      // We'll manually trigger collection and export to the composite exporter
 
-      // Create a meter provider that uses this reader
-      final meterProvider = OTel.createMeterProvider(
-        resource: OTel.resource,
+      // Create a new instance with our test reader
+      await OTel.reset();
+      await OTel.initialize(
+        serviceName: 'failure-test-service',
         metricReader: reader,
+        detectPlatformResources: false,
       );
 
       // Get a meter and record data
-      final meter = meterProvider.getMeter('failure-test');
+      final meter = OTel.meter('failure-test');
       final counter = meter.createCounter<int>('failure_counter');
       counter.add(42);
 
