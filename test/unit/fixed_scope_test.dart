@@ -55,8 +55,8 @@ void main() {
       dbSpan.end();
 
       // Now get the spans and check their instrumentation scopes
-      final httpScope = (httpSpan as Span).instrumentationScope;
-      final dbScope = (dbSpan as Span).instrumentationScope;
+      final httpScope = httpSpan.instrumentationScope;
+      final dbScope = dbSpan.instrumentationScope;
 
       print('HTTP Span Instrumentation Scope: ${httpScope.name}, version: ${httpScope.version}');
       print('DB Span Instrumentation Scope: ${dbScope.name}, version: ${dbScope.version}');
@@ -76,7 +76,7 @@ void main() {
         for (final attr in rs.resource.attributes) {
           print('  ${attr.key}: ${attr.value.stringValue}');
         }
-        
+
         for (final ss in rs.scopeSpans) {
           print('\nScopeSpan:');
           print('  Name: "${ss.scope.name}"');
@@ -90,18 +90,18 @@ void main() {
 
       // Find all scope names
       final allScopeNames = <String>[];
-      
+
       for (final rs in request.resourceSpans) {
         for (final ss in rs.scopeSpans) {
           final name = ss.scope.name;
           allScopeNames.add(name);
         }
       }
-      
+
       print('All scope names: $allScopeNames');
-      
+
       // Check for both instrumentation scopes
-      expect(allScopeNames.contains('http-instrumentation'), isTrue, 
+      expect(allScopeNames.contains('http-instrumentation'), isTrue,
              reason: 'Should contain http-instrumentation scope');
       expect(allScopeNames.contains('db-instrumentation'), isTrue,
              reason: 'Should contain db-instrumentation scope');

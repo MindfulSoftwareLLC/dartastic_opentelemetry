@@ -53,7 +53,7 @@ void main() {
 
     // Use a unique file for each test run to avoid conflicts
     final uniqueId = DateTime.now().millisecondsSinceEpoch;
-    final outputPath = '$testDir/test/testing_utils/spans_context_${uniqueId}.json';
+    final outputPath = '$testDir/test/testing_utils/spans_context_$uniqueId.json';
     final fallbackPath = '$outputPath.fallback';
 
     setUp(() async {
@@ -113,7 +113,7 @@ void main() {
       // Initialize OTel with proper configuration
       await OTel.initialize(
         endpoint: 'http://localhost:${collector.getPort}',
-        serviceName: 'test-service-context-${uniqueId}',
+        serviceName: 'test-service-context-$uniqueId',
         serviceVersion: '1.0.0',
       );
 
@@ -133,7 +133,7 @@ void main() {
       final processor = SimpleSpanProcessor(exporter);
       tracerProvider.addSpanProcessor(processor);
 
-      tracer = tracerProvider.getTracer('test-tracer-${uniqueId}');
+      tracer = tracerProvider.getTracer('test-tracer-$uniqueId');
 
       // Stabilization time (longer when in isolation mode)
       await Future.delayed(isIsolatedRun ? Duration(milliseconds: 500) : Duration(milliseconds: 100));
@@ -147,9 +147,9 @@ void main() {
           print('No spans found, creating fallback data');
           final fallbackData = [
             {
-              'name': 'fallback-span-${uniqueId}',
-              'spanId': 'fallback-id-${uniqueId}',
-              'traceId': 'fallback-trace-${uniqueId}',
+              'name': 'fallback-span-$uniqueId',
+              'spanId': 'fallback-id-$uniqueId',
+              'traceId': 'fallback-trace-$uniqueId',
               'attributes': [
                 {'key': 'test.key', 'value': {'stringValue': 'test-value'}},
               ]

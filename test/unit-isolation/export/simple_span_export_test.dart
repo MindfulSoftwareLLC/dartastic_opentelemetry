@@ -105,14 +105,14 @@ void main() {
 
       // Process the span with our processor
       print('Processing span with span processor');
-      await processor.onStart(span as Span, null);
+      await processor.onStart(span, null);
 
       // End the span
       span.end();
 
       // Process end event
       print('Processing span end event');
-      await processor.onEnd(span as Span);
+      await processor.onEnd(span);
 
       // Force flush to be sure
       print('Forcing processor flush');

@@ -2,7 +2,6 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'dart:convert';
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
@@ -39,28 +38,33 @@ void main() {
         // Wait for spans with a generous timeout
         await collector.waitForSpans(1, timeout: Duration(seconds: 3));
         spans = await collector.getSpans();
-        if (OTelLog.isDebug())
+        if (OTelLog.isDebug()) {
           OTelLog.debug(
               'Successfully got ${spans.length} spans from collector');
+        }
       } catch (e) {
-        if (OTelLog.isDebug())
+        if (OTelLog.isDebug()) {
           OTelLog.debug('Error waiting for spans from collector: $e');
+        }
 
         // Try getting any spans that might be there
         try {
           spans = await collector.getSpans();
-          if (OTelLog.isDebug())
+          if (OTelLog.isDebug()) {
             OTelLog.debug('Got ${spans.length} spans despite timeout error');
+          }
         } catch (e) {
-          if (OTelLog.isDebug())
+          if (OTelLog.isDebug()) {
             OTelLog.debug('Error getting spans from collector: $e');
+          }
         }
       }
 
       // If collector has no spans, check backup file
       if (spans.isEmpty) {
-        if (OTelLog.isDebug())
+        if (OTelLog.isDebug()) {
           OTelLog.debug('No spans from collector, checking backup file');
+        }
         final backupFile = File(backupOutputPath);
 
         // If backup file exists and has content, parse it and check for spans
@@ -68,8 +72,9 @@ void main() {
           print('Backup file exists at: ${backupFile.absolute.path}');
           final content = backupFile.readAsStringSync();
           if (content.isNotEmpty) {
-            if (OTelLog.isDebug())
+            if (OTelLog.isDebug()) {
               OTelLog.debug('Found backup file with content: \n$content');
+            }
             print('Backup file content: $content');
 
             // Try to parse the JSON
@@ -113,8 +118,9 @@ void main() {
                 return;
               }
             } catch (e) {
-              if (OTelLog.isDebug())
+              if (OTelLog.isDebug()) {
                 OTelLog.debug('Error parsing backup file JSON: $e');
+              }
               print('Error parsing backup file: $e');
               // Fall back to basic content check
               expect(content.contains(expectedSpanName), isTrue,
@@ -206,8 +212,9 @@ void main() {
             // Now shutdown the tracer provider
             await tracerProvider.shutdown();
           } catch (e) {
-            if (OTelLog.isError())
+            if (OTelLog.isError()) {
               OTelLog.error('Error during tracer provider teardown: $e');
+            }
           }
         }
 
@@ -221,8 +228,9 @@ void main() {
             await collector.clear();
           }
         } catch (e) {
-          if (OTelLog.isError())
+          if (OTelLog.isError()) {
             OTelLog.error('Error during collector teardown: $e');
+          }
         }
 
         // Add delay to ensure port is freed

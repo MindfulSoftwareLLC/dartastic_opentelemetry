@@ -2,14 +2,9 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 library;
-import 'package:dartastic_opentelemetry/src/trace/sampling/sampler.dart';
-import 'package:dartastic_opentelemetry/src/trace/tracer.dart';
-import 'package:dartastic_opentelemetry/src/trace/span_processor.dart';
-import 'package:dartastic_opentelemetry/src/resource/resource.dart';
 import 'package:opentelemetry_api/opentelemetry_api.dart';
 
 import '../../dartastic_opentelemetry.dart';
-import '../util/otel_log.dart';
 
 part 'tracer_provider_create.dart';
 

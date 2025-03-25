@@ -45,7 +45,7 @@ class TestFileExporter implements SpanExporter {
       print('TestFileExporter: No spans to export');
       return;
     }
-    
+
     // Debug information about the spans
     for (var span in spans) {
       print('TestFileExporter: Exporting span ${span.name} with ID ${span.spanContext.spanId} and traceID ${span.spanContext.traceId}');
@@ -53,7 +53,7 @@ class TestFileExporter implements SpanExporter {
       print('TestFileExporter:   isEnded: ${span.isEnded}');
       print('TestFileExporter:   status: ${span.status}');
       print('TestFileExporter:   endTime: ${span.endTime}');
-      
+
       // Check if the span is properly ended
       if (!span.isEnded) {
         print('TestFileExporter: WARNING - Span ${span.name} is not properly ended, which may cause export issues');
@@ -84,11 +84,11 @@ class TestFileExporter implements SpanExporter {
       final batchedSpans = [jsonSpans];
 
       // Write to file, appending new spans
-      String newContent = jsonEncode(batchedSpans) + '\n';
+      String newContent = '${jsonEncode(batchedSpans)}\n';
 
       // Use sync operations to guarantee it gets written
       file.writeAsStringSync(newContent, mode: FileMode.append, flush: true);
-      
+
       // Verify file was written
       final fileSize = file.lengthSync();
       print('TestFileExporter: Wrote ${newContent.length} bytes to file. File size is now $fileSize bytes');

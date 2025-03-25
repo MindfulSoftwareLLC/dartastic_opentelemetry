@@ -11,7 +11,7 @@ class RealCollector {
   Process? _process;
   final String _outputPath;
   final String _configPath;
-  
+
   // Getter for port to allow access from tests
   int get getPort => port;
 
@@ -26,13 +26,13 @@ class RealCollector {
   Future<void> start() async {
     // First, ensure any existing ports are cleared
     await _killExistingProcesses();
-    
+
     // Ensure output directory exists
     final outputDir = File(_outputPath).parent;
     if (!await outputDir.exists()) {
       await outputDir.create(recursive: true);
     }
-    
+
     // Ensure output file exists and is empty
     await File(_outputPath).writeAsString('');
 
@@ -43,7 +43,7 @@ class RealCollector {
       throw StateError(
           'OpenTelemetry Collector not found at $execPath');
     }
-    
+
     // Make sure it's executable
     try {
       final stat = await collectorFile.stat();
@@ -57,7 +57,7 @@ class RealCollector {
     }
 
     // Create temporary config file with port substitution
-    final tempConfigPath = '${Directory.current.path}/test/testing_utils/otelcol-config-${port}.yaml';
+    final tempConfigPath = '${Directory.current.path}/test/testing_utils/otelcol-config-$port.yaml';
     final configContent = await File(_configPath).readAsString();
     final updatedConfig = configContent.replaceAll('127.0.0.1:4316', '127.0.0.1:$port');
     await File(tempConfigPath).writeAsString(updatedConfig);
@@ -91,7 +91,7 @@ class RealCollector {
         readyCompleter.complete(true);
       }
     });
-    
+
     _process!.stderr.transform(utf8.decoder).listen((line) {
       print('Collector stderr: $line');
       if (line.contains('Everything is ready') && !hasServiceStarted) {
@@ -111,11 +111,11 @@ class RealCollector {
         started = true;
       }
     }
-    
+
     if (!started) {
       throw StateError('Failed to start collector properly');
     }
-    
+
     print('Collector started successfully');
     // Clean up temp config file
     try {
@@ -123,7 +123,7 @@ class RealCollector {
     } catch (e) {
       // Ignore errors deleting temp file
     }
-    
+
     // Allow some time for the collector to stabilize
     await Future.delayed(Duration(seconds: 2));
   }
@@ -135,14 +135,14 @@ class RealCollector {
         // Send SIGTERM for graceful shutdown
         print('Stopping collector with PID: ${_process!.pid}');
         _process!.kill(ProcessSignal.sigterm);
-        
+
         // Wait for a short time to allow graceful shutdown
         try {
           await Future.delayed(Duration(seconds: 2));
         } catch (e) {
           // Ignore, just continue with force kill
         }
-        
+
         // Check if process exited gracefully
         bool isRunning = true;
         try {
@@ -154,7 +154,7 @@ class RealCollector {
           // If timeout, process is still running
           isRunning = true;
         }
-        
+
         // Force kill if still running
         if (isRunning) {
           print('Collector still running, force killing...');
@@ -165,7 +165,7 @@ class RealCollector {
             print('Error force killing collector: $e');
           }
         }
-        
+
         // Find and kill any lingering processes by PID
         if (_process != null) {
           try {
@@ -206,7 +206,7 @@ class RealCollector {
           }
         }
       }
-      
+
       // Find and kill any leftover otelcol processes
       final psResult = await Process.run('ps', ['-ef']);
       if (psResult.stdout.toString().isNotEmpty) {
@@ -228,7 +228,7 @@ class RealCollector {
           }
         }
       }
-      
+
       // Wait a moment for ports to be released
       await Future.delayed(Duration(seconds: 1));
     } catch (e) {
@@ -250,9 +250,9 @@ class RealCollector {
         print('Output file is empty');
         return [];
       }
-      
+
       final lines = content.split('\n').where((l) => l.isNotEmpty);
-      
+
       // Parse each line and extract spans
       final allSpans = <Map<String, dynamic>>[];
       for (final line in lines) {
@@ -289,17 +289,17 @@ class RealCollector {
   Map<String, dynamic> _parseAttributes(List? attrs) {
     if (attrs == null) return {};
     final result = <String, dynamic>{};
-    
+
     for (final attr in attrs) {
       final key = attr['key'] as String;
       final valueMap = attr['value'];
-      
+
       if (valueMap is! Map) {
         // If not a map (shouldn't happen), just store as is
         result[key] = valueMap;
         continue;
       }
-      
+
       // Extract the actual value based on its type
       if (valueMap['stringValue'] != null) {
         result[key] = valueMap['stringValue'];
@@ -329,7 +329,7 @@ class RealCollector {
         }
       }
     }
-    
+
     return result;
   }
 
@@ -343,22 +343,22 @@ class RealCollector {
   Future<void> waitForSpans(int count, {Duration? timeout}) async {
     final deadline = DateTime.now().add(timeout ?? Duration(seconds: 15));
     var attempts = 0;
-    
+
     // Ensure output file exists
     if (!File(_outputPath).existsSync()) {
       await File(_outputPath).writeAsString('');
     }
-    
+
     while (DateTime.now().isBefore(deadline)) {
       attempts++;
       var spans = await getSpans();
       print('waitForSpans attempt $attempts: found ${spans.length} spans');
-      
+
       if (spans.length >= count) {
         print('waitForSpans: found required $count spans');
         return;
       }
-      
+
       // Check if file exists and has content
       final file = File(_outputPath);
       final exists = await file.exists();
@@ -378,7 +378,7 @@ class RealCollector {
             print('Output file content is too large to print (${content.length} bytes)');
           }
         }
-        
+
         // If file exists but is empty after multiple attempts, it might be an issue with collector
         if (size == 0 && attempts > 3) {
           print('Output file is empty after multiple attempts, checking collector status...');
@@ -394,7 +394,7 @@ class RealCollector {
               isRunning = false;
             }
           }
-          
+
           // Check for fallback file
           final String fallbackPath = '$_outputPath.fallback';
           try {
@@ -417,7 +417,7 @@ class RealCollector {
           } catch (e) {
             print('Error checking backup file: $e');
           }
-          
+
           if (!isRunning) {
             print('Collector process is not running, restarting...');
             try {
@@ -434,7 +434,7 @@ class RealCollector {
           }
         }
       }
-      
+
       // Gradually increase delay between attempts but keep it reasonable
       final delayMs = 250 * (1 << (attempts ~/ 3).clamp(0, 4)); // Max ~4 seconds between attempts
       await Future.delayed(Duration(milliseconds: delayMs));
@@ -443,7 +443,7 @@ class RealCollector {
     // Final attempt to read spans
     final spans = await getSpans();
     throw TimeoutException(
-      'Timed out waiting for $count spans. ' 
+      'Timed out waiting for $count spans. '
       'Found ${spans.length} spans: ${spans.map((s) => s['name']).toList()}');
   }
 
@@ -455,7 +455,7 @@ class RealCollector {
     String? spanId,
   }) async {
     final spans = await getSpans();
-    
+
     print('Looking for a span with name: $name');
     for (var span in spans) {
       final spanAttrs = _parseAttributes(span['attributes'] as List?);
@@ -463,11 +463,11 @@ class RealCollector {
       final allAttrs = {...?resourceAttrs, ...spanAttrs};
       print('Found span: ${span['name']}, spanId: ${span['spanId']}, traceId: ${span['traceId']}');
       print('  Attributes: $allAttrs');
-      
+
       // Log the raw attribute structure for debugging
       print('  Raw attributes structure: ${span['attributes']}');
     }
-    
+
     final matching = spans.where((span) {
       if (name != null && span['name'] != name) {
         print('Span ${span['spanId']} has name "${span['name']}" which doesn\'t match expected "$name"');
@@ -475,25 +475,25 @@ class RealCollector {
       }
       if (traceId != null && span['traceId'] != traceId) return false;
       if (spanId != null && span['spanId'] != spanId) return false;
-      
+
       if (attributes != null) {
         // Check both span attributes and resource attributes
         final spanAttrs = _parseAttributes(span['attributes'] as List?);
         final resourceAttrs = span['resourceAttributes'] as Map<String, dynamic>?;
         final allAttrs = {...?resourceAttrs, ...spanAttrs};
-        
+
         for (final entry in attributes.entries) {
           final expectedValue = entry.value;
           final actualValue = allAttrs[entry.key];
-          
+
           if (actualValue == null) {
             print('Attribute ${entry.key} is missing. Expected: $expectedValue');
             return false;
           }
-          
+
           // Log types for debugging
           print('Comparing ${entry.key}: expected=$expectedValue (${expectedValue.runtimeType}), actual=$actualValue (${actualValue.runtimeType})');
-          
+
           // Perform appropriate comparison based on types
           bool match = false;
           if (expectedValue is num && actualValue is num) {
@@ -509,14 +509,14 @@ class RealCollector {
             // Last resort: string comparison for different types
             match = expectedValue.toString() == actualValue.toString();
           }
-          
+
           if (!match) {
             print('Attribute mismatch for ${entry.key}: expected $expectedValue (${expectedValue.runtimeType}), got $actualValue (${actualValue.runtimeType})');
             return false;
           }
         }
       }
-      
+
       return true;
     }).toList();
 
@@ -525,10 +525,11 @@ class RealCollector {
       if (spans.length == 1 && name != null) {
         final actualName = spans.first['name'];
         throw StateError(
+            // ignore: prefer_adjacent_string_concatenation
             'No matching span found with name "$name". Found span named "$actualName" instead. ' +
             'Consider updating the test to use the correct span name.');
       }
-      
+
       final criteria = <String, dynamic>{
         if (name != null) 'name': name,
         if (attributes != null) 'attributes': attributes,

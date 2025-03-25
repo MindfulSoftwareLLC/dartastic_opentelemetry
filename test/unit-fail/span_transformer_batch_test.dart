@@ -24,12 +24,12 @@ Span createTestSpan({
   // Create a tracer with the specified instrumentation scope and resource
   final tracerProvider = OTel.tracerProvider();
   tracerProvider.resource = OTel.resource(OTel.attributesFromMap(combinedResAttrs));
-  
+
   final tracer = tracerProvider.getTracer(
     resourceAttributes?['instrumentation.name'] ?? 'test-tracer',
     version: resourceAttributes?['instrumentation.version'] ?? '1.0.0',
   );
-  
+
   // Create the span context
   final spanContext = OTel.spanContext(
     traceId: OTel.traceIdFrom(traceId ?? '00112233445566778899aabbccddeeff'),
@@ -155,8 +155,8 @@ void main() {
       httpSpan.end();
 
       // Check the spans have the right instrumentation scope
-      final httpScopeInfo = (httpSpan as Span).instrumentationScope;
-      final dbScopeInfo = (dbSpan as Span).instrumentationScope;
+      final httpScopeInfo = httpSpan.instrumentationScope;
+      final dbScopeInfo = dbSpan.instrumentationScope;
       expect(httpScopeInfo.name, equals('http-instrumentation'));
       expect(dbScopeInfo.name, equals('db-instrumentation'));
 
@@ -235,15 +235,15 @@ void main() {
 
       // Find the service names from the resources
       final service1ResourceSpan = request.resourceSpans.firstWhere(
-        (rs) => rs.resource.attributes.any((attr) => 
+        (rs) => rs.resource.attributes.any((attr) =>
             attr.key == 'service.name' && attr.value.stringValue == 'service1'),
       );
-      
+
       final service2ResourceSpan = request.resourceSpans.firstWhere(
-        (rs) => rs.resource.attributes.any((attr) => 
+        (rs) => rs.resource.attributes.any((attr) =>
             attr.key == 'service.name' && attr.value.stringValue == 'service2'),
       );
-      
+
       // Verify both resource spans exist
       expect(service1ResourceSpan, isNotNull);
       expect(service2ResourceSpan, isNotNull);
@@ -278,7 +278,7 @@ void main() {
       ];
 
       final request = OtlpSpanTransformer.transformSpans(spans);
-      
+
       // Print debug info for analysis
       print('\nResource & scope combinations:');
       print('Resource spans count: ${request.resourceSpans.length}');
@@ -298,28 +298,28 @@ void main() {
           }
         }
       }
-      
+
       // Should have distinct resource spans for each service name
       expect(request.resourceSpans.where(
-        (rs) => rs.resource.attributes.any((attr) => 
+        (rs) => rs.resource.attributes.any((attr) =>
             attr.key == 'service.name' && attr.value.stringValue == 'service1')
       ).length, equals(1), reason: 'Should have one resource span for service1');
-      
+
       expect(request.resourceSpans.where(
-        (rs) => rs.resource.attributes.any((attr) => 
+        (rs) => rs.resource.attributes.any((attr) =>
             attr.key == 'service.name' && attr.value.stringValue == 'service2')
       ).length, equals(1), reason: 'Should have one resource span for service2');
-      
-      // Find service1 resource span 
+
+      // Find service1 resource span
       final service1ResourceSpan = request.resourceSpans.firstWhere(
-        (rs) => rs.resource.attributes.any((attr) => 
+        (rs) => rs.resource.attributes.any((attr) =>
             attr.key == 'service.name' && attr.value.stringValue == 'service1'),
       );
-      
+
       // Service1 should have scopes for scope1 and scope2
-      expect(service1ResourceSpan.scopeSpans.length, equals(2), 
+      expect(service1ResourceSpan.scopeSpans.length, equals(2),
              reason: 'Service1 resource should have 2 different scope spans');
-             
+
       // Check that the scopes for service1 include scope1 and scope2
       final service1Scopes = service1ResourceSpan.scopeSpans.map((ss) => ss.scope.name).toList();
       expect(service1Scopes.contains('scope1'), isTrue);
@@ -327,14 +327,14 @@ void main() {
 
       // Find service2 resource span
       final service2ResourceSpan = request.resourceSpans.firstWhere(
-        (rs) => rs.resource.attributes.any((attr) => 
+        (rs) => rs.resource.attributes.any((attr) =>
             attr.key == 'service.name' && attr.value.stringValue == 'service2'),
       );
-      
+
       // Service2 should have only one scope: scope1
       expect(service2ResourceSpan.scopeSpans.length, equals(1),
              reason: 'Service2 resource should have 1 scope span');
-             
+
       // Check the scope for service2
       expect(service2ResourceSpan.scopeSpans.first.scope.name, equals('scope1'));
     });
@@ -342,7 +342,7 @@ void main() {
     test('maintains span order within scopes', () {
       // Create a fixed base time for consistent ordering
       final baseTime = DateTime.now();
-      
+
       // Create spans with sequential timestamps
       final spans = List.generate(
         10, // Use fewer spans for a more predictable test
@@ -362,14 +362,14 @@ void main() {
       shuffled.shuffle();
 
       final request = OtlpSpanTransformer.transformSpans(shuffled);
-      
+
       // Get the first resource span and scope span
       expect(request.resourceSpans.length, greaterThan(0), reason: 'Should have at least one resource span');
       final resourceSpan = request.resourceSpans.first;
-      
+
       expect(resourceSpan.scopeSpans.length, greaterThan(0), reason: 'Should have at least one scope span');
       final scopeSpan = resourceSpan.scopeSpans.first;
-      
+
       // Get the transformed spans
       final transformedSpans = scopeSpan.spans;
       expect(transformedSpans.length, equals(10), reason: 'Should have 10 spans');
@@ -382,7 +382,7 @@ void main() {
           break;
         }
       }
-      
+
       expect(isOrdered, isTrue, reason: 'Spans should be ordered by start time');
     });
 
@@ -438,7 +438,7 @@ void main() {
       print('Total spans: ${spans.length}');
       print('Unique strings: ${stringTable.length}');
       print('Strings: ${stringTable.join(', ')}');
-      
+
       // The number of unique strings should be much less than the total number of attribute strings
       // For 10 spans with common attributes and names, we'd expect around ~15-25 unique strings
       // depending on system attributes

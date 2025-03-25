@@ -203,7 +203,7 @@ class Tracer implements APITracer {
     if (spanContext != null && spanContext.traceId.isValid) {
       // Use provided span context's trace ID if valid
       traceId = spanContext.traceId;
-      
+
       // Validate it against parent if both exist and are valid
       if (parentContext != null && parentContext.isValid) {
         if (parentContext.traceId != traceId) {
@@ -257,10 +257,10 @@ class Tracer implements APITracer {
         attributes: attributes,
         links: links,
       );
-      
+
       // Update the isRecording flag based on the sampling decision
       shouldRecord = samplingResult.decision != SamplingDecision.drop;
-      
+
       // Update trace flags based on sampling decision
       if (traceFlags == null) {
         traceFlags = OTel.traceFlags(shouldRecord ? TraceFlags.SAMPLED_FLAG : TraceFlags.NONE_FLAG);
@@ -271,7 +271,7 @@ class Tracer implements APITracer {
         // Downgrade to not sampled if necessary
         traceFlags = OTel.traceFlags(TraceFlags.NONE_FLAG);
       }
-      
+
       // Add sampler attributes if provided
       if (samplingResult.attributes != null) {
         if (attributes == null) {
@@ -280,7 +280,7 @@ class Tracer implements APITracer {
           attributes = attributes.copyWithAttributes(samplingResult.attributes!);
         }
       }
-      
+
       if (OTelLog.isDebug()) {
         OTelLog.debug('Sampling decision for span $name: ${samplingResult.decision}');
       }
@@ -304,7 +304,7 @@ class Tracer implements APITracer {
       kind: kind,
       attributes: attributes,
       links: links,
-      isRecording: isRecording != null ? isRecording : shouldRecord
+      isRecording: isRecording ?? shouldRecord
     );
 
     // Wrap it in our SDK span which will handle processing
