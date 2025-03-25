@@ -2,6 +2,7 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:opentelemetry_api/opentelemetry_api.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -32,17 +33,17 @@ void main() {
       storage.record(10.25, attributes2);
       storage.record(15.75, attributes1);
       storage.record(20.0, attributes2);
-      
+
       // Record values without attributes
       storage.record(30.0);
       storage.record(40.0);
 
       // Collect points to verify data
       final points = storage.collectPoints();
-      
+
       // We should have three points (one for each attribute set, including null)
       expect(points.length, equals(3));
-      
+
       // Find each point by attributes
       final point1 = points.firstWhere(
         (point) => point.attributes == attributes1,
@@ -56,15 +57,15 @@ void main() {
         (point) => point.attributes == OTelFactory.otelFactory!.attributes(),
         orElse: () => throw StateError('Point with null attributes not found'),
       );
-      
+
       // Verify histogram data for point1 (attributes1)
       expect(point1.sum, equals(21.25)); // 5.5 + 15.75
       expect(point1.count, equals(2));
-      
+
       // Verify histogram data for point2 (attributes2)
       expect(point2.sum, equals(30.25)); // 10.25 + 20.0
       expect(point2.count, equals(2));
-      
+
       // Verify histogram data for point3 (null attributes)
       expect(point3.sum, equals(70.0)); // 30.0 + 40.0
       expect(point3.count, equals(2));
@@ -81,17 +82,17 @@ void main() {
       storage.record(30.0);  // Bucket 2 (>20, ≤50)
       storage.record(75.0);  // Bucket 3 (>50, ≤100)
       storage.record(120.0); // Bucket 4 (>100)
-      
+
       // Collect points to verify
       final points = storage.collectPoints();
       expect(points.length, equals(1));
-      
+
       final point = points.first;
-      
+
       // Verify sum and count
       expect(point.sum, equals(245.0)); // 5 + 15 + 30 + 75 + 120
       expect(point.count, equals(5));
-      
+
       // Verify bucket counts
       // The buckets should have counts: [1, 1, 1, 1, 1]
       // Bucket 0: 1 value (5.0)
@@ -110,18 +111,18 @@ void main() {
     test('HistogramStorage reset clears all data', () {
       final storage = HistogramStorage<double>();
       final attributes = {'service': 'api'}.toAttributes();
-      
+
       // Record some values
       storage.record(5.0, attributes);
       storage.record(10.0, attributes);
       storage.record(15.0);
-      
+
       // Verify we have data
       expect(storage.collectPoints().length, equals(2));
-      
+
       // Reset the storage
       storage.reset();
-      
+
       // Verify the storage is empty
       expect(storage.collectPoints().length, equals(0));
     });
@@ -129,16 +130,16 @@ void main() {
     test('HistogramStorage with integer values', () {
       final storage = HistogramStorage<int>();
       final attributes = {'service': 'api'}.toAttributes();
-      
+
       // Record integer values
       storage.record(5, attributes);
       storage.record(10, attributes);
       storage.record(15, attributes);
-      
+
       // Collect points to verify
       final points = storage.collectPoints();
       expect(points.length, equals(1));
-      
+
       final point = points.first;
       expect(point.sum, equals(30.0)); // 5 + 10 + 15, but as double
       expect(point.count, equals(3));
@@ -147,13 +148,13 @@ void main() {
     test('HistogramStorage with exemplars', () {
       final storage = HistogramStorage<double>();
       final attributes = {'service': 'api'}.toAttributes();
-      
+
       // Record a value
       storage.record(15.0, attributes);
-      
+
       // Create an exemplar
-      final traceId = OTel.generateTraceId();
-      final spanId = OTel.generateSpanId();
+      final traceId = OTel.traceId();
+      final spanId = OTel.spanId();
       final exemplar = Exemplar(
         value: 15.0,
         timestamp: DateTime.now(),
@@ -161,17 +162,17 @@ void main() {
         spanId: spanId,
         attributes: {'request.id': '123'}.toAttributes(),
       );
-      
+
       // Add the exemplar
       storage.addExemplar(exemplar, attributes);
-      
+
       // Collect points and verify exemplar was added
       final points = storage.collectPoints();
       expect(points.length, equals(1));
-      expect(points.first.exemplars.length, equals(1));
-      expect(points.first.exemplars.first.value, equals(15.0));
-      expect(points.first.exemplars.first.traceId, equals(traceId));
-      expect(points.first.exemplars.first.spanId, equals(spanId));
+      expect(points.first.exemplars!.length, equals(1));
+      expect(points.first.exemplars!.first.value, equals(15.0));
+      expect(points.first.exemplars!.first.traceId, equals(traceId));
+      expect(points.first.exemplars!.first.spanId, equals(spanId));
     });
   });
 }

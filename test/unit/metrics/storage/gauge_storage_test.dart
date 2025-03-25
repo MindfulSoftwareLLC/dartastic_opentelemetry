@@ -75,24 +75,24 @@ void main() {
       final storage = GaugeStorage<double>();
       final attributes1 = {'service': 'api'}.toAttributes();
       final attributes2 = {'service': 'db'}.toAttributes();
-      
+
       // Record some values
       storage.record(5.5, attributes1);
       storage.record(10.25, attributes2);
-      
+
       // Collect points
       final points = storage.collectPoints();
-      
+
       // Verify the points
       expect(points.length, equals(2));
-      
+
       // Find point with attributes1
       final point1 = points.firstWhere(
         (point) => point.attributes == attributes1,
         orElse: () => throw StateError('Point with attributes1 not found'),
       );
       expect(point1.value, equals(5.5));
-      
+
       // Find point with attributes2
       final point2 = points.firstWhere(
         (point) => point.attributes == attributes2,
@@ -105,17 +105,17 @@ void main() {
       final storage = GaugeStorage<double>();
       final attributes1 = {'service': 'api'}.toAttributes();
       final attributes2 = {'service': 'db'}.toAttributes();
-      
+
       // Record some values
       storage.record(5.5, attributes1);
       storage.record(10.25, attributes2);
-      
+
       // Verify we have two points
       expect(storage.collectPoints().length, equals(2));
-      
+
       // Reset the storage
       storage.reset();
-      
+
       // Verify the storage is empty
       expect(storage.collectPoints().length, equals(0));
       expect(storage.getValue(attributes1), equals(0.0)); // Default value
@@ -125,13 +125,13 @@ void main() {
     test('GaugeStorage addExemplar adds exemplars to points', () {
       final storage = GaugeStorage<double>();
       final attributes1 = {'service': 'api'}.toAttributes();
-      
+
       // Record a value
       storage.record(5.5, attributes1);
-      
+
       // Create an exemplar
-      final traceId = OTel.generateTraceId();
-      final spanId = OTel.generateSpanId();
+      final traceId = OTel.traceId();
+      final spanId = OTel.spanId();
       final exemplar = Exemplar(
         value: 5.5,
         timestamp: DateTime.now(),
@@ -139,17 +139,17 @@ void main() {
         spanId: spanId,
         attributes: {'request.id': '123'}.toAttributes(),
       );
-      
+
       // Add the exemplar
       storage.addExemplar(exemplar, attributes1);
-      
+
       // Collect points and verify exemplar was added
       final points = storage.collectPoints();
       expect(points.length, equals(1));
-      expect(points.first.exemplars.length, equals(1));
-      expect(points.first.exemplars.first.value, equals(5.5));
-      expect(points.first.exemplars.first.traceId, equals(traceId));
-      expect(points.first.exemplars.first.spanId, equals(spanId));
+      expect(points.first.exemplars!.length, equals(1));
+      expect(points.first.exemplars!.first.value, equals(5.5));
+      expect(points.first.exemplars!.first.traceId, equals(traceId));
+      expect(points.first.exemplars!.first.spanId, equals(spanId));
     });
   });
 }
