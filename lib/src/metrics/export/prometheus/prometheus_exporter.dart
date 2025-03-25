@@ -149,7 +149,7 @@ class PrometheusExporter implements MetricExporter {
   String _getPrometheusType(Metric metric) {
     if (metric.points.isNotEmpty && metric.points.first.value is HistogramValue) {
       return 'histogram';
-    } else if (metric.type == MetricPointKind.sum) {
+    } else if (metric.type == MetricType.sum) {
       return 'counter';
     } else {
       return 'gauge';

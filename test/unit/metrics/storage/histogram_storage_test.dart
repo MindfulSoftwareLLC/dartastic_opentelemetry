@@ -22,7 +22,7 @@ void main() {
 
     test('HistogramStorage with double values', () {
       // Create a histogram with default boundaries
-      final storage = HistogramStorage<double>();
+      final storage = HistogramStorage<double>(boundaries: [0.0, 10.0, 100.0, 1000.0]);
 
       // Create attributes
       final attributes1 = {'service': 'api'}.toAttributes();
@@ -58,17 +58,21 @@ void main() {
         orElse: () => throw StateError('Point with null attributes not found'),
       );
 
+      final histogramValue1 = point1.histogram();
+      final histogramValue2 = point2.histogram();
+      final histogramValue3 = point3.histogram();
+
       // Verify histogram data for point1 (attributes1)
-      expect(point1.sum, equals(21.25)); // 5.5 + 15.75
-      expect(point1.count, equals(2));
+      expect(histogramValue1.sum, equals(21.25)); // 5.5 + 15.75
+      expect(histogramValue1.count, equals(2));
 
       // Verify histogram data for point2 (attributes2)
-      expect(point2.sum, equals(30.25)); // 10.25 + 20.0
-      expect(point2.count, equals(2));
+      expect(histogramValue2.sum, equals(30.25)); // 10.25 + 20.0
+      expect(histogramValue2.count, equals(2));
 
       // Verify histogram data for point3 (null attributes)
-      expect(point3.sum, equals(70.0)); // 30.0 + 40.0
-      expect(point3.count, equals(2));
+      expect(histogramValue3.sum, equals(70.0)); // 30.0 + 40.0
+      expect(histogramValue3.count, equals(2));
     });
 
     test('HistogramStorage with custom boundaries', () {
@@ -89,9 +93,11 @@ void main() {
 
       final point = points.first;
 
+      final histogramValue = point.histogram();
+
       // Verify sum and count
-      expect(point.sum, equals(245.0)); // 5 + 15 + 30 + 75 + 120
-      expect(point.count, equals(5));
+      expect(histogramValue.sum, equals(245.0)); // 5 + 15 + 30 + 75 + 120
+      expect(histogramValue.count, equals(5));
 
       // Verify bucket counts
       // The buckets should have counts: [1, 1, 1, 1, 1]
@@ -100,16 +106,16 @@ void main() {
       // Bucket 2: 1 value (30.0)
       // Bucket 3: 1 value (75.0)
       // Bucket 4: 1 value (120.0)
-      expect(point.buckets.length, equals(boundaries.length + 1));
-      expect(point.buckets[0], equals(1)); // ≤10
-      expect(point.buckets[1], equals(1)); // >10, ≤20
-      expect(point.buckets[2], equals(1)); // >20, ≤50
-      expect(point.buckets[3], equals(1)); // >50, ≤100
-      expect(point.buckets[4], equals(1)); // >100
+      expect(histogramValue.bucketCounts.length, equals(boundaries.length + 1));
+      expect(histogramValue.bucketCounts[0], equals(1)); // ≤10
+      expect(histogramValue.bucketCounts[1], equals(1)); // >10, ≤20
+      expect(histogramValue.bucketCounts[2], equals(1)); // >20, ≤50
+      expect(histogramValue.bucketCounts[3], equals(1)); // >50, ≤100
+      expect(histogramValue.bucketCounts[4], equals(1)); // >100
     });
 
     test('HistogramStorage reset clears all data', () {
-      final storage = HistogramStorage<double>();
+      final storage = HistogramStorage<double>(boundaries: [0.0, 10.0, 100.0]);
       final attributes = {'service': 'api'}.toAttributes();
 
       // Record some values
@@ -128,7 +134,7 @@ void main() {
     });
 
     test('HistogramStorage with integer values', () {
-      final storage = HistogramStorage<int>();
+      final storage = HistogramStorage<int>(boundaries: [0.0, 10.0, 20.0]);
       final attributes = {'service': 'api'}.toAttributes();
 
       // Record integer values
@@ -141,12 +147,13 @@ void main() {
       expect(points.length, equals(1));
 
       final point = points.first;
-      expect(point.sum, equals(30.0)); // 5 + 10 + 15, but as double
-      expect(point.count, equals(3));
+      final histogramValue = point.histogram();
+      expect(histogramValue.sum, equals(30.0)); // 5 + 10 + 15, but as double
+      expect(histogramValue.count, equals(3));
     });
 
     test('HistogramStorage with exemplars', () {
-      final storage = HistogramStorage<double>();
+      final storage = HistogramStorage<double>(boundaries: [0.0, 10.0, 20.0]);
       final attributes = {'service': 'api'}.toAttributes();
 
       // Record a value
@@ -161,6 +168,7 @@ void main() {
         traceId: traceId,
         spanId: spanId,
         attributes: {'request.id': '123'}.toAttributes(),
+        filteredAttributes: OTel.attributes(),
       );
 
       // Add the exemplar

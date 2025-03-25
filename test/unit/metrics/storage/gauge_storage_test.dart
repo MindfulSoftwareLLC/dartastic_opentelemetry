@@ -138,6 +138,7 @@ void main() {
         traceId: traceId,
         spanId: spanId,
         attributes: {'request.id': '123'}.toAttributes(),
+        filteredAttributes: OTel.attributes(),
       );
 
       // Add the exemplar
