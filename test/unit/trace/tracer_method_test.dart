@@ -21,7 +21,7 @@ void main() {
     late Tracer tracer;
     final testPort = 4316; // Use the same port in collector config
     // Using absolute path to avoid issues with current directory
-  final testDir = '/Users/mbushe/dev/mf/otel/dartastic_opentelemetry';
+    final testDir = '/Users/mbushe/dev/mf/otel/dartastic_opentelemetry';
     final configPath = '$testDir/test/testing_utils/otelcol-config.yaml';
     final outputPath = '$testDir/test/testing_utils/spans.json';
     final backupOutputPath = '$testDir/test/testing_utils/fallback_spans.json';
@@ -37,24 +37,30 @@ void main() {
       List<Map<String, dynamic>> spans = [];
       try {
         // Wait for spans with a generous timeout
-        await collector.waitForSpans(1, timeout: Duration(seconds: 15));
+        await collector.waitForSpans(1, timeout: Duration(seconds: 3));
         spans = await collector.getSpans();
-        if (OTelLog.isDebug()) OTelLog.debug('Successfully got ${spans.length} spans from collector');
+        if (OTelLog.isDebug())
+          OTelLog.debug(
+              'Successfully got ${spans.length} spans from collector');
       } catch (e) {
-        if (OTelLog.isDebug()) OTelLog.debug('Error waiting for spans from collector: $e');
+        if (OTelLog.isDebug())
+          OTelLog.debug('Error waiting for spans from collector: $e');
 
         // Try getting any spans that might be there
         try {
           spans = await collector.getSpans();
-          if (OTelLog.isDebug()) OTelLog.debug('Got ${spans.length} spans despite timeout error');
+          if (OTelLog.isDebug())
+            OTelLog.debug('Got ${spans.length} spans despite timeout error');
         } catch (e) {
-          if (OTelLog.isDebug()) OTelLog.debug('Error getting spans from collector: $e');
+          if (OTelLog.isDebug())
+            OTelLog.debug('Error getting spans from collector: $e');
         }
       }
 
       // If collector has no spans, check backup file
       if (spans.isEmpty) {
-        if (OTelLog.isDebug()) OTelLog.debug('No spans from collector, checking backup file');
+        if (OTelLog.isDebug())
+          OTelLog.debug('No spans from collector, checking backup file');
         final backupFile = File(backupOutputPath);
 
         // If backup file exists and has content, parse it and check for spans
@@ -62,7 +68,8 @@ void main() {
           print('Backup file exists at: ${backupFile.absolute.path}');
           final content = backupFile.readAsStringSync();
           if (content.isNotEmpty) {
-            if (OTelLog.isDebug()) OTelLog.debug('Found backup file with content: \n$content');
+            if (OTelLog.isDebug())
+              OTelLog.debug('Found backup file with content: \n$content');
             print('Backup file content: $content');
 
             // Try to parse the JSON
@@ -70,7 +77,8 @@ void main() {
               // Parse the JSON
               final jsonContent = jsonDecode(content);
               if (jsonContent is List) {
-                print('Successfully parsed backup file JSON. Found ${jsonContent.length} span entries');
+                print(
+                    'Successfully parsed backup file JSON. Found ${jsonContent.length} span entries');
                 // Check if any of the spans match our expected name
                 bool foundExpectedSpan = false;
                 for (var spanBatch in jsonContent) {
@@ -97,16 +105,21 @@ void main() {
                 }
 
                 // Backup file should contain at least one span batch
-                expect(jsonContent.isNotEmpty, isTrue, reason: 'Expected non-empty span list in backup file');
-                expect(foundExpectedSpan, isTrue, reason: 'Expected to find span named $expectedSpanName in backup file');
+                expect(jsonContent.isNotEmpty, isTrue,
+                    reason: 'Expected non-empty span list in backup file');
+                expect(foundExpectedSpan, isTrue,
+                    reason:
+                        'Expected to find span named $expectedSpanName in backup file');
                 return;
               }
             } catch (e) {
-              if (OTelLog.isDebug()) OTelLog.debug('Error parsing backup file JSON: $e');
+              if (OTelLog.isDebug())
+                OTelLog.debug('Error parsing backup file JSON: $e');
               print('Error parsing backup file: $e');
               // Fall back to basic content check
               expect(content.contains(expectedSpanName), isTrue,
-                  reason: 'Expected backup file to contain span named $expectedSpanName');
+                  reason:
+                      'Expected backup file to contain span named $expectedSpanName');
               return;
             }
           } else {
@@ -118,12 +131,15 @@ void main() {
       }
 
       // If we're here, we should have spans from the collector
-      expect(spans.isNotEmpty, isTrue, reason: 'Expected at least one span to be exported');
+      expect(spans.isNotEmpty, isTrue,
+          reason: 'Expected at least one span to be exported');
 
       // Check if any span has the expected name
-      final matchingSpans = spans.where((span) => span['name'] == expectedSpanName).toList();
+      final matchingSpans =
+          spans.where((span) => span['name'] == expectedSpanName).toList();
       expect(matchingSpans.isNotEmpty, isTrue,
-          reason: 'Expected to find a span named $expectedSpanName, found: ${spans.map((s) => s['name']).join(', ')}');
+          reason:
+              'Expected to find a span named $expectedSpanName, found: ${spans.map((s) => s['name']).join(', ')}');
     }
 
     setUp(() async {
@@ -148,13 +164,14 @@ void main() {
       // Reset and initialize OTel
       await OTel.reset();
       await OTel.initialize(
-        endpoint: 'http://127.0.0.1:$testPort',
-        serviceName: 'test-service',
-        serviceVersion: '1.0.0', // Must provide serviceVersion
-        enableMetrics: false,
-        resourceAttributes: Attributes.of({
-          'test.framework': 'dart-test',
-        }));
+          endpoint: 'http://127.0.0.1:$testPort',
+          serviceName: 'test-service',
+          serviceVersion: '1.0.0',
+          // Must provide serviceVersion
+          enableMetrics: false,
+          resourceAttributes: Attributes.of({
+            'test.framework': 'dart-test',
+          }));
 
       tracerProvider = OTel.tracerProvider();
 
@@ -189,7 +206,8 @@ void main() {
             // Now shutdown the tracer provider
             await tracerProvider.shutdown();
           } catch (e) {
-            if (OTelLog.isError()) OTelLog.error('Error during tracer provider teardown: $e');
+            if (OTelLog.isError())
+              OTelLog.error('Error during tracer provider teardown: $e');
           }
         }
 
@@ -203,7 +221,8 @@ void main() {
             await collector.clear();
           }
         } catch (e) {
-          if (OTelLog.isError()) OTelLog.error('Error during collector teardown: $e');
+          if (OTelLog.isError())
+            OTelLog.error('Error during collector teardown: $e');
         }
 
         // Add delay to ensure port is freed
@@ -268,7 +287,8 @@ void main() {
       await verifySpanExported('test-with-span-async');
     });
 
-    test('startSpanWithContext creates a span in the provided context', () async {
+    test('startSpanWithContext creates a span in the provided context',
+        () async {
       // Arrange
       final customContext = OTel.context();
 
@@ -305,7 +325,8 @@ void main() {
       await verifySpanExported('auto-record-span');
     });
 
-    test('recordSpanAsync creates and automatically ends an async span', () async {
+    test('recordSpanAsync creates and automatically ends an async span',
+        () async {
       // Act
       final result = await tracer.recordSpanAsync(
         name: 'async-record-span',
@@ -324,8 +345,10 @@ void main() {
 
     test('recordSpan captures exceptions and sets error status', () async {
       // Add an identifier to ensure we can uniquely identify this span
-      final uniqueSpanName = 'error-span-${DateTime.now().millisecondsSinceEpoch}';
-      print('\n********** Using unique span name: $uniqueSpanName **********\n');
+      final uniqueSpanName =
+          'error-span-${DateTime.now().millisecondsSinceEpoch}';
+      print(
+          '\n********** Using unique span name: $uniqueSpanName **********\n');
 
       try {
         // Clear any existing spans before the test
@@ -379,7 +402,8 @@ void main() {
       await verifySpanExported('active-span');
     });
 
-    test('startActiveSpanAsync activates span during async execution', () async {
+    test('startActiveSpanAsync activates span during async execution',
+        () async {
       // Act
       final result = await tracer.startActiveSpanAsync(
         name: 'active-async-span',
