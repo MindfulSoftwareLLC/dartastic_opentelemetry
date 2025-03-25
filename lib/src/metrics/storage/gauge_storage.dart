@@ -26,7 +26,7 @@ class GaugeStorage<T extends num> extends PointStorage<T> {
       updateTime: DateTime.now(),
     );
   }
-  
+
   /// Helper to get empty attributes safely
   Attributes _emptyAttributes() {
     // If OTelFactory is not initialized yet, create an empty attributes directly
@@ -42,11 +42,11 @@ class GaugeStorage<T extends num> extends PointStorage<T> {
   T getValue([Attributes? attributes]) {
     // Create a normalized key for lookup
     final key = attributes ?? _emptyAttributes();
-    
+
     // Find matching attributes
     var existingKey = _findMatchingKey(key);
     final num value = existingKey != null ? _points[existingKey]!.value : 0;
-    
+
     // Convert to the appropriate generic type
     if (T == int) {
       return value.toInt() as T;
@@ -56,7 +56,7 @@ class GaugeStorage<T extends num> extends PointStorage<T> {
       return value as T;
     }
   }
-  
+
   /// Finds a key in the points map that equals the given key
   Attributes? _findMatchingKey(Attributes key) {
     for (final existingKey in _points.keys) {
@@ -88,8 +88,7 @@ class GaugeStorage<T extends num> extends PointStorage<T> {
   /// Resets all points (not typically used for Gauges, but required by interface).
   @override
   void reset() {
-    // For gauges, we don't clear values on reset
-    // since they represent the current state
+    _points.clear();
   }
 
   /// Adds an exemplar to a specific point.
@@ -97,7 +96,7 @@ class GaugeStorage<T extends num> extends PointStorage<T> {
   void addExemplar(Exemplar exemplar, [Attributes? attributes]) {
     // Create a normalized key for lookup
     final key = attributes ?? _emptyAttributes();
-    
+
     // Find matching attributes
     var existingKey = _findMatchingKey(key);
     if (existingKey != null) {
