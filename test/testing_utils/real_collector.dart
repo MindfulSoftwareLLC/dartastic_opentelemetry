@@ -11,6 +11,9 @@ class RealCollector {
   Process? _process;
   final String _outputPath;
   final String _configPath;
+  
+  // Getter for port to allow access from tests
+  int get getPort => port;
 
   RealCollector({
     this.port = 4316,  // Use non-standard port by default
@@ -348,7 +351,7 @@ class RealCollector {
     
     while (DateTime.now().isBefore(deadline)) {
       attempts++;
-      final spans = await getSpans();
+      var spans = await getSpans();
       print('waitForSpans attempt $attempts: found ${spans.length} spans');
       
       if (spans.length >= count) {
@@ -392,16 +395,39 @@ class RealCollector {
             }
           }
           
+          // Check for fallback file
+          final String fallbackPath = '$_outputPath.fallback';
+          try {
+            final fallbackFile = File(fallbackPath);
+            print('Backup file exists at: $fallbackPath');
+            if (fallbackFile.existsSync()) {
+              final fallbackContent = await fallbackFile.readAsString();
+              if (fallbackContent.isNotEmpty) {
+                print('Using backup file content');
+                final List<dynamic> jsonData = json.decode(fallbackContent) as List<dynamic>;
+                spans = jsonData.cast<Map<String, dynamic>>(); // Now spans is 'var' not 'final'
+                if (spans.length >= count) {
+                  print('Found required $count spans in fallback file');
+                  return;
+                }
+              } else {
+                print('Backup file exists but is empty');
+              }
+            }
+          } catch (e) {
+            print('Error checking backup file: $e');
+          }
+          
           if (!isRunning) {
             print('Collector process is not running, restarting...');
             try {
               await stop(); // Ensure clean stop first
-              await Future.delayed(Duration(seconds: 1)); // Wait for resources to be freed
+              await Future.delayed(Duration(milliseconds: 500)); // Wait for resources to be freed
               await start();
               // Make sure the file is cleared after restart
               await File(_outputPath).writeAsString('');
               // Allow collector to initialize
-              await Future.delayed(Duration(seconds: 2));
+              await Future.delayed(Duration(milliseconds: 1000));
             } catch (e) {
               print('Failed to restart collector: $e');
             }
