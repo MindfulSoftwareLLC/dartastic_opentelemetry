@@ -24,6 +24,8 @@ class SumStorage<T extends num> extends PointStorage<T> {
   });
 
   /// Records a measurement with the given attributes.
+  /// For synchronous counters, this is a delta that gets added to the existing value.
+  /// For asynchronous counters (Observable), this should be the absolute value.
   @override
   void record(T value, [Attributes? attributes]) {
     // Check constraints
@@ -39,7 +41,8 @@ class SumStorage<T extends num> extends PointStorage<T> {
     // Find matching attributes or use the new key directly
     var existingKey = _findMatchingKey(key);
     if (existingKey != null) {
-      // Update existing point
+      // For synchronous counters, add to the existing value
+      // For asynchronous counters, this would replace the value instead
       _points[existingKey]!.add(value);
     } else {
       // Create new point
@@ -143,9 +146,15 @@ class _SumPointData {
     required this.lastUpdateTime,
   });
 
-  /// Adds a value to this point.
+  /// Adds a value to this point (for synchronous counters).
   void add(num delta) {
     value += delta;
+    lastUpdateTime = DateTime.now();
+  }
+  
+  /// Sets the value directly (for asynchronous counters).
+  void setValue(num newValue) {
+    value = newValue;
     lastUpdateTime = DateTime.now();
   }
 }

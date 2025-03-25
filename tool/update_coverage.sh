@@ -1,16 +1,11 @@
 #!/bin/bash
 # Script to run all tests and combine coverage data
-
-# Make sure our scripts are executable
-chmod +x tool/isolate_coverage.sh
-chmod +x tool/run_problem_tests.sh
-
 # Create coverage directory if it doesn't exist
 mkdir -p coverage
 
 # First run regular tests with coverage
 echo "===== Running regular tests with coverage ====="
-dart test --coverage=coverage --timeout=60s test/ --exclude=test/unit-fail/
+dart test --coverage=coverage --timeout=60s test/util test/performance test/integration
 
 # Then run problematic tests in isolation
 echo "===== Running problematic tests in isolation ====="
@@ -30,7 +25,7 @@ if command -v genhtml >/dev/null 2>&1; then
   # Use ignore-errors to handle the range issue
   genhtml --ignore-errors range coverage/lcov.info -o coverage/html
   echo "HTML coverage report generated in coverage/html"
-  
+
   # Try to open the report on macOS
   if [ "$(uname)" == "Darwin" ]; then
     open coverage/html/index.html

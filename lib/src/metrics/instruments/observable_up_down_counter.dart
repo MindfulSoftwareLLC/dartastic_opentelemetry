@@ -20,7 +20,7 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
   /// Storage for accumulating counter measurements.
   final SumStorage _storage = SumStorage(isMonotonic: false);
 
-  /// The last observed values, used for delta calculations.
+  /// The last observed values, for tracking changes.
   final Map<Attributes, T> _lastValues = {};
 
   /// Creates a new ObservableUpDownCounter instance.
@@ -103,6 +103,10 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
       return result;
     }
 
+    // First, clear previous values to prepare for fresh collection
+    // This is necessary to avoid accumulating values from multiple collections
+    _storage.reset();
+
     // Call all callbacks
     for (final callback in callbackList) {
       try {
@@ -116,18 +120,17 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
         for (final measurement in observableResult.measurements) {
           // Type checking for the generic parameter
           final value = measurement.value;
-          // For observable up-down counters, we need to calculate deltas
-          final key = measurement.attributes ?? OTelFactory.otelFactory!.attributes();
-          // Properly handle the generic type for first observation
-          final T lastValue = (_lastValues[key] ??
-              (T == int ? 0 : 0.0)) as T;
-          final T delta = _subtractNumeric(value, lastValue);
-          _storage.record(delta, measurement.attributes);
-          // Add a new measurement with the delta value
-          result.add(OTelFactory.otelFactory!.createMeasurement<T>(delta, measurement.attributes));
+          final attributes = measurement.attributes ?? OTelFactory.otelFactory!.attributes();
 
-          // Update last value
-          _lastValues[key] = value;
+          // Per the spec, for ObservableUpDownCounter we record the absolute value
+          // directly - not the delta
+          _storage.record(value, attributes);
+
+          // Add measurement with the absolute value to the result
+          result.add(measurement);
+
+          // Keep track of the last value for debugging and tracking
+          _lastValues[attributes] = value;
         }
       } catch (e) {
         print('Error collecting measurements from ObservableUpDownCounter callback: $e');
@@ -137,20 +140,6 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
     return result;
   }
 
-  /// Helper method to subtract numeric values while preserving the generic type T.
-  /// This properly handles both int and double types.
-  T _subtractNumeric(num a, num b) {
-    if (T == int) {
-      return (a.toInt() - b.toInt()) as T;
-    } else if (T == double) {
-      return (a.toDouble() - b.toDouble()) as T;
-    } else {
-      // For any other numeric type, default to the standard subtraction
-      // and cast the result to T
-      return (a - b) as T;
-    }
-  }
-
   /// Gets the current points for this counter.
   /// This is used by the SDK to collect metrics.
   List<MetricPoint> collectPoints() {
@@ -158,7 +147,7 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
       return [];
     }
 
-    // First collect new measurements
+    // Collect new measurements, which will update storage
     collect();
 
     // Then return points from storage
@@ -193,7 +182,7 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
     ];
   }
 
-  /// Resets the counter. This is only used for Delta temporality.
+  /// Resets the counter for testing. This is not typically used in production.
   void reset() {
     _storage.reset();
     _lastValues.clear();

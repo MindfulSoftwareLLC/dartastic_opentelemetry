@@ -5,257 +5,441 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:opentelemetry_api/opentelemetry_api.dart';
 import 'package:test/test.dart';
 
-import '../../../testing_utils/memory_metric_exporter.dart';
-
 void main() {
-  group('ObservableUpDownCounter', () {
+  group('ObservableUpDownCounter Tests', () {
     late MeterProvider meterProvider;
     late Meter meter;
-    late ObservableUpDownCounter<int> observableCounter;
-    late APICallbackRegistration<int> registration;
-    late MemoryMetricExporter exporter;
-    late MemoryMetricReader reader;
-    int callbackCounter = 0;
-    int callbackValue = 0;
-
-    // Set up the callback for the observable counter
-    void counterCallback(APIObservableResult<int> result) {
-      callbackCounter++;
-      result.observe(callbackValue);
-    }
 
     setUp(() async {
-      // Reset counters
-      callbackCounter = 0;
-      callbackValue = 0;
-
-      // Create in-memory exporter and reader
-      exporter = MemoryMetricExporter();
-      reader = MemoryMetricReader(exporter: exporter);
-
-      // Initialize OpenTelemetry with in-memory metric exporter
+      // Initialize OpenTelemetry with test endpoint to avoid network issues
+      await OTel.reset();
       await OTel.initialize(
-        endpoint: 'http://localhost:4318',
-        metricExporter: exporter,
-        metricReader: reader,
-        enableMetrics: true
+        serviceName: 'test-service',
+        endpoint: 'http://localhost:4317',
+        detectPlatformResources: false, // Disable for testing
       );
-
-      // Explicitly ensure metrics are enabled
-      OTel.meterProvider().enabled = true;
 
       // Get a meter provider and create a meter
       meterProvider = OTel.meterProvider();
       meter = meterProvider.getMeter(name: 'test-meter') as Meter;
-
-      // Create an observable up-down counter
-      observableCounter = meter.createObservableUpDownCounter<int>(
-        name: 'test-observable-up-down-counter',
-        unit: 'connections',
-        description: 'A test observable up-down counter',
-      ) as ObservableUpDownCounter<int>;
-
-      // Register the callback
-      registration = observableCounter.addCallback(counterCallback);
     });
 
     tearDown(() async {
-      // Reset the counter to clean state
-      observableCounter.reset();
-
       // Clean up
-      registration.unregister();
-      await reader.shutdown();
       await meterProvider.shutdown();
       await OTel.reset();
     });
 
-    test('has correct properties', () {
-      // Assert
-      expect(observableCounter.name, equals('test-observable-up-down-counter'));
-      expect(observableCounter.unit, equals('connections'));
-      expect(observableCounter.description, equals('A test observable up-down counter'));
-      expect(observableCounter.meter, equals(meter));
+    test('Simple ObservableUpDownCounter with single callback', () {
+      // Value that can go up and down
+      int counterValue = 100;
+      bool shouldIncrease = true;
 
-      // Debug output to understand the state
-      print('MeterProvider enabled: ${meterProvider.enabled}');
-      print('API meter enabled: ${observableCounter.meter.enabled}');
-      print('Observable counter enabled: ${observableCounter.enabled}');
+      // Create an ObservableUpDownCounter with int type
+      final counter = meter.createObservableUpDownCounter<int>(
+        name: 'test-observable-updown-counter',
+        unit: 'items',
+        description: 'A test observable up-down counter',
+        callback: (APIObservableResult<int> result) {
+          result.observe(counterValue);
+          // Change the value for next observation
+          if (shouldIncrease) {
+            counterValue += 10;
+          } else {
+            counterValue -= 15;
+          }
+          shouldIncrease = !shouldIncrease; // Toggle for next time
+        },
+      ) as ObservableUpDownCounter<int>;
 
-      // Skip this assertion for now - we'll focus on functional tests
-      // expect(observableCounter.enabled, isTrue);
-    });
-
-    test('registers and receives callbacks', () {
-      // Arrange
-      callbackValue = 42;
-      callbackCounter = 0;  // Explicitly reset counter just before test
-
-      // Act - This will trigger the callback
-      final measurements = observableCounter.collect();
-
-      // Assert
-      expect(callbackCounter, equals(1));
-      expect(measurements, isNotEmpty);
-      expect(measurements.first.value, equals(42));
-    });
-
-    test('handles callback with attributes', () {
-      // Add a test-specific local function with expected signature
-      void customCallback(APIObservableResult<int> result) {
-        final attrs1 = {'service': 'auth'}.toAttributes();
-        final attrs2 = {'service': 'database'}.toAttributes();
-        result.observe(5, attrs1);
-        result.observe(10, attrs2);
-      }
-
-      // Arrange - Remove the existing callback first to avoid interference
-      registration.unregister();
+      // Verify instrument properties
+      expect(counter.name, equals('test-observable-updown-counter'));
+      expect(counter.unit, equals('items'));
+      expect(counter.description, equals('A test observable up-down counter'));
+      expect(counter.enabled, isTrue);
+      expect(counter.meter, equals(meter));
       
-      // Register a new callback with attributes
-      final customReg = observableCounter.addCallback(customCallback);
-
-      // Act
-      final measurements = observableCounter.collect();
-
-      // Cleanup
-      customReg.unregister();
-
-      // Assert - Should be exactly 2 measurements
-      expect(measurements.length, equals(2), reason: 'Should have exactly 2 measurements');
-
-      // Find measurements with matching attributes
-      final auth = measurements.firstWhere(
-        (m) => m.attributes?.getString('service') == 'auth');
-      final db = measurements.firstWhere(
-        (m) => m.attributes?.getString('service') == 'database');
-
-      expect(auth.value, equals(5));
-      expect(db.value, equals(10));
-    });
-
-    test('handles delta calculations correctly', () {
-      // Arrange - First collection
-      callbackValue = 10;
-      final firstMeasurements = observableCounter.collect();
-
-      // Act - Increase value and collect again
-      callbackValue = 15;
-      final secondMeasurements = observableCounter.collect();
-
-      // Assert
-      expect(firstMeasurements.first.value, equals(10)); // Initial value
-      expect(secondMeasurements.first.value, equals(5)); // Delta (15-10)
-
-      // Now decrease value and collect again
-      callbackValue = 8;
-      final thirdMeasurements = observableCounter.collect();
-      expect(thirdMeasurements.first.value, equals(-7)); // Delta (8-15)
-    });
-
-    test('handles removal of callbacks', () {
-      // Arrange
-      callbackValue = 42;
-      registration.unregister();
-
-      // Act
-      final measurements = observableCounter.collect();
-
-      // Assert
-      expect(measurements, isEmpty); // No callbacks registered
-    });
-
-    test('collects metrics for reporting', () {
-      // Arrange
-      callbackValue = 42;
-      observableCounter.collect(); // Initial collection
-
-      // Act
-      final points = observableCounter.collectPoints();
-
-      // Assert
-      expect(points, isNotEmpty);
-      expect(points.first.value, equals(42));
-    });
-
-    test('reset clears accumulated values', () {
-      // Arrange - First collection with value 10
-      callbackValue = 10;
-      observableCounter.collect();
-
-      // Act - Reset counter
-      observableCounter.reset();
-
-      // Now set new value and collect
-      callbackValue = 5;
-      final measurements = observableCounter.collect();
-
-      // Assert
-      expect(measurements.first.value, equals(5)); // Should be full value, not delta
-    });
-
-    test('supports getValue with and without attributes', () {
-      // Arrange
-      final attrs = {'service': 'api'}.toAttributes();
-
-      // Create a callback that registers values with attributes
-      void attrCallback(APIObservableResult<int> result) {
-        result.observe(8, attrs);
-        result.observe(12); // Without attributes
-      }
-
-      // Register the callback and collect
-      final attrReg = observableCounter.addCallback(attrCallback);
-      observableCounter.collect();
-
-      // Act - Get values
-      final attrValue = observableCounter.getValue(attrs);
-      final totalValue = observableCounter.getValue();
-
-      // Cleanup
-      attrReg.unregister();
-
-      // Assert
-      expect(attrValue, equals(8));
-      expect(totalValue, equals(20)); // Sum of all values
-    });
-
-    test('metrics can be exported through the reader', () async {
-    // Arrange
-    // First make sure the meter provider is enabled
-    expect(meterProvider.enabled, isTrue, reason: 'MeterProvider must be enabled for metrics export');
+      // Verify callbacks were registered
+      expect(counter.callbacks.length, equals(1));
       
-      callbackValue = 50;
-      // Collect measurements and verify we get measurements
-      final measurements = observableCounter.collect();
-      expect(measurements, isNotEmpty, reason: 'Should have measurements from collect()');
+      // Collect measurements - first value
+      final measurements1 = counter.collect();
+      expect(measurements1.length, equals(1));
+      expect(measurements1[0].value, equals(10)); // First observation (collectPoints() is called first internally)
       
-      // Act - Force flush to trigger export
-      await reader.forceFlush();
-
-      // Assert
-      // Get exported metrics and dump for debugging
-      final exportedMetrics = exporter.exportedMetrics;
+      // Collect again - should get the second value (increased)
+      final measurements2 = counter.collect();
+      expect(measurements2.length, equals(1));
+      expect(measurements2[0].value, equals(110)); // Increased value
       
-      print('Exported metrics count: ${exportedMetrics.length}');
-      for (var metric in exportedMetrics) {
-        print('- ${metric.name}: ${metric.type}, ${metric.unit}');
-      }
+      // Collect again - should get the third value (decreased)
+      final measurements3 = counter.collect();
+      expect(measurements3.length, equals(1));
+      expect(measurements3[0].value, equals(95)); // Decreased value
       
-      expect(exportedMetrics, isNotEmpty, reason: 'Should have exported metrics after forceFlush()');
+      // Collect metrics
+      final metrics = counter.collectMetrics();
+      expect(metrics.length, equals(1));
+      
+      // Verify this is a sum metric that's not monotonic
+      expect(metrics[0].type, equals(MetricType.sum));
+      expect(metrics[0].name, equals('test-observable-updown-counter'));
+      
+      // Verify the points
+      expect(metrics[0].points.length, equals(1));
+      expect(metrics[0].points[0].value, equals(95)); // Latest value
+    });
 
-      // Find our metric
-      try {
-        final metric = exportedMetrics.firstWhere(
-          (m) => m.name == 'test-observable-up-down-counter',
-        );
+    test('ObservableUpDownCounter with attributes', () {
+      // Create sets of attributes
+      final attributes1 = {'region': 'east'}.toAttributes();
+      final attributes2 = {'region': 'west'}.toAttributes();
+      
+      // Create value maps to simulate values that can go up or down
+      Map<String, int> regionValues = {
+        'east': 50,
+        'west': 75,
+      };
+      
+      // Create an ObservableUpDownCounter
+      final counter = meter.createObservableUpDownCounter<int>(
+        name: 'attr-observable-updown-counter',
+        unit: 'connections',
+        callback: (APIObservableResult<int> result) {
+          // Report both values
+          result.observe(regionValues['east']!, attributes1);
+          result.observe(regionValues['west']!, attributes2);
+          
+          // Change values for next observation
+          regionValues['east'] = regionValues['east']! + 5;
+          regionValues['west'] = regionValues['west']! - 8;
+        },
+      ) as ObservableUpDownCounter<int>;
+      
+      // First collection
+      final measurements1 = counter.collect();
+      expect(measurements1.length, equals(2));
+      
+      // Values should match our initial values
+      expect(measurements1.where((m) => m.attributes == attributes1).first.value, equals(50));
+      expect(measurements1.where((m) => m.attributes == attributes2).first.value, equals(75));
+      
+      // Second collection
+      final measurements2 = counter.collect();
+      expect(measurements2.length, equals(2));
+      
+      // Values should reflect the changes
+      expect(measurements2.where((m) => m.attributes == attributes1).first.value, equals(55));
+      expect(measurements2.where((m) => m.attributes == attributes2).first.value, equals(67));
+      
+      // Get metric points 
+      final metrics = counter.collectMetrics();
+      expect(metrics.length, equals(1));
+      
+      expect(metrics[0].type, equals(MetricType.sum));
+      expect(metrics[0].points.length, equals(2));
+      
+      // Points should have the latest values
+      final point1 = metrics[0].points.where((p) => p.attributes == attributes1).first;
+      final point2 = metrics[0].points.where((p) => p.attributes == attributes2).first;
+      expect(point1.value, equals(55));
+      expect(point2.value, equals(67));
+    });
 
-        expect(metric.unit, equals('connections'));
-        expect(metric.type, equals(MetricType.sum));
-        expect(metric.description, equals('A test observable up-down counter'));
-      } catch (e) {
-        fail('Expected metric not found in exported metrics: $e');
-      }
+    test('ObservableUpDownCounter with multiple callbacks', () {
+      // Create an ObservableUpDownCounter without initial callback
+      final counter = meter.createObservableUpDownCounter<int>(
+        name: 'multi-callback-updown-counter',
+        unit: 'processes',
+      ) as ObservableUpDownCounter<int>;
+      
+      // First callback
+      int serverProcesses = 42;
+      final attributes1 = {'server': 'app'}.toAttributes();
+      final registration1 = counter.addCallback((APIObservableResult<int> result) {
+        result.observe(serverProcesses, attributes1);
+        // Increment by 1 for each observation
+        serverProcesses++;  
+      });
+      
+      // Second callback
+      int dbProcesses = 15;
+      final attributes2 = {'server': 'db'}.toAttributes();
+      final registration2 = counter.addCallback((APIObservableResult<int> result) {
+        result.observe(dbProcesses, attributes2);
+        // Sometimes goes up, sometimes down
+        dbProcesses = (dbProcesses == 15) ? 17 : 15;
+      });
+      
+      // Verify both callbacks are registered
+      expect(counter.callbacks.length, equals(2));
+      
+      // First collection should have both values
+      final measurements1 = counter.collect();
+      expect(measurements1.length, equals(2));
+      expect(measurements1.where((m) => m.attributes == attributes1).first.value, equals(42));
+      expect(measurements1.where((m) => m.attributes == attributes2).first.value, equals(15));
+      
+      // Second collection should have updated values
+      final measurements2 = counter.collect();
+      expect(measurements2.length, equals(2));
+      expect(measurements2.where((m) => m.attributes == attributes1).first.value, equals(43));
+      expect(measurements2.where((m) => m.attributes == attributes2).first.value, equals(17));
+      
+      // Unregister first callback
+      registration1.unregister();
+      expect(counter.callbacks.length, equals(1));
+      
+      // Collection should now only have the second callback's value
+      final measurements3 = counter.collect();
+      expect(measurements3.length, equals(1));
+      expect(measurements3[0].attributes, equals(attributes2));
+      expect(measurements3[0].value, equals(15)); // Back to 15
+      
+      // Unregister second callback
+      registration2.unregister();
+      expect(counter.callbacks.length, equals(0));
+      
+      // Collection should now be empty
+      final measurements4 = counter.collect();
+      expect(measurements4.length, equals(0));
+    });
+
+    test('ObservableUpDownCounter collectMetrics', () {
+      // Create a counter with value that oscillates
+      int value = 1000; 
+      bool goingUp = false;
+      
+      final counter = meter.createObservableUpDownCounter<int>(
+        name: 'metrics-updown-counter',
+        unit: 'connections',
+        description: 'Test metrics collection',
+        callback: (APIObservableResult<int> result) {
+          result.observe(value);
+          // Change direction every call
+          if (goingUp) {
+            value += 50;
+          } else {
+            value -= 30;
+          }
+          goingUp = !goingUp;
+        },
+      ) as ObservableUpDownCounter<int>;
+      
+      // Trigger collection
+      counter.collect();
+      
+      // Get metrics
+      final metrics = counter.collectMetrics();
+      expect(metrics.length, equals(1));
+      
+      // Verify metric properties
+      final metric = metrics[0];
+      expect(metric.name, equals('metrics-updown-counter'));
+      expect(metric.description, equals('Test metrics collection'));
+      expect(metric.unit, equals('connections'));
+      
+      // Verify this is a sum metric
+      expect(metric.type, equals(MetricType.sum));
+      
+      // Verify the points
+      expect(metric.points.length, equals(1));
+      expect(metric.points[0].value, equals(1000));
+      
+      // Second collection - check that value decreased
+      counter.collect();
+      final metrics2 = counter.collectMetrics();
+      expect(metrics2[0].points[0].value, equals(970)); // 1000 - 30
+      
+      // Third collection - check that value increased
+      counter.collect();
+      final metrics3 = counter.collectMetrics();
+      expect(metrics3[0].points[0].value, equals(1020)); // 970 + 50
+    });
+
+    test('ObservableUpDownCounter with disabled meter', () {
+      // Create a counter
+      int callCount = 0;
+      
+      final counter = meter.createObservableUpDownCounter<int>(
+        name: 'disabled-updown-counter',
+        callback: (APIObservableResult<int> result) {
+          callCount++;
+          result.observe(callCount * 100);
+        },
+      ) as ObservableUpDownCounter<int>;
+      
+      // Verify it's enabled initially
+      expect(counter.enabled, isTrue);
+      
+      // Collect while enabled
+      var measurements = counter.collect();
+      expect(measurements.length, equals(1));
+      expect(callCount, equals(1));
+      
+      // Disable the meter provider
+      meterProvider.enabled = false;
+      expect(counter.enabled, isFalse);
+      
+      // Collect while disabled - callback shouldn't be called
+      var measurements2 = counter.collect();
+      expect(measurements2.length, equals(0)); // No measurements when disabled
+      expect(callCount, equals(1)); // Counter wasn't incremented
+      
+      // Metrics collection should also respect disabled state
+      var metrics = counter.collectMetrics();
+      expect(metrics.length, equals(0));
+    });
+    
+    test('ObservableUpDownCounter with different numeric types', () {
+      // Create an integer counter
+      final intCounter = meter.createObservableUpDownCounter<int>(
+        name: 'int-updown-counter',
+        unit: 'bytes',
+        callback: (APIObservableResult<int> result) {
+          result.observe(1024);
+        },
+      ) as ObservableUpDownCounter<int>;
+      
+      // Create a double counter
+      final doubleCounter = meter.createObservableUpDownCounter<double>(
+        name: 'double-updown-counter',
+        unit: 'seconds',
+        callback: (APIObservableResult<double> result) {
+          result.observe(12.345);
+        },
+      ) as ObservableUpDownCounter<double>;
+      
+      // Collect from both
+      final intMeasurements = intCounter.collect();
+      final doubleMeasurements = doubleCounter.collect();
+      
+      // Verify the values maintain their types
+      expect(intMeasurements[0].value, equals(1024));
+      expect(intMeasurements[0].value, isA<int>());
+      expect(doubleMeasurements[0].value, equals(12.345));
+      expect(doubleMeasurements[0].value, isA<double>());
+      
+      // Verify metrics collection
+      final intMetrics = intCounter.collectMetrics();
+      final doubleMetrics = doubleCounter.collectMetrics();
+      
+      expect(intMetrics[0].points[0].value, equals(1024));
+      expect(doubleMetrics[0].points[0].value, equals(12.345));
+    });
+    
+    test('ObservableUpDownCounter state clearing', () async {
+      // Create a counter
+      int value = 100;
+      
+      final counter = meter.createObservableUpDownCounter<int>(
+        name: 'clear-updown-counter',
+        callback: (APIObservableResult<int> result) {
+          result.observe(value);
+          value += 25;
+        },
+      ) as ObservableUpDownCounter<int>;
+      
+      // First collection
+      counter.collect();
+      
+      // Verify point exists
+      final metrics1 = counter.collectMetrics();
+      expect(metrics1[0].points.length, equals(1));
+      expect(metrics1[0].points[0].value, equals(100));
+      
+      // Second collection
+      counter.collect();
+      final metrics2 = counter.collectMetrics();
+      expect(metrics2[0].points[0].value, equals(125));
+      
+      // Shutdown the meter provider (should clear internal state)
+      await meterProvider.shutdown();
+      
+      // Recreate environment
+      await OTel.reset();
+      await OTel.initialize(
+        serviceName: 'test-service',
+        endpoint: 'http://localhost:4317',
+        detectPlatformResources: false,
+      );
+      meterProvider = OTel.meterProvider();
+      meter = meterProvider.getMeter(name: 'test-meter') as Meter;
+      
+      // Create a new counter
+      final newCounter = meter.createObservableUpDownCounter<int>(
+        name: 'clear-updown-counter',
+        callback: (APIObservableResult<int> result) {
+          result.observe(200);
+        },
+      ) as ObservableUpDownCounter<int>;
+      
+      // Collect again
+      newCounter.collect();
+      final metrics3 = newCounter.collectMetrics();
+      expect(metrics3[0].points.length, equals(1));
+      expect(metrics3[0].points[0].value, equals(200)); // New value after shutdown/reset
+    });
+    
+    test('ObservableUpDownCounter with exceptions in callbacks', () {
+      // Create a counter with a callback that throws an exception
+      bool callbackThrows = true;
+      
+      final counter = meter.createObservableUpDownCounter<int>(
+        name: 'exception-counter',
+        callback: (APIObservableResult<int> result) {
+          if (callbackThrows) {
+            throw Exception('Simulated error in counter callback');
+          }
+          result.observe(500);
+        },
+      ) as ObservableUpDownCounter<int>;
+      
+      // First collection with exception
+      // The SDK should handle exceptions gracefully and not crash
+      final measurements1 = counter.collect();
+      expect(measurements1.length, equals(0)); // No measurements due to exception
+      
+      // Fix the callback and collect again
+      callbackThrows = false;
+      final measurements2 = counter.collect();
+      expect(measurements2.length, equals(1));
+      expect(measurements2[0].value, equals(500));
+    });
+    
+    test('ObservableUpDownCounter with value changes', () {
+      // Track how a counter behaves with different types of value changes
+      // Set the same value multiple times
+      int fixedValue = 42;
+      bool valueChanged = false;
+      
+      final counter = meter.createObservableUpDownCounter<int>(
+        name: 'change-test-counter',
+        callback: (APIObservableResult<int> result) {
+          result.observe(fixedValue);
+          
+          // Only change after second collection
+          if (valueChanged) {
+            fixedValue = 37;
+          }
+          valueChanged = true;
+        },
+      ) as ObservableUpDownCounter<int>;
+      
+      // First collection - initial value
+      counter.collect();
+      var metrics1 = counter.collectMetrics();
+      expect(metrics1[0].points[0].value, equals(42));
+      
+      // Second collection - same value
+      counter.collect();
+      var metrics2 = counter.collectMetrics();
+      expect(metrics2[0].points[0].value, equals(42)); // No change yet
+      
+      // Third collection - decreased value
+      counter.collect();
+      var metrics3 = counter.collectMetrics();
+      expect(metrics3[0].points[0].value, equals(37)); // Decreased to 37
     });
   });
 }

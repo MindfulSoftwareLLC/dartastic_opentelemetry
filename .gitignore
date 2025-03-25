@@ -4,3 +4,4 @@
 /coverage/
 /.dart_tool/pub/bin/coverage/format_coverage.dart-3.7.0.snapshot
 /test.txt
+/.dart_tool/pub/bin/coverage/collect_coverage.dart-3.7.0.snapshot

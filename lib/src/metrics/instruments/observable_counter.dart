@@ -20,7 +20,7 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, SDKIn
   /// Storage for accumulating counter measurements.
   final SumStorage _storage = SumStorage(isMonotonic: true);
 
-  /// The last observed values, used for delta calculations.
+  /// The last observed values, for tracking and detecting resets.
   final Map<Attributes, T> _lastValues = {};
 
   /// Creates a new ObservableCounter instance.
@@ -105,6 +105,10 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, SDKIn
       return result;
     }
 
+    // First, clear previous values to prepare for fresh collection
+    // This is necessary to avoid accumulating values from multiple collections
+    _storage.reset();
+
     // Call all callbacks
     for (final callback in callbacksSnapshot) {
       try {
@@ -118,30 +122,24 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, SDKIn
         for (final measurement in observableResult.measurements) {
           // Type checking for the generic parameter
           final value = measurement.value;
-          // For observable counters, we need to calculate deltas
-          final key = measurement.attributes ?? OTelFactory.otelFactory!.attributes();
-          // Properly handle the generic type
-          final T lastValue = (_lastValues[key] ??
-              (T == int ? 0 : 0.0)) as T;
-
-          // If the new value is less than the last value, we assume a reset occurred
+          final attributes = measurement.attributes ?? OTelFactory.otelFactory!.attributes();
+          
+          // Check for monotonicity - current value should be >= last value
+          final T lastValue = (_lastValues[attributes] ?? (T == int ? 0 : 0.0)) as T;
+          
+          // If value decreased, it indicates a counter reset
           if (value < lastValue) {
-            // Just use the new value as the delta
-            _storage.record(value, measurement.attributes);
+            // Per spec, for a reset we just record the current value
+            _storage.record(value, attributes);
             result.add(measurement);
           } else {
-            // Calculate delta with proper type handling
-            final num rawDelta = value - lastValue;
-            final T delta = (T == int ? rawDelta.toInt() : rawDelta.toDouble()) as T;
-            if (delta > 0) {
-              _storage.record(delta, measurement.attributes);
-              // Add a new measurement with the delta value
-              result.add(OTelFactory.otelFactory!.createMeasurement<T>(delta, measurement.attributes));
-            }
+            // Per spec, we record the absolute value for monotonic counters
+            _storage.record(value, attributes);
+            result.add(measurement);
           }
-
-          // Update last value
-          _lastValues[key] = value;
+          
+          // Store the latest value for next time
+          _lastValues[attributes] = value;
         }
       } catch (e) {
         print('Error collecting measurements from ObservableCounter callback: $e');
@@ -186,14 +184,14 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, SDKIn
       return [];
     }
 
-    // First collect new measurements
+    // Collect new measurements, which will update storage
     collect();
 
     // Then return points from storage
     return _storage.collectPoints();
   }
 
-  /// Resets the counter. This is only used for Delta temporality.
+  /// Resets the counter. This is only used for testing.
   void reset() {
     _storage.reset();
     _lastValues.clear();
