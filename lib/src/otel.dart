@@ -142,7 +142,7 @@ class OTel {
     };
     // Create initial resource with service attributes
     var baseResource = OTel.resource(OTel.attributesFromMap(serviceResourceAttributes));
-    
+
     if (tenantId != null) {
       // Create a separate tenant_id resource to ensure it's preserved
       var tenantResource = OTel.resource(OTel.attributesFromMap({'tenant_id': tenantId}));
@@ -150,7 +150,7 @@ class OTel {
       // Merge tenant into the base resource
       baseResource = baseResource.merge(tenantResource);
     }
-    
+
     // Initialize with tenant-aware resource
     var mergedResource = baseResource;
     if (detectPlatformResources) {
@@ -158,7 +158,7 @@ class OTel {
       var platformResource = await resourceDetector.detect();
       // Merge platform resource with our service resource - our service resource takes precedence
       mergedResource = platformResource.merge(mergedResource);
-      
+
       if (OTelLog.isDebug()) {
         OTelLog.debug('Resource after platform merge:');
         mergedResource.attributes.toList().forEach((attr) {
@@ -172,7 +172,7 @@ class OTel {
       final initResources = OTel.resource(resourceAttributes);
       // Merge user-provided attributes - they have highest priority
       mergedResource = mergedResource.merge(initResources);
-      
+
       if (OTelLog.isDebug()) {
         OTelLog.debug('Resource after user attributes merge:');
         mergedResource.attributes.toList().forEach((attr) {
@@ -184,26 +184,30 @@ class OTel {
     }
     // Set the final merged resource as default
     OTel.defaultResource = mergedResource;
-    
-    // Final check to ensure tenant_id is preserved 
-    if (tenantId != null && OTel.defaultResource != null) {
-      bool hasTenantId = false;
-      OTel.defaultResource!.attributes.toList().forEach((attr) {
-        if (attr.key == 'tenant_id') {
-          hasTenantId = true;
-          if (OTelLog.isDebug()) {
-            OTelLog.debug('Final resource check - tenant_id is present: ${attr.value}');
+
+    if (OTelLog.isDebug()) {
+      // Final check to ensure tenant_id is preserved
+      if (tenantId != null && OTel.defaultResource != null) {
+        bool hasTenantId = false;
+        OTel.defaultResource!.attributes.toList().forEach((attr) {
+          if (attr.key == 'tenant_id') {
+            hasTenantId = true;
+            if (OTelLog.isDebug()) {
+              OTelLog.debug(
+                  'Final resource check - tenant_id is present: ${attr.value}');
+            }
           }
+        });
+
+        if (!hasTenantId) {
+          // As a last resort, add the tenant_id directly
+          if (OTelLog.isDebug()) {
+            OTelLog.debug('tenant_id was missing - adding it as fallback');
+          }
+          var tenantResource = OTel.resource(
+              OTel.attributesFromMap({'tenant_id': tenantId}));
+          OTel.defaultResource = OTel.defaultResource!.merge(tenantResource);
         }
-      });
-      
-      if (!hasTenantId) {
-        // As a last resort, add the tenant_id directly
-        if (OTelLog.isDebug()) {
-          OTelLog.debug('tenant_id was missing - adding it as fallback');
-        }
-        var tenantResource = OTel.resource(OTel.attributesFromMap({'tenant_id': tenantId}));
-        OTel.defaultResource = OTel.defaultResource!.merge(tenantResource);
       }
     }
 
@@ -286,7 +290,7 @@ class OTel {
   /// created by those tracers
   static TracerProvider tracerProvider({String? name}) {
     var tracerProvider = OTelAPI.tracerProvider(name) as TracerProvider;
-    
+
     // Ensure the resource is properly set
     if (tracerProvider.resource == null && defaultResource != null) {
       tracerProvider.resource = defaultResource;
@@ -301,7 +305,7 @@ class OTel {
         }
       }
     }
-    
+
     tracerProvider.sampler ??= _defaultSampler;
     return tracerProvider;
   }

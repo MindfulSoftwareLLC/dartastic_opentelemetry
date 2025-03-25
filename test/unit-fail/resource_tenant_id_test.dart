@@ -11,7 +11,7 @@ import 'package:dartastic_opentelemetry/src/trace/export/otlp/otlp_grpc_span_exp
 import 'package:dartastic_opentelemetry/src/trace/export/otlp/otlp_grpc_span_exporter_config.dart';
 import 'package:test/test.dart';
 
-import '../../testing_utils/real_collector.dart';
+import '../testing_utils/real_collector.dart';
 
 void main() {
   group('Resource Tenant ID Test', () {
@@ -255,7 +255,7 @@ void main() {
       // Get platform resources
       final resourceDetector = PlatformResourceDetector.create();
       final platformResource = await resourceDetector.detect();
-      
+
       // Merge resources - platform first, then service, then tenant_id
       // The order is critical: tenant_id must be merged last to take precedence
       final mergedResource = platformResource.merge(serviceResource).merge(tenantResource);
@@ -290,11 +290,11 @@ void main() {
       final originalTenantResource = OTel.resource(OTel.attributesFromMap({
         'tenant_id': 'original-tenant',
       }));
-      
+
       // Get platform resource
       final resourceDetector = PlatformResourceDetector.create();
       final platformResource = await resourceDetector.detect();
-      
+
       // Merge platform and original tenant
       OTel.defaultResource = platformResource.merge(originalTenantResource);
 
@@ -373,7 +373,7 @@ void main() {
       var mergedBaseResource = platformResource.merge(serviceResource);
       // Then tenant_id resource is merged last to ensure it takes precedence
       OTel.defaultResource = mergedBaseResource.merge(tenantIdResource);
-      
+
       // Print debug for resource attributes
       if (OTel.defaultResource != null) {
         print('Default resource attributes for example pattern:');
