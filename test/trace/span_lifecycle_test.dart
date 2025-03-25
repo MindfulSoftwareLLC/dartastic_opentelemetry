@@ -78,6 +78,12 @@ void main() {
     print('Waiting for span with attributes...');
     await collector.waitForSpans(1);
 
+    // Get the exported span to inspect the raw format
+    final spans = await collector.getSpans();
+    expect(spans, isNotEmpty, reason: 'Expected at least one span to be exported');
+    final exportedSpan = spans.first;
+    print('Exported span data: $exportedSpan');
+
     print('Verifying span attributes...');
     await collector.assertSpanExists(
       name: 'test-span',

@@ -286,20 +286,47 @@ class RealCollector {
   Map<String, dynamic> _parseAttributes(List? attrs) {
     if (attrs == null) return {};
     final result = <String, dynamic>{};
+    
     for (final attr in attrs) {
       final key = attr['key'] as String;
-      final value = attr['value'] as Map<String, dynamic>;
-      // Handle different value types
-      if (value.containsKey('stringValue')) {
-        result[key] = value['stringValue'];
-      } else if (value.containsKey('intValue')) {
-        result[key] = value['intValue'];
-      } else if (value.containsKey('doubleValue')) {
-        result[key] = value['doubleValue'];
-      } else if (value.containsKey('boolValue')) {
-        result[key] = value['boolValue'];
+      final valueMap = attr['value'];
+      
+      if (valueMap is! Map) {
+        // If not a map (shouldn't happen), just store as is
+        result[key] = valueMap;
+        continue;
+      }
+      
+      // Extract the actual value based on its type
+      if (valueMap['stringValue'] != null) {
+        result[key] = valueMap['stringValue'];
+      } else if (valueMap['intValue'] != null) {
+        var intVal = valueMap['intValue'];
+        // Ensure numeric types are preserved
+        if (intVal is num) {
+          result[key] = intVal;
+        } else {
+          result[key] = int.tryParse(intVal.toString()) ?? intVal;
+        }
+      } else if (valueMap['doubleValue'] != null) {
+        var doubleVal = valueMap['doubleValue'];
+        if (doubleVal is num) {
+          result[key] = doubleVal;
+        } else {
+          result[key] = double.tryParse(doubleVal.toString()) ?? doubleVal;
+        }
+      } else if (valueMap['boolValue'] != null) {
+        var boolVal = valueMap['boolValue'];
+        if (boolVal is bool) {
+          result[key] = boolVal;
+        } else if (boolVal is String) {
+          result[key] = boolVal.toLowerCase() == 'true';
+        } else {
+          result[key] = boolVal;
+        }
       }
     }
+    
     return result;
   }
 
@@ -405,7 +432,14 @@ class RealCollector {
     
     print('Looking for a span with name: $name');
     for (var span in spans) {
+      final spanAttrs = _parseAttributes(span['attributes'] as List?);
+      final resourceAttrs = span['resourceAttributes'] as Map<String, dynamic>?;
+      final allAttrs = {...?resourceAttrs, ...spanAttrs};
       print('Found span: ${span['name']}, spanId: ${span['spanId']}, traceId: ${span['traceId']}');
+      print('  Attributes: $allAttrs');
+      
+      // Log the raw attribute structure for debugging
+      print('  Raw attributes structure: ${span['attributes']}');
     }
     
     final matching = spans.where((span) {
@@ -423,8 +457,35 @@ class RealCollector {
         final allAttrs = {...?resourceAttrs, ...spanAttrs};
         
         for (final entry in attributes.entries) {
-          if (allAttrs[entry.key] != entry.value) {
-            print('Attribute mismatch for ${entry.key}: expected ${entry.value}, got ${allAttrs[entry.key]}');
+          final expectedValue = entry.value;
+          final actualValue = allAttrs[entry.key];
+          
+          if (actualValue == null) {
+            print('Attribute ${entry.key} is missing. Expected: $expectedValue');
+            return false;
+          }
+          
+          // Log types for debugging
+          print('Comparing ${entry.key}: expected=$expectedValue (${expectedValue.runtimeType}), actual=$actualValue (${actualValue.runtimeType})');
+          
+          // Perform appropriate comparison based on types
+          bool match = false;
+          if (expectedValue is num && actualValue is num) {
+            // For numbers, compare numeric values (handles int vs double)
+            match = expectedValue.toDouble() == actualValue.toDouble();
+          } else if (expectedValue is bool && actualValue is bool) {
+            // Direct comparison for booleans
+            match = expectedValue == actualValue;
+          } else if (expectedValue is String && actualValue is String) {
+            // Direct comparison for strings
+            match = expectedValue == actualValue;
+          } else {
+            // Last resort: string comparison for different types
+            match = expectedValue.toString() == actualValue.toString();
+          }
+          
+          if (!match) {
+            print('Attribute mismatch for ${entry.key}: expected $expectedValue (${expectedValue.runtimeType}), got $actualValue (${actualValue.runtimeType})');
             return false;
           }
         }
