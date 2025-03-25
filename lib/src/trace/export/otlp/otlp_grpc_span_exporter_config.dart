@@ -87,6 +87,9 @@ class OtlpGrpcExporterConfig {
         return '${parts[0]}:4317';
       } else if (parts.length == 2 && parts[0].isNotEmpty) {
         // Validate port is a number if specified
+        if (parts[1].isEmpty) {
+          throw ArgumentError('Invalid port format in endpoint: $endpoint');
+        }
         if (int.tryParse(parts[1]) == null) {
           throw ArgumentError('Invalid port format in endpoint: $endpoint');
         }

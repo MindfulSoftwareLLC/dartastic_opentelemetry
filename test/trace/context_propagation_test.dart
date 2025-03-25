@@ -7,7 +7,7 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:opentelemetry_api/opentelemetry_api.dart';
 import 'package:test/test.dart';
 
-import '../../testing_utils/real_collector.dart';
+import '../testing_utils/real_collector.dart';
 
 void main() {
   group('Context Propagation', () {
