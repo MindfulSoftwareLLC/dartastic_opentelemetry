@@ -67,10 +67,10 @@ void main() {
     setUp(() async {
       // Increment port to avoid conflicts between tests
       testPort++;
-      
+
       // Add delay to ensure port is free
       await Future.delayed(Duration(seconds: 2));
-      
+
       // Ensure output file exists and is empty
       File(outputPath).writeAsStringSync('');
 
@@ -101,29 +101,29 @@ void main() {
       } catch (e) {
         print('Error during force flush: $e');
       }
-      
+
       // Clean shutdown sequence
       try {
         await exporter.shutdown();
       } catch (e) {
         print('Error during exporter shutdown: $e');
       }
-      
+
       // Wait a moment to ensure channel is properly closed
       await Future.delayed(Duration(seconds: 1));
-      
+
       try {
         await collector.stop();
       } catch (e) {
         print('Error stopping collector: $e');
       }
-      
+
       try {
         await collector.clear();
       } catch (e) {
         print('Error clearing collector data: $e');
       }
-      
+
       // Add delay between tests
       await Future.delayed(Duration(seconds: 2));
     });
@@ -150,17 +150,17 @@ void main() {
         // Check if file has any content
         final fileContent = await File(outputPath).readAsString();
         print('File content after export: ${fileContent.length} bytes');
-  
+
         // Now wait for spans with a longer timeout
         await collector.waitForSpans(1, timeout: Duration(seconds: 15));
-  
+
         final spans2 = await collector.getSpans();
         print('Found ${spans2.length} spans: ${json.encode(spans2)}');
-  
+
         // Check if we have spans with the expected attributes, not necessarily the exact name
         final newSpans = await collector.getSpans();
         expect(newSpans.isNotEmpty, isTrue, reason: 'Expected spans to be exported');
-  
+
         // Look for the test.key attribute to verify our span was exported
         final hasSpanWithAttribute = newSpans.any((span) {
           // First try attributes array if it exists
@@ -173,16 +173,16 @@ void main() {
             });
             if (hasAttribute) return true;
           }
-          
+
           // If the span has attributes map for backward compatibility with OTel formats
           final attrMap = span['attributes'] as Map<String, dynamic>?;
           if (attrMap != null && attrMap['test.key'] == 'test.value') {
             return true;
           }
-          
+
           return false;
         });
-  
+
         expect(hasSpanWithAttribute, isTrue, reason: 'Expected span with test.key attribute');
         print('Found span with the test.key attribute, test passed');
       } catch (e) {
@@ -214,7 +214,7 @@ void main() {
         // Allow more time for span processing
         await Future.delayed(Duration(seconds: 3));
         await collector.waitForSpans(3, timeout: Duration(seconds: 15));
-  
+
         // Try to verify each span individually
         for (var i = 0; i < 3; i++) {
           try {
@@ -236,7 +236,7 @@ void main() {
         for (var span in spans) {
           print('  - Span name: ${span['name']}, attributes: ${span['attributes']}');
         }
-        
+
         // Still throw to fail the test if we didn't get all spans
         if (spans.length < 3) {
           throw Exception('Failed to export all 3 spans, got ${spans.length}');

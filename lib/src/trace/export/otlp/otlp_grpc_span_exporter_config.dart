@@ -65,7 +65,7 @@ class OtlpGrpcExporterConfig {
     }
 
     // Check for specific invalid formats that might parse but are invalid
-    if (endpoint.contains(':port')) {
+    if (endpoint.contains(':port') || endpoint.contains('://port')) {
       throw ArgumentError('Invalid port specification in endpoint: $endpoint');
     }
 
@@ -74,9 +74,29 @@ class OtlpGrpcExporterConfig {
       return '$endpoint:4317'; // Add default port if missing
     }
 
-    // Special case for full URLs (always valid in our context)
+    // Handle URL format validation more carefully
     if (endpoint.startsWith('http://') || endpoint.startsWith('https://')) {
-      return endpoint;
+      try {
+        final uri = Uri.parse(endpoint);
+        if (uri.host.isEmpty) {
+          throw ArgumentError('Invalid host in endpoint: $endpoint');
+        }
+        if (uri.port == 0 && !endpoint.contains(':')) {
+          // No port specified in URL format, add default
+          return '${uri.scheme}://${uri.host}:4317${uri.path}';
+        }
+        if (uri.port == 0 && endpoint.contains(':') && !endpoint.contains('://:')) {
+          // Port part exists but might be invalid
+          final portStr = endpoint.split(':').last;
+          if (int.tryParse(portStr) == null) {
+            throw ArgumentError('Invalid port format in endpoint URL: $endpoint');
+          }
+        }
+        return endpoint;
+      } catch (e) {
+        if (e is ArgumentError) rethrow;
+        throw ArgumentError('Invalid URL format in endpoint: $endpoint');
+      }
     }
 
     // Try to parse as URI or host:port
