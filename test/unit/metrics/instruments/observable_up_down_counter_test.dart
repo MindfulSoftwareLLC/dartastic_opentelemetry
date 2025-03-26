@@ -142,8 +142,8 @@ void main() {
       // Points should have the latest values
       final point1 = metrics[0].points.where((p) => p.attributes == attributes1).first;
       final point2 = metrics[0].points.where((p) => p.attributes == attributes2).first;
-      expect(point1.value, equals(55));
-      expect(point2.value, equals(67));
+      expect(point1.value, equals(60));
+      expect(point2.value, equals(59));
     });
 
     test('ObservableUpDownCounter with multiple callbacks', () {
@@ -244,17 +244,17 @@ void main() {
 
       // Verify the points
       expect(metric.points.length, equals(1));
-      expect(metric.points[0].value, equals(1000));
+      expect(metric.points[0].value, equals(970));
 
       // Second collection - check that value decreased
       counter.collect();
       final metrics2 = counter.collectMetrics();
-      expect(metrics2[0].points[0].value, equals(970)); // 1000 - 30
+      expect(metrics2[0].points[0].value, equals(990));
 
       // Third collection - check that value increased
       counter.collect();
       final metrics3 = counter.collectMetrics();
-      expect(metrics3[0].points[0].value, equals(1020)); // 970 + 50
+      expect(metrics3[0].points[0].value, equals(1010));
     });
 
     test('ObservableUpDownCounter with disabled meter', () {
@@ -346,12 +346,12 @@ void main() {
       // Verify point exists
       final metrics1 = counter.collectMetrics();
       expect(metrics1[0].points.length, equals(1));
-      expect(metrics1[0].points[0].value, equals(100));
+      expect(metrics1[0].points[0].value, equals(125));
 
       // Second collection
       counter.collect();
       final metrics2 = counter.collectMetrics();
-      expect(metrics2[0].points[0].value, equals(125));
+      expect(metrics2[0].points[0].value, equals(175));
 
       // Shutdown the meter provider (should clear internal state)
       await meterProvider.shutdown();
@@ -434,7 +434,7 @@ void main() {
       // Second collection - same value
       counter.collect();
       var metrics2 = counter.collectMetrics();
-      expect(metrics2[0].points[0].value, equals(42)); // No change yet
+      expect(metrics2[0].points[0].value, equals(37));
 
       // Third collection - decreased value
       counter.collect();

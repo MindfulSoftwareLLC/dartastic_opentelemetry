@@ -159,13 +159,7 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T>, SDKInstru
       return [];
     }
 
-    // For gauges, we don't keep historical data, so first clear the storage
-    _storage.reset();
-
-    // Collect measurements from callbacks
-    collect();
-
-    // Then return points from storage
+    // Return points from storage
     return _storage.collectPoints();
   }
 }
