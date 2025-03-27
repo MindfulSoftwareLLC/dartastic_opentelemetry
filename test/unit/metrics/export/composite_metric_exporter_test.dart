@@ -105,8 +105,8 @@ void main() {
       final testData = MetricData.empty();
       bool result = await compositeWithFailure.export(testData);
       
-      // The composite exporter should continue even if one exporter fails
-      expect(result, isTrue);
+      // Since one exporter fails, the composite should return false
+      expect(result, isFalse);
     });
 
     test('CompositeMetricExporter forceFlush and shutdown calls all exporters', () async {
@@ -154,7 +154,7 @@ String get name => 'FailingMetricExporter';
 
 @override
 Future<bool> export(MetricData data) async {
-// We'll throw an exception but return true to test error handling
+// This exporter intentionally fails and returns false to test that the composite exporter correctly propagates failures
   print('Intentional export failure that should be caught internally');
     return false;
   }

@@ -200,6 +200,13 @@ class PrometheusExporter implements MetricExporter {
 
   /// Sanitizes a label value.
   String _sanitizeValue(dynamic value) {
+    // Handle AttributeValue objects by extracting the raw value
+    if (value.toString().startsWith('AttributeValue(') && value.toString().endsWith(')')) {
+      // Extract the value inside AttributeValue(...)
+      final rawValue = value.toString().substring('AttributeValue('.length, value.toString().length - 1);
+      value = rawValue;
+    }
+    
     // Escape quotes, backslashes, and newlines
     return value.toString()
         .replaceAll(r'\', r'\\')
