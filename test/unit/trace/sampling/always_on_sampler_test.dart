@@ -9,7 +9,11 @@ void main() {
   group('AlwaysOnSampler Tests', () {
     late AlwaysOnSampler sampler;
 
-    setUp(() {
+    setUp(() async {
+      await OTel.reset();
+      await OTel.initialize(
+        serviceName: 'test-service',
+      );
       sampler = const AlwaysOnSampler();
     });
 

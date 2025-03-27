@@ -73,6 +73,15 @@ class MeterProvider implements APIMeterProvider {
 
   @override
   APIMeter getMeter({required String name, String? version, String? schemaUrl, Attributes? attributes}) {
+    // Check if provider is shutdown
+    if (isShutdown) {
+      // Return a no-op meter instead of throwing
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('MeterProvider: Attempting to get meter "$name" after shutdown. Returning a no-op meter.');
+      }
+      return NoopMeter(name: name, version: version, schemaUrl: schemaUrl);
+    }
+
     // Create a unique key for this meter
     final meterKey = '$name:${version ?? ''}:${schemaUrl ?? ''}';
 

@@ -1,13 +1,8 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'dart:async';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry/src/metrics/data/metric.dart';
-import 'package:dartastic_opentelemetry/src/metrics/data/metric_data.dart';
-import 'package:dartastic_opentelemetry/src/metrics/data/metric_point.dart';
-import 'package:dartastic_opentelemetry/src/metrics/export/prometheus/prometheus_exporter.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -9,8 +9,16 @@ void main() {
   group('AlwaysOffSampler Tests', () {
     late AlwaysOffSampler sampler;
 
-    setUp(() {
+    setUp(() async {
+      await OTel.reset();
+      await OTel.initialize(
+        serviceName: 'test-service',
+      );
       sampler = const AlwaysOffSampler();
+    });
+
+    tearDown(() async {
+      await OTel.reset();
     });
 
     test('description returns expected value', () {

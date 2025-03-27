@@ -75,7 +75,7 @@ void main() {
       final tracer = tracerProvider.getTracer('test');
 
       // Create a parent span that is sampled
-      final sampledFlags = OTel.traceFlags(TraceFlags.SAMPLED_FLAG);
+      OTel.traceFlags(TraceFlags.SAMPLED_FLAG);
       final parent = tracer.startSpan('parent');
       expect(parent.spanContext.traceFlags.isSampled, isTrue);
 

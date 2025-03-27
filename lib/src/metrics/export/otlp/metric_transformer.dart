@@ -174,8 +174,6 @@ class MetricTransformer {
     );
   }
 
-  // This method is no longer needed as we're creating complete objects instead of modifying them
-
   /// Creates a KeyValue proto from a key and value.
   static common_proto.KeyValue _createKeyValue(String key, dynamic value) {
     final keyValue = common_proto.KeyValue();

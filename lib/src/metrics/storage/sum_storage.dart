@@ -10,7 +10,7 @@ import 'point_storage.dart';
 /// like Counter and UpDownCounter.
 class SumStorage<T extends num> extends PointStorage<T> {
   /// Map of attribute sets to accumulated values.
-  final Map<Attributes, _SumPointData> _points = {};
+  final Map<Attributes?, _SumPointData> _points = {};
 
   /// Whether the sum is monotonic (only increases).
   final bool isMonotonic;
@@ -35,37 +35,34 @@ class SumStorage<T extends num> extends PointStorage<T> {
       return;
     }
 
-    // Create a normalized key for lookup
-    final key = attributes ?? _emptyAttributes();
-
-    // Find matching attributes or use the new key directly
-    var existingKey = _findMatchingKey(key);
+    // Find matching attributes or create a new entry
+    var existingKey = _findMatchingKey(attributes);
     if (existingKey != null) {
       // For synchronous counters, add to the existing value
       // For asynchronous counters, this would replace the value instead
       _points[existingKey]!.add(value);
     } else {
-      // Create new point
-      _points[key] = _SumPointData(
+      // Create new point with the given attributes (can be null)
+      _points[attributes] = _SumPointData(
         value: value,
         lastUpdateTime: DateTime.now(),
       );
     }
   }
   
-  /// Helper to get empty attributes safely
-  Attributes _emptyAttributes() {
-    // If OTelFactory is not initialized yet, create an empty attributes directly
-    if (OTelFactory.otelFactory == null) {
-      return OTelAPI.attributes(); // Use the API's static method instead
-    }
-    return OTelFactory.otelFactory!.attributes();
-  }
-  
   /// Finds a key in the points map that equals the given key
-  Attributes? _findMatchingKey(Attributes key) {
+  Attributes? _findMatchingKey(Attributes? keyToFind) {
+    // Handle null key case specially
+    if (keyToFind == null) {
+      return _points.keys.firstWhere(
+        (key) => key == null,
+        orElse: () => null,
+      );
+    }
+    
+    // Handle non-null key case
     for (final existingKey in _points.keys) {
-      if (existingKey == key) { // Using the == operator which should call equals
+      if (existingKey == keyToFind) { // Using the == operator which should call equals
         return existingKey;
       }
     }
@@ -77,7 +74,8 @@ class SumStorage<T extends num> extends PointStorage<T> {
   @override
   T getValue([Attributes? attributes]) {
     if (attributes == null) {
-      // Sum across all attribute sets
+      // For null attributes, return the sum across all attribute sets
+      // to be consistent with the tests and expected behavior
       final num totalSum = _points.values.fold<num>(0, (sum, data) => sum + data.value);
       
       // Convert to the appropriate generic type
@@ -88,19 +86,19 @@ class SumStorage<T extends num> extends PointStorage<T> {
       } else {
         return totalSum as T;
       }
-    }
-    
-    // Find matching attributes
-    var existingKey = _findMatchingKey(attributes);
-    final num value = existingKey != null ? _points[existingKey]!.value : 0;
-    
-    // Convert to the appropriate generic type
-    if (T == int) {
-      return value.toInt() as T;
-    } else if (T == double) {
-      return value.toDouble() as T;
     } else {
-      return value as T;
+      // For specific attributes, find the matching key
+      var existingKey = _findMatchingKey(attributes);
+      final num value = existingKey != null ? _points[existingKey]!.value : 0;
+      
+      // Convert to the appropriate generic type
+      if (T == int) {
+        return value.toInt() as T;
+      } else if (T == double) {
+        return value.toDouble() as T;
+      } else {
+        return value as T;
+      }
     }
   }
 
@@ -110,8 +108,11 @@ class SumStorage<T extends num> extends PointStorage<T> {
     final now = DateTime.now();
 
     return _points.entries.map((entry) {
+      // Convert null attributes to empty attributes for MetricPoint
+      final attributes = entry.key ?? OTelFactory.otelFactory!.attributes();
+      
       return MetricPoint.sum(
-        attributes: entry.key,
+        attributes: attributes,
         startTime: _startTime,
         time: now,
         value: entry.value.value,
@@ -130,11 +131,8 @@ class SumStorage<T extends num> extends PointStorage<T> {
   /// Adds an exemplar to a specific point.
   @override
   void addExemplar(Exemplar exemplar, [Attributes? attributes]) {
-    // Create a normalized key for lookup
-    final key = attributes ?? _emptyAttributes();
-    
     // Find matching attributes
-    var existingKey = _findMatchingKey(key);
+    var existingKey = _findMatchingKey(attributes);
     if (existingKey != null) {
       _points[existingKey]!.exemplars.add(exemplar);
     }

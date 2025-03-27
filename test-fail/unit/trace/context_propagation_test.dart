@@ -9,7 +9,7 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:opentelemetry_api/opentelemetry_api.dart';
 import 'package:test/test.dart';
 
-import '../../testing_utils/real_collector.dart';
+import '../../../test/testing_utils/real_collector.dart';
 
 // Check if we're running in isolated mode
 final bool isIsolatedRun =
@@ -236,7 +236,7 @@ void main() {
       print('Starting context propagation test with withSpan');
 
       final parentSpan = tracer.startSpan('parent-span-test-$uniqueId');
-      final parentSpanId = parentSpan.spanContext.spanId.toString();
+      parentSpan.spanContext.spanId.toString();
 
       final parentContext = OTel.context().withSpan(parentSpan);
 

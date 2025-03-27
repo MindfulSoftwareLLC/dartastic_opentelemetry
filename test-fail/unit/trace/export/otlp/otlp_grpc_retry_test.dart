@@ -10,8 +10,8 @@ import 'package:opentelemetry_api/opentelemetry_api.dart';
 import 'package:test/test.dart';
 import 'package:dartastic_opentelemetry/src/trace/span.dart';
 
-import '../testing_utils/real_collector.dart';
-import '../testing_utils/network_proxy.dart';
+import '../../../../../test/testing_utils/real_collector.dart';
+import '../../../../../test/testing_utils/network_proxy.dart';
 
 // Helper function to create a test span using OTel factory methods
 Span createTestSpan({

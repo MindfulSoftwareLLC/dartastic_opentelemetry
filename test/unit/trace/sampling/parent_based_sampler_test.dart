@@ -10,7 +10,11 @@ void main() {
     late ParentBasedSampler sampler;
     late Sampler rootSampler;
 
-    setUp(() {
+    setUp(() async {
+      await OTel.reset();
+      await OTel.initialize(
+        serviceName: 'test-service',
+      );
       // Use TraceIdRatioSampler(0.5) as the root sampler for testing
       rootSampler = TraceIdRatioSampler(0.5);
       sampler = ParentBasedSampler(rootSampler);

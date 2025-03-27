@@ -7,6 +7,12 @@ import 'package:test/test.dart';
 
 void main() {
   group('TraceIdRatioSampler Tests', () {
+    setUp(() async {
+      await OTel.reset();
+      await OTel.initialize(
+        serviceName: 'test-service',
+      );
+    });
     test('constructor throws ArgumentError for invalid ratio values', () {
       expect(() => TraceIdRatioSampler(-0.1), throwsArgumentError);
       expect(() => TraceIdRatioSampler(1.1), throwsArgumentError);
@@ -26,11 +32,11 @@ void main() {
     test('sampler with ratio 0.0 never samples', () {
       final sampler = TraceIdRatioSampler(0.0);
       final parentContext = OTelAPI.context();
-      
+
       // Try with 10 different trace IDs
       for (int i = 0; i < 10; i++) {
         final traceId = '000000000000000000000000000000${i.toRadixString(16).padLeft(2, '0')}';
-        
+
         final result = sampler.shouldSample(
           parentContext: parentContext,
           traceId: traceId,
@@ -39,7 +45,7 @@ void main() {
           attributes: null,
           links: null,
         );
-        
+
         expect(result.decision, equals(SamplingDecision.drop));
       }
     });
@@ -47,11 +53,11 @@ void main() {
     test('sampler with ratio 1.0 always samples', () {
       final sampler = TraceIdRatioSampler(1.0);
       final parentContext = OTelAPI.context();
-      
+
       // Try with 10 different trace IDs
       for (int i = 0; i < 10; i++) {
         final traceId = '000000000000000000000000000000${i.toRadixString(16).padLeft(2, '0')}';
-        
+
         final result = sampler.shouldSample(
           parentContext: parentContext,
           traceId: traceId,
@@ -60,7 +66,7 @@ void main() {
           attributes: null,
           links: null,
         );
-        
+
         expect(result.decision, equals(SamplingDecision.recordAndSample));
       }
     });
@@ -68,12 +74,12 @@ void main() {
     test('sampler with ratio 0.5 samples approximately half the time', () {
       final sampler = TraceIdRatioSampler(0.5);
       final parentContext = OTelAPI.context();
-      
+
       // Create predictable trace IDs that will cover both sides of the decision boundary
       // The sampler uses the last 16 hex chars (8 bytes) of the trace ID
       final lowTraceId = '00000000000000000000000000000000'; // Should be sampled
       final highTraceId = 'ffffffffffffffffffffffffffffffff'; // Should not be sampled
-      
+
       final lowResult = sampler.shouldSample(
         parentContext: parentContext,
         traceId: lowTraceId,
@@ -82,7 +88,7 @@ void main() {
         attributes: null,
         links: null,
       );
-      
+
       final highResult = sampler.shouldSample(
         parentContext: parentContext,
         traceId: highTraceId,
@@ -91,7 +97,7 @@ void main() {
         attributes: null,
         links: null,
       );
-      
+
       expect(lowResult.decision, equals(SamplingDecision.recordAndSample));
       expect(highResult.decision, equals(SamplingDecision.drop));
     });
@@ -99,16 +105,16 @@ void main() {
     test('statistical distribution test with ratio 0.3', () {
       final sampler = TraceIdRatioSampler(0.3);
       final parentContext = OTelAPI.context();
-      
+
       int sampledCount = 0;
       const totalRuns = 1000;
-      
+
       // Generate trace IDs with a simple pattern that should appear random for sampling
       for (int i = 0; i < totalRuns; i++) {
         // Use timestamp + iteration to generate "random" trace IDs
         final timestamp = DateTime.now().microsecondsSinceEpoch.toRadixString(16);
-        final traceId = '${timestamp.padRight(32, '0')}';
-        
+        final traceId = timestamp.padRight(32, '0');
+
         final result = sampler.shouldSample(
           parentContext: parentContext,
           traceId: traceId,
@@ -117,12 +123,12 @@ void main() {
           attributes: null,
           links: null,
         );
-        
+
         if (result.decision == SamplingDecision.recordAndSample) {
           sampledCount++;
         }
       }
-      
+
       // Check if the sampling rate is roughly within expected bounds
       // Allow for some statistical variation (±10%)
       final samplingRate = sampledCount / totalRuns;

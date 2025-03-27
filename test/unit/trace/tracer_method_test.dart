@@ -204,17 +204,15 @@ void main() {
     tearDown(() async {
       try {
         // First ensure the tracer provider flushes any pending spans
-        if (tracerProvider != null) {
-          try {
-            await tracerProvider.forceFlush();
-            // Add delay to ensure spans are exported
-            await Future.delayed(Duration(seconds: 1));
-            // Now shutdown the tracer provider
-            await tracerProvider.shutdown();
-          } catch (e) {
-            if (OTelLog.isError()) {
-              OTelLog.error('Error during tracer provider teardown: $e');
-            }
+        try {
+          await tracerProvider.forceFlush();
+          // Add delay to ensure spans are exported
+          await Future.delayed(Duration(seconds: 1));
+          // Now shutdown the tracer provider
+          await tracerProvider.shutdown();
+        } catch (e) {
+          if (OTelLog.isError()) {
+            OTelLog.error('Error during tracer provider teardown: $e');
           }
         }
 
@@ -223,11 +221,9 @@ void main() {
       } finally {
         // Always stop the collector and clean up
         try {
-          if (collector != null) {
-            await collector.stop();
-            await collector.clear();
-          }
-        } catch (e) {
+          await collector.stop();
+          await collector.clear();
+                } catch (e) {
           if (OTelLog.isError()) {
             OTelLog.error('Error during collector teardown: $e');
           }
