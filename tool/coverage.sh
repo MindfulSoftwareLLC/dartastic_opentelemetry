@@ -11,7 +11,7 @@ mkdir -p coverage
 
 # Run tests with coverage
 echo "Running tests with coverage..."
-dart test --coverage=coverage
+dart test --coverage=coverage --concurrency=1
 
 # Verify that the coverage directory contains data
 if [ ! "$(ls -A coverage)" ]; then
@@ -24,6 +24,7 @@ echo "Formatting coverage data..."
 dart run coverage:format_coverage \
   --lcov \
   --in=coverage \
+  --ignore-files='lib/proto/.*,**/*.pb.dart,**/*.pbenum.dart,**/*.pbserver.dart,**/*.pbjson.dart' \
   --out=coverage/lcov.info \
   --report-on=lib \
   --check-ignore
@@ -60,7 +61,7 @@ if [ -f coverage/lcov.info ] && [ "$LCOV_SIZE" -gt 0 ]; then
     # Fallback to basic calculation if lcov command is not available
     LINE_COVERAGE=$(grep -c 'LF:' coverage/lcov.info)
     LINE_HIT=$(grep -c 'LH:' coverage/lcov.info)
-    
+
     if [ "$LINE_COVERAGE" -gt 0 ]; then
       echo "Found $LINE_COVERAGE coverage data points"
     else

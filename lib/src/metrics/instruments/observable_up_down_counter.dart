@@ -147,9 +147,6 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
       return [];
     }
 
-    // Collect new measurements, which will update storage
-    collect();
-
     // Then return points from storage
     return _storage.collectPoints();
   }

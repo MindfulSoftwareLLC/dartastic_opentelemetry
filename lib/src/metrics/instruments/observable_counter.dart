@@ -123,10 +123,10 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, SDKIn
           // Type checking for the generic parameter
           final value = measurement.value;
           final attributes = measurement.attributes ?? OTelFactory.otelFactory!.attributes();
-          
+
           // Check for monotonicity - current value should be >= last value
           final T lastValue = (_lastValues[attributes] ?? (T == int ? 0 : 0.0)) as T;
-          
+
           // If value decreased, it indicates a counter reset
           if (value < lastValue) {
             // Per spec, for a reset we just record the current value
@@ -137,7 +137,7 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, SDKIn
             _storage.record(value, attributes);
             result.add(measurement);
           }
-          
+
           // Store the latest value for next time
           _lastValues[attributes] = value;
         }
@@ -183,9 +183,6 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, SDKIn
     if (!enabled) {
       return [];
     }
-
-    // Collect new measurements, which will update storage
-    collect();
 
     // Then return points from storage
     return _storage.collectPoints();

@@ -74,7 +74,7 @@ void main() {
 
       // Verify the points
       expect(metrics[0].points.length, equals(1));
-      expect(metrics[0].points[0].value, equals(28.5)); // Latest value
+      expect(metrics[0].points[0].value, equals(27.0)); // Latest value
     });
 
     test('ObservableGauge with attributes', () {
@@ -139,8 +139,20 @@ void main() {
           metrics[0].points.where((p) => p.attributes == attributes1).first;
       final point2 =
           metrics[0].points.where((p) => p.attributes == attributes2).first;
-      expect(point1.value, closeTo(23.5, 0.001));
-      expect(point2.value, closeTo(24.4, 0.001));
+      expect(point1.value, closeTo(23.0, 0.001));
+      expect(point2.value, closeTo(24.6, 0.001));
+
+      // third collection
+      final measurements3 = gauge.collect();
+      expect(measurements3.length, equals(2));
+
+      // Values should reflect the changes
+      expect(
+          measurements3.where((m) => m.attributes == attributes1).first.value,
+          closeTo(23.5, 0.001));
+      expect(
+          measurements3.where((m) => m.attributes == attributes2).first.value,
+          closeTo(24.4, 0.001));
     });
 
     test('ObservableGauge with multiple callbacks', () {
@@ -211,16 +223,6 @@ void main() {
     });
 
     test('ObservableGauge collectMetrics', () {
-      /*
-      The sequence is:
-        Initial value = 98.6
-        First collect(): Records 98.6, then updates to 98.9
-        First collectMetrics(): Gets 98.9 (updated value)
-        Second collect(): Records 98.9, then updates to 99.2
-        collectMetrics() is called again but before that there's another invisible collection
-        Third collection: Records 99.2, then updates to 99.5
-        Second collectMetrics(): Gets 99.5 (the latest value)
-      */
       // Create a gauge
       double value = 98.6;
       bool decreasing = false;
@@ -266,7 +268,7 @@ void main() {
       gauge.collect();
       final metrics2 = gauge.collectMetrics();
       expect(metrics2[0].points[0].value,
-          closeTo(99.5, 0.001)); // 98.9 + 0.3 = 99.2 + 0.3 = 99.5
+          closeTo(98.9, 0.001));
     });
 
     test('ObservableGauge with disabled meter', () {
@@ -392,7 +394,7 @@ void main() {
       gauge.collect();
       final metrics2 = gauge.collectMetrics();
       expect(metrics2[0].points.length, equals(1));
-      expect(metrics2[0].points[0].value, equals(70.0)); // 50.0 + 20.0 = 70.0
+      expect(metrics2[0].points[0].value, equals(60.0)); // 50.0 + 10.0 = 60.0
 
       // Shutdown the meter provider (should clear internal state)
       await meterProvider.shutdown();

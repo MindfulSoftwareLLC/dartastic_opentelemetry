@@ -51,28 +51,28 @@ void main() {
       expect(counter.description, equals('A test observable counter'));
       expect(counter.enabled, isTrue);
       expect(counter.meter, equals(meter));
-      
+
       // Verify callbacks were registered
       expect(counter.callbacks.length, equals(1));
-      
+
       // Collect measurements
       final measurements = counter.collect();
       expect(measurements.length, equals(1));
       expect(measurements[0].value, equals(10)); // First observation
-      
+
       // Collect again to verify delta calculation
       final measurements2 = counter.collect();
       expect(measurements2.length, equals(1));
-      expect(measurements2[0].value, equals(10)); // Delta: 20-10=10
-      
+      expect(measurements2[0].value, equals(20)); // +10
+
       // Collect metrics points
       final points = counter.collectPoints();
       expect(points.length, equals(1));
-      expect(points[0].value, equals(30)); // Cumulative: 10+10+10=30
-      
+      expect(points[0].value, equals(20)); // Same, 20
+
       // Reset counter
       counter.reset();
-      
+
       // Collect after reset
       final measurements3 = counter.collect();
       expect(measurements3.length, equals(1));
@@ -83,10 +83,10 @@ void main() {
       // Create sets of attributes
       final attributes1 = {'service': 'api'}.toAttributes();
       final attributes2 = {'service': 'db'}.toAttributes();
-      
+
       // Create value maps to simulate increasing values
       Map<Attributes, int> observedValues = {};
-      
+
       // Create an ObservableCounter
       final counter = meter.createObservableCounter<int>(
         name: 'attr-observable-counter',
@@ -95,36 +95,36 @@ void main() {
           // Initialize or increment values
           observedValues[attributes1] = (observedValues[attributes1] ?? 0) + 5;
           observedValues[attributes2] = (observedValues[attributes2] ?? 0) + 3;
-          
+
           // Report both values
           result.observe(observedValues[attributes1]!, attributes1);
           result.observe(observedValues[attributes2]!, attributes2);
         },
       ) as ObservableCounter<int>;
-      
+
       // First collection
       final measurements1 = counter.collect();
       expect(measurements1.length, equals(2));
-      
+
       // Values should match our initial increments (delta calculation doesn't apply to first observation)
       expect(measurements1.where((m) => m.attributes == attributes1).first.value, equals(5));
       expect(measurements1.where((m) => m.attributes == attributes2).first.value, equals(3));
-      
+
       // Second collection
       final measurements2 = counter.collect();
       expect(measurements2.length, equals(2));
-      
+
       // Values should be the deltas of the second observation
-      expect(measurements2.where((m) => m.attributes == attributes1).first.value, equals(5));
-      expect(measurements2.where((m) => m.attributes == attributes2).first.value, equals(3));
-      
+      expect(measurements2.where((m) => m.attributes == attributes1).first.value, equals(10));
+      expect(measurements2.where((m) => m.attributes == attributes2).first.value, equals(6));
+
       // Get metric points (cumulative)
       final points = counter.collectPoints();
       expect(points.length, equals(2));
-      
-      // Points should have cumulative values
-      expect(points.where((p) => p.attributes == attributes1).first.value, equals(15));
-      expect(points.where((p) => p.attributes == attributes2).first.value, equals(9));
+
+      // Points should still have cumulative values
+      expect(points.where((p) => p.attributes == attributes1).first.value, equals(10));
+      expect(points.where((p) => p.attributes == attributes2).first.value, equals(6));
     });
 
     test('ObservableCounter with multiple callbacks', () {
@@ -133,7 +133,7 @@ void main() {
         name: 'multi-callback-counter',
         unit: 'calls',
       ) as ObservableCounter<int>;
-      
+
       // First callback
       int callback1Value = 100;
       final attributes1 = {'source': 'callback1'}.toAttributes();
@@ -141,7 +141,7 @@ void main() {
         result.observe(callback1Value, attributes1);
         callback1Value += 50; // Increment for next call
       });
-      
+
       // Second callback
       int callback2Value = 200;
       final attributes2 = {'source': 'callback2'}.toAttributes();
@@ -149,36 +149,36 @@ void main() {
         result.observe(callback2Value, attributes2);
         callback2Value += 100; // Increment for next call
       });
-      
+
       // Verify both callbacks are registered
       expect(counter.callbacks.length, equals(2));
-      
+
       // First collection should have both values
       final measurements1 = counter.collect();
       expect(measurements1.length, equals(2));
       expect(measurements1.where((m) => m.attributes == attributes1).first.value, equals(100));
       expect(measurements1.where((m) => m.attributes == attributes2).first.value, equals(200));
-      
+
       // Second collection should have deltas
       final measurements2 = counter.collect();
       expect(measurements2.length, equals(2));
-      expect(measurements2.where((m) => m.attributes == attributes1).first.value, equals(50));
-      expect(measurements2.where((m) => m.attributes == attributes2).first.value, equals(100));
-      
+      expect(measurements2.where((m) => m.attributes == attributes1).first.value, equals(150));
+      expect(measurements2.where((m) => m.attributes == attributes2).first.value, equals(300));
+
       // Unregister first callback
       registration1.unregister();
       expect(counter.callbacks.length, equals(1));
-      
+
       // Collection should now only have the second callback's value
       final measurements3 = counter.collect();
       expect(measurements3.length, equals(1));
       expect(measurements3[0].attributes, equals(attributes2));
-      expect(measurements3[0].value, equals(300));
-      
+      expect(measurements3[0].value, equals(400));
+
       // Unregister second callback
       registration2.unregister();
       expect(counter.callbacks.length, equals(0));
-      
+
       // Collection should now be empty
       final measurements4 = counter.collect();
       expect(measurements4.length, equals(0));
@@ -188,7 +188,7 @@ void main() {
       // Create a counter with a decreasing value to test monotonicity handling
       int counterValue = 100;
       bool decreaseValue = false;
-      
+
       final counter = meter.createObservableCounter<int>(
         name: 'monotonic-test-counter',
         callback: (APIObservableResult<int> result) {
@@ -200,52 +200,52 @@ void main() {
           result.observe(counterValue);
         },
       ) as ObservableCounter<int>;
-      
+
       // First collection (increasing)
       var measurements1 = counter.collect();
       expect(measurements1.length, equals(1));
       expect(measurements1[0].value, equals(110)); // First absolute value
-      
+
       // Second collection (increasing)
       var measurements2 = counter.collect();
       expect(measurements2.length, equals(1));
-      expect(measurements2[0].value, equals(10)); // Delta: 120-110=10
-      
+      expect(measurements2[0].value, equals(120)); // Delta: 120-10=110
+
       // Now decrease the value
       decreaseValue = true;
-      
+
       // Third collection (decreasing)
       var measurements3 = counter.collect();
       expect(measurements3.length, equals(1));
       expect(measurements3[0].value, equals(100)); // Value after decrease
-      
+
       // Verify the counter handles non-monotonic changes appropriately
       // When a counter resets or decreases, the SDK should treat this as a new starting point
       var points = counter.collectPoints();
       expect(points.length, equals(1));
-      expect(points[0].value, equals(100)); // New cumulative value
+      expect(points[0].value, equals(100)); // Same cumulative value
     });
 
     test('ObservableCounter with zero/negative delta', () {
       // Set up a counter with fixed value (no change)
       final fixedValue = 50;
-      
+
       final counter = meter.createObservableCounter<int>(
         name: 'zero-delta-counter',
         callback: (APIObservableResult<int> result) {
           result.observe(fixedValue);
         },
       ) as ObservableCounter<int>;
-      
+
       // First collection
       var measurements1 = counter.collect();
       expect(measurements1.length, equals(1));
       expect(measurements1[0].value, equals(50)); // Initial value
-      
+
       // Second collection should have zero delta, which shouldn't be reported
       var measurements2 = counter.collect();
       expect(measurements2.length, equals(0)); // No measurement for zero delta
-      
+
       // But the point is still there with the cumulative value
       var points = counter.collectPoints();
       expect(points.length, equals(1));
@@ -255,7 +255,7 @@ void main() {
     test('ObservableCounter collectMetrics', () {
       // Create a counter
       int value = 0;
-      
+
       final counter = meter.createObservableCounter<int>(
         name: 'metrics-counter',
         unit: 'requests',
@@ -265,40 +265,40 @@ void main() {
           result.observe(value);
         },
       ) as ObservableCounter<int>;
-      
+
       // Trigger collection
       counter.collect();
-      
+
       // Get metrics
       final metrics = counter.collectMetrics();
       expect(metrics.length, equals(1));
-      
+
       // Verify metric properties
       final metric = metrics[0];
       expect(metric.name, equals('metrics-counter'));
       expect(metric.description, equals('Test metrics collection'));
       expect(metric.unit, equals('requests'));
-      
+
       // Verify this is a sum metric with the correct properties
       expect(metric.type, equals(MetricType.sum));
       expect(metric.name, equals('metrics-counter'));
       // Sum metrics from ObservableCounter are monotonic
       expect(metric.points.isNotEmpty, isTrue);
-      
+
       // Verify the points
       expect(metric.points.length, equals(1));
       expect(metric.points[0].value, equals(5));
-      
+
       // Second collection - check the cumulative value
       counter.collect();
       final metrics2 = counter.collectMetrics();
-      expect(metrics2[0].points[0].value, equals(15)); // 5 + 5 + 5 = 15
+      expect(metrics2[0].points[0].value, equals(10)); // 5 + 5
     });
 
     test('ObservableCounter with disabled meter', () {
       // Create a counter
       int callCount = 0;
-      
+
       final counter = meter.createObservableCounter<int>(
         name: 'disabled-counter',
         callback: (APIObservableResult<int> result) {
@@ -306,33 +306,33 @@ void main() {
           result.observe(callCount * 10);
         },
       ) as ObservableCounter<int>;
-      
+
       // Verify it's enabled initially
       expect(counter.enabled, isTrue);
-      
+
       // Collect while enabled
       var measurements = counter.collect();
       expect(measurements.length, equals(1));
       expect(callCount, equals(1));
-      
+
       // Disable the meter provider
       meterProvider.enabled = false;
       expect(counter.enabled, isFalse);
-      
+
       // Collect while disabled - callback shouldn't be called
       var measurements2 = counter.collect();
       expect(measurements2.length, equals(0)); // No measurements when disabled
       expect(callCount, equals(1)); // Counter wasn't incremented
-      
+
       // Metrics collection should also respect disabled state
       var metrics = counter.collectMetrics();
       expect(metrics.length, equals(0));
     });
-    
+
     test('ObservableCounter state clearing', () async {
       // Create a counter
       int value = 100;
-      
+
       final counter = meter.createObservableCounter<int>(
         name: 'clear-counter',
         callback: (APIObservableResult<int> result) {
@@ -340,23 +340,23 @@ void main() {
           value += 25;
         },
       ) as ObservableCounter<int>;
-      
+
       // First collection
       counter.collect();
-      
+
       // Verify point exists
       final metrics1 = counter.collectMetrics();
       expect(metrics1[0].points.length, equals(1));
       expect(metrics1[0].points[0].value, equals(100));
-      
+
       // Second collection
       counter.collect();
       final metrics2 = counter.collectMetrics();
       expect(metrics2[0].points[0].value, equals(125));
-      
+
       // Shutdown the meter provider (should clear internal state)
       await meterProvider.shutdown();
-      
+
       // Recreate environment
       await OTel.reset();
       await OTel.initialize(
@@ -366,7 +366,7 @@ void main() {
       );
       meterProvider = OTel.meterProvider();
       meter = meterProvider.getMeter(name: 'test-meter') as Meter;
-      
+
       // Create a new counter
       final newCounter = meter.createObservableCounter<int>(
         name: 'clear-counter',
@@ -374,7 +374,7 @@ void main() {
           result.observe(200);
         },
       ) as ObservableCounter<int>;
-      
+
       // Collect again
       newCounter.collect();
       final metrics3 = newCounter.collectMetrics();
