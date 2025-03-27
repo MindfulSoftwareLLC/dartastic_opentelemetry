@@ -150,19 +150,19 @@ void main() {
       expect(metric.points.first.value, equals(5));
     });
 
-    test('UpDownCounter with recordWithMap', () async {
+    test('UpDownCounter with addWithMap', () async {
       final counter = meter.createUpDownCounter<int>(
         name: 'map-attributes-counter',
         unit: 'bytes',
-      );
+      ) as UpDownCounter<int>; // Cast to implementation class to access addWithMap
       
-      // Record using recordWithMap
-      counter.recordWithMap(100, {
+      // Record using addWithMap
+      counter.addWithMap(100, {
         'direction': 'up',
         'operation': 'test',
       });
       
-      counter.recordWithMap(-25, {
+      counter.addWithMap(-25, {
         'direction': 'down',
         'operation': 'test',
       });
@@ -187,7 +187,7 @@ void main() {
     test('UpDownCounter.getValue returns correct value', () {
       final counter = meter.createUpDownCounter<int>(
         name: 'get-value-counter',
-      );
+      ) as UpDownCounter<int>; // Cast to implementation class to access getValue
       
       // Record values with different attributes
       final attrs1 = {'region': 'us-west'}.toAttributes();

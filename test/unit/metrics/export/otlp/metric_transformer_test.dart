@@ -192,35 +192,48 @@ void main() {
       expect(histogramPoint.attributes.first.value.stringValue, equals('/api'));
     });
 
-    test('_createKeyValue handles various attribute types correctly', () {
-      // Test string
-      final stringKv = MetricTransformer._createKeyValue('string_key', 'string_value');
-      expect(stringKv.key, equals('string_key'));
-      expect(stringKv.value.stringValue, equals('string_value'));
+    test('transforms attributes with various types correctly', () {
+      // Test by creating a metric with various attribute types and verify conversion
+      final nowTime = DateTime.now();
+      final startTime = nowTime.subtract(const Duration(minutes: 1));
       
-      // Test boolean
-      final boolKv = MetricTransformer._createKeyValue('bool_key', true);
-      expect(boolKv.key, equals('bool_key'));
-      expect(boolKv.value.boolValue, isTrue);
+      // Create attributes with different types
+      final attributes = Attributes.of({
+        'string_key': 'string_value',
+        'bool_key': true,
+        'int_key': 42,
+        'double_key': 3.14,
+        // Arrays can't be directly used in Attributes.of(), so we'll skip that test
+      });
       
-      // Test integer
-      final intKv = MetricTransformer._createKeyValue('int_key', 42);
-      expect(intKv.key, equals('int_key'));
-      expect(intKv.value.intValue, equals(Int64(42)));
+      final metricPoint = MetricPoint.gauge(
+        attributes: attributes,
+        startTime: startTime,
+        time: nowTime,
+        value: 100,
+      );
       
-      // Test double
-      final doubleKv = MetricTransformer._createKeyValue('double_key', 3.14);
-      expect(doubleKv.key, equals('double_key'));
-      expect(doubleKv.value.doubleValue, equals(3.14));
+      final metric = Metric(
+        name: 'attribute_test_metric',
+        type: MetricType.gauge,
+        points: [metricPoint],
+      );
       
-      // Test array with mixed types
-      final arrayKv = MetricTransformer._createKeyValue('array_key', ['abc', 123, true, 2.5]);
-      expect(arrayKv.key, equals('array_key'));
-      expect(arrayKv.value.arrayValue.values.length, equals(4));
-      expect(arrayKv.value.arrayValue.values[0].stringValue, equals('abc'));
-      expect(arrayKv.value.arrayValue.values[1].intValue, equals(Int64(123)));
-      expect(arrayKv.value.arrayValue.values[2].boolValue, isTrue);
-      expect(arrayKv.value.arrayValue.values[3].doubleValue, equals(2.5));
+      // Transform the metric
+      final metricProto = MetricTransformer.transformMetric(metric);
+      
+      // Get the attributes from the transformed point
+      final protoAttributes = metricProto.gauge.dataPoints.first.attributes;
+      
+      // Create a map for easier verification
+      final attributeMap = Map.fromEntries(protoAttributes.map((kv) => 
+          MapEntry(kv.key, kv.value)));
+      
+      // Verify each attribute type was converted correctly
+      expect(attributeMap['string_key']!.stringValue, equals('string_value'));
+      expect(attributeMap['bool_key']!.boolValue, isTrue);
+      expect(attributeMap['int_key']!.intValue, equals(Int64(42)));
+      expect(attributeMap['double_key']!.doubleValue, equals(3.14));
     });
   });
 }

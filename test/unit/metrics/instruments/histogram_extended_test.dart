@@ -200,7 +200,7 @@ void main() {
     test('Histogram.getValue returns sum of recorded values', () {
       final histogram = meter.createHistogram<double>(
         name: 'get-value-histogram',
-      ) as Histogram<double>;
+      ) as Histogram<double>; // Cast to implementation class to access getValue
       
       // Record values with different attributes
       final attrs1 = {'endpoint': '/api/users'}.toAttributes();
@@ -221,7 +221,7 @@ void main() {
       final histogram = meter.createHistogram<double>(
         name: 'map-attributes-histogram',
         unit: 'ms',
-      );
+      ) as Histogram<double>; // Cast to implementation class to access recordWithMap
       
       // Record using recordWithMap
       histogram.recordWithMap(15.5, {
