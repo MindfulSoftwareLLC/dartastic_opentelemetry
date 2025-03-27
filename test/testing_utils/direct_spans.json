@@ -1,1 +1,1 @@
-[[{"name":"direct-test-span","spanId":"51668b2f6de673da","traceId":"c28e2f447ff5daf2f8751607d4e30c30","kind":"SpanKind.internal","startTime":"2025-03-26T21:51:13.951302","endTime":"2025-03-26T21:51:13.958955","status":"SpanStatusCode.Ok","attributes":{"test.key":"test.value"},"isEnded":true}]]
+[[{"name":"record-span-test","spanId":"4dd3c381306625dc","traceId":"1bb0bbdba7dc2cba3222e321495515d8","kind":"SpanKind.internal","startTime":"2025-03-27T06:50:41.186314","endTime":"2025-03-27T06:50:41.186731","status":"SpanStatusCode.Ok","attributes":{},"isEnded":true}]]

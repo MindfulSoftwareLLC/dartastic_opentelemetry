@@ -1,0 +1,8 @@
+[run]
+source = lib/
+omit = 
+  test/*
+  lib/src/proto/*
+  lib/proto/*
+  lib/src/*/proto/*
+  lib/src/metrics/export/otlp/proto/*

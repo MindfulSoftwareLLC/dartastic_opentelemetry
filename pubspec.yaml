@@ -25,3 +25,9 @@ dev_dependencies:
   test: ^1.25.14
   coverage: ^1.11.1
   protoc_plugin: ^21.1.2  # For generating Dart proto files
+
+# Script commands
+scripts:
+  test: dart test
+  coverage: ./run_coverage.sh
+  coverage_unit_only: dart test --tags=unit --coverage=coverage

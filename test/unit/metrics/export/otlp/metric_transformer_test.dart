@@ -1,0 +1,226 @@
+// Licensed under the Apache License, Version 2.0
+// Copyright 2025, Michael Bushe, All rights reserved.
+
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry/proto/metrics/v1/metrics.pb.dart' as proto;
+import 'package:dartastic_opentelemetry/src/metrics/export/otlp/metric_transformer.dart';
+import 'package:fixnum/fixnum.dart';
+import 'package:test/test.dart';
+
+void main() {
+  group('MetricTransformer Tests', () {
+    test('transformResource converts Resource attributes correctly', () {
+      // Create a Resource with various attribute types
+      final resource = OTel.resource(Attributes.of({
+        'service.name': 'test-service',
+        'service.version': '1.0.0',
+        'host.id': 'test-host',
+        'process.pid': 1234,
+        'is.test': true,
+        'cpu.usage': 0.75,
+      }));
+
+      // Transform the resource
+      final resourceProto = MetricTransformer.transformResource(resource);
+
+      // Verify attributes were converted correctly
+      expect(resourceProto.attributes.length, equals(6));
+
+      // Check each attribute
+      final attributeMap = Map.fromEntries(resourceProto.attributes.map((kv) => 
+          MapEntry(kv.key, kv.value)));
+
+      expect(attributeMap['service.name']!.stringValue, equals('test-service'));
+      expect(attributeMap['service.version']!.stringValue, equals('1.0.0'));
+      expect(attributeMap['host.id']!.stringValue, equals('test-host'));
+      expect(attributeMap['process.pid']!.intValue, equals(Int64(1234)));
+      expect(attributeMap['is.test']!.boolValue, isTrue);
+      expect(attributeMap['cpu.usage']!.doubleValue, equals(0.75));
+    });
+
+    test('transformMetric converts Gauge metric correctly', () {
+      // Create a gauge metric
+      final nowTime = DateTime.now();
+      final startTime = nowTime.subtract(const Duration(minutes: 5));
+      
+      final attributes = {'dimension': 'value'}.toAttributes();
+      final metricPoint = MetricPoint.gauge(
+        attributes: attributes,
+        startTime: startTime,
+        time: nowTime,
+        value: 42.5,
+      );
+      
+      final metric = Metric(
+        name: 'test.gauge',
+        description: 'Test gauge metric',
+        unit: 'items',
+        type: MetricType.gauge,
+        points: [metricPoint],
+      );
+
+      // Transform the gauge metric
+      final metricProto = MetricTransformer.transformMetric(metric);
+
+      // Verify basic fields
+      expect(metricProto.name, equals('test.gauge'));
+      expect(metricProto.description, equals('Test gauge metric'));
+      expect(metricProto.unit, equals('items'));
+      
+      // Verify it was transformed as a gauge
+      expect(metricProto.gauge.dataPoints.length, equals(1));
+      
+      // Check point details
+      final gaugePoint = metricProto.gauge.dataPoints.first;
+      expect(gaugePoint.asDouble, equals(42.5));
+      expect(gaugePoint.startTimeUnixNano, equals(Int64(startTime.microsecondsSinceEpoch * 1000)));
+      expect(gaugePoint.timeUnixNano, equals(Int64(nowTime.microsecondsSinceEpoch * 1000)));
+      
+      // Check attributes
+      expect(gaugePoint.attributes.length, equals(1));
+      expect(gaugePoint.attributes.first.key, equals('dimension'));
+      expect(gaugePoint.attributes.first.value.stringValue, equals('value'));
+    });
+
+    test('transformMetric converts Sum metric correctly', () {
+      // Create a sum metric
+      final nowTime = DateTime.now();
+      final startTime = nowTime.subtract(const Duration(minutes: 5));
+      
+      final attributes = {'counter': 'requests'}.toAttributes();
+      final metricPoint = MetricPoint.sum(
+        attributes: attributes,
+        startTime: startTime,
+        time: nowTime,
+        value: 100,
+        isMonotonic: true,
+      );
+      
+      final metric = Metric.sum(
+        name: 'test.counter',
+        description: 'Test counter metric',
+        unit: 'requests',
+        temporality: AggregationTemporality.cumulative,
+        points: [metricPoint],
+        isMonotonic: true,
+      );
+
+      // Transform the sum metric
+      final metricProto = MetricTransformer.transformMetric(metric);
+
+      // Verify basic fields
+      expect(metricProto.name, equals('test.counter'));
+      expect(metricProto.description, equals('Test counter metric'));
+      expect(metricProto.unit, equals('requests'));
+      
+      // Verify it was transformed as a sum
+      expect(metricProto.sum.dataPoints.length, equals(1));
+      expect(metricProto.sum.isMonotonic, isTrue);
+      expect(metricProto.sum.aggregationTemporality, equals(proto.AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE));
+      
+      // Check point details
+      final sumPoint = metricProto.sum.dataPoints.first;
+      expect(sumPoint.asDouble, equals(100.0));
+      expect(sumPoint.startTimeUnixNano, equals(Int64(startTime.microsecondsSinceEpoch * 1000)));
+      expect(sumPoint.timeUnixNano, equals(Int64(nowTime.microsecondsSinceEpoch * 1000)));
+      
+      // Check attributes
+      expect(sumPoint.attributes.length, equals(1));
+      expect(sumPoint.attributes.first.key, equals('counter'));
+      expect(sumPoint.attributes.first.value.stringValue, equals('requests'));
+    });
+
+    test('transformMetric converts Histogram metric correctly', () {
+      // Create a histogram metric
+      final nowTime = DateTime.now();
+      final startTime = nowTime.subtract(const Duration(minutes: 5));
+      
+      final attributes = {'endpoint': '/api'}.toAttributes();
+      
+      // Create histogram point with bucket data
+      final histogramValue = HistogramValue(
+        sum: 100.0,
+        count: 5,
+        boundaries: [0, 10, 20, 50, 100],
+        bucketCounts: [1, 1, 2, 1, 0],
+        min: 1.0,
+        max: 75.0,
+      );
+      
+      final metricPoint = MetricPoint(
+        attributes: attributes,
+        startTime: startTime,
+        endTime: nowTime,
+        value: histogramValue,
+      );
+      
+      final metric = Metric(
+        name: 'http.duration',
+        description: 'HTTP request duration',
+        unit: 'ms',
+        type: MetricType.histogram,
+        points: [metricPoint],
+        temporality: AggregationTemporality.delta,
+      );
+
+      // Transform the histogram metric
+      final metricProto = MetricTransformer.transformMetric(metric);
+
+      // Verify basic fields
+      expect(metricProto.name, equals('http.duration'));
+      expect(metricProto.description, equals('HTTP request duration'));
+      expect(metricProto.unit, equals('ms'));
+      
+      // Verify it was transformed as a histogram
+      expect(metricProto.histogram.dataPoints.length, equals(1));
+      expect(metricProto.histogram.aggregationTemporality, equals(proto.AggregationTemporality.AGGREGATION_TEMPORALITY_DELTA));
+      
+      // Check point details
+      final histogramPoint = metricProto.histogram.dataPoints.first;
+      expect(histogramPoint.sum, equals(100.0));
+      expect(histogramPoint.count, equals(Int64(5)));
+      expect(histogramPoint.min, equals(1.0));
+      expect(histogramPoint.max, equals(75.0));
+      
+      // Check buckets
+      expect(histogramPoint.explicitBounds, equals([0, 10, 20, 50, 100]));
+      expect(histogramPoint.bucketCounts.map((c) => c.toInt()).toList(), equals([1, 1, 2, 1, 0]));
+      
+      // Check attributes
+      expect(histogramPoint.attributes.length, equals(1));
+      expect(histogramPoint.attributes.first.key, equals('endpoint'));
+      expect(histogramPoint.attributes.first.value.stringValue, equals('/api'));
+    });
+
+    test('_createKeyValue handles various attribute types correctly', () {
+      // Test string
+      final stringKv = MetricTransformer._createKeyValue('string_key', 'string_value');
+      expect(stringKv.key, equals('string_key'));
+      expect(stringKv.value.stringValue, equals('string_value'));
+      
+      // Test boolean
+      final boolKv = MetricTransformer._createKeyValue('bool_key', true);
+      expect(boolKv.key, equals('bool_key'));
+      expect(boolKv.value.boolValue, isTrue);
+      
+      // Test integer
+      final intKv = MetricTransformer._createKeyValue('int_key', 42);
+      expect(intKv.key, equals('int_key'));
+      expect(intKv.value.intValue, equals(Int64(42)));
+      
+      // Test double
+      final doubleKv = MetricTransformer._createKeyValue('double_key', 3.14);
+      expect(doubleKv.key, equals('double_key'));
+      expect(doubleKv.value.doubleValue, equals(3.14));
+      
+      // Test array with mixed types
+      final arrayKv = MetricTransformer._createKeyValue('array_key', ['abc', 123, true, 2.5]);
+      expect(arrayKv.key, equals('array_key'));
+      expect(arrayKv.value.arrayValue.values.length, equals(4));
+      expect(arrayKv.value.arrayValue.values[0].stringValue, equals('abc'));
+      expect(arrayKv.value.arrayValue.values[1].intValue, equals(Int64(123)));
+      expect(arrayKv.value.arrayValue.values[2].boolValue, isTrue);
+      expect(arrayKv.value.arrayValue.values[3].doubleValue, equals(2.5));
+    });
+  });
+}

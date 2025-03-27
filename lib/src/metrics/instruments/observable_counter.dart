@@ -132,10 +132,15 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, SDKIn
             // Per spec, for a reset we just record the current value
             _storage.record(value, attributes);
             result.add(measurement);
-          } else {
-            // Per spec, we record the absolute value for monotonic counters
+          } else if (value > lastValue) {
+            // Only add measurements with positive deltas
             _storage.record(value, attributes);
             result.add(measurement);
+          } else {
+            // For zero deltas, we still record the value in storage for cumulative reporting,
+            // but don't include it in the returned measurements
+            _storage.record(value, attributes);
+            // Note: The measurement is deliberately not added to the result list
           }
 
           // Store the latest value for next time

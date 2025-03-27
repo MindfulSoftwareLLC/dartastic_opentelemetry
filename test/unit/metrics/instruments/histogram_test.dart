@@ -236,7 +236,7 @@ void main() {
 
       // With cumulative aggregation temporality, we expect all values to be present
       expect(point.histogram().sum, equals(100.0)); // 10 + 20 + 30 + 40
-      expect(point.histogram().count, equals(2));
+      expect(point.histogram().count, equals(4)); // All 4 values (10, 20, 30, 40)
     });
 
     test('Histogram with attributes', () async {
