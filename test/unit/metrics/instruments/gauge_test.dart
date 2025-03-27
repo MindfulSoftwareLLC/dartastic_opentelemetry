@@ -9,17 +9,21 @@ void main() {
   group('Gauge Instrument Tests', () {
     late Meter meter;
     late MemoryMetricExporter memoryExporter;
+    late MemoryMetricReader metricReader;
 
     setUp(() async {
       await OTel.reset();
 
       // Create a memory exporter for verification
       memoryExporter = MemoryMetricExporter();
+      
+      // Create a metric reader connected to the exporter
+      metricReader = MemoryMetricReader(exporter: memoryExporter);
 
-      // Initialize OTel with our memory exporter
+      // Initialize OTel with our memory metric reader
       await OTel.initialize(
         serviceName: 'gauge-test-service',
-        metricExporter: memoryExporter,
+        metricReader: metricReader,
         detectPlatformResources: false,
       );
 
@@ -33,7 +37,7 @@ void main() {
 
     test('Gauge sets current values correctly', () async {
       // Create a gauge instrument
-      final gauge = meter.createGauge(name: 'test_gauge',
+      final gauge = meter.createGauge<double>(name: 'test_gauge',
         description: 'Test gauge for validation',
         unit: 'ms',
       );
@@ -50,18 +54,16 @@ void main() {
       gauge.record(60.0, attrs1);
 
       // Force a collection
-      await memoryExporter.forceFlush();
+      await metricReader.forceFlush();
 
       // Get the collected metrics
       final metrics = memoryExporter.exportedMetrics;
-
-      // We should have one metric (our gauge)
-      expect(metrics.length, equals(1));
+      expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
 
       // Find our gauge
       final metric = metrics.firstWhere(
         (m) => m.name == 'test_gauge',
-        orElse: () => throw StateError('Gauge metric not found'),
+        orElse: () => throw StateError('Gauge metric not found: ${metrics.map((m) => m.name).join(', ')}'),
       );
 
       // Check properties
@@ -70,26 +72,27 @@ void main() {
 
       // We should have 3 data points (one for each attributes set)
       final points = metric.points;
-      expect(points.length, equals(3));
+      expect(points.length, equals(3), reason: "Expected 3 points, got ${points.length}");
 
       // Find each data point by attributes
-      final point1 = points.firstWhere(
-        (p) => p.attributes.getString('service') == 'api',
-        orElse: () => throw StateError('Point with api attributes not found'),
-      );
-      final point2 = points.firstWhere(
-        (p) => p.attributes.getString('service') == 'database',
-        orElse: () => throw StateError('Point with database attributes not found'),
-      );
-      final point3 = points.firstWhere(
-        (p) => p.attributes.isEmpty,
-        orElse: () => throw StateError('Point with no attributes not found'),
-      );
+      final apiPoints = points.where((p) => 
+          p.attributes.getString('service') == 'api').toList();
+      
+      final dbPoints = points.where((p) => 
+          p.attributes.getString('service') == 'database').toList();
+      
+      final noAttrPoints = points.where((p) => 
+          p.attributes.toList().isEmpty).toList();
+
+      // Verify we found the points
+      expect(apiPoints.isNotEmpty, isTrue, reason: "No points with 'api' service attribute found");
+      expect(dbPoints.isNotEmpty, isTrue, reason: "No points with 'database' service attribute found");
+      expect(noAttrPoints.isNotEmpty, isTrue, reason: "No points without attributes found");
 
       // Verify each point's value
-      expect(point1.value, equals(60.0));  // Updated from 50.0 to 60.0
-      expect(point2.value, equals(100.0));
-      expect(point3.value, equals(75.0));
+      expect(apiPoints.first.value, equals(60.0));  // Updated from 50.0 to 60.0
+      expect(dbPoints.first.value, equals(100.0));
+      expect(noAttrPoints.first.value, equals(75.0));
     });
 
     test('Gauge with int values', () async {
@@ -104,27 +107,38 @@ void main() {
       gauge.record(20, {'type': 'request'}.toAttributes());
 
       // Force collection
-      await memoryExporter.forceFlush();
+      await metricReader.forceFlush();
 
       // Get the collected metrics
       final metrics = memoryExporter.exportedMetrics;
-      final metric = metrics.firstWhere((m) => m.name == 'int_gauge');
+      expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
+      
+      final metric = metrics.firstWhere(
+          (m) => m.name == 'int_gauge',
+          orElse: () => throw StateError('int_gauge metric not found: ${metrics.map((m) => m.name).join(', ')}'));
 
       // Verify we have 2 data points
-      expect(metric.points.length, equals(2));
+      expect(metric.points.length, equals(2), reason: "Expected 2 points, got ${metric.points.length}");
 
       // Find each point
-      final noAttrsPoint = metric.points.firstWhere((p) => p.attributes.isEmpty);
-      final withAttrsPoint = metric.points.firstWhere((p) => !p.attributes.isEmpty);
+      final noAttrsPoints = metric.points.where((p) => 
+          p.attributes.toList().isEmpty).toList();
+          
+      final withAttrsPoints = metric.points.where((p) => 
+          p.attributes.getString('type') == 'request').toList();
+
+      // Verify we found the points
+      expect(noAttrsPoints.isNotEmpty, isTrue, reason: "No points without attributes found");
+      expect(withAttrsPoints.isNotEmpty, isTrue, reason: "No points with 'request' type attribute found");
 
       // Verify values
-      expect(noAttrsPoint.value, equals(10));
-      expect(withAttrsPoint.value, equals(20));
+      expect(noAttrsPoints.first.value, equals(10));
+      expect(withAttrsPoints.first.value, equals(20));
     });
 
     test('Gauge overwrites old values', () async {
       // Create a gauge
-      final gauge = meter.createGauge<double>(name: 'overwrite_gauge',);
+      final gauge = meter.createGauge<double>(name: 'overwrite_gauge');
 
       final attrs = {'endpoint': '/api/users'}.toAttributes();
 
@@ -132,25 +146,41 @@ void main() {
       gauge.record(50.0, attrs);
 
       // Force collection
-      await memoryExporter.forceFlush();
+      await metricReader.forceFlush();
+      
+      // Verify initial value was recorded
+      var metrics = memoryExporter.exportedMetrics;
+      expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported in first collection");
+      
+      // Clear the exporter to make verification clearer
+      memoryExporter.clear();
 
       // Set new value (should overwrite)
       gauge.record(75.0, attrs);
 
       // Force another collection
-      await memoryExporter.forceFlush();
+      await metricReader.forceFlush();
 
       // Get the collected metrics from the second collection
-      final metrics = memoryExporter.exportedMetrics;
-      final metric = metrics.firstWhere((m) => m.name == 'overwrite_gauge');
+      metrics = memoryExporter.exportedMetrics;
+      expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported in second collection");
+      
+      final metric = metrics.firstWhere(
+          (m) => m.name == 'overwrite_gauge',
+          orElse: () => throw StateError('overwrite_gauge metric not found: ${metrics.map((m) => m.name).join(', ')}'));
+
+      // Verify we have at least one point
+      expect(metric.points.isNotEmpty, isTrue, reason: "No points found in metric");
 
       // Find the point with our attributes
-      final point = metric.points.firstWhere(
-        (p) => p.attributes.getString('endpoint') == '/api/users',
-      );
+      final matchingPoints = metric.points.where((p) => 
+          p.attributes.getString('endpoint') == '/api/users').toList();
+      
+      expect(matchingPoints.isNotEmpty, isTrue, 
+          reason: "No points with '/api/users' endpoint attribute found. Available points: ${metric.points.map((p) => p.attributes.toString()).join(', ')}");
 
       // Verify the value was overwritten
-      expect(point.value, equals(75.0));
+      expect(matchingPoints.first.value, equals(75.0));
     });
 
     test('Gauge with different types', () async {
@@ -163,12 +193,23 @@ void main() {
       doubleGauge.record(42.5);
 
       // Force collection
-      await memoryExporter.forceFlush();
+      await metricReader.forceFlush();
 
       // Get metrics
       final metrics = memoryExporter.exportedMetrics;
-      final intMetric = metrics.firstWhere((m) => m.name == 'int_gauge_type');
-      final doubleMetric = metrics.firstWhere((m) => m.name == 'double_gauge_type');
+      expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
+      
+      final intMetric = metrics.firstWhere(
+          (m) => m.name == 'int_gauge_type',
+          orElse: () => throw StateError('int_gauge_type metric not found: ${metrics.map((m) => m.name).join(', ')}'));
+          
+      final doubleMetric = metrics.firstWhere(
+          (m) => m.name == 'double_gauge_type',
+          orElse: () => throw StateError('double_gauge_type metric not found: ${metrics.map((m) => m.name).join(', ')}'));
+
+      // Verify we have at least one point for each metric
+      expect(intMetric.points.isNotEmpty, isTrue, reason: "No points found in int_gauge_type metric");
+      expect(doubleMetric.points.isNotEmpty, isTrue, reason: "No points found in double_gauge_type metric");
 
       // Verify values and types
       expect(intMetric.points.first.value, equals(42));

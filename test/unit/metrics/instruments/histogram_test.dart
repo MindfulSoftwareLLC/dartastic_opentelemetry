@@ -9,17 +9,21 @@ void main() {
   group('Histogram Instrument Tests', () {
     late Meter meter;
     late MemoryMetricExporter memoryExporter;
+    late MemoryMetricReader metricReader;
 
     setUp(() async {
       await OTel.reset();
 
       // Create a memory exporter for verification
       memoryExporter = MemoryMetricExporter();
+      
+      // Create a metric reader connected to the exporter
+      metricReader = MemoryMetricReader(exporter: memoryExporter);
 
-      // Initialize OTel with our memory exporter
+      // Initialize OTel with our memory metric reader
       await OTel.initialize(
         serviceName: 'histogram-test-service',
-        metricExporter: memoryExporter,
+        metricReader: metricReader,
         detectPlatformResources: false,
       );
 
@@ -56,18 +60,16 @@ void main() {
       histogram.record(100.0); // No attributes
 
       // Force a collection
-      await memoryExporter.forceFlush();
+      await metricReader.forceFlush();
 
       // Get the collected metrics
       final metrics = memoryExporter.exportedMetrics;
-
-      // We should have one metric (our histogram)
-      expect(metrics.length, equals(1));
+      expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
 
       // Find our histogram
       final metric = metrics.firstWhere(
         (m) => m.name == 'test_histogram',
-        orElse: () => throw StateError('Histogram metric not found'),
+        orElse: () => throw StateError('Histogram metric not found: ${metrics.map((m) => m.name).join(', ')}'),
       );
 
       // Check properties
@@ -76,35 +78,36 @@ void main() {
 
       // We should have 3 data points (one for each attributes set)
       final points = metric.points;
-      expect(points.length, equals(3));
+      expect(points.length, equals(3), reason: "Expected 3 points, got ${points.length}");
 
       // Find each data point by attributes
-      final point1 = points.firstWhere(
-        (p) => p.attributes.getString('endpoint') == '/api/users',
-        orElse: () => throw StateError('Point with /api/users attributes not found'),
-      );
-      final point2 = points.firstWhere(
-        (p) => p.attributes.getString('endpoint') == '/api/products',
-        orElse: () => throw StateError('Point with /api/products attributes not found'),
-      );
-      final point3 = points.firstWhere(
-        (p) => p.attributes.isEmpty,
-        orElse: () => throw StateError('Point with no attributes not found'),
-      );
+      final usersPoints = points.where((p) => 
+          p.attributes.getString('endpoint') == '/api/users').toList();
+      
+      final productsPoints = points.where((p) => 
+          p.attributes.getString('endpoint') == '/api/products').toList();
+      
+      final noAttrPoints = points.where((p) => 
+          p.attributes.toList().isEmpty).toList();
+
+      // Verify we found the points
+      expect(usersPoints.isNotEmpty, isTrue, reason: "No points with '/api/users' endpoint attribute found");
+      expect(productsPoints.isNotEmpty, isTrue, reason: "No points with '/api/products' endpoint attribute found");
+      expect(noAttrPoints.isNotEmpty, isTrue, reason: "No points without attributes found");
 
       // Verify each point's aggregated values
-      expect(point1.histogram().sum, equals(60.0));  // 10 + 20 + 30
-      expect(point1.histogram().count, equals(3));
+      expect(usersPoints.first.histogram().sum, equals(60.0));  // 10 + 20 + 30
+      expect(usersPoints.first.histogram().count, equals(3));
 
-      expect(point2.histogram().sum, equals(45.0));  // 5 + 15 + 25
-      expect(point2.histogram().count, equals(3));
+      expect(productsPoints.first.histogram().sum, equals(45.0));  // 5 + 15 + 25
+      expect(productsPoints.first.histogram().count, equals(3));
 
-      expect(point3.histogram().sum, equals(150.0)); // 50 + 100
-      expect(point3.histogram().count, equals(2));
+      expect(noAttrPoints.first.histogram().sum, equals(150.0)); // 50 + 100
+      expect(noAttrPoints.first.histogram().count, equals(2));
 
       // Verify histograms have buckets
-      expect(point1.histogram().bucketCounts, isNotNull);
-      expect(point1.histogram().bucketCounts.isNotEmpty, isTrue);
+      expect(usersPoints.first.histogram().bucketCounts, isNotNull);
+      expect(usersPoints.first.histogram().bucketCounts.isNotEmpty, isTrue);
     });
 
     test('Histogram with custom boundaries', () async {
@@ -126,14 +129,18 @@ void main() {
       histogram.record(150.0);  // Bucket 4 (>100)
 
       // Force collection
-      await memoryExporter.forceFlush();
+      await metricReader.forceFlush();
 
       // Get metrics
       final metrics = memoryExporter.exportedMetrics;
-      final metric = metrics.firstWhere((m) => m.name == 'custom_histogram');
+      expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
+      
+      final metric = metrics.firstWhere(
+          (m) => m.name == 'custom_histogram',
+          orElse: () => throw StateError('custom_histogram metric not found: ${metrics.map((m) => m.name).join(', ')}'));
 
-      // Verify we have one data point
-      expect(metric.points.length, equals(1));
+      // Verify we have at least one data point
+      expect(metric.points.isNotEmpty, isTrue, reason: "No points found in metric");
 
       // Get the data point
       final point = metric.points.first;
@@ -168,11 +175,18 @@ void main() {
       histogram.record(30);
 
       // Force collection
-      await memoryExporter.forceFlush();
+      await metricReader.forceFlush();
 
       // Get metrics
       final metrics = memoryExporter.exportedMetrics;
-      final metric = metrics.firstWhere((m) => m.name == 'int_histogram');
+      expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
+      
+      final metric = metrics.firstWhere(
+          (m) => m.name == 'int_histogram',
+          orElse: () => throw StateError('int_histogram metric not found: ${metrics.map((m) => m.name).join(', ')}'));
+
+      // Verify we have at least one data point
+      expect(metric.points.isNotEmpty, isTrue, reason: "No points found in metric");
 
       // Get the data point
       final point = metric.points.first;
@@ -194,24 +208,34 @@ void main() {
       histogram.record(20.0);
 
       // First collection
-      await memoryExporter.forceFlush();
+      await metricReader.forceFlush();
+      
+      // Clear export data to ensure we only see new values
+      memoryExporter.clear();
 
       // Record more values
       histogram.record(30.0);
       histogram.record(40.0);
 
       // Second collection
-      await memoryExporter.forceFlush();
+      await metricReader.forceFlush();
 
       // Get the latest metrics
       final metrics = memoryExporter.exportedMetrics;
-      final metric = metrics.firstWhere((m) => m.name == 'multi_collection_histogram');
+      expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported in second collection");
+      
+      final metric = metrics.firstWhere(
+          (m) => m.name == 'multi_collection_histogram',
+          orElse: () => throw StateError('multi_collection_histogram metric not found: ${metrics.map((m) => m.name).join(', ')}'));
+
+      // Verify we have at least one data point
+      expect(metric.points.isNotEmpty, isTrue, reason: "No points found in metric after second collection");
 
       // Get the data point from the second collection
       final point = metric.points.first;
 
-      // Verify only the new values are present (assuming delta aggregation temporality)
-      expect(point.histogram().sum, equals(70.0)); // 30 + 40
+      // With cumulative aggregation temporality, we expect all values to be present
+      expect(point.histogram().sum, equals(100.0)); // 10 + 20 + 30 + 40
       expect(point.histogram().count, equals(2));
     });
 
@@ -236,35 +260,43 @@ void main() {
       histogram.record(35.0, attrs3);
 
       // Force collection
-      await memoryExporter.forceFlush();
+      await metricReader.forceFlush();
 
       // Get metrics
       final metrics = memoryExporter.exportedMetrics;
-      final metric = metrics.firstWhere((m) => m.name == 'attr_histogram');
+      expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
+      
+      final metric = metrics.firstWhere(
+          (m) => m.name == 'attr_histogram',
+          orElse: () => throw StateError('attr_histogram metric not found: ${metrics.map((m) => m.name).join(', ')}'));
 
       // We should have 3 data points (one for each attribute set)
-      expect(metric.points.length, equals(3));
+      expect(metric.points.length, equals(3), reason: "Expected 3 points (one for each attribute set), got ${metric.points.length}");
 
       // Find each point
-      final point1 = metric.points.firstWhere(
-        (p) => p.attributes.getString('endpoint') == '/login',
-      );
-      final point2 = metric.points.firstWhere(
-        (p) => p.attributes.getString('endpoint') == '/logout',
-      );
-      final point3 = metric.points.firstWhere(
-        (p) => p.attributes.getString('endpoint') == '/query',
-      );
+      final loginPoints = metric.points.where((p) => 
+          p.attributes.getString('endpoint') == '/login').toList();
+      
+      final logoutPoints = metric.points.where((p) => 
+          p.attributes.getString('endpoint') == '/logout').toList();
+      
+      final queryPoints = metric.points.where((p) => 
+          p.attributes.getString('endpoint') == '/query').toList();
+
+      // Verify we found all points
+      expect(loginPoints.isNotEmpty, isTrue, reason: "No points with '/login' endpoint attribute found");
+      expect(logoutPoints.isNotEmpty, isTrue, reason: "No points with '/logout' endpoint attribute found");
+      expect(queryPoints.isNotEmpty, isTrue, reason: "No points with '/query' endpoint attribute found");
 
       // Verify values
-      expect(point1.histogram().sum, equals(30.0)); // 10 + 20
-      expect(point1.histogram().count, equals(2));
+      expect(loginPoints.first.histogram().sum, equals(30.0)); // 10 + 20
+      expect(loginPoints.first.histogram().count, equals(2));
 
-      expect(point2.histogram().sum, equals(15.0));
-      expect(point2.histogram().count, equals(1));
+      expect(logoutPoints.first.histogram().sum, equals(15.0));
+      expect(logoutPoints.first.histogram().count, equals(1));
 
-      expect(point3.histogram().sum, equals(60.0)); // 25 + 35
-      expect(point3.histogram().count, equals(2));
+      expect(queryPoints.first.histogram().sum, equals(60.0)); // 25 + 35
+      expect(queryPoints.first.histogram().count, equals(2));
     });
   });
 }

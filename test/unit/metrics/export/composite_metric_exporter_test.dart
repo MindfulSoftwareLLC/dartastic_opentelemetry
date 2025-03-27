@@ -22,7 +22,7 @@ void main() {
       // Create the composite exporter with both memory exporters
       compositeExporter = CompositeMetricExporter([exporter1, exporter2]);
 
-      // Create a metric reader that will work with our test
+      // Create a metric reader with a separate exporter for test infrastructure
       metricReader = MemoryMetricReader();
 
       // Initialize OTel with the metric reader
@@ -45,8 +45,12 @@ void main() {
       counter.add(5);
       counter.add(10, {'service': 'api'}.toAttributes());
 
-      // Force collection by calling forceFlush
-      await metricReader.forceFlush();
+      // Collect metrics
+      final data = await metricReader.collect();
+      
+      // Manually export metrics through our composite exporter
+      bool exportResult = await compositeExporter.export(data);
+      expect(exportResult, isTrue);
 
       // Verify both exporters received the metrics
       final metrics1 = exporter1.exportedMetrics;
@@ -57,8 +61,10 @@ void main() {
       expect(metrics2.isNotEmpty, isTrue);
 
       // Find the test_counter metric in each exporter
-      final metric1 = metrics1.firstWhere((m) => m.name == 'test_counter');
-      final metric2 = metrics2.firstWhere((m) => m.name == 'test_counter');
+      final metric1 = metrics1.firstWhere((m) => m.name == 'test_counter', 
+          orElse: () => throw StateError('test_counter not found in exporter1'));
+      final metric2 = metrics2.firstWhere((m) => m.name == 'test_counter',
+          orElse: () => throw StateError('test_counter not found in exporter2'));
 
       // Verify the metrics exist
       expect(metric1, isNotNull);
@@ -82,11 +88,11 @@ void main() {
       // Clear previous metrics
       exporter1.clear();
 
-      // For the test, we will use our own metric reader and exporters
-      final memoryMetricReader = MemoryMetricReader();
-      
       // Create a new instance with our test reader
       await OTel.reset();
+      // Use a separate reader for test infrastructure
+      final memoryMetricReader = MemoryMetricReader();
+      
       await OTel.initialize(
         serviceName: 'failure-test-service', 
         metricReader: memoryMetricReader,
@@ -98,15 +104,17 @@ void main() {
       final counter = meter.createCounter<int>(name: 'failure_counter');
       counter.add(42);
 
-      // Attempt to export (shouldn't throw even though one exporter fails)
-      await memoryMetricReader.forceFlush();
+      // Collect metrics
+      final data = await memoryMetricReader.collect();
       
-      // We would now manually test the behavior by calling the composite exporter with our own data
-      final testData = MetricData.empty();
-      bool result = await compositeWithFailure.export(testData);
+      // Manually export through our composite exporter
+      bool result = await compositeWithFailure.export(data);
       
       // Since one exporter fails, the composite should return false
       expect(result, isFalse);
+      
+      // But metrics should still reach the working exporter
+      expect(exporter1.exportedMetrics.isNotEmpty, isTrue);
     });
 
     test('CompositeMetricExporter forceFlush and shutdown calls all exporters', () async {
@@ -124,21 +132,26 @@ void main() {
       final emptyData = MetricData.empty();
 
       // Call export
-      await composite.export(emptyData);
+      bool result = await composite.export(emptyData);
+      
+      // Export should succeed
+      expect(result, isTrue);
 
       // Verify both exporters had export called
       expect(trackedExporter1.exportCalled, isTrue);
       expect(trackedExporter2.exportCalled, isTrue);
 
       // Call forceFlush
-      await composite.forceFlush();
+      bool flushResult = await composite.forceFlush();
+      expect(flushResult, isTrue);
 
       // Verify both exporters had forceFlush called
       expect(trackedExporter1.forceFlushCalled, isTrue);
       expect(trackedExporter2.forceFlushCalled, isTrue);
 
       // Call shutdown
-      await composite.shutdown();
+      bool shutdownResult = await composite.shutdown();
+      expect(shutdownResult, isTrue);
 
       // Verify both exporters had shutdown called
       expect(trackedExporter1.shutdownCalled, isTrue);
