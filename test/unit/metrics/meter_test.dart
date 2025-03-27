@@ -8,17 +8,19 @@ import '../../testing_utils/memory_metric_exporter.dart';
 void main() {
   group('Meter and MeterProvider Tests', () {
     late MemoryMetricExporter memoryExporter;
+    late MemoryMetricReader metricReader;
 
     setUp(() async {
       await OTel.reset();
 
       // Create a memory exporter for verification
       memoryExporter = MemoryMetricExporter();
+      metricReader = MemoryMetricReader(exporter: memoryExporter);
 
-      // Initialize OTel with our memory exporter
+      // Initialize OTel with our memory metric reader
       await OTel.initialize(
         serviceName: 'meter-provider-test-service',
-        metricExporter: memoryExporter,
+        metricReader: metricReader,
         detectPlatformResources: false,
       );
     });
@@ -75,11 +77,14 @@ void main() {
       counter.add(5);
 
       // Force collection
-      await memoryExporter.forceFlush();
+      await metricReader.forceFlush();
 
       // Get the metrics
       final metrics = memoryExporter.exportedMetrics;
-      final metric = metrics.firstWhere((m) => m.name == 'test_counter');
+      expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
+      
+      final metric = metrics.firstWhere((m) => m.name == 'test_counter', 
+         orElse: () => throw StateError('test_counter metric not found in exported metrics: $metrics'));
 
       // Check the instrumentation scope information
       expect(metric.name, equals('test_counter'));
@@ -131,11 +136,14 @@ void main() {
       counter.add(1);
 
       // Force collection
-      await memoryExporter.forceFlush();
+      await metricReader.forceFlush();
 
       // Get the metrics
       final metrics = memoryExporter.exportedMetrics;
-      final metric = metrics.firstWhere((m) => m.name == 'schema_counter');
+      expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
+      
+      final metric = metrics.firstWhere((m) => m.name == 'schema_counter',
+          orElse: () => throw StateError('schema_counter metric not found in exported metrics: $metrics'));
 
       // Verify metric is captured
       expect(metric.name, equals('schema_counter'));

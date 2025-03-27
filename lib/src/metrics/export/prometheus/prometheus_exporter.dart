@@ -159,7 +159,7 @@ class PrometheusExporter implements MetricExporter {
   /// Formats attributes as Prometheus labels.
   String _formatLabels(Map<String, dynamic> attributes) {
     if (attributes.isEmpty) {
-      return '';
+      return '{}';  // Return empty braces for metrics without attributes
     }
 
     final labelPairs = attributes.entries.map((entry) {
@@ -174,6 +174,10 @@ class PrometheusExporter implements MetricExporter {
     final newAttributes = Map<String, dynamic>.from(attributes);
     if (le == double.infinity) {
       newAttributes['le'] = '+Inf';
+    } else if (le == le.truncateToDouble()) {
+      // If the number is an integer (no decimal component),
+      // format it without the decimal point
+      newAttributes['le'] = le.toInt().toString();
     } else {
       newAttributes['le'] = le.toString();
     }
