@@ -46,132 +46,135 @@ class MetricTransformer {
     switch (metric.type) {
       case MetricType.histogram:
         // Histogram metric
-        final histogram = metricProto.histogram;
-        // Set aggregation temporality
-        if (metric.temporality == AggregationTemporality.delta) {
-          histogram.aggregationTemporality = proto.AggregationTemporality.AGGREGATION_TEMPORALITY_DELTA;
-        } else {
-          histogram.aggregationTemporality = proto.AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE;
-        }
-        
+        final histogramDataPoints = <proto.HistogramDataPoint>[];
         for (final point in metric.points) {
           if (point.value is HistogramValue) {
-            _addHistogramDataPoint(histogram.dataPoints, point);
+            final dataPoint = _createHistogramDataPoint(point);
+            histogramDataPoints.add(dataPoint);
           }
         }
+        
+        // Create a new histogram with the correct temporality and data points
+        final histogram = proto.Histogram(
+          aggregationTemporality: metric.temporality == AggregationTemporality.delta
+              ? proto.AggregationTemporality.AGGREGATION_TEMPORALITY_DELTA
+              : proto.AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE,
+          dataPoints: histogramDataPoints,
+        );
+        
+        metricProto.histogram = histogram;
         break;
         
       case MetricType.sum:
         // Sum metric
-        final sum = metricProto.sum;
-        sum.isMonotonic = true; // Assuming sum metrics are monotonic by default
-        
-        // Set aggregation temporality
-        if (metric.temporality == AggregationTemporality.delta) {
-          sum.aggregationTemporality = proto.AggregationTemporality.AGGREGATION_TEMPORALITY_DELTA;
-        } else {
-          sum.aggregationTemporality = proto.AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE;
-        }
-        
+        final numberDataPoints = <proto.NumberDataPoint>[];
         for (final point in metric.points) {
-          _addNumberDataPoint(sum.dataPoints, point);
+          final dataPoint = _createNumberDataPoint(point);
+          numberDataPoints.add(dataPoint);
         }
+        
+        // Create a new sum with the correct temporality and data points
+        final sum = proto.Sum(
+          isMonotonic: metric.isMonotonic ?? true, // Assuming sum metrics are monotonic by default
+          aggregationTemporality: metric.temporality == AggregationTemporality.delta
+              ? proto.AggregationTemporality.AGGREGATION_TEMPORALITY_DELTA
+              : proto.AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE,
+          dataPoints: numberDataPoints,
+        );
+        
+        metricProto.sum = sum;
         break;
         
       case MetricType.gauge:
         // Gauge metric
-        final gauge = metricProto.gauge;
+        final numberDataPoints = <proto.NumberDataPoint>[];
         for (final point in metric.points) {
-          _addNumberDataPoint(gauge.dataPoints, point);
+          final dataPoint = _createNumberDataPoint(point);
+          numberDataPoints.add(dataPoint);
         }
+        
+        // Create a new gauge with the data points
+        final gauge = proto.Gauge(dataPoints: numberDataPoints);
+        metricProto.gauge = gauge;
         break;
     }
 
     return metricProto;
   }
 
-  /// Adds a histogram data point to the given list.
-  static void _addHistogramDataPoint(
-    List<proto.HistogramDataPoint> dataPoints,
-    MetricPoint point,
-  ) {
+  /// Creates a histogram data point for the given MetricPoint.
+  static proto.HistogramDataPoint _createHistogramDataPoint(MetricPoint point) {
     final histogramValue = point.value as HistogramValue;
-    final dataPoint = proto.HistogramDataPoint();
-
-    // Set common fields
-    _setCommonDataPointFields(dataPoint, point);
-
-    // Set histogram-specific fields
-    dataPoint.count = Int64(histogramValue.count);
-    dataPoint.sum = histogramValue.sum.toDouble();
-
-    // Add bucket counts and boundaries
-    dataPoint.bucketCounts.addAll(
-      histogramValue.bucketCounts.map((count) => Int64(count)),
-    );
-    dataPoint.explicitBounds.addAll(histogramValue.boundaries);
-
-    // Add min/max if available
-    if (histogramValue.min != null) {
-      dataPoint.min = histogramValue.min!.toDouble();
-    }
-    if (histogramValue.max != null) {
-      dataPoint.max = histogramValue.max!.toDouble();
-    }
-
-    // Add exemplars if available
-    if (point.hasExemplars) {
-      for (final exemplar in point.exemplars!) {
-        // Note: Exemplar transformation is simplified here
-        final exemplarProto = proto.Exemplar();
-        exemplarProto.timeUnixNano = Int64(exemplar.timestamp.microsecondsSinceEpoch * 1000);
-        exemplarProto.asDouble = exemplar.value.toDouble();
-        dataPoint.exemplars.add(exemplarProto);
-      }
-    }
-
-    dataPoints.add(dataPoint);
-  }
-
-  /// Adds a number data point to the given list.
-  static void _addNumberDataPoint(
-    List<proto.NumberDataPoint> dataPoints,
-    MetricPoint point,
-  ) {
-    final dataPoint = proto.NumberDataPoint();
-
-    // Set common fields
-    _setCommonDataPointFields(dataPoint, point);
-
-    // Set value (as double)
-    dataPoint.asDouble = point.value.toDouble();
-
-    // Add exemplars if available
-    if (point.hasExemplars) {
-      for (final exemplar in point.exemplars!) {
-        // Note: Exemplar transformation is simplified here
-        final exemplarProto = proto.Exemplar();
-        exemplarProto.timeUnixNano = Int64(exemplar.timestamp.microsecondsSinceEpoch * 1000);
-        exemplarProto.asDouble = exemplar.value.toDouble();
-        dataPoint.exemplars.add(exemplarProto);
-      }
-    }
-
-    dataPoints.add(dataPoint);
-  }
-
-  /// Sets common fields for any data point type.
-  static void _setCommonDataPointFields(dynamic dataPoint, MetricPoint point) {
-    // Convert timestamps to nanoseconds
-    dataPoint.startTimeUnixNano = Int64(point.startTime.microsecondsSinceEpoch * 1000);
-    dataPoint.timeUnixNano = Int64(point.endTime.microsecondsSinceEpoch * 1000);
-
-    // Add attributes
+    
+    // Prepare attributes
     final attributes = point.attributes.toMap();
-    for (final entry in attributes.entries) {
-      dataPoint.attributes.add(_createKeyValue(entry.key, entry.value.value));
+    final attributeKeyValues = attributes.entries
+        .map((entry) => _createKeyValue(entry.key, entry.value.value))
+        .toList();
+    
+    // Prepare exemplars if available
+    final exemplars = <proto.Exemplar>[];
+    if (point.hasExemplars) {
+      for (final exemplar in point.exemplars!) {
+        final exemplarProto = proto.Exemplar(
+          timeUnixNano: Int64(exemplar.timestamp.microsecondsSinceEpoch * 1000),
+          asDouble: exemplar.value.toDouble(),
+        );
+        exemplars.add(exemplarProto);
+      }
     }
+    
+    // Create bucket counts as Int64 list
+    final bucketCountsInt64 = histogramValue.bucketCounts
+        .map((count) => Int64(count))
+        .toList();
+    
+    // Create the HistogramDataPoint with all fields set
+    return proto.HistogramDataPoint(
+      attributes: attributeKeyValues,
+      startTimeUnixNano: Int64(point.startTime.microsecondsSinceEpoch * 1000),
+      timeUnixNano: Int64(point.endTime.microsecondsSinceEpoch * 1000),
+      count: Int64(histogramValue.count),
+      sum: histogramValue.sum.toDouble(),
+      bucketCounts: bucketCountsInt64,
+      explicitBounds: List<double>.from(histogramValue.boundaries),
+      exemplars: exemplars,
+      min: histogramValue.min?.toDouble(),
+      max: histogramValue.max?.toDouble(),
+    );
   }
+
+  /// Creates a number data point for the given MetricPoint.
+  static proto.NumberDataPoint _createNumberDataPoint(MetricPoint point) {
+    // Prepare attributes
+    final attributes = point.attributes.toMap();
+    final attributeKeyValues = attributes.entries
+        .map((entry) => _createKeyValue(entry.key, entry.value.value))
+        .toList();
+    
+    // Prepare exemplars if available
+    final exemplars = <proto.Exemplar>[];
+    if (point.hasExemplars) {
+      for (final exemplar in point.exemplars!) {
+        final exemplarProto = proto.Exemplar(
+          timeUnixNano: Int64(exemplar.timestamp.microsecondsSinceEpoch * 1000),
+          asDouble: exemplar.value.toDouble(),
+        );
+        exemplars.add(exemplarProto);
+      }
+    }
+    
+    // Create the NumberDataPoint with all fields set
+    return proto.NumberDataPoint(
+      attributes: attributeKeyValues,
+      startTimeUnixNano: Int64(point.startTime.microsecondsSinceEpoch * 1000),
+      timeUnixNano: Int64(point.endTime.microsecondsSinceEpoch * 1000),
+      asDouble: point.value.toDouble(),
+      exemplars: exemplars,
+    );
+  }
+
+  // This method is no longer needed as we're creating complete objects instead of modifying them
 
   /// Creates a KeyValue proto from a key and value.
   static common_proto.KeyValue _createKeyValue(String key, dynamic value) {

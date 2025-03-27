@@ -64,6 +64,10 @@ class Metric {
   /// The data points for this metric.
   final List<MetricPoint> points;
   
+  /// Whether this metric is monotonic (sum metrics only).
+  /// A monotonic metric only increases or only decreases over time.
+  final bool? isMonotonic;
+  
   /// Creates a new Metric instance.
   Metric({
     required this.name,
@@ -73,6 +77,7 @@ class Metric {
     this.temporality = AggregationTemporality.cumulative,
     this.instrumentationScope,
     required this.points,
+    this.isMonotonic,
   });
   
   /// Creates a sum metric.
@@ -93,6 +98,7 @@ class Metric {
       temporality: temporality,
       instrumentationScope: instrumentationScope,
       points: points,
+      isMonotonic: isMonotonic,
     );
   }
   
