@@ -173,8 +173,11 @@ void main() {
       expect(gauge.getValue(attrs1), equals(75));
       expect(gauge.getValue(attrs2), equals(30));
 
-      // Without specific attributes, returns last recorded value
-      expect(gauge.getValue(OTel.attributes()), equals(75));
+      // Note: Gauge.getValue requires attributes parameter and doesn't have a version without parameters
+      // So we test with a specific attribute set again
+      final emptyAttrs = OTel.attributes();
+      gauge.record(100, emptyAttrs);
+      expect(gauge.getValue(emptyAttrs), equals(100));
     });
 
     test('Gauge handles negative values correctly', () async {

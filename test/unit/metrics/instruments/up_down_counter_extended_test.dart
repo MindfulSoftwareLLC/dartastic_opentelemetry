@@ -174,14 +174,19 @@ void main() {
       final metric = memoryExporter.exportedMetrics
           .firstWhere((m) => m.name == 'map-attributes-counter');
       
-      // Verify final value (100 - 25 = 75)
-      expect(metric.points.length, equals(1));
-      expect(metric.points.first.value, equals(75));
+      // Verify we get two separate points with different values
+      expect(metric.points.length, equals(2));
+      // Find points for each direction
+      final upPoint = metric.points.firstWhere((p) => p.attributes.getString('direction') == 'up');
+      final downPoint = metric.points.firstWhere((p) => p.attributes.getString('direction') == 'down');
       
-      // Verify attributes
-      final attributes = metric.points.first.attributes;
-      expect(attributes.getString('direction'), equals('down'));
-      expect(attributes.getString('operation'), equals('test'));
+      // Verify values for each point
+      expect(upPoint.value, equals(100));
+      expect(downPoint.value, equals(-25));
+      
+      // Verify all attributes are preserved
+      expect(upPoint.attributes.getString('operation'), equals('test'));
+      expect(downPoint.attributes.getString('operation'), equals('test'));
     });
 
     test('UpDownCounter.getValue returns correct value', () {

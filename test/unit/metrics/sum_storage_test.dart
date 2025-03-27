@@ -41,11 +41,17 @@ void main() {
       expect(storage.getValue(attributes1), equals(8)); // 5 + 3
       expect(storage.getValue(attributes2), equals(10)); // unchanged
 
-      // Check that null attributes are handled separately
-      storage.record(15);
-      expect(storage.getValue(), equals(15));
+      // Create empty attributes for specific testing
+      final emptyAttributes = OTel.attributes();
+
+      // Check that empty attributes are handled correctly
+      storage.record(15, emptyAttributes);
+      expect(storage.getValue(emptyAttributes), equals(15));
       expect(storage.getValue(attributes1), equals(8)); // unchanged
       expect(storage.getValue(attributes2), equals(10)); // unchanged
+
+      // Verify the sum across all attribute sets
+      expect(storage.getValue(), equals(33)); // 8 + 10 + 15
     });
 
     test('SumStorage with doubles', () {

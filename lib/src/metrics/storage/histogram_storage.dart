@@ -67,13 +67,25 @@ class HistogramStorage<T extends num> extends PointStorage<T> {
 
   /// Gets the current value for the given attributes.
   /// For histograms, this returns the sum of all recorded values for the attribute set.
+  /// If no attributes are provided, returns the sum across all attribute sets.
   @override
   T getValue([Attributes? attributes]) {
-    // Create a normalized key for lookup
-    final key = attributes ?? _emptyAttributes();
+    if (attributes == null) {
+      // Sum across all attribute sets
+      final num totalSum = _points.values.fold<num>(0, (sum, data) => sum + data.sum);
+      
+      // Convert to the appropriate generic type
+      if (T == int) {
+        return totalSum.toInt() as T;
+      } else if (T == double) {
+        return totalSum.toDouble() as T;
+      } else {
+        return totalSum as T;
+      }
+    }
     
     // Find matching attributes
-    var existingKey = _findMatchingKey(key);
+    var existingKey = _findMatchingKey(attributes);
     final num value = existingKey != null ? _points[existingKey]!.sum : 0;
     
     // Convert to the appropriate generic type

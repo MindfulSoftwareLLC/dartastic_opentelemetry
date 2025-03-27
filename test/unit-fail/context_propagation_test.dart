@@ -14,7 +14,7 @@ import '../testing_utils/real_collector.dart';
 // Check if we're running in isolated mode
 final bool isIsolatedRun =
     Platform.environment['DART_OTEL_ISOLATED_TESTING'] == 'true' ||
-    const bool.fromEnvironment('ISOLATED_RUN', defaultValue: false);
+        const bool.fromEnvironment('ISOLATED_RUN', defaultValue: false);
 
 // Port management to avoid conflicts in parallel tests
 class _PortManager {
@@ -53,18 +53,20 @@ void main() {
 
     // Use a unique file for each test run to avoid conflicts
     final uniqueId = DateTime.now().millisecondsSinceEpoch;
-    final outputPath = '$testDir/test/testing_utils/spans_context_$uniqueId.json';
+    final outputPath =
+        '$testDir/test/testing_utils/spans_context_$uniqueId.json';
     final fallbackPath = '$outputPath.fallback';
 
     setUp(() async {
-      print('Setting up context_propagation_test in ${isIsolatedRun ? "ISOLATED" : "NORMAL"} mode');
+      print(
+          'Setting up context_propagation_test in ${isIsolatedRun ? "ISOLATED" : "NORMAL"} mode');
       print('Using port $testPort and output file $outputPath');
 
       // Ensure OTel is reset
       try {
-      await OTel.reset();
+        await OTel.reset();
       } catch (e) {
-      print('Error resetting OTel: $e');
+        print('Error resetting OTel: $e');
       }
 
       // Create unique output file and fallback file
@@ -72,8 +74,8 @@ void main() {
         final outputFile = File(outputPath);
         if (!outputFile.existsSync()) {
           outputFile.createSync(recursive: true);
-      }
-      outputFile.writeAsStringSync('');
+        }
+        outputFile.writeAsStringSync('');
 
         // Create a fallback file too
         final backupFile = File(fallbackPath);
@@ -82,18 +84,18 @@ void main() {
         }
         backupFile.writeAsStringSync('');
       } catch (e) {
-      print('Error creating output file: $e');
+        print('Error creating output file: $e');
       }
 
       // Start collector with configuration that exports to file
       try {
-      collector = RealCollector(
-        port: testPort,
-        configPath: configPath,
-      outputPath: outputPath,
-      );
-      await collector.start();
-      print('Collector started on port $testPort with output to $outputPath');
+        collector = RealCollector(
+          port: testPort,
+          configPath: configPath,
+          outputPath: outputPath,
+        );
+        await collector.start();
+        print('Collector started on port $testPort with output to $outputPath');
       } catch (e) {
         print('Error starting collector on port $testPort: $e');
 
@@ -114,20 +116,20 @@ void main() {
       await OTel.initialize(
         endpoint: 'http://localhost:${collector.getPort}',
         serviceName: 'test-service-context-$uniqueId',
-      serviceVersion: '1.0.0',
+        serviceVersion: '1.0.0',
       );
 
       tracerProvider = OTel.tracerProvider();
 
       final exporter = OtlpGrpcSpanExporter(
-      OtlpGrpcExporterConfig(
+        OtlpGrpcExporterConfig(
           endpoint: 'http://localhost:${collector.getPort}',
-      insecure: true,
+          insecure: true,
           timeout: isIsolatedRun ? Duration(seconds: 10) : Duration(seconds: 5),
           maxRetries: isIsolatedRun ? 3 : 2,
-      baseDelay: Duration(milliseconds: 50),
+          baseDelay: Duration(milliseconds: 50),
           maxDelay: Duration(milliseconds: 500),
-      ),
+        ),
       );
 
       final processor = SimpleSpanProcessor(exporter);
@@ -136,7 +138,9 @@ void main() {
       tracer = tracerProvider.getTracer('test-tracer-$uniqueId');
 
       // Stabilization time (longer when in isolation mode)
-      await Future.delayed(isIsolatedRun ? Duration(milliseconds: 500) : Duration(milliseconds: 100));
+      await Future.delayed(isIsolatedRun
+          ? Duration(milliseconds: 500)
+          : Duration(milliseconds: 100));
     });
 
     tearDown(() async {
@@ -151,7 +155,10 @@ void main() {
               'spanId': 'fallback-id-$uniqueId',
               'traceId': 'fallback-trace-$uniqueId',
               'attributes': [
-                {'key': 'test.key', 'value': {'stringValue': 'test-value'}},
+                {
+                  'key': 'test.key',
+                  'value': {'stringValue': 'test-value'}
+                },
               ]
             }
           ];
@@ -161,47 +168,48 @@ void main() {
         print('Error creating fallback data: $e');
       }
 
-    // Shutdown in a safe order
-    print('Starting tearDown... Shutting down tracer provider');
-    try {
-    await tracerProvider.shutdown();
-    } catch (e) {
-    print('Error shutting down tracer provider: $e');
-    }
+      // Shutdown in a safe order
+      print('Starting tearDown... Shutting down tracer provider');
+      try {
+        await tracerProvider.shutdown();
+      } catch (e) {
+        print('Error shutting down tracer provider: $e');
+      }
 
-    print('Stopping collector...');
-    try {
-    await collector.stop();
-    } catch (e) {
-    print('Error stopping collector: $e');
-    }
+      print('Stopping collector...');
+      try {
+        await collector.stop();
+      } catch (e) {
+        print('Error stopping collector: $e');
+      }
 
       // Clean up the output files
-    try {
+      try {
         if (File(outputPath).existsSync()) {
           await File(outputPath).delete();
         }
         if (File(fallbackPath).existsSync()) {
           await File(fallbackPath).delete();
         }
-    } catch (e) {
+      } catch (e) {
         print('Error deleting output files: $e');
-    }
+      }
 
-    print('Resetting OTel...');
-    try {
-      await OTel.reset();
-    } catch (e) {
-      print('Error resetting OTel during tearDown: $e');
-    }
+      print('Resetting OTel...');
+      try {
+        await OTel.reset();
+      } catch (e) {
+        print('Error resetting OTel during tearDown: $e');
+      }
 
       // Release the port
       _PortManager.releasePort(collector.getPort);
 
-    // Very short delay for cleanup
-      await Future.delayed(isIsolatedRun ? Duration(seconds: 1) : Duration(milliseconds: 50));
+      // Very short delay for cleanup
+      await Future.delayed(
+          isIsolatedRun ? Duration(seconds: 1) : Duration(milliseconds: 50));
 
-    print('TearDown complete');
+      print('TearDown complete');
     });
 
     // Use test.fn(fn, timeout: testTimeout) pattern to apply dynamic timeout
@@ -220,7 +228,9 @@ void main() {
       span.end();
 
       print('Waiting for span to be exported...');
-      await collector.waitForSpans(1, timeout: isIsolatedRun ? Duration(seconds: 10) : Duration(seconds: 5));
+      await collector.waitForSpans(1,
+          timeout:
+              isIsolatedRun ? Duration(seconds: 10) : Duration(seconds: 5));
 
       print('Verifying span attributes...');
       await collector.assertSpanExists(
@@ -233,65 +243,68 @@ void main() {
     }, timeout: testTimeout);
 
     test('propagates context between spans correctly using withSpan', () async {
-    print('Starting context propagation test with withSpan');
+      print('Starting context propagation test with withSpan');
 
-    final parentSpan = tracer.startSpan('parent-span-test-$uniqueId');
-    final parentSpanId = parentSpan.spanContext.spanId.toString();
+      final parentSpan = tracer.startSpan('parent-span-test-$uniqueId');
+      final parentSpanId = parentSpan.spanContext.spanId.toString();
 
-    final parentContext = OTel.context().withSpan(parentSpan);
+      final parentContext = OTel.context().withSpan(parentSpan);
 
-    final childSpan = tracer.startSpan(
-    'child-span-test-$uniqueId',
-    context: parentContext,
-    );
+      final childSpan = tracer.startSpan(
+        'child-span-test-$uniqueId',
+        context: parentContext,
+      );
 
-    // End spans in the correct order
-    print('Ending spans...');
-    childSpan.end();
-    parentSpan.end();
+      // End spans in the correct order
+      print('Ending spans...');
+      childSpan.end();
+      parentSpan.end();
 
-    // Wait for export with shorter timeout
-    print('Waiting for spans to be exported...');
-      await collector.waitForSpans(2, timeout: isIsolatedRun ? Duration(seconds: 10) : Duration(seconds: 5));
+      // Wait for export with shorter timeout
+      print('Waiting for spans to be exported...');
+      await collector.waitForSpans(2,
+          timeout:
+              isIsolatedRun ? Duration(seconds: 10) : Duration(seconds: 5));
 
-    // Get all spans
-    final spans = await collector.getSpans();
+      // Get all spans
+      final spans = await collector.getSpans();
       print('Got ${spans.length} spans');
 
-    // Print the available spans for debugging
-    print('Available spans:');
-    for (var span in spans) {
-    print('  Span: ${span['name']}, ID: ${span['spanId']}');
-    }
+      // Print the available spans for debugging
+      print('Available spans:');
+      for (var span in spans) {
+        print('  Span: ${span['name']}, ID: ${span['spanId']}');
+      }
 
-    // Check if we have the right spans
-    expect(spans.any((s) => s['name'] == 'parent-span-test-$uniqueId'), isTrue,
-    reason: 'Parent span should be exported');
-    expect(spans.any((s) => s['name'] == 'child-span-test-$uniqueId'), isTrue,
-    reason: 'Child span should be exported');
+      // Check if we have the right spans
+      expect(
+          spans.any((s) => s['name'] == 'parent-span-test-$uniqueId'), isTrue,
+          reason: 'Parent span should be exported');
+      expect(spans.any((s) => s['name'] == 'child-span-test-$uniqueId'), isTrue,
+          reason: 'Child span should be exported');
 
       final parentExportedSpan = spans.firstWhere(
           (s) => s['name'] == 'parent-span-test-$uniqueId',
-    orElse: () => <String, dynamic>{});
+          orElse: () => <String, dynamic>{});
 
       final childExportedSpan = spans.firstWhere(
           (s) => s['name'] == 'child-span-test-$uniqueId',
-    orElse: () => <String, dynamic>{});
+          orElse: () => <String, dynamic>{});
 
-    // Only verify if we actually have both spans
-    if (parentExportedSpan.isNotEmpty && childExportedSpan.isNotEmpty) {
-    // Verify parent-child relationship if parentSpanId is available
-    if (childExportedSpan['parentSpanId'] != null) {
-    expect(childExportedSpan['parentSpanId'], isNotNull);
+      // Only verify if we actually have both spans
+      if (parentExportedSpan.isNotEmpty && childExportedSpan.isNotEmpty) {
+        // Verify parent-child relationship if parentSpanId is available
+        if (childExportedSpan['parentSpanId'] != null) {
+          expect(childExportedSpan['parentSpanId'], isNotNull);
 
-    // Verify trace IDs match
-    expect(
-    childExportedSpan['traceId'],
-    equals(parentExportedSpan['traceId']),
-    reason: 'Child span should inherit trace ID from parent',
-    );
-    }
-    }
+          // Verify trace IDs match
+          expect(
+            childExportedSpan['traceId'],
+            equals(parentExportedSpan['traceId']),
+            reason: 'Child span should inherit trace ID from parent',
+          );
+        }
+      }
     }, timeout: testTimeout);
 
     test('withSpanContext prevents trace ID changes', () async {
