@@ -1,34 +1,3 @@
-## Testing
-
-### Running Tests
-
-The project includes a comprehensive test suite:
-
-```bash
-# Run all unit tests
-make test
-
-# Run tests safely in sequence (for problematic tests)
-make test-safe
-
-# Run web-specific tests (requires Chrome)
-make test-web
-
-# Run all checks including tests and coverage
-make check
-```
-
-### Web Testing
-
-Some components use platform-specific implementations, especially for web environments. To ensure these components work correctly in browsers:
-
-```bash
-# Run only web-specific tests in Chrome
-make test-web
-```
-
-Web-specific tests verify JS interop functionality and browser API usage like Compression Streams. For more details on running and writing web tests, see `test/web/README.md`.
-
 # OpenTelemetry SDK for Dart
 
 [![Pub Version](https://img.shields.io/pub/v/opentelemetry_sdk.svg)](https://pub.dev/packages/opentelemetry_sdk)
@@ -457,6 +426,38 @@ OTel.initialize(
   // Alternative HTTP endpoint: 'http://otel-collector:4318/v1/traces'
 );
 ```
+
+## Testing
+
+### Running Tests
+
+The project includes a comprehensive test suite:
+
+```bash
+# Run all unit tests
+make test
+
+# Run tests safely in sequence (for problematic tests)
+make test-safe
+
+# Run web-specific tests (requires Chrome)
+make test-web
+
+# Run all checks including tests and coverage
+make check
+```
+
+### Web Testing
+
+Some components use platform-specific implementations, especially for web environments. To ensure these components work correctly in browsers:
+
+```bash
+# Run only web-specific tests in Chrome
+make test-web
+```
+
+Web-specific tests verify JS interop functionality and browser API usage like Compression Streams. For more details on running and writing web tests, see `test/web/README.md`.
+
 
 ## Platform Support
 
