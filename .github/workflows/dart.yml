@@ -1,0 +1,71 @@
+name: Dart CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 'stable'
+      - name: Install dependencies
+        run: dart pub get
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+      - name: Analyze project source
+        run: dart analyze --fatal-infos
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        sdk: ['stable', 'beta']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: ${{ matrix.sdk }}
+      - name: Install dependencies
+        run: dart pub get
+      - name: Run tests
+        run: dart test
+      
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 'stable'
+      - name: Install dependencies
+        run: dart pub get
+      - name: Activate coverage
+        run: dart pub global activate coverage
+      - name: Run tests with coverage
+        run: dart pub global run coverage:test_with_coverage
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage/lcov.info
+          fail_ci_if_error: false
+          
+  pana:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 'stable'
+      - name: Install dependencies
+        run: dart pub get
+      - name: Install pana
+        run: dart pub global activate pana
+      - name: Run pana
+        run: dart pub global run pana --no-warning --source path .

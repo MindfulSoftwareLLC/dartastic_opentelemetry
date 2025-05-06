@@ -1,0 +1,19 @@
+OpenTelemetry SDK for Dart
+Copyright 2025 Michael Bushe, MindfulSoftware.com
+
+This product includes software developed by:
+- Michael Bushe (https://mindfulsoftware.com)
+
+This product depends on:
+- opentelemetry_api - Copyright 2025 Michael Bushe - Licensed under the Apache License 2.0
+- meta - Copyright (c) Google, Inc - Licensed under the BSD 3-Clause License
+- collection - Copyright (c) Google, Inc - Licensed under the BSD 3-Clause License
+- fixnum - Copyright (c) Google, Inc - Licensed under the BSD 3-Clause License
+- protobuf - Copyright (c) Google, Inc - Licensed under the BSD 3-Clause License
+- grpc - Copyright (c) Google, Inc - Licensed under the BSD 3-Clause License
+- http - Copyright (c) Google, Inc - Licensed under the BSD 3-Clause License
+- async - Copyright (c) Google, Inc - Licensed under the BSD 3-Clause License
+
+This package implements the OpenTelemetry Specification, which is developed by the Cloud Native Computing Foundation (CNCF) OpenTelemetry project and licensed under the Apache License 2.0.
+
+For complete licenses for each dependency, see their respective LICENSE files in the Dart pub.dev package repository.

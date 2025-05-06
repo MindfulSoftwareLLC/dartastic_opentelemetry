@@ -1,0 +1,90 @@
+Analyzing dartastic_opentelemetry...
+
+  error - lib/src/metrics/data/metric_point.dart:92:14 - The argument type 'dynamic' can't be assigned to the parameter type 'num'.  - argument_type_not_assignable
+  error - lib/src/metrics/data/metric_point.dart:96:14 - The argument type 'T?' can't be assigned to the parameter type 'num?'.  - argument_type_not_assignable
+  error - lib/src/metrics/data/metric_point.dart:97:14 - The argument type 'T?' can't be assigned to the parameter type 'num?'.  - argument_type_not_assignable
+  error - lib/src/metrics/export/otlp/metric_transformer.dart:172:17 - The argument type 'dynamic' can't be assigned to the parameter type 'double?'.  - argument_type_not_assignable
+  error - lib/src/metrics/instruments/observable_counter.dart:79:75 - The argument type 'dynamic' can't be assigned to the parameter type 'num'.  - argument_type_not_assignable
+  error - lib/src/metrics/instruments/observable_counter.dart:148:37 - A value of type 'num' can't be assigned to a variable of type 'T'. Try changing the type of the variable, or casting the right-hand type to 'T'. - invalid_assignment
+  error - lib/src/metrics/instruments/observable_gauge.dart:78:59 - The argument type 'dynamic' can't be assigned to the parameter type 'num'.  - argument_type_not_assignable
+  error - lib/src/metrics/instruments/observable_up_down_counter.dart:79:75 - The argument type 'dynamic' can't be assigned to the parameter type 'num'.  - argument_type_not_assignable
+  error - lib/src/metrics/instruments/observable_up_down_counter.dart:134:37 - A value of type 'num' can't be assigned to a variable of type 'T'. Try changing the type of the variable, or casting the right-hand type to 'T'. - invalid_assignment
+  error - lib/src/trace/span.dart:143:8 - 'Span.setStringAttribute' ('void Function(String, String)') isn't a valid override of 'APISpan.setStringAttribute' ('void Function<T>(String, String)'). - invalid_override
+           - The member being overridden at lib/src/trace/span.dart:186:66.
+  error - lib/src/trace/span.dart:146:8 - 'Span.setStringListAttribute' ('void Function(String, List<String>)') isn't a valid override of 'APISpan.setStringListAttribute' ('void Function<T>(String, List<String>)'). - invalid_override
+           - The member being overridden at lib/src/trace/span.dart:213:1541.
+  error - lib/src/trace/span.dart:210:62 - The name 'type' isn't a type and can't be used in an 'is' expression. Try correcting the name to match an existing type. - type_test_with_non_type
+  error - test-crashers/unit/trace/tracer_method_test.dart:103:38 - The type 'dynamic' used in the 'for' loop must implement 'Iterable'. - for_in_of_invalid_type
+  error - test/unit/trace/simple_test_file_exporter_test.dart:96:13 - Conditions must have a static type of 'bool'. Try changing the condition. - non_bool_condition
+  error - test/unit/trace/simple_test_file_exporter_test.dart:100:15 - Conditions must have a static type of 'bool'. Try changing the condition. - non_bool_condition
+  error - test/unit/trace/tracer_method_test.dart:101:38 - The type 'dynamic' used in the 'for' loop must implement 'Iterable'. - for_in_of_invalid_type
+warning - lib/src/metrics/data/metric.dart:127:14 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/metrics/data/metric.dart:173:19 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/metrics/data/metric.dart:205:19 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/metrics/data/metric.dart:235:19 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/metrics/export/otlp/metric_transformer.dart:106:61 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/metrics/export/otlp/metric_transformer.dart:148:55 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/metrics/export/prometheus/prometheus_exporter.dart:117:62 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/metrics/instruments/counter.dart:141:8 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/metrics/instruments/gauge.dart:93:8 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/metrics/instruments/histogram.dart:103:8 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/metrics/instruments/observable_counter.dart:188:8 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/metrics/instruments/observable_gauge.dart:158:8 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/metrics/instruments/observable_up_down_counter.dart:146:8 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/metrics/instruments/up_down_counter.dart:90:8 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/metrics/storage/gauge_storage.dart:73:8 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/metrics/storage/histogram_storage.dart:104:8 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/metrics/storage/point_storage.dart:19:8 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/metrics/storage/sum_storage.dart:110:8 - The generic type 'MetricPoint<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'MetricPoint<dynamic>'. - strict_raw_type
+warning - lib/src/trace/export/otlp/span_transformer.dart:108:52 - The operand can't be 'null', so the condition is always 'true'. Remove the condition. - unnecessary_null_comparison
+warning - lib/src/trace/span.dart:143:67 - The type argument(s) of the function 'setStringAttribute' can't be inferred. Use explicit type argument(s) for 'setStringAttribute'. - inference_failure_on_function_invocation
+warning - lib/src/trace/span.dart:146:77 - The type argument(s) of the function 'setStringListAttribute' can't be inferred. Use explicit type argument(s) for 'setStringListAttribute'. - inference_failure_on_function_invocation
+warning - lib/src/trace/span.dart:177:9 - Unnecessary type check; the result is always 'true'. Try correcting the type check, or removing the type check. - unnecessary_type_check
+warning - lib/src/trace/span.dart:210:8 - The method doesn't override an inherited method. Try updating this class to match the superclass, or removing the override annotation. - override_on_non_overriding_member
+warning - pubspec.yaml:12:5 - Publishable packages can't have 'path' dependencies. Try adding a 'publish_to: none' entry to mark the package as not for publishing or remove the path dependency. - invalid_dependency
+warning - test/testing_utils/real_collector.dart:290:41 - The generic type 'List<dynamic>?' should have explicit type arguments but doesn't. Use explicit type arguments for 'List<dynamic>?'. - strict_raw_type
+warning - test/unit/trace/direct_file_exporter_test.dart:99:28 - The generic type 'List<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'List<dynamic>'. - strict_raw_type
+warning - test/unit/trace/direct_file_exporter_test.dart:104:32 - The generic type 'List<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'List<dynamic>'. - strict_raw_type
+warning - test/unit/trace/file_export_test.dart:135:29 - The generic type 'List<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'List<dynamic>'. - strict_raw_type
+warning - test/unit/trace/file_export_test.dart:208:29 - The generic type 'List<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'List<dynamic>'. - strict_raw_type
+warning - test/unit/trace/file_export_test.dart:269:29 - The generic type 'List<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'List<dynamic>'. - strict_raw_type
+warning - test/unit/trace/simple_test_file_exporter_test.dart:90:26 - The generic type 'List<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'List<dynamic>'. - strict_raw_type
+warning - test/unit/trace/simple_test_file_exporter_test.dart:98:34 - The generic type 'List<dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'List<dynamic>'. - strict_raw_type
+warning - test/unit/trace/simple_test_file_exporter_test.dart:102:30 - The generic type 'Map<dynamic, dynamic>' should have explicit type arguments but doesn't. Use explicit type arguments for 'Map<dynamic, dynamic>'. - strict_raw_type
+   info - lib/src/metrics/metric_reader.dart:62:8 - The referenced name isn't visible in scope. Try adding an import for the referenced name. - comment_references
+   info - lib/src/otel.dart:34:43 - The referenced name isn't visible in scope. Try adding an import for the referenced name. - comment_references
+   info - lib/src/otel.dart:35:11 - The referenced name isn't visible in scope. Try adding an import for the referenced name. - comment_references
+   info - lib/src/otel.dart:35:37 - The referenced name isn't visible in scope. Try adding an import for the referenced name. - comment_references
+   info - lib/src/trace/export/batch_span_processor.dart:29:9 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/export/otlp/otlp_grpc_span_exporter.dart:32:3 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/export/otlp/otlp_grpc_span_exporter_config.dart:6:7 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/export/otlp/otlp_grpc_span_exporter_config.dart:7:16 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/export/otlp/otlp_grpc_span_exporter_config.dart:8:29 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/export/otlp/otlp_grpc_span_exporter_config.dart:9:18 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/export/otlp/otlp_grpc_span_exporter_config.dart:10:14 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/export/otlp/otlp_grpc_span_exporter_config.dart:11:14 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/export/otlp/otlp_grpc_span_exporter_config.dart:12:13 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/export/otlp/otlp_grpc_span_exporter_config.dart:13:18 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/export/otlp/otlp_grpc_span_exporter_config.dart:14:18 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/export/otlp/otlp_grpc_span_exporter_config.dart:15:17 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/export/otlp/otlp_grpc_span_exporter_config.dart:16:17 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/export/otlp/otlp_grpc_span_exporter_config.dart:17:17 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/export/otlp/otlp_grpc_span_exporter_config.dart:19:3 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/export/test_file_exporter.dart:16:3 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/sampling/counting_sampler.dart:110:3 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/sampling/counting_sampler.dart:137:17 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/sampling/counting_sampler.dart:139:3 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/sampling/counting_sampler.dart:159:16 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/sampling/counting_sampler.dart:160:17 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/sampling/counting_sampler.dart:161:15 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/sampling/counting_sampler.dart:162:14 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/sampling/counting_sampler.dart:163:17 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/sampling/counting_sampler.dart:168:3 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/sampling/trace_id_ratio_sampler.dart:13:16 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/trace/span.dart:210:8 - Missing documentation for a public member. Try adding documentation for the member. - public_member_api_docs
+   info - lib/src/util/zip/gzip_web.dart:45:23 - Cast from 'JSAny?' to 'Uint8List' casts a JS interop value to a Dart type, which might not be platform-consistent. Try using conversion methods from 'dart:js_interop' to convert between JS interop types and Dart types. - invalid_runtime_check_with_js_interop_types
+   info - test/testing_utils/real_collector.dart:32:16 - Use of an async 'dart:io' method. Try using the synchronous version of the method. - avoid_slow_async_io
+   info - test/testing_utils/real_collector.dart:49:26 - Use of an async 'dart:io' method. Try using the synchronous version of the method. - avoid_slow_async_io
+   info - test/testing_utils/real_collector.dart:374:28 - Use of an async 'dart:io' method. Try using the synchronous version of the method. - avoid_slow_async_io
+
+84 issues found.

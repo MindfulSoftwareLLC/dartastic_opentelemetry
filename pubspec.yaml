@@ -1,0 +1,32 @@
+name: dartastic_opentelemetry
+description: Dartastic.io's OpenTelemetry SDK for Dart
+version: 0.8.0
+repository: https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry.git
+homepage: https://dartastic.io
+
+environment:
+  sdk: ^3.0.0
+
+dependencies:
+  dartastic_opentelemetry_api: ^0.8.0
+  fixnum: ^1.1.1
+  grpc: ^3.2.4
+  http: ^1.3.0
+  meta: ^1.16.0
+  protobuf: ^3.1.0
+  synchronized: ^3.3.1
+  web: ^1.1.0
+
+dev_dependencies:
+  benchmark_harness: ^2.3.1
+  build_runner: ^2.4.9
+  lints: ^5.1.1
+  mockito: ^5.4.4
+  protoc_plugin: ^21.1.2  # For generating Dart proto files
+  test: ^1.25.14
+
+# Script commands
+scripts:
+  test: dart test
+  coverage: ./tools/coverage.sh
+  coverage_unit_only: dart test --tags=unit --coverage=coverage

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Stable Tests" type="DartTestRunConfigurationType" factoryName="Dart Test">
+    <option name="filePath" value="$PROJECT_DIR$" />
+    <option name="scope" value="FOLDER" />
+    <option name="testRunnerOptions" value="--exclude-tags=fail --concurrency=4" />
+    <method v="2" />
+  </configuration>
+</component>
