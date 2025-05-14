@@ -1,469 +1,220 @@
 # OpenTelemetry SDK for Dart
 
-[![Pub Version](https://img.shields.io/pub/v/opentelemetry_sdk.svg)](https://pub.dev/packages/opentelemetry_sdk)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![OpenTelemetry Specification](https://img.shields.io/badge/OpenTelemetry-Specification-blueviolet)](https://opentelemetry.io/docs/specs/otel/)
 
-A Dart implementation of the [OpenTelemetry](https://opentelemetry.io/) SDK that strictly adheres to the
-OpenTelemetry (OTel) specification. This package provides a production-ready implementation of OpenTelemetry telemetry
-collection and export for Dart applications.
+Dartastic is an [OpenTelemetry](https://opentelemetry.io/) SDK to add standard observability to Dart applications.
 
-## Overview
-
-The OpenTelemetry SDK for Dart implements the OpenTelemetry specification, allowing you to collect telemetry data 
-(traces, metrics, logs coming) from your Dart applications and export it to your backend of choice.
-
-This SDK implements the [OpenTelemetry API for Dart](https://pub.dev/packages/opentelemetry_api) and provides additional components needed for a full telemetry solution:
-
-- **Span processors** for processing and enriching spans
-- **Exporters** for sending data to backends (OTLP, Console, Custom)
-- **Resource providers** for adding service information
-- **Samplers** for controlling data volume
-- **Propagators** for cross-service context propagation
-
-[Dartastic.io](https://dartastic.io) provides an OpenTelemetry Observability backend specifically built for Dart and Flutter applications, offering rich features like source code integration, function call visualization, and more.
+This SDK has been proposed for [Donation to the CNCF](https://github.com/open-telemetry/community/issues/2718).
+We need YOU to grow the Dartastic community and make this SDK the standard for Flutter and Dart OTel.
+Please use it, submit issues, support us with stars and contribute PRs. We are looking for contributors and maintainers.
+Also, please support the development by subscribing at [Dartastic.io][https://dartastic.io] and gain early access to the
+Flutter SDK and the Wondrous Demo.
 
 ## Features
 
-- ✅ **Complete OpenTelemetry SDK implementation** for Dart
-- ✅ **Strict adherence** to the OpenTelemetry specification
-- ✅ **Support for all telemetry signals**:
+- 🚀 **Friendly API**: An easy to use, discoverable, immutable, typesafe API that feels familiar to Dart developers.
+- 📐 **Standards Compliant**: Complies with the [OpenTelemetry specification](https://opentelemetry.io/docs/specs/)
+  so it's portable and future-proof.
+- 🌎 **Ecosystem**:
+  - [Dartastic.io](https://dartastic.io) is an OTel backend for Dart with a generous free tier,
+    professional support and enterprise features.
+  - [Flutterrific OTel](https://pub.dev/packages/flutterrific_opentelemetry) (Coming soon - sign up at Dartastic.io for early access)
+    adds Dartastic OTel to Flutter apps with ease.  Observe app routes, errors, web vitals and more with as few
+    as two lines of code.
+- 💪🏻 **Powerful**:
+  - Propagate OpenTelemetry Context across async gaps and Isolates.
+  - Pick from a rich set of Samplers including On/Off, probability and rate-limiting.
+  - Automatically capture platform resources on initialization.
+  - No skimping - If it's optional in the spec, it's included in Dartastic.
+  - A pluggable and extensible API and SDK enables implementation freedom.
+- 🧷 **Typesafe Semantics**: Ensure you're speaking the right language with a massive set of enums matching
+  the [OpenTelemetry Semantics Conventions](https://opentelemetry.io/docs/specs/semconv/).
+- 📊 **Excellent Performance**: 
+    - Low overhead
+    - Batch processing
+    - Performance test suite for proven benchmarks
+- 🐞 **Well Tested**: Good test coverage (>85%). 
+- 📃 **Quality Documentation**: If it's not clearly documented, it's a bug. Extensive examples and best practices are
+  provided [Wonderous Dartastic](https://pub.dev/packages/wonderous_dartastic) demonstrates the Wonderous App instrumented
+  with OpenTelemetry.
+- ✅ **Supported Telemetry Signals and Features **:
   - Tracing with span processors and samplers
   - Metrics collection and aggregation
-  - Logging integration
   - Context propagation
   - Baggage management
-- ✅ **Multiple export protocols**:
-  - OTLP over gRPC
-  - OTLP over HTTP/JSON
-  - Zipkin
-  - Jaeger
-  - Console (for debugging)
-- ✅ **Configurable resource providers**
-- ✅ **Cross-platform compatibility** - works across all Dart environments
-- ✅ **Low overhead** with efficient processing and batching
-- ✅ **Pluggable architecture** for custom extensions
+  - Logging is not available yet
 
-## Getting Started
+[Dartastic OTel](https://pub.dev/packages/dartastic_opentelemetry) is suitable for Dart backends, CLIs or any
+Dart application.
 
-### Installation
+[opentelemetry_api](https://pub.dev/packages/opentelemetry_api) is the API for the Dartastic OTel SDK.
+The `opentelemetry_api` exists as a standalone library to strictly adhere to the
+OpenTelemetry specification which separates API and the SDK.  All OpenTelemetry API classes on in
+`opentelemetry_api`.
 
-Add the package to your `pubspec.yaml`:
-The API is a separate package but it's not necessary since the SDK re-exports the relevant members.
-```yaml
+[Flutterrific OTel](https://pub.dev/packages/flutterrific_opentelemetry) adds Dartastic OTel to Flutter apps with ease.  Sign Up at Dartastic.io for early access to this soon to be open source.
+
+[Dartastic.io](https://dartastic.io) is an OpenTelemetry backend based on Elastic with a generous free tier.
+
+Dartastic and Flutterrific OTel are made with 💙 by Michael Bushe at [Mindful Software](https://mindfulsoftware.com),
+the Flutter experts with support from [SEMplicity, Inc.](https://semplicityinc.com), the Elastic experts.
+
+## Getting started
+
+Include this in your pubspec.yaml:
+```
 dependencies:
-  opentelemetry_sdk: ^0.8.0
+  dartastic_opentelemetry: ^0.8.3
 ```
 
-Then run:
-
-```bash
-dart pub get
-```
-
-### Basic Configuration
-
-To start using the SDK with default settings:
+The entrypoint to the SDK is the `OTel` class.  `OTel` has static "factory" methods for all
+OTel API and SDK objects.  `OTel` needs to be initialized first to point to an OpenTelemetry
+backend.  Initialization does a lot of work under the hood including gathering a rich set of
+standard resources for any OS that Dart runs in.  It prepares for the creation of the global
+default `TracerProvider` with the serviceName and a default `Tracer`, both created on first use.
 
 ```dart
-import 'package:opentelemetry_sdk/opentelemetry_sdk.dart';
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
 void main() {
-  // Initialize the SDK with defaults (console exporter)
   OTel.initialize(
-    endpoint: 'http://localhost:4317',
-    serviceName: 'my-service', 
-    serviceVersion: '1.0.0'
-  );
-  
-  // Your application code here
-  
-  // Shutdown the SDK before application exit
-  OTel.shutdown();
-}
-```
-
-### Advanced Configuration
-
-For more control over the SDK configuration:
-
-```dart
-import 'package:opentelemetry_sdk/opentelemetry_sdk.dart';
-
-void main() async {
-  // Create a resource describing your service
-  final resource = OTel.resource([
-    OTel.resourceAttribute('service.name', 'payment-service'),
-    OTel.resourceAttribute('service.version', '1.2.3'),
-    OTel.resourceAttribute('deployment.environment', 'production'),
-  ]);
-  
-  // Configure span processors
-  final batchProcessor = OTel.batchSpanProcessor(
-    OTel.otlpHttpExporter(
-      endpoint: 'https://api.example.com/v1/traces',
-      headers: {'Authorization': 'Bearer token123'},
-    ),
-    maxQueueSize: 2048,
-    scheduledDelayMillis: 5000,
-  );
-  
-  // Configure samplers
-  final sampler = OTel.parentBasedSampler(
-    OTel.traceIdRatioSampler(0.1), // Sample 10% of traces
-  );
-  
-  // Initialize the SDK with custom configuration
-  OTel.initializeAdvanced(
-    resource: resource,
-    spanProcessors: [batchProcessor],
-    sampler: sampler,
-    propagators: [
-      OTel.w3cTraceContextPropagator(),
-      OTel.w3cBaggagePropagator(),
-    ],
-  );
-  
-  // Application shutdown
-  await OTel.shutdownAsync(); // Flush pending telemetry
-}
-```
-
-## Usage Examples
-
-### Tracing Example
-
-```dart
-import 'package:opentelemetry_sdk/opentelemetry_sdk.dart';
-
-void main() {
-  // Initialize the SDK
-  OTel.initialize(
-    endpoint: 'http://localhost:4317',
-    serviceName: 'example-service',
-  );
-  
-  // Get a tracer
-  final tracer = OTel.tracer('example-component');
-  
-  // Create and use a span
-  tracer.startActiveSpan(
-    name: 'main-operation', 
-    kind: SpanKind.server,
-    fn: (span) {
-      // Your business logic here
-      span.setAttribute('operation.type', 'example');
-      
-      try {
-        // Do work - call a nested operation
-        performSubOperation(tracer);
-        span.setStatus(SpanStatusCode.Ok);
-        return 'Operation completed successfully';
-      } catch (e, stackTrace) {
-        // Record the error
-        span
-          ..setStatus(SpanStatusCode.Error, e.toString())
-          ..recordException(e, stackTrace: stackTrace);
-        rethrow;
+      serviceName: 'powerful-backend-service',
+      serviceVersion: '2.0',
+      tracerName: 'data-microservice',
+      tracerVersion: '1.1.11',
+      //OTel standard tenant_id, required for Dartastic.io
+      tenantId: 'valued-customer-id',
+      //required for the Dartastic.io backend
+      dartasticAPIKey: '123456',
+      resourceAttributes: {
+        // Always consult the OTel Semantic Conventions to find an existing
+        // convention name for an attribute:
+        // https://opentelemetry.io/docs/specs/semconv/
+        //--dart-define environment=dev
+        '${DeploymentNames.deploymentEnvironmentName}: String.fromEnvironment('
+        environment
+        '),//See https://opentelemetry.io/docs/specs/semconv/resource/deployment-environment/
+        //--dart-define pod-name=powerful-dart-pod
+        '${DeploymentNames.k8sPodName}: String.fromEnvironment('
+        pod - name
+        '),//See https://opentelemetry.io/docs/specs/semconv/resource/#kubernetes
       }
-    },
   );
-  
-  // Always shutdown the SDK before the application exits
-  OTel.shutdown();
-}
 
-void performSubOperation(APITracer tracer) {
-  tracer.startActiveSpan(
-    name: 'sub-operation', 
-    fn: (span) {
-      // Sub-operation logic
-      span.setAttribute('operation.value', 42);
-      span.setStatus(SpanStatusCode.Ok);
-      return 'Sub-operation complete';
-    },
+  // Get the default tracer
+  var tracer = OTel.tracer();
+
+  // Create a new root span
+  final rootSpan = tracer.startSpan(
+    'root-operation',
+    attributes: OTel.attributesFromMap({
+      //SourceCode attributes are atypical, this is showing off the extensive semantics
+      SourceCodeNames.codeFunctionName.key: 'main',
+      // The spec limits attribute values to String, bool, int, double and lists thereof.
+      'readme.magic.number': 42,
+      'can.I.use.a.boolean': true,
+      'a.list.of.ints': [42, 143],
+      'a.list.of.doubles': [42.1, 143.4],
+    }),
   );
-}
-```
 
-### HTTP Client Instrumentation Example
-
-```dart
-import 'package:http/http.dart' as http;
-import 'package:opentelemetry_sdk/opentelemetry_sdk.dart';
-
-Future<void> main() async {
-  // Initialize the SDK
-  OTel.initialize(
-    endpoint: 'http://localhost:4317',
-    serviceName: 'http-client-example',
-  );
-  
-  final tracer = OTel.tracer('http-client');
-  
-  // Make an HTTP request with tracing
-  final result = await tracer.startActiveSpanAsync(
-    name: 'GET /api/users',
-    kind: SpanKind.client,
-    fn: (span) async {
-      try {
-        // Add HTTP attributes
-        span.setAttribute('http.method', 'GET');
-        span.setAttribute('http.url', 'https://api.example.com/users');
-        
-        // Extract the current context's headers for propagation
-        final headers = <String, String>{};
-        OTel.propagator().inject(
-          Context.current,
-          headers,
-          defaultSetter,
-        );
-        
-        // Make the HTTP request with propagation headers
-        final response = await http.get(
-          Uri.parse('https://api.example.com/users'),
-          headers: headers,
-        );
-        
-        // Record response details
-        span.setAttribute('http.status_code', response.statusCode);
-        
-        if (response.statusCode >= 400) {
-          span.setStatus(SpanStatusCode.Error, 'HTTP error ${response.statusCode}');
-        } else {
-          span.setStatus(SpanStatusCode.Ok);
-        }
-        
-        return response;
-      } catch (e, stackTrace) {
-        span.recordException(e, stackTrace: stackTrace);
-        span.setStatus(SpanStatusCode.Error, e.toString());
-        rethrow;
-      }
-    },
-  );
-  
-  print('Response status: ${result.statusCode}');
-  
-  // Shut down the SDK
-  await OTel.shutdownAsync();
+  try {
+    importantFunction();
+    rootSpan.addEventNow('importantFunction completed', 
+            // attributedFromMap can throw with bad types, OTel has typesafe attribute methods
+            OTel.attributes([
+              OTel.attributeString('event-foo', 'bar'),
+              OTel.attributeBool('event-baz', true)
+            ]));
+  } catch (e, s) {
+    span.recordException(e, stackTrace: s);
+    span.setStatus(SpanStatusCode.Error, 'Error running importantFunction $e');
+  } finally {
+    // Ending a span sets the span status to SpanStatusCode.Ok, unless 
+    // the span status has already been set, per the OpenTelemetry Specification
+    // See https://opentelemetry.io/docs/specs/otel/trace/api/#set-status
+    span.end();
+  }
 }
 
-void defaultSetter(Map<String, String> carrier, String key, String value) {
-  carrier[key] = value;
-}
 ```
 
-More examples can be found in the `/example` directory.
+Since dartastic_opentelemetry exports all the classes of `opentelemetry_api`, refer to
+`opentelemetry_api` for documenation of API classes.
 
-## Configuration Options
+See the `/example` folder for more examples.
 
-### Exporters
+# OpenTelemetry Metrics API
 
-The SDK provides multiple exporter options:
+The Metrics API in OpenTelemetry provides a way to record measurements about your application. These measurements can be exported later as metrics, allowing you to monitor and analyze the performance and behavior of your application.
+
+## Concepts
+
+- **MeterProvider**: Entry point to the metrics API, responsible for creating Meters
+- **Meter**: Used to create instruments for recording measurements
+- **Instrument**: Used to record measurements
+  - Synchronous instruments: record measurements at the moment of calling their APIs
+  - Asynchronous instruments: collect measurements on demand via callbacks
+
+## Instrument Types
+
+- **Counter**: Synchronous, monotonic increasing counter (can only go up)
+- **UpDownCounter**: Synchronous, non-monotonic counter (can go up or down)
+- **Histogram**: Synchronous, aggregable measurements with statistical distributions
+- **Gauge**: Synchronous, non-additive value that represents current state
+- **ObservableCounter**: Asynchronous version of Counter
+- **ObservableUpDownCounter**: Asynchronous version of UpDownCounter
+- **ObservableGauge**: Asynchronous version of Gauge
+
+## Usage Pattern
+
+Similar to the Tracing API, the metrics API follows a multi-layered factory pattern:
+
+1. **API Layer**: Defines interfaces and provides no-op implementations
+2. **SDK Layer**: Provides concrete implementations
+3. **Flutter Layer**: Adds UI-specific functionality
+
+The API follows the pattern of using factory methods for creation rather than constructors:
 
 ```dart
-// OTLP over gRPC
-final otlpGrpcExporter = OTel.otlpGrpcExporter(
-  endpoint: 'http://collector:4317',
-  headers: {'x-api-key': 'your-api-key'},
-);
+// Get a meter from the meter provider
+final meter = OTel.meterProvider().getMeter('component_name');
 
-// OTLP over HTTP/JSON
-final otlpHttpExporter = OTel.otlpHttpExporter(
-  endpoint: 'http://collector:4318/v1/traces',
-  headers: {'x-api-key': 'your-api-key'},
-);
+// Create a counter instrument
+final counter = meter.createCounter('my_counter');
 
-// Zipkin exporter
-final zipkinExporter = OTel.zipkinExporter(
-  endpoint: 'http://zipkin:9411/api/v2/spans',
-);
-
-// Console exporter (for debugging)
-final consoleExporter = OTel.consoleExporter();
+// Record measurements
+counter.add(1, {'attribute_key': 'attribute_value'});
 ```
 
-### Span Processors
-
-Configure how spans are processed before export:
+For asynchronous instruments:
 
 ```dart
-// Simple span processor - exports immediately
-final simpleProcessor = OTel.simpleSpanProcessor(exporter);
-
-// Batch span processor - batches spans for efficiency
-final batchProcessor = OTel.batchSpanProcessor(
-  exporter,
-  maxQueueSize: 2048,
-  scheduledDelayMillis: 5000,
-  maxExportBatchSize: 512,
+// Create an observable counter
+final observableCounter = meter.createObservableCounter(
+  'my_observable_counter',
+  () => [Measurement(10, {'attribute_key': 'attribute_value'})],
 );
 ```
 
-### Samplers
+## Understanding Metric Types and When to Use Them
 
-Control which spans are sampled:
+| Instrument Type | Use Case | Example |
+|----------------|----------|---------|
+| Counter | Count things that only increase | Request count, completed tasks |
+| UpDownCounter | Count things that can increase or decrease | Active requests, queue size |
+| Histogram | Measure distributions | Request durations, payload sizes |
+| Gauge | Record current value | CPU usage, memory usage |
+| ObservableCounter | Count things that only increase, collected on demand | Total CPU time |
+| ObservableUpDownCounter | Count things that can increase or decrease, collected on demand | Memory usage |
+| ObservableGauge | Record current value, collected on demand | Current temperature |
 
-```dart
-// Always sample
-final alwaysOnSampler = OTel.alwaysOnSampler();
+## Integration with Dartastic/Flutterrific
 
-// Never sample
-final alwaysOffSampler = OTel.alwaysOffSampler();
-
-// Sample based on trace ID
-final traceIdRatioSampler = OTel.traceIdRatioSampler(0.1); // 10% sampling
-
-// Parent-based sampling
-final parentSampler = OTel.parentBasedSampler(
-  traceIdRatioSampler, // root sampler
-);
-```
-
-### Propagators
-
-Configure context propagation:
-
-```dart
-// W3C Trace Context propagator
-final traceContextPropagator = OTel.w3cTraceContextPropagator();
-
-// W3C Baggage propagator
-final baggagePropagator = OTel.w3cBaggagePropagator();
-
-// Composite propagator (combines multiple propagators)
-final compositePropagator = OTel.compositePropagator([
-  traceContextPropagator,
-  baggagePropagator,
-]);
-```
-
-## Advanced Topics
-
-### Custom Span Processors
-
-You can create custom span processors by implementing the `SpanProcessor` interface:
-
-```dart
-class CustomSpanProcessor implements SpanProcessor {
-  @override
-  void onStart(ReadWriteSpan span, Context parentContext) {
-    // Add custom logic when a span starts
-  }
-
-  @override
-  void onEnd(ReadOnlySpan span) {
-    // Add custom logic when a span ends
-  }
-
-  @override
-  Future<void> shutdown() async {
-    // Cleanup resources
-  }
-
-  @override
-  Future<void> forceFlush() async {
-    // Force export of any pending spans
-  }
-}
-```
-
-### Custom Resource Providers
-
-Implement custom resource providers to add additional service information:
-
-```dart
-class EnvironmentResourceProvider implements ResourceProvider {
-  @override
-  Resource get() {
-    final envVars = Platform.environment;
-    return Resource.create([
-      OTel.resourceAttribute('host.name', envVars['HOSTNAME'] ?? 'unknown'),
-      OTel.resourceAttribute('deployment.environment', 
-                            envVars['ENV'] ?? 'development'),
-    ]);
-  }
-}
-```
-
-### Custom Exporters
-
-Implement your own exporters by extending the `SpanExporter` interface:
-
-```dart
-class CustomExporter implements SpanExporter {
-  @override
-  Future<ExportResult> export(List<ReadOnlySpan> spans) async {
-    // Custom export logic
-    for (final span in spans) {
-      // Process and send the span data
-    }
-    return ExportResult.success;
-  }
-
-  @override
-  Future<void> shutdown() async {
-    // Clean up resources
-  }
-
-  @override
-  Future<void> force() async {
-    // Forcefully flush any pending spans
-  }
-}
-```
-
-## Integration with OpenTelemetry Collector
-
-For production deployments, it's recommended to use the [OpenTelemetry Collector](https://opentelemetry.io/docs/collector/):
-
-```dart
-// Configure to send to an OpenTelemetry Collector
-OTel.initialize(
-  endpoint: 'http://otel-collector:4317', // gRPC endpoint
-  serviceName: 'my-service',
-  // Alternative HTTP endpoint: 'http://otel-collector:4318/v1/traces'
-);
-```
-
-## Testing
-
-### Running Tests
-
-The project includes a comprehensive test suite:
-
-```bash
-# Run all unit tests
-make test
-
-# Run tests safely in sequence (for problematic tests)
-make test-safe
-
-# Run web-specific tests (requires Chrome)
-make test-web
-
-# Run all checks including tests and coverage
-make check
-```
-
-### Web Testing
-
-Some components use platform-specific implementations, especially for web environments. To ensure these components work correctly in browsers:
-
-```bash
-# Run only web-specific tests in Chrome
-make test-web
-```
-
-Web-specific tests verify JS interop functionality and browser API usage like Compression Streams. For more details on running and writing web tests, see `test/web/README.md`.
-
-
-## Platform Support
-
-- ✅ **Dart VM** - For server applications
-- ✅ **Flutter** - For mobile applications (see also [flutterrific_opentelemetry](https://pub.dev/packages/flutterrific_opentelemetry))
-- ✅ **Web** - For browser applications (with some limitations)
+This API implementation follows the same pattern as the tracing API, where the creation of objects is managed through
+factory methods. This allows for a clear separation between API and SDK, and ensures that the metrics functionality
+can be used in a no-op mode when the SDK is not initialized.
 
 ## Commercial Support
 
@@ -478,10 +229,9 @@ Web-specific tests verify JS interop functionality and browser API usage like Co
 ## Roadmap
 
 - [ ] Enhanced metrics support
-- [ ] Additional exporters
-- [ ] Automatic instrumentation for common Dart libraries
-- [ ] Configuration through environment variables
-- [ ] Enhanced context propagation options
+- [ ] Support for Zipkin, Jaeger
+- [ ] Integration with common Dart libraries (Dio, etc.)
+- [ ] Context propagation through http, Android, iOS, WebViews
 
 ## CNCF Contribution and Alignment
 
@@ -505,18 +255,16 @@ Dartastic.io is built on open standards, specifically catering to Flutter and Da
 Dart source code lines and function calls from production errors and logs.
 
 Dartastic.io offers:
-- Various levels of free, paid, and enterprise support
+- Free, paid, and enterprise support
 - Packages with advanced features not available in the open source offering
 - Native code integration and Real-Time User Monitoring for Flutter apps
 - Multiple backends (Elastic, Grafana) customized for Flutter apps.
 
-## Additional Information
-- Flutter developers should use the [Flutterific OTel SDK](https://pub.dev/packages/flutterrific_opentelemetry).
-- Dart backend developers should use the [Dartastic OTel SDK](https://pub.dev/packages/dartastic_opentelemetry).
-- [Dartastic.io](https://dartastic.io/) the Flutter OTel backend
-- [The OpenTelemetry Specifiction](https://opentelemetry.io/docs/specs/otel/)
 
-## Acknowledgements
+## Additional information
 
-This OpenTelemetry SDK for Dart is made with 💙 by Michael Bushe at [Mindful Software](https://mindfulsoftware.com).
-
+- Flutter developers should use the [Flutterific OTel SDK](https://pub.dev/packages/flutterrific_otel_sdk).
+- Dart backend developers should use the [Dartastic OTel SDK](https://pub.dev/packages/dartastic_otel_sdk).
+- Also see:
+  - [Dartastic.io](https://dartastic.io/) the Flutter OTel backend
+  - [The OpenTelemetry Specification](https://opentelemetry.io/docs/specs/otel/)
