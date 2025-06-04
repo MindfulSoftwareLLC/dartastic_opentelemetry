@@ -94,7 +94,7 @@ class OTel {
     String? tracerVersion,
     Attributes? resourceAttributes,
     SpanProcessor? spanProcessor,
-    Sampler? sampler,
+    Sampler sampler = const AlwaysOnSampler(),
     SpanKind spanKind = SpanKind.server,
     MetricExporter? metricExporter,
     MetricReader? metricReader,
@@ -123,7 +123,7 @@ class OTel {
     final factoryFactory =
         oTelFactoryCreationFunction ?? otelSDKFactoryFactoryFunction;
     // Initialize with default sampler
-    _defaultSampler = sampler ?? const AlwaysOnSampler();
+    _defaultSampler = sampler;
     OTel.defaultTracerName = tracerName ?? _defaultTracerName;
     OTel.defaultTracerVersion = tracerVersion;
     OTel.dartasticApiKey = dartasticApiKey;
@@ -380,6 +380,11 @@ class OTel {
     return sdkTracerProvider;
   }
 
+  /// @return the [TracerProvider]s, the global default and named ones.
+  static List<APITracerProvider> tracerProviders() {
+    return OTelAPI.tracerProviders();
+  }
+
   /// Gets the default Tracer from the default TracerProvider.
   ///
   /// This is a convenience method for getting a Tracer with the default configuration.
@@ -420,6 +425,11 @@ class OTel {
         serviceVersion: serviceVersion) as MeterProvider;
     mp.resource = resource ?? defaultResource;
     return mp;
+  }
+
+  /// @return the [MeterProvider]s, the global default and named ones.
+  static List<APIMeterProvider> meterProviders() {
+    return OTelAPI.meterProviders();
   }
 
   /// Gets the default Meter from the default MeterProvider.
@@ -818,6 +828,53 @@ class OTel {
     }
   }
 
+
+  /// Flushes and shuts down trace and metric providers,
+  /// processors and exporters.  Typically called from [OTel.shutdown]
+  static Future<void> shutdown() async {
+    // Shutdown any tracer providers to clean up span processors
+    try {
+      final tracerProviders = OTel.tracerProviders();
+      for (final tracerProvider in tracerProviders) {
+        if (OTelLog.isDebug()) OTelLog.debug('OTel: Shutting down tracer providers');
+        if (tracerProvider is TracerProvider) {
+          try {
+            await tracerProvider.forceFlush();
+            if (OTelLog.isDebug()) {
+              OTelLog.debug(
+                'OTel: Tracer provider flush complete');
+            }
+          } catch (e) {
+            if (OTelLog.isDebug()) {
+              OTelLog.debug(
+                'OTel: Error during tracer provider flush: $e');
+            }
+          }
+        }
+        try {
+          await tracerProvider.shutdown();
+          if (OTelLog.isDebug()) OTelLog.debug('OTel: Tracer provider shutdown complete');
+        } catch (e) {
+          if (OTelLog.isDebug()) OTelLog.debug('OTel: Error during tracer provider shutdown: $e');
+        }
+      }
+    } catch (e) {
+      if (OTelLog.isDebug()) OTelLog.debug('OTel: Error accessing tracer provider: $e');
+    }
+
+    // Shutdown meter providers to clean up metric readers and exporters
+    final meterProviders = OTel.meterProviders();
+    for (var meterProvider in meterProviders) {
+      try {
+        if (OTelLog.isDebug()) OTelLog.debug('OTel: Shutting down meter provider');
+        await meterProvider.shutdown();
+        if (OTelLog.isDebug()) OTelLog.debug('OTel: Meter provider shutdown complete');
+      } catch (e) {
+        if (OTelLog.isDebug()) OTelLog.debug('OTel: Error during meter provider shutdown: $e');
+      }
+    }
+  }
+
   /// Resets the OTel state for testing purposes.
   ///
   /// This method should only be used in tests to reset the state between test runs.
@@ -828,36 +885,7 @@ class OTel {
   static Future<void> reset() async {
     if (OTelLog.isDebug()) OTelLog.debug('OTel: Resetting state');
 
-    // Shutdown any tracer providers to clean up span processors
-    try {
-      final tracerProvider = OTelAPI.tracerProvider() as TracerProvider;
-      if (OTelLog.isDebug()) OTelLog.debug('OTel: Shutting down tracer provider');
-      try {
-        await tracerProvider.forceFlush();
-        if (OTelLog.isDebug()) OTelLog.debug('OTel: Tracer provider flush complete');
-      } catch (e) {
-        if (OTelLog.isDebug()) OTelLog.debug('OTel: Error during tracer provider flush: $e');
-      }
-
-      try {
-        await tracerProvider.shutdown();
-        if (OTelLog.isDebug()) OTelLog.debug('OTel: Tracer provider shutdown complete');
-      } catch (e) {
-        if (OTelLog.isDebug()) OTelLog.debug('OTel: Error during tracer provider shutdown: $e');
-      }
-    } catch (e) {
-      if (OTelLog.isDebug()) OTelLog.debug('OTel: Error accessing tracer provider: $e');
-    }
-
-    // Shutdown meter providers to clean up metric readers and exporters
-    try {
-      final meterProvider = OTelAPI.meterProvider() as MeterProvider;
-      if (OTelLog.isDebug()) OTelLog.debug('OTel: Shutting down meter provider');
-      await meterProvider.shutdown();
-      if (OTelLog.isDebug()) OTelLog.debug('OTel: Meter provider shutdown complete');
-    } catch (e) {
-      if (OTelLog.isDebug()) OTelLog.debug('OTel: Error during meter provider shutdown: $e');
-    }
+    await shutdown();
 
     // Reset all static fields
     _otelFactory = null;
@@ -883,4 +911,6 @@ class OTel {
     await Future<void>.delayed(const Duration(milliseconds: 250));
     if (OTelLog.isDebug()) OTelLog.debug('OTel: Reset complete');
   }
+
+
 }

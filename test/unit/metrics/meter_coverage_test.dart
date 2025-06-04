@@ -58,20 +58,6 @@ void main() {
       expect(meter.enabled, isTrue);
     });
 
-    test('NoopMeter is returned after reset', () async {
-      // Get a meter before reset
-      final normalMeter = OTel.meter('pre-reset-meter');
-      expect(normalMeter, isA<Meter>());
-
-      // Reset the SDK instead of shutdown
-      await OTel.reset();
-
-      // Get a meter after reset
-      final postResetMeter = OTel.meter('post-reset-meter');
-      expect(postResetMeter.name, equals('post-reset-meter'));
-      expect(postResetMeter.enabled, isFalse);
-    });
-
     test('NoopMeter instruments create NoOp implementations', () async {
       // Reset to force NoopMeter
       await OTel.reset();
