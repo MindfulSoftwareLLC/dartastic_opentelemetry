@@ -14,9 +14,7 @@ import '../../dartastic_opentelemetry.dart' show Span, OTelLog;
 /// @param span The span to log
 /// @param message Optional message to include with the span log
 void logSpan(Span span, [String? message]) {
-  if (OTelLog.logFunction == null) {
-    return;
-  } else {
+  if (OTelLog.logFunction != null) {
     final timestamp = DateTime.now().toIso8601String();
     final String msg = message ?? '';
     OTelLog.logFunction!('[$timestamp] [message] $msg [span] $span');

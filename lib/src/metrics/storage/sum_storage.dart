@@ -5,7 +5,7 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import '../data/exemplar.dart';
 import '../data/metric_point.dart';
-import 'point_storage.dart';
+import 'metric_storage.dart';
 
 /// Storage implementation for sum-based metrics like Counter and UpDownCounter.
 ///
@@ -18,7 +18,7 @@ import 'point_storage.dart';
 ///
 /// More information:
 /// https://opentelemetry.io/docs/specs/otel/metrics/sdk/#the-temporality-of-instruments
-class SumStorage<T extends num> extends PointStorage<T> {
+class SumStorage<T extends num> extends NumericStorage<T> {
   /// Map of attribute sets to accumulated values.
   final Map<Attributes?, _SumPointData<T>> _points = {};
 

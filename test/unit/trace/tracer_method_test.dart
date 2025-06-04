@@ -1,256 +1,51 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:test/test.dart';
 
-import '../../testing_utils/real_collector.dart';
-import '../../testing_utils/test_file_exporter.dart';
+import '../../testing_utils/in_memory_span_exporter.dart';
 
 void main() {
-  // Enable debug logging
-  OTelLog.enableDebugLogging();
-
   group('Tracer Methods', () {
-    late RealCollector collector;
     late TracerProvider tracerProvider;
     late Tracer tracer;
-    final testPort = 4316; // Use the same port in collector config
-    // Using absolute path to avoid issues with current directory
-    final testDir = '/Users/mbushe/dev/mf/otel/dartastic_opentelemetry';
-    final configPath = '$testDir/test/testing_utils/otelcol-config.yaml';
-    final outputPath = '$testDir/test/testing_utils/spans.json';
-    final backupOutputPath = '$testDir/test/testing_utils/fallback_spans.json';
-
-    // Print paths for debugging
-    print('Using paths:');
-    print('  Config path: $configPath');
-    print('  Output path: $outputPath');
-    print('  Backup output path: $backupOutputPath');
-
-    // Helper method to verify spans are exported
-    Future<void> verifySpanExported(String expectedSpanName) async {
-      List<Map<String, dynamic>> spans = [];
-      try {
-        // Wait for spans with a generous timeout
-        await collector.waitForSpans(1, timeout: const Duration(seconds: 3));
-        spans = await collector.getSpans();
-        if (OTelLog.isDebug()) {
-          OTelLog.debug(
-              'Successfully got ${spans.length} spans from collector');
-        }
-      } catch (e) {
-        if (OTelLog.isDebug()) {
-          OTelLog.debug('Error waiting for spans from collector: $e');
-        }
-
-        // Try getting any spans that might be there
-        try {
-          spans = await collector.getSpans();
-          if (OTelLog.isDebug()) {
-            OTelLog.debug('Got ${spans.length} spans despite timeout error');
-          }
-        } catch (e) {
-          if (OTelLog.isDebug()) {
-            OTelLog.debug('Error getting spans from collector: $e');
-          }
-        }
-      }
-
-      // If collector has no spans, check backup file
-      if (spans.isEmpty) {
-        if (OTelLog.isDebug()) {
-          OTelLog.debug('No spans from collector, checking backup file');
-        }
-        final backupFile = File(backupOutputPath);
-
-        // If backup file exists and has content, parse it and check for spans
-        if (backupFile.existsSync()) {
-          print('Backup file exists at: ${backupFile.absolute.path}');
-          final content = backupFile.readAsStringSync();
-          if (content.isNotEmpty) {
-            if (OTelLog.isDebug()) {
-              OTelLog.debug('Found backup file with content: \n$content');
-            }
-            print('Backup file content: $content');
-
-            // Try to parse the JSON
-            try {
-              // Parse the JSON
-              final jsonContent = jsonDecode(content);
-              if (jsonContent is List) {
-                print(
-                    'Successfully parsed backup file JSON. Found ${jsonContent.length} span entries');
-                // Check if any of the spans match our expected name
-                bool foundExpectedSpan = false;
-                for (var spanBatch in jsonContent) {
-                  if (spanBatch is List) {
-                    for (var span in spanBatch) {
-                      print('Found span in backup file: ${span['name']}');
-                      if (span['name'] == expectedSpanName) {
-                        print('Found matching span: $expectedSpanName');
-                        foundExpectedSpan = true;
-                        break;
-                      }
-                    }
-                  } else {
-                    // Handle single span objects
-                    if (spanBatch is Map && spanBatch.containsKey('name')) {
-                      final span = spanBatch;
-                      print('Found span in backup file: ${span['name']}');
-                      if (span['name'] == expectedSpanName) {
-                        print('Found matching span: $expectedSpanName');
-                        foundExpectedSpan = true;
-                      }
-                    } else if (spanBatch is Iterable) {
-                      for (var span in spanBatch) {
-                        if (span['name'] == expectedSpanName) {
-                          print('Found matching span: $expectedSpanName');
-                          foundExpectedSpan = true;
-                          break;
-                        }
-                      }
-                    }
-                  }
-                  if (foundExpectedSpan) break;
-                }
-
-                // Backup file should contain at least one span batch
-                expect(jsonContent.isNotEmpty, isTrue,
-                    reason: 'Expected non-empty span list in backup file');
-                expect(foundExpectedSpan, isTrue,
-                    reason:
-                        'Expected to find span named $expectedSpanName in backup file');
-                return;
-              }
-            } catch (e) {
-              if (OTelLog.isDebug()) {
-                OTelLog.debug('Error parsing backup file JSON: $e');
-              }
-              print('Error parsing backup file: $e');
-              // Fall back to basic content check
-              expect(content.contains(expectedSpanName), isTrue,
-                  reason:
-                      'Expected backup file to contain span named $expectedSpanName');
-              return;
-            }
-          } else {
-            print('Backup file exists but is empty');
-          }
-        } else {
-          print('Backup file does not exist at: ${backupFile.absolute.path}');
-        }
-      }
-
-      // If we're here, we should have spans from the collector
-      expect(spans.isNotEmpty, isTrue,
-          reason: 'Expected at least one span to be exported');
-
-      // Check if any span has the expected name
-      final matchingSpans =
-          spans.where((span) => span['name'] == expectedSpanName).toList();
-      expect(matchingSpans.isNotEmpty, isTrue,
-          reason:
-              'Expected to find a span named $expectedSpanName, found: ${spans.map((s) => s['name']).join(', ')}');
-    }
+    late InMemorySpanExporter exporter;
+    late SimpleSpanProcessor processor;
 
     setUp(() async {
-      // Add delay to ensure port is free
-      await Future<void>.delayed(const Duration(seconds: 1));
-
-      // Clean up any previous test state
+      // Reset OTel completely
       await OTel.reset();
 
-      // Ensure output files exist and are empty
-      File(outputPath).writeAsStringSync('');
-      File(backupOutputPath).writeAsStringSync('');
-
-      // Start collector with configuration that exports to file
-      collector = RealCollector(
-        port: testPort,
-        configPath: configPath,
-        outputPath: outputPath,
-      );
-      await collector.start();
-
-      // Reset and initialize OTel
-      await OTel.reset();
+      // Initialize with a clean setup
       await OTel.initialize(
-          endpoint: 'http://127.0.0.1:$testPort',
-          serviceName: 'test-service',
-          serviceVersion: '1.0.0',
-          // Must provide serviceVersion
-          enableMetrics: false,
-          resourceAttributes: Attributes.of({
-            'test.framework': 'dart-test',
-          }));
+        serviceName: 'test-tracer-methods-service',
+        serviceVersion: '1.0.0',
+        enableMetrics: false,
+      );
 
       tracerProvider = OTel.tracerProvider();
-
-      // Create both exporters for redundancy
-      final grpcExporter = OtlpGrpcSpanExporter(
-        OtlpGrpcExporterConfig(
-          endpoint: 'http://127.0.0.1:$testPort',
-          insecure: true,
-        ),
-      );
-
-      // Create a file exporter as a backup
-      final fileExporter = TestFileExporter(backupOutputPath);
-
-      // Use a composite exporter with both
-      final compositeExporter = CompositeExporter([grpcExporter, fileExporter]);
-
-      // Create the processor with our composite exporter
-      final processor = SimpleSpanProcessor(compositeExporter);
+      
+      // Create in-memory exporter and processor
+      exporter = InMemorySpanExporter();
+      processor = SimpleSpanProcessor(exporter);
+      
+      // Add the processor to capture spans
       tracerProvider.addSpanProcessor(processor);
-      tracer = tracerProvider.getTracer('test-tracer');
+      
+      tracer = tracerProvider.getTracer('test-tracer-methods');
     });
 
     tearDown(() async {
-      try {
-        // First ensure the tracer provider flushes any pending spans
-        try {
-          await tracerProvider.forceFlush();
-          // Add delay to ensure spans are exported
-          await Future<void>.delayed(const Duration(seconds: 1));
-          // Now shutdown the tracer provider
-          await tracerProvider.shutdown();
-        } catch (e) {
-          if (OTelLog.isError()) {
-            OTelLog.error('Error during tracer provider teardown: $e');
-          }
-        }
-
-        // Wait before stopping the collector
-        await Future<void>.delayed(const Duration(seconds: 1));
-      } finally {
-        // Always stop the collector and clean up
-        try {
-          await collector.stop();
-          await collector.clear();
-                } catch (e) {
-          if (OTelLog.isError()) {
-            OTelLog.error('Error during collector teardown: $e');
-          }
-        }
-
-        // Add delay to ensure port is freed
-        await Future<void>.delayed(const Duration(seconds: 1));
-
-        // Reset OTel state to ensure next test starts fresh
-        try {
-          await OTel.reset();
-        } catch (e) {
-          if (OTelLog.isError()) OTelLog.error('Error during OTel reset: $e');
-        }
-      }
+      await processor.shutdown();
+      await exporter.shutdown();
+      await tracerProvider.shutdown();
+      await OTel.reset();
     });
 
     test('withSpan executes code with an active span', () async {
+      exporter.clear();
+
       // Arrange
       String result = '';
       final span = tracer.startSpan('test-with-span');
@@ -264,17 +59,22 @@ void main() {
           return result;
         },
       );
+      
       // End the span explicitly since withSpan doesn't end it
       span.end();
 
+      // Force export
+      await processor.forceFlush();
+
       // Assert
       expect(result, equals('test-with-span'));
-
-      // Verify span was exported
-      await verifySpanExported('test-with-span');
+      expect(exporter.spans, hasLength(1));
+      expect(exporter.hasSpanWithName('test-with-span'), isTrue);
     });
 
     test('withSpanAsync executes async code with an active span', () async {
+      exporter.clear();
+
       // Arrange
       String result = '';
       final span = tracer.startSpan('test-with-span-async');
@@ -290,18 +90,22 @@ void main() {
           return result;
         },
       );
+      
       // End the span explicitly since withSpanAsync doesn't end it
       span.end();
 
+      // Force export
+      await processor.forceFlush();
+
       // Assert
       expect(result, equals('test-with-span-async'));
-
-      // Verify span was exported
-      await verifySpanExported('test-with-span-async');
+      expect(exporter.spans, hasLength(1));
+      expect(exporter.hasSpanWithName('test-with-span-async'), isTrue);
     });
 
-    test('startSpanWithContext creates a span in the provided context',
-        () async {
+    test('startSpanWithContext creates a span in the provided context', () async {
+      exporter.clear();
+
       // Arrange
       final customContext = OTel.context();
 
@@ -311,18 +115,22 @@ void main() {
         context: customContext,
       );
 
-      // End the span explicitly - this is crucial for exporting the span
+      // End the span explicitly
       span.end();
+
+      // Force export
+      await processor.forceFlush();
 
       // Assert
       expect(span.name, equals('context-span'));
-      expect(span.isEnded, isTrue, reason: 'Span should be ended');
-
-      // Verify span was exported
-      await verifySpanExported('context-span');
+      expect(span.isEnded, isTrue);
+      expect(exporter.spans, hasLength(1));
+      expect(exporter.hasSpanWithName('context-span'), isTrue);
     });
 
     test('recordSpan creates and automatically ends a span', () async {
+      exporter.clear();
+
       // Act
       final result = tracer.recordSpan(
         name: 'auto-record-span',
@@ -331,15 +139,21 @@ void main() {
         },
       );
 
+      // Force export
+      await processor.forceFlush();
+
       // Assert
       expect(result, equals('success'));
-
-      // Verify span was exported
-      await verifySpanExported('auto-record-span');
+      expect(exporter.spans, hasLength(1));
+      expect(exporter.hasSpanWithName('auto-record-span'), isTrue);
+      
+      final exportedSpan = exporter.findSpanByName('auto-record-span')!;
+      expect(exportedSpan.isEnded, isTrue);
     });
 
-    test('recordSpanAsync creates and automatically ends an async span',
-        () async {
+    test('recordSpanAsync creates and automatically ends an async span', () async {
+      exporter.clear();
+
       // Act
       final result = await tracer.recordSpanAsync(
         name: 'async-record-span',
@@ -349,33 +163,25 @@ void main() {
         },
       );
 
+      // Force export
+      await processor.forceFlush();
+
       // Assert
       expect(result, equals('async success'));
-
-      // Verify span was exported
-      await verifySpanExported('async-record-span');
+      expect(exporter.spans, hasLength(1));
+      expect(exporter.hasSpanWithName('async-record-span'), isTrue);
+      
+      final exportedSpan = exporter.findSpanByName('async-record-span')!;
+      expect(exportedSpan.isEnded, isTrue);
     });
 
     test('recordSpan captures exceptions and sets error status', () async {
-      // Add an identifier to ensure we can uniquely identify this span
-      final uniqueSpanName =
-          'error-span-${DateTime.now().millisecondsSinceEpoch}';
-      print(
-          '\n********** Using unique span name: $uniqueSpanName **********\n');
-
-      try {
-        // Clear any existing spans before the test
-        File(outputPath).writeAsStringSync('');
-        File(backupOutputPath).writeAsStringSync('');
-        await collector.clear();
-      } catch (e) {
-        print('Error clearing spans: $e');
-      }
+      exporter.clear();
 
       // Act & Assert
       expect(
         () => tracer.recordSpan(
-          name: uniqueSpanName,
+          name: 'error-span',
           fn: () {
             throw Exception('Test error in recordSpan');
           },
@@ -383,20 +189,21 @@ void main() {
         throwsException,
       );
 
-      // Add a short delay to ensure spans have time to be processed
-      await Future<void>.delayed(const Duration(milliseconds: 500));
+      // Force export
+      await processor.forceFlush();
 
-      // Manually force flush the tracer provider
-      await tracerProvider.forceFlush();
-
-      // Add another delay
-      await Future<void>.delayed(const Duration(milliseconds: 500));
-
-      // Verify span was exported
-      await verifySpanExported(uniqueSpanName);
+      // Verify span was created and exported even though exception was thrown
+      expect(exporter.spans, hasLength(1));
+      expect(exporter.hasSpanWithName('error-span'), isTrue);
+      
+      final exportedSpan = exporter.findSpanByName('error-span')!;
+      expect(exportedSpan.isEnded, isTrue);
+      expect(exportedSpan.status, equals(SpanStatusCode.Error));
     });
 
     test('startActiveSpan activates span during execution', () async {
+      exporter.clear();
+
       // Act
       final result = tracer.startActiveSpan(
         name: 'active-span',
@@ -408,15 +215,21 @@ void main() {
         },
       );
 
+      // Force export
+      await processor.forceFlush();
+
       // Assert
       expect(result, equals('active span success'));
-
-      // Verify span was exported
-      await verifySpanExported('active-span');
+      expect(exporter.spans, hasLength(1));
+      expect(exporter.hasSpanWithName('active-span'), isTrue);
+      
+      final exportedSpan = exporter.findSpanByName('active-span')!;
+      expect(exportedSpan.isEnded, isTrue);
     });
 
-    test('startActiveSpanAsync activates span during async execution',
-        () async {
+    test('startActiveSpanAsync activates span during async execution', () async {
+      exporter.clear();
+
       // Act
       final result = await tracer.startActiveSpanAsync(
         name: 'active-async-span',
@@ -431,11 +244,50 @@ void main() {
         },
       );
 
+      // Force export
+      await processor.forceFlush();
+
       // Assert
       expect(result, equals('active async span success'));
+      expect(exporter.spans, hasLength(1));
+      expect(exporter.hasSpanWithName('active-async-span'), isTrue);
+      
+      final exportedSpan = exporter.findSpanByName('active-async-span')!;
+      expect(exportedSpan.isEnded, isTrue);
+    });
 
-      // Verify span was exported
-      await verifySpanExported('active-async-span');
+    test('withSpan maintains span context during execution', () async {
+      exporter.clear();
+
+      final parentSpan = tracer.startSpan('parent-span');
+      final parentContext = OTel.context().withSpan(parentSpan);
+
+      tracer.withSpan(
+        parentSpan,
+        () {
+          // Start a child span within the parent context
+          final childSpan = tracer.startSpan('child-span', context: parentContext);
+          childSpan.end();
+        },
+      );
+      
+      parentSpan.end();
+
+      await processor.forceFlush();
+
+      // Verify both spans were exported
+      expect(exporter.spans, hasLength(2));
+      expect(exporter.hasSpanWithName('parent-span'), isTrue);
+      expect(exporter.hasSpanWithName('child-span'), isTrue);
+
+      // Verify parent-child relationship
+      final parentExported = exporter.findSpanByName('parent-span')!;
+      final childExported = exporter.findSpanByName('child-span')!;
+      
+      expect(childExported.parentSpanContext!.spanId, 
+             equals(parentExported.spanContext.spanId));
+      expect(childExported.spanContext.traceId, 
+             equals(parentExported.spanContext.traceId));
     });
   });
 }

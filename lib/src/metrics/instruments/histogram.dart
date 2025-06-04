@@ -92,15 +92,15 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
     record(value, attributes);
   }
 
-  /// Gets the current sum for the given attributes.
-  /// If no attributes are provided, returns the sum for the null/empty attribute set.
-  T getValue([Attributes? attributes]) {
+  /// Gets the current histogram value for the given attributes.
+  /// If no attributes are provided, returns the histogram value for the null/empty attribute set.
+  HistogramValue getValue([Attributes? attributes]) {
     return _storage.getValue(attributes);
   }
 
   /// Gets the current points for this histogram.
   /// This is used by the SDK to collect metrics.
-  List<MetricPoint<T>> collectPoints() {
+  List<MetricPoint<HistogramValue>> collectPoints() {
     return _storage.collectPoints();
   }
 

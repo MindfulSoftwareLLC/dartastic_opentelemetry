@@ -1,6 +1,8 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+// ignore_for_file: strict_raw_type
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -49,31 +51,7 @@ void main() {
     });
 
     tearDown(() async {
-      try {
-        print('Test teardown - cleaning up resources');
-
-        // Flush any pending spans
-        try {
-          print('Flushing tracer provider');
-          await tracerProvider.forceFlush();
-        } catch (e) {
-          print('Error during flush: $e');
-        }
-
-        // Shutdown components in reverse order
-        try {
-          print('Shutting down tracer provider');
-          await tracerProvider.shutdown();
-        } catch (e) {
-          print('Error shutting down tracer provider: $e');
-        }
-
-        await Future<void>.delayed(const Duration(seconds: 1));
-        print('Teardown complete');
-      } finally {
-        // Reset OTel for good measure
-        await OTel.reset();
-      }
+      await OTel.shutdown();
     });
 
     test('withSpan executes code with an active span', () async {
@@ -124,18 +102,24 @@ void main() {
         if (parsedContent is! List) {
           fail('Expected JSON content to be a List but got ${parsedContent.runtimeType}');
         }
-        final List<List<Map<String, dynamic>>> batches = parsedContent as List<List<Map<String, dynamic>>>;
+        
+        // Use step-by-step casting to avoid type cast errors
+        final batches = parsedContent;
         print('Found ${batches.length} batches in file');
 
         expect(batches, isNotEmpty, reason: 'Expected at least one batch of spans');
 
         bool found = false;
         // Iterate through batches
-        for (final batch in batches) {
-          expect(batch, isA<List<Map<String, dynamic>>>(), reason: 'Expected batch to be a list of spans');
-
+        for (final batchData in batches) {
+          expect(batchData, isA<List>(), reason: 'Expected batch to be a list of spans');
+          
+          final batch = batchData as List;
           // Iterate through spans in the batch
-          for (final span in batch) {
+          for (final spanData in batch) {
+            expect(spanData, isA<Map>(), reason: 'Expected span to be a map');
+            final span = spanData as Map<String, dynamic>;
+            
             if (span.containsKey('name')) {
               print('Found span: ${span["name"]}');
               if (span['name'] == 'test-with-span') {
@@ -195,21 +179,27 @@ void main() {
         if (parsedContent is! List) {
           fail('Expected JSON content to be a List but got ${parsedContent.runtimeType}');
         }
-        final List<List<Map<String, dynamic>>> batches = parsedContent as List<List<Map<String, dynamic>>>;
+        
+        // Use step-by-step casting to avoid type cast errors
+        final batches = parsedContent;
         print('Found ${batches.length} batches in file');
 
         expect(batches, isNotEmpty, reason: 'Expected at least one batch of spans');
 
         bool found = false;
         // Iterate through batches
-        for (final batch in batches) {
-          expect(batch, isA<List<Map<String, dynamic>>>(), reason: 'Expected batch to be a list of spans');
-
+        for (final batchData in batches) {
+          expect(batchData, isA<List>(), reason: 'Expected batch to be a list of spans');
+          
+          final batch = batchData as List;
           // Iterate through spans in the batch
           for (final spanData in batch) {
-            if (spanData.containsKey('name')) {
-              print('Found span: ${spanData["name"]}');
-              if (spanData['name'] == 'test-with-span-async') {
+            expect(spanData, isA<Map>(), reason: 'Expected span to be a map');
+            final span = spanData as Map<String, dynamic>;
+            
+            if (span.containsKey('name')) {
+              print('Found span: ${span["name"]}');
+              if (span['name'] == 'test-with-span-async') {
                 found = true;
                 break;
               }
@@ -254,21 +244,27 @@ void main() {
         if (parsedContent is! List) {
           fail('Expected JSON content to be a List but got ${parsedContent.runtimeType}');
         }
-        final List<List<Map<String, dynamic>>> batches = parsedContent as List<List<Map<String, dynamic>>>;
+        
+        // Use step-by-step casting to avoid type cast errors
+        final batches = parsedContent;
         print('Found ${batches.length} batches in file');
 
         expect(batches, isNotEmpty, reason: 'Expected at least one batch of spans');
 
         bool found = false;
         // Iterate through batches
-        for (final batch in batches) {
-          expect(batch, isA<List<Map<String, dynamic>>>(), reason: 'Expected batch to be a list of spans');
-
+        for (final batchData in batches) {
+          expect(batchData, isA<List>(), reason: 'Expected batch to be a list of spans');
+          
+          final batch = batchData as List;
           // Iterate through spans in the batch
           for (final spanData in batch) {
-            if (spanData.containsKey('name')) {
-              print('Found span: ${spanData["name"]}');
-              if (spanData['name'] == 'auto-record-span') {
+            expect(spanData, isA<Map>(), reason: 'Expected span to be a map');
+            final span = spanData as Map<String, dynamic>;
+            
+            if (span.containsKey('name')) {
+              print('Found span: ${span["name"]}');
+              if (span['name'] == 'auto-record-span') {
                 found = true;
                 break;
               }

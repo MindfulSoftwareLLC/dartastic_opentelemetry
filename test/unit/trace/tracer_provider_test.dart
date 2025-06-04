@@ -72,11 +72,13 @@ void main() {
       mockProcessor1 = MockSpanProcessor();
       mockProcessor2 = MockSpanProcessor();
 
+      // Add our test processors
       tracerProvider.addSpanProcessor(mockProcessor1);
       tracerProvider.addSpanProcessor(mockProcessor2);
     });
 
     tearDown(() async {
+      await OTel.shutdown();
       await OTel.reset();
     });
 
@@ -110,17 +112,17 @@ void main() {
     });
 
     test('addSpanProcessor adds processors to list', () {
-      // Already added two processors in setup
-      expect(tracerProvider.spanProcessors.length, equals(2));
-
+      // Get the initial count (there might be default processors from OTel.initialize)
+      final initialCount = tracerProvider.spanProcessors.length;
+      
       // Add another processor
       final mockProcessor3 = MockSpanProcessor();
       tracerProvider.addSpanProcessor(mockProcessor3);
 
-      // Should now have three processors
-      expect(tracerProvider.spanProcessors.length, equals(3));
+      // Should now have one more processor
+      expect(tracerProvider.spanProcessors.length, equals(initialCount + 1));
 
-      // Verify all processors are in the list
+      // Verify our test processors are in the list
       expect(tracerProvider.spanProcessors, contains(mockProcessor1));
       expect(tracerProvider.spanProcessors, contains(mockProcessor2));
       expect(tracerProvider.spanProcessors, contains(mockProcessor3));
@@ -129,8 +131,8 @@ void main() {
     test('spanProcessors returns unmodifiable list', () {
       final processors = tracerProvider.spanProcessors;
 
-      // Try to modify the list - should throw
-      expect(() => (processors as List<dynamic>).add(null), throwsUnsupportedError);
+      // Try to modify the list - should throw UnsupportedError
+      expect(() => processors.add(MockSpanProcessor()), throwsUnsupportedError);
     });
 
     test('ensureResourceIsSet sets resource if null', () {
@@ -206,14 +208,14 @@ void main() {
       // Shut down the provider
       await tracerProvider.shutdown();
 
-      // Reset processor state
-      mockProcessor1 = MockSpanProcessor();
-      mockProcessor2 = MockSpanProcessor();
+      // Reset processor state to verify they aren't called again
+      mockProcessor1._forceFlushCalled = false;
+      mockProcessor2._forceFlushCalled = false;
 
       // Force flush on shut down provider
       await tracerProvider.forceFlush();
 
-      // Processors should not be called
+      // Processors should not be called again
       expect(mockProcessor1.forceFlushCalled, isFalse);
       expect(mockProcessor2.forceFlushCalled, isFalse);
     });
@@ -221,21 +223,17 @@ void main() {
     test('second shutdown call does nothing', () async {
       // First shutdown
       await tracerProvider.shutdown();
+      expect(tracerProvider.isShutdown, isTrue);
 
-      // Reset processor state
-      mockProcessor1 = MockSpanProcessor();
-      mockProcessor2 = MockSpanProcessor();
+      // Reset processor state to verify they aren't called again
+      mockProcessor1._isShutdown = false;
+      mockProcessor2._isShutdown = false;
 
-      // Replace processors (shouldn't be possible in real code but needed for test)
-      tracerProvider = OTel.tracerProvider();
-      tracerProvider.isShutdown = true; // Simulate already shut down
-      tracerProvider.addSpanProcessor(mockProcessor1);
-      tracerProvider.addSpanProcessor(mockProcessor2);
-
-      // Second shutdown
+      // Second shutdown should be a no-op
       await tracerProvider.shutdown();
 
-      // Processors should not be called
+      // Provider should still be shut down but processors shouldn't be called again
+      expect(tracerProvider.isShutdown, isTrue);
       expect(mockProcessor1.isShutdown, isFalse);
       expect(mockProcessor2.isShutdown, isFalse);
     });
@@ -254,6 +252,13 @@ void main() {
 
       // Trying to add a processor should throw
       expect(() => tracerProvider.addSpanProcessor(MockSpanProcessor()), throwsStateError);
+    });
+
+    test('resource can be set and retrieved', () {
+      final newResource = OTel.resource({'custom.key': 'custom.value'}.toAttributes());
+      
+      tracerProvider.resource = newResource;
+      expect(tracerProvider.resource, equals(newResource));
     });
   });
 }

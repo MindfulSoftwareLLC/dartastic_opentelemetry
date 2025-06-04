@@ -12,7 +12,7 @@ void main() {
     LogFunction? originalLogFunction;
     LogLevel originalLogLevel = OTelLog.currentLevel;
 
-    setUp(() {
+    setUp(() async {
       // Save original logging state
       originalLogFunction = OTelLog.logFunction;
       originalLogLevel = OTelLog.currentLevel;
@@ -20,12 +20,22 @@ void main() {
       // Reset for testing
       OTelLog.logFunction = null;
       OTelLog.currentLevel = LogLevel.error; // Default
+
+      // Initialize OTel for tests that need it
+      await OTel.reset();
+      await OTel.initialize(
+        serviceName: 'test-log-service',
+        serviceVersion: '1.0.0',
+      );
     });
 
-    tearDown(() {
+    tearDown(() async {
       // Restore original logging state
       OTelLog.logFunction = originalLogFunction;
       OTelLog.currentLevel = originalLogLevel;
+      
+      // Clean up OTel
+      await OTel.shutdown();
     });
 
     test('OTelLog functions correctly set log level', () {
@@ -110,6 +120,7 @@ void main() {
       // Capture logs
       final List<String> logs = [];
       OTelLog.logFunction = logs.add;
+      OTelLog.currentLevel = LogLevel.info;
 
       // Log using direct log method
       OTelLog.log(LogLevel.info, 'Direct log message');
@@ -137,7 +148,7 @@ void main() {
       expect(OTelLog.isLogSpans(), isTrue);
       expect(OTelLog.isLogExport(), isTrue);
 
-      // Use logging methods
+      // Use logging methods - createTestSpan() now safe since OTel is initialized
       OTelLog.logMetric('Test metric');
       logSpan(createTestSpan(), 'Test span message');
       logSpans([createTestSpan()], 'Test spans message');
@@ -169,7 +180,9 @@ void main() {
 }
 
 /// Create a test span for testing
+/// This function now assumes OTel has been initialized
 Span createTestSpan() {
-  final tracer = OTel.tracer();
+  final tracerProvider = OTel.tracerProvider();
+  final tracer = tracerProvider.getTracer('test-tracer');
   return tracer.startSpan('test-span');
 }

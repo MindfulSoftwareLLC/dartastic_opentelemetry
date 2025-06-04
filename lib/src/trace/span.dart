@@ -57,9 +57,21 @@ class Span implements APISpan {
       _delegate.end(endTime: endTime, spanStatus: spanStatus);
       if (OTelLog.isDebug()) OTelLog.debug('SDKSpan: Delegate.end() completed for span $name');
 
-      // Verify the provider type
+      // Notify span processors that this span has ended
       final provider = _sdkTracer.provider;
-      if (OTelLog.isDebug()) OTelLog.debug('SDKSpan: Provider type is ${provider.runtimeType}');
+      if (OTelLog.isDebug()) OTelLog.debug('SDKSpan: Notifying ${provider.spanProcessors.length} span processors');
+      for (final processor in provider.spanProcessors) {
+        try {
+          if (OTelLog.isDebug()) OTelLog.debug('SDKSpan: Calling onEnd for processor ${processor.runtimeType}');
+          processor.onEnd(this);
+          if (OTelLog.isDebug()) OTelLog.debug('SDKSpan: Successfully called onEnd for processor ${processor.runtimeType}');
+        } catch (e, stackTrace) {
+          if (OTelLog.isError()) {
+            OTelLog.error('SDKSpan: Error calling onEnd for processor ${processor.runtimeType}: $e');
+            OTelLog.error('Stack trace: $stackTrace');
+          }
+        }
+      }
     } catch (e, stackTrace) {
       if (OTelLog.isError()) OTelLog.error('SDKSpan: Error during end(): $e');
       if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');

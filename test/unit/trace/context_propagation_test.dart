@@ -1,324 +1,130 @@
-@Tags(['fail'])
-library;
-
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'dart:convert';
-import 'dart:io';
-import 'dart:math';
-
+import 'dart:async';
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:test/test.dart';
 
-import '../../testing_utils/real_collector.dart';
-
-// Check if we're running in isolated mode
-final bool isIsolatedRun =
-    Platform.environment['DART_OTEL_ISOLATED_TESTING'] == 'true' ||
-        const bool.fromEnvironment('ISOLATED_RUN', defaultValue: false);
-
-// Port management to avoid conflicts in parallel tests
-class _PortManager {
-  static final Set<int> _usedPorts = {};
-
-  static int getNextAvailablePort(int basePort) {
-    int port = basePort;
-    while (_usedPorts.contains(port)) {
-      port++;
-    }
-    _usedPorts.add(port);
-    return port;
-  }
-
-  static void releasePort(int port) {
-    _usedPorts.remove(port);
-  }
-}
+import '../../testing_utils/in_memory_span_exporter.dart';
 
 void main() {
-  // Use longer timeout when running in isolation
-  final testTimeout = isIsolatedRun ? const Timeout(Duration(seconds: 60)) : null;
-
   group('Context Propagation', () {
-    late RealCollector collector;
     late TracerProvider tracerProvider;
     late Tracer tracer;
-
-    // Generate a random port in the available range to avoid conflicts
-    final random = Random();
-    final basePort = 4321 + random.nextInt(200);
-    final testPort = _PortManager.getNextAvailablePort(basePort);
-
-    final testDir = Directory.current.path;
-    final configPath = '$testDir/test/testing_utils/otelcol-config.yaml';
-
-    // Use a unique file for each test run to avoid conflicts
-    final uniqueId = DateTime.now().millisecondsSinceEpoch;
-    final outputPath =
-        '$testDir/test/testing_utils/spans_context_$uniqueId.json';
-    final fallbackPath = '$outputPath.fallback';
+    late InMemorySpanExporter exporter;
+    late SimpleSpanProcessor processor;
 
     setUp(() async {
-      print(
-          'Setting up context_propagation_test in ${isIsolatedRun ? "ISOLATED" : "NORMAL"} mode');
-      print('Using port $testPort and output file $outputPath');
+      // Reset OTel completely
+      await OTel.reset();
 
-      // Ensure OTel is reset
-      try {
-        await OTel.reset();
-      } catch (e) {
-        print('Error resetting OTel: $e');
-      }
-
-      // Create unique output file and fallback file
-      try {
-        final outputFile = File(outputPath);
-        if (!outputFile.existsSync()) {
-          outputFile.createSync(recursive: true);
-        }
-        outputFile.writeAsStringSync('');
-
-        // Create a fallback file too
-        final backupFile = File(fallbackPath);
-        if (!backupFile.existsSync()) {
-          backupFile.createSync(recursive: true);
-        }
-        backupFile.writeAsStringSync('');
-      } catch (e) {
-        print('Error creating output file: $e');
-      }
-
-      // Start collector with configuration that exports to file
-      try {
-        collector = RealCollector(
-          port: testPort,
-          configPath: configPath,
-          outputPath: outputPath,
-        );
-        await collector.start();
-        print('Collector started on port $testPort with output to $outputPath');
-      } catch (e) {
-        print('Error starting collector on port $testPort: $e');
-
-        // Try with a different port if the first one fails
-        final newPort = testPort + 200;
-        print('Retrying with port $newPort');
-        _PortManager.releasePort(testPort);
-
-        collector = RealCollector(
-          port: newPort,
-          configPath: configPath,
-          outputPath: outputPath,
-        );
-        await collector.start();
-      }
-
-      // Initialize OTel with proper configuration
+      // Initialize with a clean setup
       await OTel.initialize(
-        endpoint: 'http://localhost:${collector.getPort}',
-        serviceName: 'test-service-context-$uniqueId',
+        serviceName: 'test-context-service',
         serviceVersion: '1.0.0',
       );
 
       tracerProvider = OTel.tracerProvider();
-
-      final exporter = OtlpGrpcSpanExporter(
-        OtlpGrpcExporterConfig(
-          endpoint: 'http://localhost:${collector.getPort}',
-          insecure: true,
-          timeout: isIsolatedRun ? const Duration(seconds: 10) : const Duration(seconds: 5),
-          maxRetries: isIsolatedRun ? 3 : 2,
-          baseDelay: const Duration(milliseconds: 50),
-          maxDelay: const Duration(milliseconds: 500),
-        ),
-      );
-
-      final processor = SimpleSpanProcessor(exporter);
+      
+      // Create in-memory exporter and processor
+      exporter = InMemorySpanExporter();
+      processor = SimpleSpanProcessor(exporter);
+      
+      // Add the processor to capture spans
       tracerProvider.addSpanProcessor(processor);
-
-      tracer = tracerProvider.getTracer('test-tracer-$uniqueId');
-
-      // Stabilization time (longer when in isolation mode)
-      await Future<void>.delayed(isIsolatedRun
-          ? const Duration(milliseconds: 500)
-          : const Duration(milliseconds: 100));
+      
+      tracer = tracerProvider.getTracer('test-context-tracer');
     });
 
     tearDown(() async {
-      // Write a dummy span to the fallback file if tests are failing
-      try {
-        final spans = await collector.getSpans();
-        if (spans.isEmpty) {
-          print('No spans found, creating fallback data');
-          final fallbackData = [
-            {
-              'name': 'fallback-span-$uniqueId',
-              'spanId': 'fallback-id-$uniqueId',
-              'traceId': 'fallback-trace-$uniqueId',
-              'attributes': [
-                {
-                  'key': 'test.key',
-                  'value': {'stringValue': 'test-value'}
-                },
-              ]
-            }
-          ];
-          await File(fallbackPath).writeAsString(json.encode(fallbackData));
-        }
-      } catch (e) {
-        print('Error creating fallback data: $e');
-      }
-
-      // Shutdown in a safe order
-      print('Starting tearDown... Shutting down tracer provider');
-      try {
-        await tracerProvider.shutdown();
-      } catch (e) {
-        print('Error shutting down tracer provider: $e');
-      }
-
-      print('Stopping collector...');
-      try {
-        await collector.stop();
-      } catch (e) {
-        print('Error stopping collector: $e');
-      }
-
-      // Clean up the output files
-      try {
-        if (File(outputPath).existsSync()) {
-          await File(outputPath).delete();
-        }
-        if (File(fallbackPath).existsSync()) {
-          await File(fallbackPath).delete();
-        }
-      } catch (e) {
-        print('Error deleting output files: $e');
-      }
-
-      print('Resetting OTel...');
-      try {
-        await OTel.reset();
-      } catch (e) {
-        print('Error resetting OTel during tearDown: $e');
-      }
-
-      // Release the port
-      _PortManager.releasePort(collector.getPort);
-
-      // Very short delay for cleanup
-      await Future<void>.delayed(
-          isIsolatedRun ? const Duration(seconds: 1) : const Duration(milliseconds: 50));
-
-      print('TearDown complete');
+      await processor.shutdown();
+      await exporter.shutdown();
+      await tracerProvider.shutdown();
+      await OTel.reset();
     });
 
-    // Use test.fn(fn, timeout: testTimeout) pattern to apply dynamic timeout
     test('handles attributes across context boundaries', () async {
-      print('Starting context attributes test');
+      // Clear any existing spans
+      exporter.clear();
+
       final attributes = <String, Object>{
         'test.key': 'test-value',
-        'test.id': uniqueId.toString(),
+        'test.number': 42,
+        'test.boolean': true,
       }.toAttributes();
 
       final span = tracer.startSpan(
-        'attributed-span-test-$uniqueId',
+        'attributed-span-test',
         attributes: attributes,
       );
-      print('Ending span with attributes...');
+      
+      // End the span to trigger export
       span.end();
 
-      print('Waiting for span to be exported...');
-      await collector.waitForSpans(1,
-          timeout:
-              isIsolatedRun ? const Duration(seconds: 10) : const Duration(seconds: 5));
+      // Force export
+      await processor.forceFlush();
 
-      print('Verifying span attributes...');
-      await collector.assertSpanExists(
-        name: 'attributed-span-test-$uniqueId',
-        attributes: {
-          'test.key': 'test-value',
-        },
-      );
-      print('Context attributes test completed');
-    }, timeout: testTimeout);
+      // Verify span was captured
+      expect(exporter.spans, hasLength(1));
+      
+      final exportedSpan = exporter.spans.first;
+      expect(exportedSpan.name, equals('attributed-span-test'));
+      
+      // Verify attributes
+      final spanAttrs = exportedSpan.attributes;
+      expect(spanAttrs.getString('test.key'), equals('test-value'));
+      expect(spanAttrs.getInt('test.number'), equals(42));
+      expect(spanAttrs.getBool('test.boolean'), equals(true));
+    });
 
     test('propagates context between spans correctly using withSpan', () async {
-      print('Starting context propagation test with withSpan');
+      exporter.clear();
 
-      final parentSpan = tracer.startSpan('parent-span-test-$uniqueId');
+      final parentSpan = tracer.startSpan('parent-span-test');
       final parentContext = OTel.context().withSpan(parentSpan);
 
       final childSpan = tracer.startSpan(
-        'child-span-test-$uniqueId',
+        'child-span-test',
         context: parentContext,
       );
 
-      // End spans in the correct order
-      print('Ending spans...');
+      // End spans in correct order
       childSpan.end();
       parentSpan.end();
 
-      // Wait for export with shorter timeout
-      print('Waiting for spans to be exported...');
-      await collector.waitForSpans(2,
-          timeout:
-              isIsolatedRun ? const Duration(seconds: 10) : const Duration(seconds: 5));
+      // Force export
+      await processor.forceFlush();
 
-      // Get all spans
-      final spans = await collector.getSpans();
-      print('Got ${spans.length} spans');
+      // Verify both spans were captured
+      expect(exporter.spans, hasLength(2));
+      expect(exporter.hasSpanWithName('parent-span-test'), isTrue);
+      expect(exporter.hasSpanWithName('child-span-test'), isTrue);
 
-      // Print the available spans for debugging
-      print('Available spans:');
-      for (var span in spans) {
-        print('  Span: ${span['name']}, ID: ${span['spanId']}');
-      }
+      final parentExportedSpan = exporter.findSpanByName('parent-span-test')!;
+      final childExportedSpan = exporter.findSpanByName('child-span-test')!;
 
-      // Check if we have the right spans
+      // Verify parent-child relationship
+      expect(childExportedSpan.parentSpanContext, isNotNull);
       expect(
-          spans.any((s) => s['name'] == 'parent-span-test-$uniqueId'), isTrue,
-          reason: 'Parent span should be exported');
-      expect(spans.any((s) => s['name'] == 'child-span-test-$uniqueId'), isTrue,
-          reason: 'Child span should be exported');
+        childExportedSpan.parentSpanContext!.spanId,
+        equals(parentExportedSpan.spanContext.spanId),
+      );
 
-      final parentExportedSpan = spans.firstWhere(
-          (s) => s['name'] == 'parent-span-test-$uniqueId',
-          orElse: () => <String, dynamic>{});
-
-      final childExportedSpan = spans.firstWhere(
-          (s) => s['name'] == 'child-span-test-$uniqueId',
-          orElse: () => <String, dynamic>{});
-
-      // Only verify if we actually have both spans
-      if (parentExportedSpan.isNotEmpty && childExportedSpan.isNotEmpty) {
-        // Verify parent-child relationship if parentSpanId is available
-        if (childExportedSpan['parentSpanId'] != null) {
-          expect(childExportedSpan['parentSpanId'], isNotNull);
-
-          // Verify trace IDs match
-          expect(
-            childExportedSpan['traceId'],
-            equals(parentExportedSpan['traceId']),
-            reason: 'Child span should inherit trace ID from parent',
-          );
-        }
-      }
-    }, timeout: testTimeout);
+      // Verify trace IDs match
+      expect(
+        childExportedSpan.spanContext.traceId,
+        equals(parentExportedSpan.spanContext.traceId),
+      );
+    });
 
     test('withSpanContext prevents trace ID changes', () async {
-      // Use unique span names
-      final uniqueSpanName1 = 'span1-$uniqueId';
-      final uniqueSpanName2 = 'span2-$uniqueId';
-
       // Create first span with its own trace
-      final span1 = tracer.startSpan(uniqueSpanName1);
+      final span1 = tracer.startSpan('span1-test');
       final context1 = OTel.context().withSpan(span1);
 
       final newContext = OTel.context();
-      final span2 = tracer.startSpan(uniqueSpanName2, context: newContext);
+      final span2 = tracer.startSpan('span2-test', context: newContext);
 
       // This should throw because we're trying to change trace ID
       expect(
@@ -330,7 +136,7 @@ void main() {
       // Clean up
       span1.end();
       span2.end();
-    }, timeout: testTimeout);
+    });
 
     test('allows withSpanContext for cross-process propagation', () async {
       // Create a span context with isRemote=true to simulate cross-process propagation
@@ -345,10 +151,9 @@ void main() {
       // This should work fine because we're starting a new trace
       final context = OTel.context().withSpanContext(remoteContext);
 
-      // Create a child span with a unique name
-      final uniqueChildName = 'remote-child-$uniqueId';
+      // Create a child span
       final childSpan = tracer.startSpan(
-        uniqueChildName,
+        'remote-child-test',
         context: context,
       );
 
@@ -360,6 +165,122 @@ void main() {
       );
 
       childSpan.end();
-    }, timeout: testTimeout);
+    });
+
+    test('context propagation with nested spans', () async {
+      exporter.clear();
+
+      // Create a root span
+      final rootSpan = tracer.startSpan('root-span');
+      final rootContext = OTel.context().withSpan(rootSpan);
+
+      // Create a child span
+      final childSpan = tracer.startSpan(
+        'child-span',
+        context: rootContext,
+      );
+      final childContext = OTel.context().withSpan(childSpan);
+
+      // Create a grandchild span
+      final grandchildSpan = tracer.startSpan(
+        'grandchild-span',
+        context: childContext,
+      );
+
+      // End all spans
+      grandchildSpan.end();
+      childSpan.end();
+      rootSpan.end();
+
+      await processor.forceFlush();
+
+      // Verify all spans were captured
+      expect(exporter.spans, hasLength(3));
+      expect(exporter.spanNames, containsAll(['root-span', 'child-span', 'grandchild-span']));
+
+      final rootExported = exporter.findSpanByName('root-span')!;
+      final childExported = exporter.findSpanByName('child-span')!;
+      final grandchildExported = exporter.findSpanByName('grandchild-span')!;
+
+      // Verify trace IDs are all the same
+      final traceId = rootExported.spanContext.traceId;
+      expect(childExported.spanContext.traceId, equals(traceId));
+      expect(grandchildExported.spanContext.traceId, equals(traceId));
+
+      // Verify parent relationships
+      expect(rootExported.parentSpanContext, isNull);
+      expect(childExported.parentSpanContext!.spanId, 
+             equals(rootExported.spanContext.spanId));
+      expect(grandchildExported.parentSpanContext!.spanId, 
+             equals(childExported.spanContext.spanId));
+    });
+
+    test('context attributes inheritance', () async {
+      exporter.clear();
+
+      // Create parent span with attributes
+      final parentSpan = tracer.startSpan(
+        'parent-with-attrs',
+        attributes: {'parent.key': 'parent.value'}.toAttributes(),
+      );
+      final parentContext = OTel.context().withSpan(parentSpan);
+
+      // Create child span with its own attributes
+      final childSpan = tracer.startSpan(
+        'child-with-attrs',
+        context: parentContext,
+        attributes: {'child.key': 'child.value'}.toAttributes(),
+      );
+
+      childSpan.end();
+      parentSpan.end();
+
+      await processor.forceFlush();
+
+      expect(exporter.spans, hasLength(2));
+
+      final parentExported = exporter.findSpanByName('parent-with-attrs')!;
+      final childExported = exporter.findSpanByName('child-with-attrs')!;
+
+      // Verify each span has its own attributes
+      expect(parentExported.attributes.getString('parent.key'), equals('parent.value'));
+      expect(childExported.attributes.getString('child.key'), equals('child.value'));
+
+      // Verify child doesn't inherit parent's attributes (this is correct behavior)
+      expect(childExported.attributes.getString('parent.key'), isNull);
+    });
+
+    test('context propagation across async boundaries', () async {
+      exporter.clear();
+
+      final parentSpan = tracer.startSpan('async-parent');
+      final parentContext = OTel.context().withSpan(parentSpan);
+
+      // Simulate async operation
+      // ignore: inference_failure_on_instance_creation
+      await Future.delayed(const Duration(milliseconds: 10));
+
+      final childSpan = tracer.startSpan(
+        'async-child',
+        context: parentContext,
+      );
+
+      // End spans
+      childSpan.end();
+      parentSpan.end();
+
+      await processor.forceFlush();
+
+      expect(exporter.spans, hasLength(2));
+
+      final parentExported = exporter.findSpanByName('async-parent')!;
+      final childExported = exporter.findSpanByName('async-child')!;
+
+      // Verify relationship maintained across async boundary
+      expect(childExported.parentSpanContext!.spanId, 
+             equals(parentExported.spanContext.spanId));
+      expect(childExported.spanContext.traceId, 
+             equals(parentExported.spanContext.traceId));
+    });
   });
 }

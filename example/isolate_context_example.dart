@@ -32,6 +32,7 @@ Future<void> main() async {
     print('Isolate returned: $result');
   } finally {
     mainSpan.end();
+    await OTel.shutdown();
   }
 }
 

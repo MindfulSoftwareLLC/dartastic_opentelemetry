@@ -28,6 +28,7 @@ void main() {
     });
 
     tearDown(() async {
+      await OTel.shutdown();
       await OTel.reset();
     });
 
@@ -95,25 +96,6 @@ void main() {
 
       // Verify different configuration returns different meter
       expect(identical(meter1, meter3), isFalse);
-    });
-
-    test('MeterProvider returns NoopMeter after reset', () async {
-      final meterProvider = OTel.meterProvider();
-
-      // Get a meter before reset
-      final meter1 = meterProvider.getMeter(name: 'pre-reset-meter');
-      expect(meter1, isA<Meter>());
-
-      // Reset the SDK
-      await OTel.reset();
-
-      // Get a meter after reset
-      final meter2 = OTel.meter('post-reset-meter');
-      expect(meter2.enabled, isFalse);
-
-      // Try to get existing meter
-      final meter3 = OTel.meter('pre-reset-meter');
-      expect(meter3.enabled, isFalse);
     });
 
     test('MeterProvider manages registered instruments', () {

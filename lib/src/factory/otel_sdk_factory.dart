@@ -87,7 +87,7 @@ class OTelSDKFactory extends OTelAPIFactory {
   @override
   APITracerProvider tracerProvider({
     required String endpoint,
-    String serviceName = "@dart/opentelemetry_api",
+    String serviceName = "@dart/opentelemetry_api", //TODO - @dart/dartastic_opentelemetry
     String? serviceVersion,
     Resource? resource
   }) {
