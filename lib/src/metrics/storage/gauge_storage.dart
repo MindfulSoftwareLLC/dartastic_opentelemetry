@@ -5,10 +5,10 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import '../data/exemplar.dart';
 import '../data/metric_point.dart';
-import 'point_storage.dart';
+import 'metric_storage.dart';
 
 /// GaugeStorage is used for storing the last recorded value for each set of attributes.
-class GaugeStorage<T extends num> extends PointStorage<T> {
+class GaugeStorage<T extends num> extends NumericStorage<T> {
   /// Map of attribute sets to gauge data.
   final Map<Attributes, _GaugePointData<T>> _points = {};
 

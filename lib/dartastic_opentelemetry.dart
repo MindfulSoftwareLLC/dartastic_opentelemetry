@@ -97,6 +97,7 @@ export 'src/metrics/metric_reader.dart';
 export 'src/metrics/observe/observable_result.dart';
 export 'src/metrics/storage/gauge_storage.dart';
 export 'src/metrics/storage/histogram_storage.dart';
+export 'src/metrics/storage/metric_storage.dart';
 export 'src/metrics/storage/point_storage.dart';
 export 'src/metrics/storage/sum_storage.dart';
 export 'src/metrics/view.dart';

@@ -5,10 +5,10 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import '../data/exemplar.dart';
 import '../data/metric_point.dart';
-import 'point_storage.dart';
+import 'metric_storage.dart';
 
 /// HistogramStorage is used for storing and accumulating histogram data.
-class HistogramStorage<T extends num> extends PointStorage<T> {
+class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
   /// Map of attribute sets to histogram data.
   final Map<Attributes, _HistogramPointData<T>> _points = {};
 
@@ -66,96 +66,92 @@ class HistogramStorage<T extends num> extends PointStorage<T> {
     return null;
   }
 
-  /// Gets the current value for the given attributes.
-  /// For histograms, this returns the sum of all recorded values for the attribute set.
-  /// If no attributes are provided, returns the sum across all attribute sets.
+  /// Gets the current histogram value for the given attributes.
+  /// If no attributes are provided, returns a combined HistogramValue across all attribute sets.
   @override
-  T getValue([Attributes? attributes]) {
+  HistogramValue getValue([Attributes? attributes]) {
     if (attributes == null) {
-      // Sum across all attribute sets
+      // Combine across all attribute sets
       final num totalSum = _points.values.fold<num>(0, (sum, data) => sum + data.sum);
+      final int totalCount = _points.values.fold<int>(0, (count, data) => count + data.count);
       
-      // Convert to the appropriate generic type
-      if (T == int) {
-        return totalSum.toInt() as T;
-      } else if (T == double) {
-        return totalSum.toDouble() as T;
-      } else {
-        return totalSum as T;
+      // Combine bucket counts
+      final List<int> combinedCounts = List<int>.filled(boundaries.length + 1, 0);
+      for (final data in _points.values) {
+        for (int i = 0; i < data.counts.length; i++) {
+          combinedCounts[i] += data.counts[i];
+        }
       }
+      
+      // Find overall min and max
+      num? overallMin;
+      num? overallMax;
+      if (recordMinMax && _points.isNotEmpty) {
+        overallMin = _points.values.map((data) => data.min).where((min) => min != double.infinity).isEmpty ? null :
+                    _points.values.map((data) => data.min).where((min) => min != double.infinity).reduce((a, b) => a < b ? a : b);
+        overallMax = _points.values.map((data) => data.max).where((max) => max != double.negativeInfinity).isEmpty ? null :
+                    _points.values.map((data) => data.max).where((max) => max != double.negativeInfinity).reduce((a, b) => a > b ? a : b);
+      }
+      
+      return HistogramValue(
+        sum: totalSum,
+        count: totalCount,
+        boundaries: boundaries,
+        bucketCounts: combinedCounts,
+        min: overallMin,
+        max: overallMax,
+      );
     }
     
     // Find matching attributes
     final existingKey = _findMatchingKey(attributes);
-    final num value = existingKey != null ? _points[existingKey]!.sum : 0;
-    
-    // Convert to the appropriate generic type
-    if (T == int) {
-      return value.toInt() as T;
-    } else if (T == double) {
-      return value.toDouble() as T;
+    if (existingKey != null) {
+      final data = _points[existingKey]!;
+      return HistogramValue(
+        sum: data.sum,
+        count: data.count,
+        boundaries: boundaries,
+        bucketCounts: data.counts,
+        min: recordMinMax && data.min != double.infinity ? data.min : null,
+        max: recordMinMax && data.max != double.negativeInfinity ? data.max : null,
+      );
     } else {
-      return value as T;
+      // Return empty histogram
+      return HistogramValue(
+        sum: 0,
+        count: 0,
+        boundaries: boundaries,
+        bucketCounts: List<int>.filled(boundaries.length + 1, 0),
+        min: null,
+        max: null,
+      );
     }
   }
 
   /// Collects the current set of metric points.
   @override
-  List<MetricPoint<T>> collectPoints() {
+  List<MetricPoint<HistogramValue>> collectPoints() {
     final now = DateTime.now();
 
     return _points.entries.map((entry) {
       final data = entry.value;
       
-      // Convert sum to appropriate type
-      final T typedSum;
-      if (T == int) {
-        typedSum = data.sum.toInt() as T;
-      } else if (T == double) {
-        typedSum = data.sum.toDouble() as T;
-      } else {
-        typedSum = data.sum as T;
-      }
-      
-      // Convert min/max to appropriate type (if needed)
-      final T? typedMin;
-      final T? typedMax;
-      
-      if (recordMinMax) {
-        if (data.min == double.infinity) {
-          typedMin = null;
-        } else if (T == int) {
-          typedMin = data.min.toInt() as T;
-        } else if (T == double) {
-          typedMin = data.min.toDouble() as T;
-        } else {
-          typedMin = data.min as T;
-        }
-        
-        if (data.max == double.negativeInfinity) {
-          typedMax = null;
-        } else if (T == int) {
-          typedMax = data.max.toInt() as T;
-        } else if (T == double) {
-          typedMax = data.max.toDouble() as T;
-        } else {
-          typedMax = data.max as T;
-        }
-      } else {
-        typedMin = null;
-        typedMax = null;
-      }
+      // Create a HistogramValue directly
+      final histogramValue = HistogramValue(
+        sum: data.sum,
+        count: data.count,
+        boundaries: boundaries,
+        bucketCounts: data.counts,
+        min: recordMinMax && data.min != double.infinity ? data.min : null,
+        max: recordMinMax && data.max != double.negativeInfinity ? data.max : null,
+      );
 
-      return MetricPoint<T>.histogram(
+      // Create a MetricPoint<HistogramValue> - no type casting needed!
+      return MetricPoint<HistogramValue>(
         attributes: entry.key,
         startTime: _startTime,
-        time: now,
-        count: data.count,
-        sum: typedSum,
-        counts: data.counts,
-        boundaries: boundaries,
-        min: typedMin,
-        max: typedMax,
+        endTime: now,
+        value: histogramValue,
         exemplars: data.exemplars,
       );
     }).toList();

@@ -58,9 +58,10 @@ void main() {
         orElse: () => throw StateError('Point with null attributes not found'),
       );
 
-      final histogramValue1 = point1.histogram();
-      final histogramValue2 = point2.histogram();
-      final histogramValue3 = point3.histogram();
+      // Points now contain HistogramValue directly via proper typing
+      final histogramValue1 = point1.value;
+      final histogramValue2 = point2.value;
+      final histogramValue3 = point3.value;
 
       // Verify histogram data for point1 (attributes1)
       expect(histogramValue1.sum, equals(21.25)); // 5.5 + 15.75
@@ -93,7 +94,7 @@ void main() {
 
       final point = points.first;
 
-      final histogramValue = point.histogram();
+      final histogramValue = point.value;
 
       // Verify sum and count
       expect(histogramValue.sum, equals(245.0)); // 5 + 15 + 30 + 75 + 120
@@ -147,7 +148,7 @@ void main() {
       expect(points.length, equals(1));
 
       final point = points.first;
-      final histogramValue = point.histogram();
+      final histogramValue = point.value;
       expect(histogramValue.sum, equals(30.0)); // 5 + 10 + 15, but as double
       expect(histogramValue.count, equals(3));
     });
