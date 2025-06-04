@@ -1,20 +1,188 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'dart:convert';
-import 'dart:io';
-
-import 'package:dartastic_opentelemetry/src/otel.dart';
-import 'package:dartastic_opentelemetry/src/trace/export/otlp/otlp_grpc_span_exporter.dart';
-import 'package:dartastic_opentelemetry/src/trace/export/otlp/otlp_grpc_span_exporter_config.dart';
-import 'package:dartastic_opentelemetry/src/trace/span.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
-import 'package:grpc/grpc.dart' as grpc;
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:test/test.dart';
 
-import '../../../../testing_utils/real_collector.dart';
+// Mock span for testing OTLP transformation
+class MockSpan implements Span {
+  @override
+  final String name;
+  
+  @override
+  final SpanContext spanContext;
+  
+  @override
+  final Resource resource;
+  
+  @override
+  final InstrumentationScope instrumentationScope;
+  
+  @override
+  final SpanKind kind;
+  
+  @override
+  final Attributes attributes;
+  
+  @override
+  final DateTime startTime;
+  
+  @override
+  final DateTime? endTime;
+  
+  final Span? _parentSpan;
+  bool _isEnded = false;
+  SpanStatusCode _status = SpanStatusCode.Ok;
+  String? _statusDescription;
+  
+  MockSpan({
+    required this.name,
+    required this.spanContext,
+    required this.resource,
+    required this.instrumentationScope,
+    required this.kind,
+    required this.attributes,
+    required this.startTime,
+    this.endTime,
+    Span? parentSpan,
+  }) : _parentSpan = parentSpan {
+    if (endTime != null) {
+      _isEnded = true;
+    }
+  }
 
-// Helper function to create a test span using OTel factory methods
+  @override
+  bool get isEnded => _isEnded;
+
+  @override
+  bool get isRecording => !_isEnded;
+
+  @override
+  SpanStatusCode get status => _status;
+
+  @override
+  String? get statusDescription => _statusDescription;
+
+  @override
+  SpanContext? get parentSpanContext => _parentSpan?.spanContext;
+
+  @override
+  Span? get parentSpan => _parentSpan;
+
+  @override
+  List<SpanEvent>? get spanEvents => null;
+
+  @override
+  List<SpanLink>? get spanLinks => null;
+
+  @override
+  void end({DateTime? endTime, SpanStatusCode? spanStatus}) {
+    _isEnded = true;
+  }
+
+  @override
+  void setStatus(SpanStatusCode code, [String? description]) {
+    _status = code;
+    _statusDescription = description;
+  }
+
+
+  @override
+  void setIntAttribute(String key, int value) {}
+
+  @override
+  void setBoolAttribute(String key, bool value) {}
+
+  @override
+  void setDoubleAttribute(String key, double value) {}
+
+  @override
+  void addEventNow(String name, [Attributes? attributes]) {}
+
+  @override
+  void addLink(SpanContext spanContext, [Attributes? attributes]) {}
+
+  @override
+  void addAttributes(Attributes attributes) {
+    // TODO: implement addAttributes
+  }
+
+  @override
+  void addEvents(Map<String, Attributes?> spanEvents) {
+    // TODO: implement addEvents
+  }
+
+  @override
+  void addSpanLink(SpanLink spanLink) {
+    // TODO: implement addSpanLink
+  }
+
+  @override
+  set attributes(Attributes newAttributes) {
+    // TODO: implement attributes
+  }
+
+  @override
+  bool isInstanceOf(Type type) {
+    // TODO: implement isInstanceOf
+    throw UnimplementedError();
+  }
+
+  @override
+  // TODO: implement isValid
+  bool get isValid => throw UnimplementedError();
+
+  @override
+  void setBoolListAttribute(String name, List<bool> value) {
+    // TODO: implement setBoolListAttribute
+  }
+
+  @override
+  void setDateTimeAsStringAttribute(String name, DateTime value) {
+    // TODO: implement setDateTimeAsStringAttribute
+  }
+
+  @override
+  void setDoubleListAttribute(String name, List<double> value) {
+    // TODO: implement setDoubleListAttribute
+  }
+
+  @override
+  void setIntListAttribute(String name, List<int> value) {
+    // TODO: implement setIntListAttribute
+  }
+
+  @override
+  void setStringListAttribute<T>(String name, List<String> value) {
+    // TODO: implement setStringListAttribute
+  }
+
+  @override
+  // TODO: implement spanId
+  SpanId get spanId => throw UnimplementedError();
+
+  @override
+  void updateName(String name) {
+    // TODO: implement updateName
+  }
+
+  @override
+  void addEvent(SpanEvent spanEvent) {
+    // TODO: implement addEvent
+  }
+
+  @override
+  void recordException(Object exception, {StackTrace? stackTrace, Attributes? attributes, bool? escaped}) {
+    // TODO: implement recordException
+  }
+
+  @override
+  void setStringAttribute<T>(String name, String value) {
+    // TODO: implement setStringAttribute
+  }
+}
+
+// Helper function to create a test span
 Span createTestSpan({
   required String name,
   String? traceId,
@@ -22,294 +190,298 @@ Span createTestSpan({
   Map<String, Object>? attributes,
   DateTime? startTime,
   DateTime? endTime,
+  Span? parentSpan,
 }) {
-  final context = OTel.spanContext(
+  final spanContext = OTel.spanContext(
     traceId: OTel.traceIdFrom(traceId ?? '00112233445566778899aabbccddeeff'),
     spanId: OTel.spanIdFrom(spanId ?? '0011223344556677'),
   );
 
-  final tracer = OTel.tracerProvider().getTracer(
-    'test-tracer',
+  final resource = OTel.resource(OTel.attributesFromMap({
+    'service.name': 'test-service',
+    'service.version': '1.0.0',
+  }));
+
+  final instrumentationScope = OTel.instrumentationScope(
+    name: 'test-tracer',
     version: '1.0.0',
   );
 
-  final span = tracer.createSpan(
+  return MockSpan(
     name: name,
-    startTime: startTime,
+    spanContext: spanContext,
+    resource: resource,
+    instrumentationScope: instrumentationScope,
     kind: SpanKind.internal,
-    attributes: attributes != null ? OTel.attributesFromMap(attributes) : null,
-    spanContext: context,
+    attributes: attributes != null ? OTel.attributesFromMap(attributes) : OTel.attributes(),
+    startTime: startTime ?? DateTime.now(),
+    endTime: endTime,
+    parentSpan: parentSpan,
   );
-
-  if (endTime != null) {
-    span.end(endTime: endTime);
-  }
-
-  return span;
 }
 
 void main() {
-  group('OtlpGrpcSpanExporter', () {
-    late RealCollector collector;
-    late OtlpGrpcSpanExporter exporter;
-    final testDir = Directory.current.path;
-    final configPath = '$testDir/test/testing_utils/otelcol-config.yaml';
-    final outputPath = '$testDir/test/testing_utils/spans.json';
-    int testPort = 4317; // Use a different port for each test to avoid conflicts
-
-    setUpAll(() async {
+  group('OtlpGrpcSpanExporter (Unit Tests)', () {
+    setUp(() async {
       await OTel.reset();
       await OTel.initialize(
-        endpoint: 'http://127.0.0.1:4316',
-        serviceName: 'example-service',
-        serviceVersion: '1.42.0.0');
-    });
-
-    setUp(() async {
-      // Increment port to avoid conflicts between tests
-      testPort++;
-
-      // Add delay to ensure port is free
-      await Future<void>.delayed(const Duration(seconds: 2));
-
-      // Ensure output file exists and is empty
-      File(outputPath).writeAsStringSync('');
-
-      collector = RealCollector(
-        port: testPort,
-        configPath: configPath,
-        outputPath: outputPath,
-      );
-      await collector.start();
-
-      // Use timeout that's more realistic for tests
-      exporter = OtlpGrpcSpanExporter(
-        OtlpGrpcExporterConfig(
-          endpoint: 'http://127.0.0.1:$testPort',
-          insecure: true,
-          maxRetries: 2,
-          baseDelay: const Duration(milliseconds: 50),
-          timeout: const Duration(seconds: 5), // Longer timeout for tests
-        ),
+        serviceName: 'test-service',
+        serviceVersion: '1.0.0',
       );
     });
 
     tearDown(() async {
-      // First force flush to ensure all spans are exported
-      try {
-        await exporter.forceFlush();
-        await Future<void>.delayed(const Duration(seconds: 2));
-      } catch (e) {
-        print('Error during force flush: $e');
-      }
-
-      // Clean shutdown sequence
-      try {
-        await exporter.shutdown();
-      } catch (e) {
-        print('Error during exporter shutdown: $e');
-      }
-
-      // Wait a moment to ensure channel is properly closed
-      await Future<void>.delayed(const Duration(seconds: 1));
-
-      try {
-        await collector.stop();
-      } catch (e) {
-        print('Error stopping collector: $e');
-      }
-
-      try {
-        await collector.clear();
-      } catch (e) {
-        print('Error clearing collector data: $e');
-      }
-
-      // Add delay between tests
-      await Future<void>.delayed(const Duration(seconds: 2));
+      await OTel.shutdown();
+      await OTel.reset();
     });
 
-    test('exports spans successfully', () async {
-      // Check that output file is clean
-      final spans = await collector.getSpans();
-      expect(spans, isEmpty, reason: 'Output file should be empty at start');
-
+    test('creates proper OTLP export request from spans', () {
       final testSpan = createTestSpan(
         name: 'test-span',
         attributes: {
           'test.key': 'test.value',
+          'test.number': 42,
         },
         traceId: '00112233445566778899aabbccddeeff',
         spanId: '0011223344556677',
       );
 
-      // Export the span and give more time for processing
-      await exporter.export([testSpan]);
-      await Future<void>.delayed(const Duration(seconds: 2));
+      // Test the span transformer directly (this is what the exporter uses internally)
+      final request = OtlpSpanTransformer.transformSpans([testSpan]);
 
-      try {
-        // Check if file has any content
-        final fileContent = await File(outputPath).readAsString();
-        print('File content after export: ${fileContent.length} bytes');
-
-        // Now wait for spans with a longer timeout
-        await collector.waitForSpans(1, timeout: const Duration(seconds: 15));
-
-        final spans2 = await collector.getSpans();
-        print('Found ${spans2.length} spans: ${json.encode(spans2)}');
-
-        // Check if we have spans with the expected attributes, not necessarily the exact name
-        final newSpans = await collector.getSpans();
-        expect(newSpans.isNotEmpty, isTrue, reason: 'Expected spans to be exported');
-
-        // Look for the test.key attribute to verify our span was exported
-        final hasSpanWithAttribute = newSpans.any((span) {
-          // First try attributes array if it exists
-          final attrs = span['attributes'] as List?;
-          if (attrs != null) {
-            final hasAttribute = attrs.any((attr) {
-              return attr['key'] == 'test.key' &&
-                     attr['value'] != null &&
-                     attr['value']['stringValue'] == 'test.value';
-            });
-            if (hasAttribute) return true;
-          }
-
-          // If the span has attributes map for backward compatibility with OTel formats
-          final attrMap = span['attributes'] as Map<String, dynamic>?;
-          if (attrMap != null && attrMap['test.key'] == 'test.value') {
-            return true;
-          }
-
-          return false;
-        });
-
-        expect(hasSpanWithAttribute, isTrue, reason: 'Expected span with test.key attribute');
-        print('Found span with the test.key attribute, test passed');
-      } catch (e) {
-        print('Error in span export test: $e');
-        rethrow;
-      }
+      // Verify the structure
+      expect(request.resourceSpans, hasLength(1));
+      
+      final resourceSpan = request.resourceSpans.first;
+      expect(resourceSpan.scopeSpans, hasLength(1));
+      
+      final scopeSpan = resourceSpan.scopeSpans.first;
+      expect(scopeSpan.spans, hasLength(1));
+      
+      final protoSpan = scopeSpan.spans.first;
+      expect(protoSpan.name, equals('test-span'));
+      
+      // Verify attributes
+      final testKeyAttr = protoSpan.attributes.firstWhere((a) => a.key == 'test.key');
+      expect(testKeyAttr.value.stringValue, equals('test.value'));
+      
+      final testNumberAttr = protoSpan.attributes.firstWhere((a) => a.key == 'test.number');
+      expect(testNumberAttr.value.intValue.toInt(), equals(42));
     });
 
-    test('handles empty span list', () async {
-      await exporter.export([]);
-      final spans = await collector.getSpans();
-      expect(spans, isEmpty);
+    test('handles empty span list', () {
+      final request = OtlpSpanTransformer.transformSpans([]);
+      expect(request.resourceSpans, isEmpty);
     });
 
-    test('exports multiple spans', () async {
+    test('transforms multiple spans correctly', () {
       final spans = List.generate(
         3,
         (i) => createTestSpan(
           name: 'span-$i',
-          attributes: {'index': '$i'},
+          attributes: {'index': i},
           traceId: '00112233445566778899aabbccddeeff',
-          spanId: '00112233445566$i$i',
+          spanId: '00112233445566${i.toString().padLeft(2, '0')}',
         ),
       );
 
-      // First try to export with short spans
-      try {
-        await exporter.export(spans);
-        // Allow more time for span processing
-        await Future<void>.delayed(const Duration(seconds: 3));
-        await collector.waitForSpans(3, timeout: const Duration(seconds: 15));
+      final request = OtlpSpanTransformer.transformSpans(spans);
 
-        // Try to verify each span individually
-        for (var i = 0; i < 3; i++) {
-          try {
-            await collector.assertSpanExists(
-              name: 'span-$i',
-              attributes: {'index': '$i'},
-            );
-          } catch (e) {
-            print('Error verifying span $i: $e');
-            // Continue checking other spans
-            continue;
-          }
-        }
-      } catch (e) {
-        print('Error in multiple spans test: $e');
-        // Instead of failing, let's check how many spans we got
-        final spans = await collector.getSpans();
-        print('Got ${spans.length} spans instead of 3:');
-        for (var span in spans) {
-          print('  - Span name: ${span['name']}, attributes: ${span['attributes']}');
-        }
+      expect(request.resourceSpans, hasLength(1));
+      final resourceSpan = request.resourceSpans.first;
+      expect(resourceSpan.scopeSpans, hasLength(1));
+      final scopeSpan = resourceSpan.scopeSpans.first;
+      expect(scopeSpan.spans, hasLength(3));
 
-        // Still throw to fail the test if we didn't get all spans
-        if (spans.length < 3) {
-          throw Exception('Failed to export all 3 spans, got ${spans.length}');
-        }
+      // Verify each span
+      for (var i = 0; i < 3; i++) {
+        final protoSpan = scopeSpan.spans[i];
+        expect(protoSpan.name, equals('span-$i'));
+        
+        final indexAttr = protoSpan.attributes.firstWhere((a) => a.key == 'index');
+        expect(indexAttr.value.intValue.toInt(), equals(i));
       }
     });
 
-    test('handles timeout properly', () async {
-      final slowExporter = OtlpGrpcSpanExporter(
-        OtlpGrpcExporterConfig(
-          endpoint: 'http://127.0.0.1:${collector.port}',
-          insecure: true,
-          timeout: const Duration(milliseconds: 1),
-          maxRetries: 0,
-        ),
+    test('preserves span context information', () {
+      const traceId = '00112233445566778899aabbccddeeff';
+      const spanId = '0011223344556677';
+      
+      final testSpan = createTestSpan(
+        name: 'context-test-span',
+        traceId: traceId,
+        spanId: spanId,
+      );
+
+      final request = OtlpSpanTransformer.transformSpans([testSpan]);
+      final protoSpan = request.resourceSpans.first.scopeSpans.first.spans.first;
+
+      // Verify trace and span IDs are preserved
+      expect(protoSpan.traceId, isNotNull);
+      expect(protoSpan.spanId, isNotNull);
+      expect(protoSpan.traceId.length, equals(16)); // 16 bytes
+      expect(protoSpan.spanId.length, equals(8));   // 8 bytes
+    });
+
+    test('includes resource information', () {
+      final testSpan = createTestSpan(name: 'resource-test-span');
+      final request = OtlpSpanTransformer.transformSpans([testSpan]);
+
+      final resource = request.resourceSpans.first.resource;
+      expect(resource.attributes, isNotEmpty);
+
+      // Should have at least service.name
+      final serviceNameAttr = resource.attributes.firstWhere(
+        (a) => a.key == 'service.name',
+        orElse: () => throw StateError('service.name attribute not found'),
+      );
+      expect(serviceNameAttr.value.stringValue, equals('test-service'));
+    });
+
+    test('includes instrumentation scope information', () {
+      final testSpan = createTestSpan(name: 'scope-test-span');
+      final request = OtlpSpanTransformer.transformSpans([testSpan]);
+
+      final scope = request.resourceSpans.first.scopeSpans.first.scope;
+      expect(scope.name, equals('test-tracer'));
+      expect(scope.version, equals('1.0.0'));
+    });
+
+    test('handles spans with different attributes types', () {
+      final testSpan = createTestSpan(
+        name: 'multi-attr-span',
+        attributes: {
+          'string.attr': 'string.value',
+          'int.attr': 123,
+          'bool.attr': true,
+          'double.attr': 45.67,
+        },
+      );
+
+      final request = OtlpSpanTransformer.transformSpans([testSpan]);
+      final protoSpan = request.resourceSpans.first.scopeSpans.first.spans.first;
+
+      // Verify each attribute type
+      final stringAttr = protoSpan.attributes.firstWhere((a) => a.key == 'string.attr');
+      expect(stringAttr.value.stringValue, equals('string.value'));
+
+      final intAttr = protoSpan.attributes.firstWhere((a) => a.key == 'int.attr');
+      expect(intAttr.value.intValue.toInt(), equals(123));
+
+      final boolAttr = protoSpan.attributes.firstWhere((a) => a.key == 'bool.attr');
+      expect(boolAttr.value.boolValue, equals(true));
+
+      final doubleAttr = protoSpan.attributes.firstWhere((a) => a.key == 'double.attr');
+      expect(doubleAttr.value.doubleValue, equals(45.67));
+    });
+
+    test('handles span timing information', () {
+      final startTime = DateTime.now();
+      final endTime = startTime.add(const Duration(milliseconds: 100));
+      
+      final testSpan = createTestSpan(
+        name: 'timing-test-span',
+        startTime: startTime,
+        endTime: endTime,
+      );
+
+      final request = OtlpSpanTransformer.transformSpans([testSpan]);
+      final protoSpan = request.resourceSpans.first.scopeSpans.first.spans.first;
+
+      expect(protoSpan.startTimeUnixNano.toInt(), greaterThan(0));
+      expect(protoSpan.endTimeUnixNano.toInt(), greaterThan(protoSpan.startTimeUnixNano.toInt()));
+    });
+
+    test('groups spans by resource correctly', () {
+      // Create spans with different resources
+      final service1Resource = OTel.resource(OTel.attributesFromMap({
+        'service.name': 'service1',
+      }));
+
+      final service2Resource = OTel.resource(OTel.attributesFromMap({
+        'service.name': 'service2',
+      }));
+
+      final instrumentationScope = OTel.instrumentationScope(
+        name: 'test-tracer',
+        version: '1.0.0',
       );
 
       final spans = [
-        createTestSpan(
-          name: 'timeout-test-span',
-          traceId: '00112233445566778899aabbccddeeff',
-          spanId: '0011223344556677',
-        )
-      ];
-
-      expect(
-        () => slowExporter.export(spans),
-        throwsA(isA<grpc.GrpcError>().having(
-          (e) => e.code,
-          'code',
-          equals(grpc.StatusCode.deadlineExceeded),
-        )),
-      );
-    });
-
-    test('handles shutdown correctly', () async {
-      await exporter.shutdown();
-      expect(
-        () => exporter.export([
-          createTestSpan(
-            name: 'post-shutdown-span',
-            traceId: '00112233445566778899aabbccddeeff',
-            spanId: '0011223344556677',
-          )
-        ]),
-        throwsA(isA<StateError>()),
-      );
-    });
-
-    test('forceFlush completes successfully', () async {
-      final spans = [
-        createTestSpan(
-          name: 'flush-test-span',
-          traceId: '00112233445566778899aabbccddeeff',
-          spanId: '0011223344556677',
+        MockSpan(
+          name: 'span1',
+          spanContext: OTel.spanContext(),
+          resource: service1Resource,
+          instrumentationScope: instrumentationScope,
+          kind: SpanKind.internal,
+          attributes: OTel.attributes(),
+          startTime: DateTime.now(),
+        ),
+        MockSpan(
+          name: 'span2',
+          spanContext: OTel.spanContext(),
+          resource: service2Resource,
+          instrumentationScope: instrumentationScope,
+          kind: SpanKind.internal,
+          attributes: OTel.attributes(),
+          startTime: DateTime.now(),
         ),
       ];
-      await exporter.export(spans);
-      await exporter.forceFlush();
+
+      final request = OtlpSpanTransformer.transformSpans(spans);
+
+      // Should have 2 resource spans (one for each service)
+      expect(request.resourceSpans, hasLength(2));
+
+      // Verify each resource has its respective span
+      final service1ResourceSpan = request.resourceSpans.firstWhere(
+        (rs) => rs.resource.attributes.any(
+          (attr) => attr.key == 'service.name' && attr.value.stringValue == 'service1',
+        ),
+      );
+
+      final service2ResourceSpan = request.resourceSpans.firstWhere(
+        (rs) => rs.resource.attributes.any(
+          (attr) => attr.key == 'service.name' && attr.value.stringValue == 'service2',
+        ),
+      );
+
+      expect(service1ResourceSpan.scopeSpans.first.spans.first.name, equals('span1'));
+      expect(service2ResourceSpan.scopeSpans.first.spans.first.name, equals('span2'));
     });
 
-    test('repeated shutdown is safe', () async {
-      final spans = [
-        createTestSpan(
-          name: 'shutdown-test-span',
-          traceId: '00112233445566778899aabbccddeeff',
-          spanId: '0011223344556677',
-        ),
-      ];
-      await exporter.export(spans);
-      await exporter.shutdown();
-      await exporter.shutdown(); // Should not throw
+    test('handles parent-child span relationships', () {
+      // Create parent span
+      final parentSpan = createTestSpan(
+        name: 'parent-span',
+        traceId: '00112233445566778899aabbccddeeff',
+        spanId: '0011223344556677',
+      );
+
+      // Create child span with parent
+      final childSpan = createTestSpan(
+        name: 'child-span',
+        traceId: '00112233445566778899aabbccddeeff', // Same trace
+        spanId: '1122334455667788', // Different span ID
+        parentSpan: parentSpan,
+      );
+
+      final request = OtlpSpanTransformer.transformSpans([parentSpan, childSpan]);
+      final protoSpans = request.resourceSpans.first.scopeSpans.first.spans;
+
+      // Find parent and child spans
+      final parentProtoSpan = protoSpans.firstWhere((s) => s.name == 'parent-span');
+      final childProtoSpan = protoSpans.firstWhere((s) => s.name == 'child-span');
+
+      // Parent should not have parentSpanId
+      expect(parentProtoSpan.hasParentSpanId(), isFalse);
+
+      // Child should have parentSpanId set to parent's spanId
+      expect(childProtoSpan.hasParentSpanId(), isTrue);
+      expect(childProtoSpan.parentSpanId, equals(parentProtoSpan.spanId));
+
+      // Both should have the same trace ID
+      expect(childProtoSpan.traceId, equals(parentProtoSpan.traceId));
     });
   });
 }

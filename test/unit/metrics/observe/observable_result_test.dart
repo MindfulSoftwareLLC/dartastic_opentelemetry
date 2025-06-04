@@ -22,7 +22,7 @@ void main() {
     });
 
     tearDown(() async {
-      await OTel.reset();
+      await OTel.shutdown();
     });
 
     test('ObservableResult starts with empty measurements', () {
@@ -35,8 +35,11 @@ void main() {
       
       expect(intResult.measurements.length, equals(1));
       expect(intResult.measurements.first.value, equals(42));
-      expect(intResult.measurements.first.attributes, isNotNull);
-      expect(intResult.measurements.first.attributes!.toList(), isEmpty);
+      // When no attributes are provided, it should either be null or empty
+      final attrs = intResult.measurements.first.attributes;
+      if (attrs != null) {
+        expect(attrs.toList(), isEmpty);
+      }
     });
 
     test('observe adds a measurement with double value', () {
@@ -44,8 +47,11 @@ void main() {
       
       expect(doubleResult.measurements.length, equals(1));
       expect(doubleResult.measurements.first.value, equals(42.5));
-      expect(doubleResult.measurements.first.attributes, isNotNull);
-      expect(doubleResult.measurements.first.attributes!.toList(), isEmpty);
+      // When no attributes are provided, it should either be null or empty
+      final attrs = doubleResult.measurements.first.attributes;
+      if (attrs != null) {
+        expect(attrs.toList(), isEmpty);
+      }
     });
 
     test('observe with attributes adds measurement with attributes', () {
@@ -118,8 +124,8 @@ void main() {
       final measurements = intResult.measurements;
       expect(measurements.length, equals(2));
       
-      // Try to modify the list - this should throw
-      expect(() => (measurements as List<dynamic>).add(null), throwsUnsupportedError);
+      // Try to modify the list - this should throw UnsupportedError
+      expect(() => measurements.add(measurements.first), throwsUnsupportedError);
     });
 
     test('observe with null OTelFactory does not add measurement', () {

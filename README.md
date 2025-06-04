@@ -4,12 +4,20 @@
 [![OpenTelemetry Specification](https://img.shields.io/badge/OpenTelemetry-Specification-blueviolet)](https://opentelemetry.io/docs/specs/otel/)
 
 Dartastic is an [OpenTelemetry](https://opentelemetry.io/) SDK to add standard observability to Dart applications.
+Dartastic can be used with any OTel backend, it's standards-compliant.
 
-This SDK has been proposed for [Donation to the CNCF](https://github.com/open-telemetry/community/issues/2718).
+Flutter developers should use the [Flutterific OTel SDK](https://pub.dev/packages/flutterrific_otel_sdk) which builds on top of Dartastic OTel.
+
+The Dartastic and Flutterrific OTel SDK has been proposed for [Donation to the CNCF](https://github.com/open-telemetry/community/issues/2718).
 We need YOU to grow the Dartastic community and make this SDK the standard for Flutter and Dart OTel.
 Please use it, submit issues, support us with stars and contribute PRs. We are looking for contributors and maintainers.
 Also, please support the development by subscribing at [Dartastic.io][https://dartastic.io] and gain early access to the
 Flutter SDK and the Wondrous Demo.
+
+[Dartastic.io](https://dartastic.io) provides an OpenTelemetry support, training, consulting
+and an Observability backend customized for Flutter apps, Dart backends, and any other service or process that produces
+OpenTelemetry data.
+
 
 ## Features
 
@@ -19,7 +27,7 @@ Flutter SDK and the Wondrous Demo.
 - 🌎 **Ecosystem**:
   - [Dartastic.io](https://dartastic.io) is an OTel backend for Dart with a generous free tier,
     professional support and enterprise features.
-  - [Flutterrific OTel](https://pub.dev/packages/flutterrific_opentelemetry) (Coming soon - sign up at Dartastic.io for early access)
+  - [Flutterrific OTel](https://pub.dev/packages/flutterrific_opentelemetry)
     adds Dartastic OTel to Flutter apps with ease.  Observe app routes, errors, web vitals and more with as few
     as two lines of code.
 - 💪🏻 **Powerful**:

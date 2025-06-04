@@ -32,9 +32,9 @@ void main() {
     });
 
     tearDown(() async {
-      // Clean up
+      // Clean up properly
+      await OTel.shutdown();
       await meterProvider.shutdown();
-      await OTel.reset();
     });
 
     test('has correct properties', () {

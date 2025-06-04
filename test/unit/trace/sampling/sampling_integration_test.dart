@@ -18,6 +18,7 @@ void main() {
 
     // Ensure cleanup after each test
     tearDown(() async {
+      await OTel.shutdown();
       await OTel.reset();
       // Add a small delay to allow for proper cleanup
       await Future<void>.delayed(const Duration(milliseconds: 500));

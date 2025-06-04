@@ -32,7 +32,7 @@ void main() {
     });
 
     tearDown(() async {
-      await OTel.reset();
+      await OTel.shutdown();
     });
 
     test('Gauge sets current values correctly', () async {

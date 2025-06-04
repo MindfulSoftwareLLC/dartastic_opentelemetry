@@ -129,7 +129,7 @@ void main() {
         final retrievedBaggage = context.baggage;
         expect(retrievedBaggage, isA<Baggage>());
 
-        final entries = OTel.baggage().getAllEntries();
+        final entries = baggage.getAllEntries();
         entries.forEach((key, value) {
           final retrievedValue = retrievedBaggage!.getEntry(key);
           expect(retrievedValue, isNotNull,
@@ -150,8 +150,7 @@ void main() {
 
         final context1 =OTel.context(baggage: baggage1);
 
-        final context2 =
-            context1.copyWithBaggage(baggage2);
+        final context2 = context1.withBaggage(baggage2);
 
         print('Immutability test debug:');
         print('Context1 baggage: ${context1.baggage!.getAllEntries()}');

@@ -1,14 +1,13 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'dart:io' as io;
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/src/util/span_logger.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart' show LogFunction, LogLevel;
 import 'package:test/test.dart';
 
 void main() {
-  group('OTelEnv Tests', () {
+  group('OTelLog Environment Tests', () {
     // Save original log settings
     LogFunction? originalLogFunction;
     LogFunction? originalMetricLogFunction;
@@ -38,18 +37,9 @@ void main() {
       OTelLog.spanLogFunction = originalSpanLogFunction;
       OTelLog.exportLogFunction = originalExportLogFunction;
       OTelLog.currentLevel = originalLogLevel;
-      
-      // Clear test environment variables
-      unsetEnvVars();
     });
     
-    test('OTelEnv.initializeLogging enables logging based on environment variables', () {
-      // Set test environment variables
-      io.Platform.environment[OTelEnv.logLevelEnv] = 'debug';
-      io.Platform.environment[OTelEnv.enableMetricsLogEnv] = 'true';
-      io.Platform.environment[OTelEnv.enableSpansLogEnv] = 'yes';
-      io.Platform.environment[OTelEnv.enableExportLogEnv] = '1';
-      
+    test('OTelLog can configure logging programmatically', () {
       // Capture logs
       final List<String> logs = [];
       final List<String> metricLogs = [];
@@ -62,8 +52,8 @@ void main() {
       OTelLog.spanLogFunction = spanLogs.add;
       OTelLog.exportLogFunction = exportLogs.add;
       
-      // Initialize logging from environment
-      OTelEnv.initializeLogging();
+      // Set debug level
+      OTelLog.enableDebugLogging();
       
       // Verify log settings
       expect(OTelLog.currentLevel, equals(LogLevel.debug));
@@ -96,18 +86,24 @@ void main() {
       expect(exportLogs.first, contains('Test export message'));
     });
     
-    test('OTelEnv respects different log levels', () {
+    test('OTelLog respects different log levels', () {
       // Test different log levels
-      final logLevels = ['trace', 'debug', 'info', 'warn', 'error', 'fatal'];
+      final logLevels = [
+        LogLevel.trace,
+        LogLevel.debug,
+        LogLevel.info,
+        LogLevel.warn,
+        LogLevel.error,
+        LogLevel.fatal
+      ];
       
       for (final level in logLevels) {
         // Reset logs for each level
         final List<String> logs = [];
         OTelLog.logFunction = logs.add;
         
-        // Set environment variable and initialize
-        io.Platform.environment[OTelEnv.logLevelEnv] = level;
-        OTelEnv.initializeLogging();
+        // Set current level
+        OTelLog.currentLevel = level;
         
         // Generate test logs at all levels
         OTelLog.trace('Trace message');
@@ -119,30 +115,30 @@ void main() {
         
         // Verify logs were captured correctly per level
         switch (level) {
-          case 'trace':
+          case LogLevel.trace:
             expect(logs.length, equals(6));
             break;
-          case 'debug':
+          case LogLevel.debug:
             expect(logs.length, equals(5));
             expect(logs.any((log) => log.contains('Debug message')), isTrue);
             expect(logs.any((log) => log.contains('Trace message')), isFalse);
             break;
-          case 'info':
+          case LogLevel.info:
             expect(logs.length, equals(4));
             expect(logs.any((log) => log.contains('Info message')), isTrue);
             expect(logs.any((log) => log.contains('Debug message')), isFalse);
             break;
-          case 'warn':
+          case LogLevel.warn:
             expect(logs.length, equals(3));
             expect(logs.any((log) => log.contains('Warn message')), isTrue);
             expect(logs.any((log) => log.contains('Info message')), isFalse);
             break;
-          case 'error':
+          case LogLevel.error:
             expect(logs.length, equals(2));
             expect(logs.any((log) => log.contains('Error message')), isTrue);
             expect(logs.any((log) => log.contains('Warn message')), isFalse);
             break;
-          case 'fatal':
+          case LogLevel.fatal:
             expect(logs.length, equals(1));
             expect(logs.any((log) => log.contains('Fatal message')), isTrue);
             expect(logs.any((log) => log.contains('Error message')), isFalse);
@@ -151,39 +147,25 @@ void main() {
       }
     });
     
-    test('OTelEnv ignores unknown log levels', () {
-      // Set logging function
+    test('OTelLog can disable logging by setting null functions', () {
+      // Set logging function first
       bool logFunctionCalled = false;
       OTelLog.logFunction = (String message) {
         logFunctionCalled = true;
       };
       
-      // Set invalid log level
-      io.Platform.environment[OTelEnv.logLevelEnv] = 'invalid_level';
-      
-      // Initialize logging
-      OTelEnv.initializeLogging();
-      
-      // Verify log function wasn't affected
-      expect(OTelLog.logFunction, isNotNull);
-      
-      // Default level should be used
-      OTelLog.error('Test error message');
+      // Set debug level and try logging
+      OTelLog.enableDebugLogging();
+      OTelLog.debug('Test debug message');
       expect(logFunctionCalled, isTrue);
+      
+      // Now disable logging
+      logFunctionCalled = false;
+      OTelLog.logFunction = null;
+      
+      // Try logging again
+      OTelLog.debug('Test debug message 2');
+      expect(logFunctionCalled, isFalse);
     });
   });
-}
-
-/// Helper to unset environment variables used in tests
-void unsetEnvVars() {
-  // Clear test environment variables
-  try {
-    io.Platform.environment.remove(OTelEnv.logLevelEnv);
-    io.Platform.environment.remove(OTelEnv.enableMetricsLogEnv);
-    io.Platform.environment.remove(OTelEnv.enableSpansLogEnv);
-    io.Platform.environment.remove(OTelEnv.enableExportLogEnv);
-  } catch (e) {
-    // Platform.environment might be unmodifiable in some environments
-    // Just ignore the error in those cases
-  }
 }

@@ -2,7 +2,7 @@
 
 # Run all tests
 echo "Running all tests..."
-dart test test/**/*_test.dart
+dart test ./test/unit ./test/integration ./test/performance
 
 # Check exit code
 if [ $? -eq 0 ]; then

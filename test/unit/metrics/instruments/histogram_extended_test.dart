@@ -32,7 +32,7 @@ void main() {
     });
 
     tearDown(() async {
-      await OTel.reset();
+      await OTel.shutdown();
     });
 
     test('Histogram reports correct type properties', () {
@@ -211,10 +211,20 @@ void main() {
       histogram.record(15.0, attrs2);
       histogram.record(25.0, attrs2);
       
-      // Get values using getValue
-      expect(histogram.getValue(attrs1), equals(30.0)); // 10 + 20
-      expect(histogram.getValue(attrs2), equals(40.0)); // 15 + 25
-      expect(histogram.getValue(), equals(70.0)); // 10 + 20 + 15 + 25
+      // Get histogram values using getValue and extract sum
+      final histValue1 = histogram.getValue(attrs1);
+      final histValue2 = histogram.getValue(attrs2);
+      final histValueTotal = histogram.getValue();
+      
+      // Extract sums from histogram values
+      expect(histValue1.sum, equals(30.0)); // 10 + 20
+      expect(histValue2.sum, equals(40.0)); // 15 + 25
+      expect(histValueTotal.sum, equals(70.0)); // 10 + 20 + 15 + 25
+      
+      // Also verify counts
+      expect(histValue1.count, equals(2));
+      expect(histValue2.count, equals(2));
+      expect(histValueTotal.count, equals(4));
     });
 
     test('Histogram with recordWithMap', () async {

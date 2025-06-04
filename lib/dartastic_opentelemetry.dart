@@ -34,6 +34,7 @@ export 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
         HostResource,
         HttpResource,
         IdGenerator,
+        InstrumentationScope,
         InteractionSemantics,
         KubernetesResource,
         LifecycleState,

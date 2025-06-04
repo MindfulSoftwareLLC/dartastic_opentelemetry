@@ -50,7 +50,10 @@ class OTel {
   
   /// Default service name used if none is provided.
   static const defaultServiceName = "@dart/dartastic_opentelemetry";
-  
+
+  /// Default OTEL endpoint
+  static const defaultEndpoint = "http://localhost;4317";
+
   /// Default tracer name used if none is provided.
   static const String _defaultTracerName = 'dartastic';
   
@@ -58,7 +61,7 @@ class OTel {
   static String defaultTracerName = _defaultTracerName;
   
   /// Default tracer version.
-  static String? defaultTracerVersion;
+  static String defaultTracerVersion = "1.0.0";
 
   /// Initializes the OpenTelemetry SDK with the specified configuration.
   ///
@@ -125,7 +128,7 @@ class OTel {
     // Initialize with default sampler
     _defaultSampler = sampler;
     OTel.defaultTracerName = tracerName ?? _defaultTracerName;
-    OTel.defaultTracerVersion = tracerVersion;
+    OTel.defaultTracerVersion = tracerVersion ?? defaultTracerVersion;
     OTel.dartasticApiKey = dartasticApiKey;
     // Initialize logging from environment variables if needed
     initializeLogging();
@@ -316,8 +319,19 @@ class OTel {
   /// created by those tracers
   /// @param name Optional name of a specific TracerProvider
   /// @return The TracerProvider instance
-  static TracerProvider tracerProvider({String? name}) {
-    final tracerProvider = OTelAPI.tracerProvider(name) as TracerProvider;
+  static TracerProvider tracerProvider({String? name, String? endpoint, String? serviceName, String? serviceVersion }) {
+    _getAndCacheOtelFactory();
+
+    // If a name is provided, get the named provider from the API
+    if (name != null) {
+      final apiProvider = OTelAPI.tracerProvider(name) as TracerProvider;
+      // Ensure resource and sampler are set for named providers
+      apiProvider.resource ??= defaultResource;
+      apiProvider.sampler ??= _defaultSampler;
+      return apiProvider;
+    }
+
+    final tracerProvider = OTelFactory.otelFactory!.tracerProvider(endpoint: endpoint ?? OTel.defaultEndpoint, serviceName: serviceName ?? OTel.defaultServiceName, serviceVersion: serviceVersion ?? OTel.defaultTracerVersion) as TracerProvider;
 
     // Ensure the resource is properly set
     if (tracerProvider.resource == null && defaultResource != null) {
@@ -912,5 +926,17 @@ class OTel {
     if (OTelLog.isDebug()) OTelLog.debug('OTel: Reset complete');
   }
 
-
+  /// Creates a new InstrumentationScope.
+  ///
+  /// [name] is required and represents the instrumentation scope name (e.g. 'io.opentelemetry.contrib.mongodb')
+  /// [version] is optional and specifies the version of the instrumentation scope, defaults to '1.0.0'
+  /// [schemaUrl] is optional and specifies the Schema URL
+  /// [attributes] is optional and specifies instrumentation scope attributes
+  static InstrumentationScope instrumentationScope(
+      {required String name,
+        String version = '1.0.0',
+        String? schemaUrl,
+        Attributes? attributes}) {
+    return OTelAPI.instrumentationScope(name: name, version: version, schemaUrl: schemaUrl, attributes: attributes);
+  }
 }

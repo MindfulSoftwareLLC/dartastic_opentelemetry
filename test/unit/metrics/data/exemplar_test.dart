@@ -29,7 +29,7 @@ void main() {
   });
 
   tearDown(() async {
-    await OTel.reset();
+    await OTel.shutdown();
   });
 
   group('Exemplar tests', () {

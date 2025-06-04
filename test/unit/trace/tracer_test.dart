@@ -17,6 +17,7 @@ void main() {
     });
 
     tearDown(() async {
+      await OTel.shutdown();
       await tracerProvider.shutdown();
     });
 

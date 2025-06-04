@@ -7,9 +7,11 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
 /// A simple file-based SpanExporter for debugging purposes.
 /// This exporter writes spans directly to a file in JSON format.
+/// Each export call creates a separate batch in the JSON array.
 class TestFileExporter implements SpanExporter {
   final String _filePath;
   bool _isShutdown = false;
+  final List<List<Map<String, dynamic>>> _allBatches = [];
 
   TestFileExporter(this._filePath) {
     // Make sure directory exists
@@ -63,8 +65,18 @@ class TestFileExporter implements SpanExporter {
 
       if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Exporting ${spans.length} spans to $_filePath');
 
-      // Convert spans to simplified JSON - avoiding properties that might not be accessible
+      // Convert spans to simplified JSON format - handle attributes safely
       final jsonSpans = spans.map((span) {
+        Map<String, dynamic> attributesJson = {};
+        try {
+          // Try to get the attributes and convert to JSON
+          attributesJson = span.attributes.toJson();
+        } catch (e) {
+          print('TestFileExporter: Warning - could not serialize attributes for span ${span.name}: $e');
+          // Fallback to empty attributes
+          attributesJson = {};
+        }
+
         return {
           'name': span.name,
           'spanId': span.spanContext.spanId.toString(),
@@ -73,24 +85,32 @@ class TestFileExporter implements SpanExporter {
           'startTime': span.startTime.toIso8601String(),
           'endTime': span.endTime?.toIso8601String(),
           'status': span.status.toString(),
-          'attributes': span.attributes.toJson(),
+          'attributes': attributesJson,
           'isEnded': span.isEnded,
         };
       }).toList();
 
-      // Wrap spans in a batch array to match expected format: [[span1, span2, ...], ...]
-      final batchedSpans = [jsonSpans];
+      // Add this batch to our collection
+      _allBatches.add(jsonSpans);
 
-      // Write to file, appending new spans
-      final String newContent = '${jsonEncode(batchedSpans)}\n';
+      // Write all batches to file (overwriting previous content)
+      final String newContent = jsonEncode(_allBatches);
 
-      // Use sync operations to guarantee it gets written
-      file.writeAsStringSync(newContent, mode: FileMode.append, flush: true);
+      // Use synchronous operations to guarantee it gets written immediately
+      file.writeAsStringSync(newContent, flush: true);
 
       // Verify file was written
       final fileSize = file.lengthSync();
-      print('TestFileExporter: Wrote ${newContent.length} bytes to file. File size is now $fileSize bytes');
-      print('TestFileExporter: File path: ${file.absolute.path}');
+      print('TestFileExporter: Wrote ${newContent.length} characters to file. File size is now $fileSize bytes');
+      print('TestFileExporter: File absolute path: ${file.absolute.path}');
+
+      // Read back to verify it was written correctly
+      final readBack = file.readAsStringSync();
+      if (readBack.isNotEmpty && readBack.contains(spans.first.name)) {
+        print('TestFileExporter: Verified file write was successful - found span name in file');
+      } else {
+        print('TestFileExporter: WARNING - File write verification failed. Content: $readBack');
+      }
 
       if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Successfully exported ${spans.length} spans');
     } catch (e, stackTrace) {
@@ -98,6 +118,8 @@ class TestFileExporter implements SpanExporter {
         OTelLog.error('TestFileExporter: Failed to export spans: $e');
         OTelLog.error('Stack trace: $stackTrace');
       }
+      print('TestFileExporter: EXPORT ERROR: $e');
+      print('TestFileExporter: STACK TRACE: $stackTrace');
       rethrow;
     }
   }
@@ -106,6 +128,7 @@ class TestFileExporter implements SpanExporter {
   Future<void> forceFlush() async {
     // No buffering in this exporter, so nothing to flush
     if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Force flush requested (no-op)');
+    print('TestFileExporter: Force flush called');
   }
 
   @override
@@ -115,6 +138,7 @@ class TestFileExporter implements SpanExporter {
     }
 
     if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Shutting down');
+    print('TestFileExporter: Shutting down');
     _isShutdown = true;
     if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Shutdown complete');
   }

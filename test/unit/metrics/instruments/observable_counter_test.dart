@@ -25,9 +25,7 @@ void main() {
     });
 
     tearDown(() async {
-      // Clean up
-      await meterProvider.shutdown();
-      await OTel.reset();
+      await OTel.shutdown();
     });
 
     test('Simple ObservableCounter with single callback', () {
