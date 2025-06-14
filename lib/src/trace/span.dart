@@ -188,7 +188,7 @@ class Span implements APISpan {
     for (final processor in provider.spanProcessors) {
       processor.onNameUpdate(this, name);
     }
-    }
+  }
 
 
   @override
@@ -198,12 +198,50 @@ class Span implements APISpan {
   SpanContext? get parentSpanContext => _delegate.parentSpanContext;
 
 
-  @override
   String toString() {
-    return  _delegate.toString();
+    final indent = '  ';
+    final buffer = StringBuffer()
+      ..writeln('Span {')
+      ..writeln('$indent name: $name,')
+      ..writeln('$indent spanContext: $spanContext,')
+      ..writeln('$indent kind: $kind,')
+      ..writeln('$indent parentSpan: ${parentSpan?.spanContext ?? "none"},')
+      ..writeln('$indent instrumentationScope: $instrumentationScope,')
+      ..writeln('$indent startTime: $startTime,')
+      ..writeln('$indent endTime: $endTime,')
+      ..writeln('$indent status: $status,')
+      ..writeln('$indent statusDescription: $statusDescription,')
+      ..writeln('$indent attributes: $attributes,');
+
+    // Span Events
+    if (spanEvents?.isNotEmpty ?? false) {
+      buffer.writeln('$indent spanEvents: [');
+      for (final e in spanEvents!) {
+        buffer.writeln('$indent$indent$e,');
+      }
+      buffer.writeln('$indent ],');
+    } else {
+      buffer.writeln('$indent spanEvents: [],');
+    }
+
+    // Span Links
+    if (spanLinks?.isNotEmpty ?? false) {
+      buffer.writeln('$indent spanLinks: [');
+      for (final l in spanLinks!) {
+        buffer.writeln('$indent$indent$l,');
+      }
+      buffer.writeln('$indent ]');
+    } else {
+      buffer.writeln('$indent spanLinks: []');
+    }
+
+    buffer.writeln('}');
+    return buffer.toString();
   }
 
-  /// Returns whether this span context is valid
+
+
+/// Returns whether this span context is valid
   /// A span context is valid when it has a non-zero traceId and a non-zero spanId.
   @override
   bool get isValid => spanContext.isValid;

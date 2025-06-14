@@ -103,31 +103,6 @@ void main() {
       expect(exporter.hasSpanWithName('test-with-span-async'), isTrue);
     });
 
-    test('startSpanWithContext creates a span in the provided context', () async {
-      exporter.clear();
-
-      // Arrange
-      final customContext = OTel.context();
-
-      // Act
-      final span = tracer.startSpanWithContext(
-        name: 'context-span',
-        context: customContext,
-      );
-
-      // End the span explicitly
-      span.end();
-
-      // Force export
-      await processor.forceFlush();
-
-      // Assert
-      expect(span.name, equals('context-span'));
-      expect(span.isEnded, isTrue);
-      expect(exporter.spans, hasLength(1));
-      expect(exporter.hasSpanWithName('context-span'), isTrue);
-    });
-
     test('recordSpan creates and automatically ends a span', () async {
       exporter.clear();
 

@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.5] - 2025-06-14
+- prep for wondrous otel demo, upgrade to api 0.8.3, span toString 
+
 ## [0.8.4] - 2025-06-06
 - fix: Issue #3 - Fixed Metric generics for Histogram.
 - chore: All 445 tests pass, 12 ignored, 0 fail, no crashes, thoroughly applied OTel.shutdown in test tearDowns.

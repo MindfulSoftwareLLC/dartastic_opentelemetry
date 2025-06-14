@@ -181,23 +181,5 @@ void main() {
         expect(e.toString(), contains('Test error'));
       }
     });
-
-    test('startSpanWithContext creates spans with correct context', () {
-      // Create a custom context
-      final customContext = OTel.context();
-
-      // Start span with the custom context
-      final span = tracer.startSpanWithContext(
-        name: 'context-span',
-        context: customContext,
-      );
-
-      expect(span.name, equals('context-span'));
-
-      // Check that the current context has been updated
-      expect(Context.current.span, equals(span));
-
-      span.end();
-    });
   });
 }

@@ -147,7 +147,7 @@
     },
     {
       "name": "dartastic_opentelemetry_api",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/dartastic_opentelemetry_api-0.8.2",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/dartastic_opentelemetry_api-0.8.3",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
@@ -488,7 +488,7 @@
       "languageVersion": "3.0"
     }
   ],
-  "generated": "2025-06-07T00:29:24.617953Z",
+  "generated": "2025-06-14T23:22:33.502666Z",
   "generator": "pub",
   "generatorVersion": "3.7.2",
   "flutterRoot": "file:///Users/mbushe/dev/flutter",

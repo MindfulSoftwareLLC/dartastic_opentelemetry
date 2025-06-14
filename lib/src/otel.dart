@@ -319,20 +319,8 @@ class OTel {
   /// created by those tracers
   /// @param name Optional name of a specific TracerProvider
   /// @return The TracerProvider instance
-  static TracerProvider tracerProvider({String? name, String? endpoint, String? serviceName, String? serviceVersion }) {
-    _getAndCacheOtelFactory();
-
-    // If a name is provided, get the named provider from the API
-    if (name != null) {
-      final apiProvider = OTelAPI.tracerProvider(name) as TracerProvider;
-      // Ensure resource and sampler are set for named providers
-      apiProvider.resource ??= defaultResource;
-      apiProvider.sampler ??= _defaultSampler;
-      return apiProvider;
-    }
-
-    final tracerProvider = OTelFactory.otelFactory!.tracerProvider(endpoint: endpoint ?? OTel.defaultEndpoint, serviceName: serviceName ?? OTel.defaultServiceName, serviceVersion: serviceVersion ?? OTel.defaultTracerVersion) as TracerProvider;
-
+  static TracerProvider tracerProvider({String? name}) {
+    final tracerProvider = OTelAPI.tracerProvider(name) as TracerProvider;
     // Ensure the resource is properly set
     if (tracerProvider.resource == null && defaultResource != null) {
       tracerProvider.resource = defaultResource;

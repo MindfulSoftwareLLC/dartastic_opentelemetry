@@ -38,8 +38,8 @@ class MetricTransformer {
       metricProto.unit = metric.unit!;
     }
 
-    if (OTelLog.isLogExport()) {
-      OTelLog.logExport('MetricTransformer: Transforming metric ${metric.name} of type ${metric.type}');
+    if (OTelLog.isLogMetrics()) {
+      OTelLog.logMetric('MetricTransformer: Transforming metric ${metric.name} of type ${metric.type}');
     }
     
     // Set data based on metric type

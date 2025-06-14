@@ -103,8 +103,8 @@ class PeriodicExportingMetricReader extends MetricReader {
   @override
   Future<MetricData> collect() async {
     if (meterProvider == null) {
-      if (OTelLog.isLogExport()) {
-        OTelLog.logExport('PeriodicExportingMetricReader: No meter provider registered');
+      if (OTelLog.isLogMetrics()) {
+        OTelLog.logMetric('PeriodicExportingMetricReader: No meter provider registered');
       }
       // Return an empty container with no metrics
       return MetricData.empty();
@@ -116,8 +116,8 @@ class PeriodicExportingMetricReader extends MetricReader {
     // Collect metrics from all instruments in the meter provider
     final metrics = await sdkMeterProvider.collectAllMetrics();
 
-    if (OTelLog.isLogExport()) {
-      OTelLog.logExport('PeriodicExportingMetricReader: Collected ${metrics.length} metrics');
+    if (OTelLog.isLogMetrics()) {
+      OTelLog.logMetric('PeriodicExportingMetricReader: Collected ${metrics.length} metrics');
     }
 
     return MetricData(
