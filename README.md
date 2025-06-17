@@ -73,7 +73,7 @@ the Flutter experts with support from [SEMplicity, Inc.](https://semplicityinc.c
 Include this in your pubspec.yaml:
 ```
 dependencies:
-  dartastic_opentelemetry: ^0.8.3
+  dartastic_opentelemetry: ^0.8.6
 ```
 
 The entrypoint to the SDK is the `OTel` class.  `OTel` has static "factory" methods for all
@@ -100,13 +100,11 @@ void main() {
         // convention name for an attribute:
         // https://opentelemetry.io/docs/specs/semconv/
         //--dart-define environment=dev
-        '${DeploymentNames.deploymentEnvironmentName}: String.fromEnvironment('
-        environment
-        '),//See https://opentelemetry.io/docs/specs/semconv/resource/deployment-environment/
+        //See https://opentelemetry.io/docs/specs/semconv/resource/deployment-environment/
+        DeploymentNames.deploymentEnvironmentName.key: String.fromEnvironment('environment'),
         //--dart-define pod-name=powerful-dart-pod
-        '${DeploymentNames.k8sPodName}: String.fromEnvironment('
-        pod - name
-        '),//See https://opentelemetry.io/docs/specs/semconv/resource/#kubernetes
+        //See https://opentelemetry.io/docs/specs/semconv/resource/#kubernetes
+        DeploymentNames.k8sPodName.key: String.fromEnvironment('pod - name'),
       }
   );
 
