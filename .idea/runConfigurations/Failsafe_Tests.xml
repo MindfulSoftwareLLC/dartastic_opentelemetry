@@ -1,8 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Failsafe Tests" type="DartTestRunConfigurationType" factoryName="Dart Test">
-    <option name="filePath" value="$PROJECT_DIR$/test" />
-    <option name="scope" value="FOLDER" />
-    <option name="testRunnerOptions" value="--exclude-tags=fail --concurrency=1 --timeout=2x" />
-    <method v="2" />
-  </configuration>
-</component>

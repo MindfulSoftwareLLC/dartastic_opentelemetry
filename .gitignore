@@ -1,3 +1,5 @@
+.idea/
+.dart_tool
 /test/testing_utils/otelcol
 /.dart_tool/pub/bin/test/test.dart-3.7.0.snapshot
 /.dart_tool/test/incremental_kernel.Ly9AZGFydD0zLjA=
