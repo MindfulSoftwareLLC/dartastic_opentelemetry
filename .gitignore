@@ -4,5 +4,7 @@
 .DS_Store
 /pubspec.lock
 /test/testing_utils/otelcol
+/test/testing_utils/*.json
+/test/testing_utils/*.json.fallback
 /coverage/
 /test.txt

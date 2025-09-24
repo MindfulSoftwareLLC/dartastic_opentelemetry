@@ -45,7 +45,7 @@ There are many ways to contribute to this project:
 2. Make your changes
 3. Run tests to ensure everything works:
    ```bash
-   dart test
+   ./tool/test.sh
    ```
 4. Run the analyzer:
    ```bash
