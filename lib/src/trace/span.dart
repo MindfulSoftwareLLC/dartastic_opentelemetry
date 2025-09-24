@@ -198,6 +198,7 @@ class Span implements APISpan {
   SpanContext? get parentSpanContext => _delegate.parentSpanContext;
 
 
+  @override
   String toString() {
     final indent = '  ';
     final buffer = StringBuffer()
@@ -261,4 +262,46 @@ class Span implements APISpan {
   /// @param type The type to check against
   /// @return true if this object is an instance of the specified type, false otherwise
   bool isInstanceOf(Type type) => type == APISpan || runtimeType == type;
+
+  @override
+  void addAttributeString(String key, String value) {
+    _delegate.addAttributeString(key, value);
+  }
+
+  @override
+  void addAttributeStringList(String key, List<String> value) {
+    _delegate.addAttributeStringList(key, value);
+  }
+
+  @override
+  void addAttributeBool(String key, bool value) {
+    _delegate.addAttributeBool(key, value);
+  }
+
+  @override
+  void addAttributeBoolList(String key, List<bool> value) {
+    _delegate.addAttributeBoolList(key, value);
+  }
+
+  @override
+  void addAttributeInt(String key, int value) {
+    _delegate.addAttributeInt(key, value);
+  }
+
+  @override
+  void addAttributeIntList(String key, List<int> value) {
+    _delegate.addAttributeIntList(key, value);
+  }
+
+  @override
+  void addAttributeDouble(String key, double value) {
+    _delegate.addAttributeDouble(key, value);
+  }
+
+  @override
+  void addAttributeDoubleList(String key, List<double> value) {
+    _delegate.addAttributeDoubleList(key, value);
+  }
+
+
 }

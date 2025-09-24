@@ -147,7 +147,7 @@
     },
     {
       "name": "dartastic_opentelemetry_api",
-      "rootUri": "../../dartastic_opentelemetry_api",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/dartastic_opentelemetry_api-0.8.5",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },

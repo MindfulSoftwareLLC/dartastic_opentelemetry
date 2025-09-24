@@ -136,7 +136,8 @@ class Tracer implements APITracer {
     }
   }
 
-  @override
+  /// Starts a span with the given context instead of the current context
+  /// Sets the current span in the given context
   APISpan startSpanWithContext({
     required String name,
     required Context context,
@@ -351,7 +352,9 @@ class Tracer implements APITracer {
     return sdkSpan;
   }
 
-  @override
+  /// Convenience method that starts a span and runs function fn
+  /// on error, records the exception and sets status to SpanStatusCode.Error
+  /// ends the span, always
   T recordSpan<T>({
     required String name,
     required T Function() fn,
@@ -370,7 +373,10 @@ class Tracer implements APITracer {
     }
   }
 
-  @override
+  /// Convenience method thatstarts a span and runs function fn and
+  /// awaits its future
+  /// on error, records the exception and sets status to SpanStatusCode.Error
+  /// ends the span, always
   Future<T> recordSpanAsync<T>({
     required String name,
     required Future<T> Function() fn,
@@ -389,7 +395,7 @@ class Tracer implements APITracer {
     }
   }
 
-  @override
+  /// TODO - needs better doc.  Is recordSpan superfluous?
   T startActiveSpan<T>({
     required String name,
     required T Function(APISpan span) fn,
@@ -405,7 +411,7 @@ class Tracer implements APITracer {
     }
   }
 
-  @override
+  /// Same as startActiveSpan but awaits the future
   Future<T> startActiveSpanAsync<T>({
     required String name,
     required Future<T> Function(APISpan span) fn,
