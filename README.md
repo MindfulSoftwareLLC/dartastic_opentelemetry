@@ -147,7 +147,7 @@ void main() {
 ```
 
 Since dartastic_opentelemetry exports all the classes of `opentelemetry_api`, refer to
-`opentelemetry_api` for documenation of API classes.
+`opentelemetry_api` for documentation of API classes.
 
 See the `/example` folder for more examples.
 
