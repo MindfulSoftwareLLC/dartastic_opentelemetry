@@ -31,12 +31,14 @@
  - Flutter to WebViews with js otel
  - Flutter to desktop platforms
 
-# Navigation
+# Navigation (Flutterrific not Dartastic)
  - Move Go_Router to a separate package
- - Support Navigtor internally
+ - Support Navigator internally
  - auto_route
  - Other routers?
 
 ### Hardening
 
 - Saving unsent OTel data to disk
+
+span.recordExpection should take a stackTrace

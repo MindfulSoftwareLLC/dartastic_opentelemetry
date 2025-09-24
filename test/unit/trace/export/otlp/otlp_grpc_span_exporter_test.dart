@@ -180,6 +180,46 @@ class MockSpan implements Span {
   void setStringAttribute<T>(String name, String value) {
     // TODO: implement setStringAttribute
   }
+
+  @override
+  void addAttributeBool(String key, bool value) {
+    // TODO: implement addAttributeBool
+  }
+
+  @override
+  void addAttributeBoolList(String key, List<bool> value) {
+    // TODO: implement addAttributeBoolList
+  }
+
+  @override
+  void addAttributeDouble(String key, double value) {
+    // TODO: implement addAttributeDouble
+  }
+
+  @override
+  void addAttributeDoubleList(String key, List<double> value) {
+    // TODO: implement addAttributeDoubleList
+  }
+
+  @override
+  void addAttributeInt(String key, int value) {
+    // TODO: implement addAttributeInt
+  }
+
+  @override
+  void addAttributeIntList(String key, List<int> value) {
+    // TODO: implement addAttributeIntList
+  }
+
+  @override
+  void addAttributeString(String key, String value) {
+    // TODO: implement addAttributeString
+  }
+
+  @override
+  void addAttributeStringList(String key, List<String> value) {
+    // TODO: implement addAttributeStringList
+  }
 }
 
 // Helper function to create a test span

@@ -261,5 +261,4 @@ class Span implements APISpan {
   /// @param type The type to check against
   /// @return true if this object is an instance of the specified type, false otherwise
   bool isInstanceOf(Type type) => type == APISpan || runtimeType == type;
-
 }

@@ -45,9 +45,9 @@
     },
     {
       "name": "build",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/build-2.4.2",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/build-2.5.1",
       "packageUri": "lib/",
-      "languageVersion": "3.6"
+      "languageVersion": "3.7"
     },
     {
       "name": "build_config",
@@ -63,21 +63,21 @@
     },
     {
       "name": "build_resolvers",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/build_resolvers-2.4.4",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/build_resolvers-2.5.1",
       "packageUri": "lib/",
-      "languageVersion": "3.6"
+      "languageVersion": "3.7"
     },
     {
       "name": "build_runner",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/build_runner-2.4.15",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/build_runner-2.5.1",
       "packageUri": "lib/",
-      "languageVersion": "3.6"
+      "languageVersion": "3.7"
     },
     {
       "name": "build_runner_core",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/build_runner_core-8.0.0",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/build_runner_core-9.0.1",
       "packageUri": "lib/",
-      "languageVersion": "3.6"
+      "languageVersion": "3.7"
     },
     {
       "name": "built_collection",
@@ -87,7 +87,7 @@
     },
     {
       "name": "built_value",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/built_value-8.9.5",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/built_value-8.10.1",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
@@ -129,7 +129,7 @@
     },
     {
       "name": "coverage",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/coverage-1.13.1",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/coverage-1.14.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
@@ -141,13 +141,13 @@
     },
     {
       "name": "dart_style",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/dart_style-3.0.1",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/dart_style-3.1.0",
       "packageUri": "lib/",
-      "languageVersion": "3.4"
+      "languageVersion": "3.7"
     },
     {
       "name": "dartastic_opentelemetry_api",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/dartastic_opentelemetry_api-0.8.3",
+      "rootUri": "../../dartastic_opentelemetry_api",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
@@ -261,9 +261,9 @@
     },
     {
       "name": "meta",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/meta-1.16.0",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/meta-1.17.0",
       "packageUri": "lib/",
-      "languageVersion": "2.12"
+      "languageVersion": "3.5"
     },
     {
       "name": "mime",
@@ -411,19 +411,19 @@
     },
     {
       "name": "test",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/test-1.26.0",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/test-1.26.2",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "test_api",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/test_api-0.7.5",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/test_api-0.7.6",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "test_core",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/test_core-0.6.9",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/test_core-0.6.11",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
@@ -441,13 +441,13 @@
     },
     {
       "name": "vm_service",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/vm_service-15.0.0",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/vm_service-15.0.2",
       "packageUri": "lib/",
-      "languageVersion": "3.3"
+      "languageVersion": "3.5"
     },
     {
       "name": "watcher",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/watcher-1.1.1",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/watcher-1.1.2",
       "packageUri": "lib/",
       "languageVersion": "3.1"
     },
@@ -488,10 +488,9 @@
       "languageVersion": "3.0"
     }
   ],
-  "generated": "2025-06-17T21:07:41.672372Z",
   "generator": "pub",
-  "generatorVersion": "3.7.2",
+  "generatorVersion": "3.9.0-333.2.beta",
   "flutterRoot": "file:///Users/mbushe/dev/flutter",
-  "flutterVersion": "3.29.2",
+  "flutterVersion": "3.35.0-0.2.pre",
   "pubCache": "file:///Users/mbushe/.pub-cache"
 }
