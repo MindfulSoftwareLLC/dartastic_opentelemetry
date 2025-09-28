@@ -20,17 +20,25 @@ import 'package:protobuf/protobuf.dart' as $pb;
 /// values. It describes how those values relate to the time interval over
 /// which they are aggregated.
 class AggregationTemporality extends $pb.ProtobufEnum {
-  static const AggregationTemporality AGGREGATION_TEMPORALITY_UNSPECIFIED = AggregationTemporality._(0, _omitEnumNames ? '' : 'AGGREGATION_TEMPORALITY_UNSPECIFIED');
-  static const AggregationTemporality AGGREGATION_TEMPORALITY_DELTA = AggregationTemporality._(1, _omitEnumNames ? '' : 'AGGREGATION_TEMPORALITY_DELTA');
-  static const AggregationTemporality AGGREGATION_TEMPORALITY_CUMULATIVE = AggregationTemporality._(2, _omitEnumNames ? '' : 'AGGREGATION_TEMPORALITY_CUMULATIVE');
+  static const AggregationTemporality AGGREGATION_TEMPORALITY_UNSPECIFIED =
+      AggregationTemporality._(
+          0, _omitEnumNames ? '' : 'AGGREGATION_TEMPORALITY_UNSPECIFIED');
+  static const AggregationTemporality AGGREGATION_TEMPORALITY_DELTA =
+      AggregationTemporality._(
+          1, _omitEnumNames ? '' : 'AGGREGATION_TEMPORALITY_DELTA');
+  static const AggregationTemporality AGGREGATION_TEMPORALITY_CUMULATIVE =
+      AggregationTemporality._(
+          2, _omitEnumNames ? '' : 'AGGREGATION_TEMPORALITY_CUMULATIVE');
 
-  static const $core.List<AggregationTemporality> values = <AggregationTemporality> [
+  static const $core.List<AggregationTemporality> values =
+      <AggregationTemporality>[
     AGGREGATION_TEMPORALITY_UNSPECIFIED,
     AGGREGATION_TEMPORALITY_DELTA,
     AGGREGATION_TEMPORALITY_CUMULATIVE,
   ];
 
-  static final $core.Map<$core.int, AggregationTemporality> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static final $core.Map<$core.int, AggregationTemporality> _byValue =
+      $pb.ProtobufEnum.initByValue(values);
   static AggregationTemporality? valueOf($core.int value) => _byValue[value];
 
   const AggregationTemporality._($core.int v, $core.String n) : super(v, n);
@@ -43,19 +51,22 @@ class AggregationTemporality extends $pb.ProtobufEnum {
 ///
 ///    (point.flags & DATA_POINT_FLAGS_NO_RECORDED_VALUE_MASK) == DATA_POINT_FLAGS_NO_RECORDED_VALUE_MASK
 class DataPointFlags extends $pb.ProtobufEnum {
-  static const DataPointFlags DATA_POINT_FLAGS_DO_NOT_USE = DataPointFlags._(0, _omitEnumNames ? '' : 'DATA_POINT_FLAGS_DO_NOT_USE');
-  static const DataPointFlags DATA_POINT_FLAGS_NO_RECORDED_VALUE_MASK = DataPointFlags._(1, _omitEnumNames ? '' : 'DATA_POINT_FLAGS_NO_RECORDED_VALUE_MASK');
+  static const DataPointFlags DATA_POINT_FLAGS_DO_NOT_USE =
+      DataPointFlags._(0, _omitEnumNames ? '' : 'DATA_POINT_FLAGS_DO_NOT_USE');
+  static const DataPointFlags DATA_POINT_FLAGS_NO_RECORDED_VALUE_MASK =
+      DataPointFlags._(
+          1, _omitEnumNames ? '' : 'DATA_POINT_FLAGS_NO_RECORDED_VALUE_MASK');
 
-  static const $core.List<DataPointFlags> values = <DataPointFlags> [
+  static const $core.List<DataPointFlags> values = <DataPointFlags>[
     DATA_POINT_FLAGS_DO_NOT_USE,
     DATA_POINT_FLAGS_NO_RECORDED_VALUE_MASK,
   ];
 
-  static final $core.Map<$core.int, DataPointFlags> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static final $core.Map<$core.int, DataPointFlags> _byValue =
+      $pb.ProtobufEnum.initByValue(values);
   static DataPointFlags? valueOf($core.int value) => _byValue[value];
 
   const DataPointFlags._($core.int v, $core.String n) : super(v, n);
 }
-
 
 const _omitEnumNames = $core.bool.fromEnvironment('protobuf.omit_enum_names');

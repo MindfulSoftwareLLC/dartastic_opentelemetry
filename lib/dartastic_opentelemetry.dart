@@ -71,6 +71,7 @@ export 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
 
 export 'src/context/propagation/w3c_baggage_propagator.dart';
 export 'src/environment/environment_service.dart';
+export 'src/environment/otel_env.dart';
 export 'src/factory/otel_sdk_factory.dart';
 export 'src/metrics/data/exemplar.dart';
 export 'src/metrics/data/metric.dart';
@@ -130,4 +131,3 @@ export 'src/trace/span.dart';
 export 'src/trace/span_processor.dart';
 export 'src/trace/tracer.dart';
 export 'src/trace/tracer_provider.dart';
-export 'src/util/otel_env.dart';

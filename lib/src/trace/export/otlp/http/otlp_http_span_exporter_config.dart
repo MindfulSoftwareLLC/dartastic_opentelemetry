@@ -1,32 +1,37 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-
 /// Configuration for the OpenTelemetry span exporter that exports spans using OTLP over HTTP/protobuf
 class OtlpHttpExporterConfig {
   /// The endpoint to export spans to (e.g., 'http://localhost:4318/v1/traces')
   /// Default: 'http://localhost:4318'
   final String endpoint;
+
   /// Additional HTTP headers to include in the export requests
   final Map<String, String> headers;
+
   /// The timeout for export HTTP requests
   /// Default: 10 seconds
   final Duration timeout;
+
   /// Whether to use gzip compression for the HTTP body
   /// Default: false
   final bool compression;
+
   /// Maximum number of retries for failed export requests
   /// Default: 3
   final int maxRetries;
+
   /// Base delay for exponential backoff when retrying
   /// Default: 100 milliseconds
   final Duration baseDelay;
+
   /// Maximum delay for exponential backoff when retrying
   /// Default: 1 second
   final Duration maxDelay;
 
   /// Creates a new configuration for the OTLP HTTP span exporter
-  /// 
+  ///
   /// The endpoint must be a valid URL and will default to http://localhost:4318
   /// if not specified. The path '/v1/traces' will be appended if not already present.
   OtlpHttpExporterConfig({
@@ -37,12 +42,12 @@ class OtlpHttpExporterConfig {
     int maxRetries = 3,
     Duration baseDelay = const Duration(milliseconds: 100),
     Duration maxDelay = const Duration(seconds: 1),
-  }) : endpoint = _validateEndpoint(endpoint),
-       headers = _validateHeaders(headers ?? {}),
-       timeout = _validateTimeout(timeout),
-       maxRetries = _validateRetries(maxRetries),
-       baseDelay = _validateDelay(baseDelay, 'baseDelay'),
-       maxDelay = _validateDelay(maxDelay, 'maxDelay') {
+  })  : endpoint = _validateEndpoint(endpoint),
+        headers = _validateHeaders(headers ?? {}),
+        timeout = _validateTimeout(timeout),
+        maxRetries = _validateRetries(maxRetries),
+        baseDelay = _validateDelay(baseDelay, 'baseDelay'),
+        maxDelay = _validateDelay(maxDelay, 'maxDelay') {
     if (baseDelay.compareTo(maxDelay) > 0) {
       throw ArgumentError('maxDelay cannot be less than baseDelay');
     }
@@ -74,13 +79,16 @@ class OtlpHttpExporterConfig {
 
     // Ensure endpoint starts with http:// or https://
     final lcEndpoint = endpoint.toLowerCase();
-    if (!lcEndpoint.startsWith('http://') && !lcEndpoint.startsWith('https://')) {
+    if (!lcEndpoint.startsWith('http://') &&
+        !lcEndpoint.startsWith('https://')) {
       endpoint = 'http://$endpoint';
     }
 
     // Default port for OTLP/HTTP is 4318
-    if (lcEndpoint == 'http://localhost' || lcEndpoint == 'http://127.0.0.1' ||
-        lcEndpoint == 'https://localhost' || lcEndpoint == 'https://127.0.0.1') {
+    if (lcEndpoint == 'http://localhost' ||
+        lcEndpoint == 'http://127.0.0.1' ||
+        lcEndpoint == 'https://localhost' ||
+        lcEndpoint == 'https://127.0.0.1') {
       return '$endpoint:4318';
     }
 
@@ -104,7 +112,8 @@ class OtlpHttpExporterConfig {
   }
 
   static Duration _validateTimeout(Duration timeout) {
-    if (timeout < const Duration(milliseconds: 1) || timeout > const Duration(minutes: 10)) {
+    if (timeout < const Duration(milliseconds: 1) ||
+        timeout > const Duration(minutes: 10)) {
       throw ArgumentError('Timeout must be between 1ms and 10 minutes');
     }
     return timeout;
@@ -118,7 +127,8 @@ class OtlpHttpExporterConfig {
   }
 
   static Duration _validateDelay(Duration delay, String name) {
-    if (delay < const Duration(milliseconds: 1) || delay > const Duration(minutes: 5)) {
+    if (delay < const Duration(milliseconds: 1) ||
+        delay > const Duration(minutes: 5)) {
       throw ArgumentError('$name must be between 1ms and 5 minutes');
     }
     return delay;

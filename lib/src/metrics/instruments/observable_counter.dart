@@ -10,7 +10,8 @@ import '../../../dartastic_opentelemetry.dart';
 /// An ObservableCounter is used to measure monotonically increasing values
 /// where measurements are made by a callback function. For example, CPU time,
 /// bytes received, or number of operations.
-class ObservableCounter<T extends num> implements APIObservableCounter<T>, SDKInstrument {
+class ObservableCounter<T extends num>
+    implements APIObservableCounter<T>, SDKInstrument {
   /// The underlying API ObservableCounter.
   final APIObservableCounter<T> _apiCounter;
 
@@ -27,8 +28,8 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, SDKIn
   ObservableCounter({
     required APIObservableCounter<T> apiCounter,
     required Meter meter,
-  }) : _apiCounter = apiCounter,
-       _meter = meter;
+  })  : _apiCounter = apiCounter,
+        _meter = meter;
 
   @override
   String get name => _apiCounter.name;
@@ -76,7 +77,9 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, SDKIn
 
     if (attributes == null) {
       // For no attributes, sum all points
-      value = _storage.collectPoints().fold<num>(0, (sum, point) => sum + point.value);
+      value = _storage
+          .collectPoints()
+          .fold<num>(0, (sum, point) => sum + point.value);
     } else {
       // For specific attributes, get that value
       value = _storage.getValue(attributes);
@@ -128,11 +131,15 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, SDKIn
         for (final measurement in observableResult.measurements) {
           // Type checking for the generic parameter
           final dynamic rawValue = measurement.value;
-          final num value = (rawValue is num) ? rawValue : num.tryParse(rawValue.toString()) ?? 0;
-          final attributes = measurement.attributes ?? OTelFactory.otelFactory!.attributes();
+          final num value = (rawValue is num)
+              ? rawValue
+              : num.tryParse(rawValue.toString()) ?? 0;
+          final attributes =
+              measurement.attributes ?? OTelFactory.otelFactory!.attributes();
 
           // Check for monotonicity - current value should be >= last value
-          final T lastValue = (_lastValues[attributes] ?? (T == int ? 0 : 0.0)) as T;
+          final T lastValue =
+              (_lastValues[attributes] ?? (T == int ? 0 : 0.0)) as T;
 
           // If value decreased, it indicates a counter reset
           if (value < lastValue) {
@@ -181,7 +188,8 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, SDKIn
           }
         }
       } catch (e) {
-        print('Error collecting measurements from ObservableCounter callback: $e');
+        print(
+            'Error collecting measurements from ObservableCounter callback: $e');
       }
     }
 
@@ -211,7 +219,7 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, SDKIn
         unit: unit,
         temporality: AggregationTemporality.cumulative,
         points: points,
-        isMonotonic: true,  // Counters are monotonic
+        isMonotonic: true, // Counters are monotonic
       )
     ];
   }
@@ -235,7 +243,8 @@ class ObservableCounter<T extends num> implements APIObservableCounter<T>, SDKIn
 }
 
 /// Wrapper for APICallbackRegistration that also handles our internal state.
-class _ObservableCounterCallbackRegistration<T extends num> implements APICallbackRegistration<T> {
+class _ObservableCounterCallbackRegistration<T extends num>
+    implements APICallbackRegistration<T> {
   /// The API registration.
   final APICallbackRegistration<T> apiRegistration;
 

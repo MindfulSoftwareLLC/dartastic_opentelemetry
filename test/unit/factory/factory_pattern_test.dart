@@ -112,7 +112,8 @@ void main() {
       OTel.initialize(serviceName: 'valid-service');
 
       // Test double initialization
-      expect(() => OTel.initialize(serviceName: 'another-service'), throwsStateError);
+      expect(() => OTel.initialize(serviceName: 'another-service'),
+          throwsStateError);
     });
 
     test('Resource creation through factory', () {
@@ -128,7 +129,8 @@ void main() {
       final resource = OTel.resource(attrs);
 
       expect(resource, isNotNull);
-      expect(resource.attributes.getString('service.name'), equals('my-service'));
+      expect(
+          resource.attributes.getString('service.name'), equals('my-service'));
       expect(resource.attributes.getString('service.version'), equals('1.0.0'));
     });
 

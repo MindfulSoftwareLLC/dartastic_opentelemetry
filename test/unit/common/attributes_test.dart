@@ -45,10 +45,12 @@ void main() {
 
       // Verify map lookups work as expected
       expect(map.containsKey(attrs1), isTrue);
-      expect(map.containsKey(attrs2), isTrue, reason: 'Same content but different instances should be equal');
+      expect(map.containsKey(attrs2), isTrue,
+          reason: 'Same content but different instances should be equal');
       expect(map.containsKey(attrs3), isFalse);
       expect(map[attrs1], equals('value1'));
-      expect(map[attrs2], equals('value1'), reason: 'Should retrieve value with equivalent key');
+      expect(map[attrs2], equals('value1'),
+          reason: 'Should retrieve value with equivalent key');
     });
 
     test('Empty attributes equality', () {

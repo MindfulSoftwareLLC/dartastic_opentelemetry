@@ -46,7 +46,8 @@ void main() {
       expect(result.attributes, isNull);
     });
 
-    test('shouldSample returns recordAndSample decision with null parameters', () {
+    test('shouldSample returns recordAndSample decision with null parameters',
+        () {
       // Call shouldSample with null for optional parameters
       final result = sampler.shouldSample(
         parentContext: OTelAPI.context(),

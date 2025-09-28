@@ -16,11 +16,11 @@ class RealCollector {
   int get getPort => port;
 
   RealCollector({
-    this.port = 4316,  // Use non-standard port by default
+    this.port = 4316, // Use non-standard port by default
     required String configPath,
     required String outputPath,
-  }) : _configPath = configPath,
-       _outputPath = outputPath;
+  })  : _configPath = configPath,
+        _outputPath = outputPath;
 
   /// Start the collector
   Future<void> start() async {
@@ -41,8 +41,7 @@ class RealCollector {
     // Verify the binary exists and has execute permissions
     final collectorFile = File(execPath);
     if (!collectorFile.existsSync()) {
-      throw StateError(
-          'OpenTelemetry Collector not found at $execPath');
+      throw StateError('OpenTelemetry Collector not found at $execPath');
     }
 
     // Make sure it's executable
@@ -58,9 +57,11 @@ class RealCollector {
     }
 
     // Create temporary config file with port substitution
-    final tempConfigPath = '${Directory.current.path}/test/testing_utils/otelcol-config-$port.yaml';
+    final tempConfigPath =
+        '${Directory.current.path}/test/testing_utils/otelcol-config-$port.yaml';
     final configContent = await File(_configPath).readAsString();
-    final updatedConfig = configContent.replaceAll('127.0.0.1:4316', '127.0.0.1:$port');
+    final updatedConfig =
+        configContent.replaceAll('127.0.0.1:4316', '127.0.0.1:$port');
     await File(tempConfigPath).writeAsString(updatedConfig);
 
     // Start collector with our config
@@ -85,7 +86,8 @@ class RealCollector {
     _process!.stdout.transform(utf8.decoder).listen((line) {
       print('Collector stdout: $line');
       if (line.contains('invalid configuration')) {
-        readyCompleter.completeError(Exception('Collector config error: $line'));
+        readyCompleter
+            .completeError(Exception('Collector config error: $line'));
       }
       if (line.contains('Everything is ready') && !hasServiceStarted) {
         hasServiceStarted = true;
@@ -148,7 +150,8 @@ class RealCollector {
         bool isRunning = true;
         try {
           // Check if process has already exited
-          final exitCode = await _process!.exitCode.timeout(const Duration(milliseconds: 100));
+          final exitCode = await _process!.exitCode
+              .timeout(const Duration(milliseconds: 100));
           print('Collector exited with code: $exitCode');
           isRunning = false;
         } catch (e) {
@@ -196,7 +199,8 @@ class RealCollector {
       final result = await Process.run('lsof', ['-i', ':$port']);
       if (result.stdout.toString().isNotEmpty) {
         final lines = result.stdout.toString().split('\n');
-        for (var line in lines.skip(1)) { // Skip header line
+        for (var line in lines.skip(1)) {
+          // Skip header line
           final parts = line.trim().split(RegExp(r'\s+'));
           if (parts.length >= 2) {
             final pid = parts[1];
@@ -263,8 +267,10 @@ class RealCollector {
           // Extract spans from OTLP format
           if (data.containsKey('resourceSpans')) {
             for (final resourceSpan in data['resourceSpans'] as List) {
-              final resource = resourceSpan['resource'] as Map<String, dynamic>?;
-              final resourceAttrs = _parseAttributes(resource?['attributes'] as List?);
+              final resource =
+                  resourceSpan['resource'] as Map<String, dynamic>?;
+              final resourceAttrs =
+                  _parseAttributes(resource?['attributes'] as List?);
 
               for (final scopeSpans in resourceSpan['scopeSpans'] as List) {
                 for (final span in scopeSpans['spans'] as List) {
@@ -338,7 +344,8 @@ class RealCollector {
         }
         print('  Parsed as bool: ${result[key]}');
       } else {
-        print('  No value found for attribute $key, keys: ${valueMap.keys.join(', ')}');
+        print(
+            '  No value found for attribute $key, keys: ${valueMap.keys.join(', ')}');
       }
     }
 
@@ -387,16 +394,19 @@ class RealCollector {
         if (size > 0) {
           // File has content but we couldn't parse spans, try to read it directly
           final content = await file.readAsString();
-          if (content.length < 1000) { // Only print if not too large
+          if (content.length < 1000) {
+            // Only print if not too large
             print('Output file content: $content');
           } else {
-            print('Output file content is too large to print (${content.length} bytes)');
+            print(
+                'Output file content is too large to print (${content.length} bytes)');
           }
         }
 
         // If file exists but is empty after multiple attempts, it might be an issue with collector
         if (size == 0 && attempts > 3) {
-          print('Output file is empty after multiple attempts, checking collector status...');
+          print(
+              'Output file is empty after multiple attempts, checking collector status...');
           // Check if collector is still running
           bool isRunning = _process != null;
           if (isRunning) {
@@ -440,7 +450,8 @@ class RealCollector {
             print('Collector process is not running, restarting...');
             try {
               await stop(); // Ensure clean stop first
-              await Future<void>.delayed(const Duration(milliseconds: 500)); // Wait for resources to be freed
+              await Future<void>.delayed(const Duration(
+                  milliseconds: 500)); // Wait for resources to be freed
               await start();
               // Make sure the file is cleared after restart
               // ignore: avoid_slow_async_io
@@ -455,15 +466,15 @@ class RealCollector {
       }
 
       // Gradually increase delay between attempts but keep it reasonable
-      final delayMs = 250 * (1 << (attempts ~/ 3).clamp(0, 4)); // Max ~4 seconds between attempts
+      final delayMs = 250 *
+          (1 << (attempts ~/ 3).clamp(0, 4)); // Max ~4 seconds between attempts
       await Future<void>.delayed(Duration(milliseconds: delayMs));
     }
 
     // Final attempt to read spans
     final spans = await getSpans();
-    throw TimeoutException(
-      'Timed out waiting for $count spans. '
-      'Found ${spans.length} spans: ${spans.map((s) => s['name']).toList()}');
+    throw TimeoutException('Timed out waiting for $count spans. '
+        'Found ${spans.length} spans: ${spans.map((s) => s['name']).toList()}');
   }
 
   /// Assert that a span matching the given criteria exists
@@ -480,7 +491,8 @@ class RealCollector {
       final spanAttrs = _parseAttributes(span['attributes'] as List?);
       final resourceAttrs = span['resourceAttributes'] as Map<String, dynamic>?;
       final allAttrs = {...?resourceAttrs, ...spanAttrs};
-      print('Found span: ${span['name']}, spanId: ${span['spanId']}, traceId: ${span['traceId']}');
+      print(
+          'Found span: ${span['name']}, spanId: ${span['spanId']}, traceId: ${span['traceId']}');
       print('  Attributes: $allAttrs');
 
       // Log the raw attribute structure for debugging
@@ -490,7 +502,7 @@ class RealCollector {
       if (attributes != null) {
         print('  Expected attribute keys: ${attributes.keys.join(', ')}');
         print('  Actual attribute keys: ${allAttrs.keys.join(', ')}');
-        
+
         // Check for missing keys
         for (final key in attributes.keys) {
           if (!allAttrs.containsKey(key)) {
@@ -499,15 +511,17 @@ class RealCollector {
         }
       }
     }
-    
+
     // For more reliable span matching, try to find the first span when expecting a name
     if (name != null && spans.isNotEmpty && spans.length == 1) {
-      print('Single span found with name: ${spans[0]['name']}, expected: $name');
+      print(
+          'Single span found with name: ${spans[0]['name']}, expected: $name');
     }
 
     final matching = spans.where((span) {
       if (name != null && span['name'] != name) {
-        print('Span ${span['spanId']} has name "${span['name']}" which doesn\'t match expected "$name"');
+        print(
+            'Span ${span['spanId']} has name "${span['name']}" which doesn\'t match expected "$name"');
         return false;
       }
       if (traceId != null && span['traceId'] != traceId) return false;
@@ -516,7 +530,8 @@ class RealCollector {
       if (attributes != null) {
         // Check both span attributes and resource attributes
         final spanAttrs = _parseAttributes(span['attributes'] as List?);
-        final resourceAttrs = span['resourceAttributes'] as Map<String, dynamic>?;
+        final resourceAttrs =
+            span['resourceAttributes'] as Map<String, dynamic>?;
         final allAttrs = {...?resourceAttrs, ...spanAttrs};
 
         for (final entry in attributes.entries) {
@@ -524,12 +539,14 @@ class RealCollector {
           final actualValue = allAttrs[entry.key];
 
           if (actualValue == null) {
-            print('Attribute ${entry.key} is missing. Expected: $expectedValue');
+            print(
+                'Attribute ${entry.key} is missing. Expected: $expectedValue');
             return false;
           }
 
           // Log types for debugging
-          print('Comparing ${entry.key}: expected=$expectedValue (${expectedValue.runtimeType}), actual=$actualValue (${actualValue.runtimeType})');
+          print(
+              'Comparing ${entry.key}: expected=$expectedValue (${expectedValue.runtimeType}), actual=$actualValue (${actualValue.runtimeType})');
 
           // Perform appropriate comparison based on types
           bool match = false;
@@ -548,7 +565,8 @@ class RealCollector {
           }
 
           if (!match) {
-            print('Attribute mismatch for ${entry.key}: expected $expectedValue (${expectedValue.runtimeType}), got $actualValue (${actualValue.runtimeType})');
+            print(
+                'Attribute mismatch for ${entry.key}: expected $expectedValue (${expectedValue.runtimeType}), got $actualValue (${actualValue.runtimeType})');
             return false;
           }
         }
@@ -564,7 +582,7 @@ class RealCollector {
         throw StateError(
             // ignore: prefer_adjacent_string_concatenation
             'No matching span found with name "$name". Found span named "$actualName" instead. ' +
-            'Consider updating the test to use the correct span name.');
+                'Consider updating the test to use the correct span name.');
       }
 
       final criteria = <String, dynamic>{

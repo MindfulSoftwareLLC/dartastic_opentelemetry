@@ -23,7 +23,8 @@ void main() {
     });
 
     test('NoopMeter creates NoopCounter', () {
-      final counter = noopMeter.createCounter<int>(name: 'test_counter', unit: 'ms', description: 'Test counter');
+      final counter = noopMeter.createCounter<int>(
+          name: 'test_counter', unit: 'ms', description: 'Test counter');
 
       expect(counter, isA<NoopCounter<int>>());
       expect(counter.name, equals('test_counter'));
@@ -44,7 +45,10 @@ void main() {
     });
 
     test('NoopMeter creates NoopUpDownCounter', () {
-      final counter = noopMeter.createUpDownCounter<int>(name: 'test_up_down', unit: 'bytes', description: 'Test up-down counter');
+      final counter = noopMeter.createUpDownCounter<int>(
+          name: 'test_up_down',
+          unit: 'bytes',
+          description: 'Test up-down counter');
 
       expect(counter, isA<NoopUpDownCounter<int>>());
       expect(counter.name, equals('test_up_down'));
@@ -93,7 +97,8 @@ void main() {
     });
 
     test('NoopMeter creates NoopGauge', () {
-      final gauge = noopMeter.createGauge<double>(name: 'test_gauge', unit: 'celsius', description: 'Test gauge');
+      final gauge = noopMeter.createGauge<double>(
+          name: 'test_gauge', unit: 'celsius', description: 'Test gauge');
 
       expect(gauge, isA<NoopGauge<double>>());
       expect(gauge.name, equals('test_gauge'));
@@ -227,10 +232,15 @@ void main() {
       expect(measurements, isEmpty);
     });
 
-    test('_NoopCallbackRegistration correctly unregisters from different instrument types', () {
-      final obsCounter = noopMeter.createObservableCounter<int>(name: 'test_counter');
-      final obsUpDown = noopMeter.createObservableUpDownCounter<int>(name: 'test_up_down');
-      final obsGauge = noopMeter.createObservableGauge<double>(name: 'test_gauge');
+    test(
+        '_NoopCallbackRegistration correctly unregisters from different instrument types',
+        () {
+      final obsCounter =
+          noopMeter.createObservableCounter<int>(name: 'test_counter');
+      final obsUpDown =
+          noopMeter.createObservableUpDownCounter<int>(name: 'test_up_down');
+      final obsGauge =
+          noopMeter.createObservableGauge<double>(name: 'test_gauge');
 
       // Add and verify callbacks
       final reg1 = obsCounter.addCallback((result) => result.observe(1));

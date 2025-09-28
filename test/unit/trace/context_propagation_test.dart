@@ -26,14 +26,14 @@ void main() {
       );
 
       tracerProvider = OTel.tracerProvider();
-      
+
       // Create in-memory exporter and processor
       exporter = InMemorySpanExporter();
       processor = SimpleSpanProcessor(exporter);
-      
+
       // Add the processor to capture spans
       tracerProvider.addSpanProcessor(processor);
-      
+
       tracer = tracerProvider.getTracer('test-context-tracer');
     });
 
@@ -58,7 +58,7 @@ void main() {
         'attributed-span-test',
         attributes: attributes,
       );
-      
+
       // End the span to trigger export
       span.end();
 
@@ -67,10 +67,10 @@ void main() {
 
       // Verify span was captured
       expect(exporter.spans, hasLength(1));
-      
+
       final exportedSpan = exporter.spans.first;
       expect(exportedSpan.name, equals('attributed-span-test'));
-      
+
       // Verify attributes
       final spanAttrs = exportedSpan.attributes;
       expect(spanAttrs.getString('test.key'), equals('test-value'));
@@ -196,7 +196,8 @@ void main() {
 
       // Verify all spans were captured
       expect(exporter.spans, hasLength(3));
-      expect(exporter.spanNames, containsAll(['root-span', 'child-span', 'grandchild-span']));
+      expect(exporter.spanNames,
+          containsAll(['root-span', 'child-span', 'grandchild-span']));
 
       final rootExported = exporter.findSpanByName('root-span')!;
       final childExported = exporter.findSpanByName('child-span')!;
@@ -209,10 +210,10 @@ void main() {
 
       // Verify parent relationships
       expect(rootExported.parentSpanContext, isNull);
-      expect(childExported.parentSpanContext!.spanId, 
-             equals(rootExported.spanContext.spanId));
-      expect(grandchildExported.parentSpanContext!.spanId, 
-             equals(childExported.spanContext.spanId));
+      expect(childExported.parentSpanContext!.spanId,
+          equals(rootExported.spanContext.spanId));
+      expect(grandchildExported.parentSpanContext!.spanId,
+          equals(childExported.spanContext.spanId));
     });
 
     test('context attributes inheritance', () async {
@@ -243,8 +244,10 @@ void main() {
       final childExported = exporter.findSpanByName('child-with-attrs')!;
 
       // Verify each span has its own attributes
-      expect(parentExported.attributes.getString('parent.key'), equals('parent.value'));
-      expect(childExported.attributes.getString('child.key'), equals('child.value'));
+      expect(parentExported.attributes.getString('parent.key'),
+          equals('parent.value'));
+      expect(childExported.attributes.getString('child.key'),
+          equals('child.value'));
 
       // Verify child doesn't inherit parent's attributes (this is correct behavior)
       expect(childExported.attributes.getString('parent.key'), isNull);
@@ -277,10 +280,10 @@ void main() {
       final childExported = exporter.findSpanByName('async-child')!;
 
       // Verify relationship maintained across async boundary
-      expect(childExported.parentSpanContext!.spanId, 
-             equals(parentExported.spanContext.spanId));
-      expect(childExported.spanContext.traceId, 
-             equals(parentExported.spanContext.traceId));
+      expect(childExported.parentSpanContext!.spanId,
+          equals(parentExported.spanContext.spanId));
+      expect(childExported.spanContext.traceId,
+          equals(parentExported.spanContext.traceId));
     });
   });
 }

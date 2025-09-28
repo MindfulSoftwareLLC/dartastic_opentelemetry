@@ -114,7 +114,7 @@ void main() {
     test('addSpanProcessor adds processors to list', () {
       // Get the initial count (there might be default processors from OTel.initialize)
       final initialCount = tracerProvider.spanProcessors.length;
-      
+
       // Add another processor
       final mockProcessor3 = MockSpanProcessor();
       tracerProvider.addSpanProcessor(mockProcessor3);
@@ -251,12 +251,14 @@ void main() {
       await tracerProvider.shutdown();
 
       // Trying to add a processor should throw
-      expect(() => tracerProvider.addSpanProcessor(MockSpanProcessor()), throwsStateError);
+      expect(() => tracerProvider.addSpanProcessor(MockSpanProcessor()),
+          throwsStateError);
     });
 
     test('resource can be set and retrieved', () {
-      final newResource = OTel.resource({'custom.key': 'custom.value'}.toAttributes());
-      
+      final newResource =
+          OTel.resource({'custom.key': 'custom.value'}.toAttributes());
+
       tracerProvider.resource = newResource;
       expect(tracerProvider.resource, equals(newResource));
     });

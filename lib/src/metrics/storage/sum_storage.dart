@@ -52,7 +52,7 @@ class SumStorage<T extends num> extends NumericStorage<T> {
     // Check constraints for monotonic counters
     if (isMonotonic && value < 0) {
       print('Warning: Negative value $value provided to monotonic sum storage. '
-            'This will be ignored.');
+          'This will be ignored.');
       return;
     }
 
@@ -78,7 +78,7 @@ class SumStorage<T extends num> extends NumericStorage<T> {
   @override
   T getValue([Attributes? attributes]) {
     num result;
-    
+
     if (attributes == null) {
       // Sum of all values across all attribute sets
       result = _points.values.fold<num>(0, (sum, data) => sum + data.value);
@@ -89,7 +89,7 @@ class SumStorage<T extends num> extends NumericStorage<T> {
       // No entry for these attributes
       result = 0;
     }
-    
+
     // Convert to the appropriate generic type
     if (T == int) {
       return result.toInt() as T;
@@ -113,7 +113,7 @@ class SumStorage<T extends num> extends NumericStorage<T> {
     return _points.entries.map((entry) {
       // Convert null attributes to empty attributes for MetricPoint
       final attributes = entry.key ?? OTelFactory.otelFactory!.attributes();
-      
+
       // Convert numeric value to the specific generic type T
       final T typedValue;
       if (T == int) {
@@ -123,7 +123,7 @@ class SumStorage<T extends num> extends NumericStorage<T> {
       } else {
         typedValue = entry.value.value;
       }
-      
+
       return MetricPoint<T>.sum(
         attributes: attributes,
         startTime: _startTime,
@@ -195,10 +195,10 @@ class _SumPointData<T extends num> {
     } else {
       value = (value + delta) as T;
     }
-    
+
     lastUpdateTime = DateTime.now();
   }
-  
+
   /// Sets the value directly (for asynchronous counters).
   ///
   /// @param newValue The new absolute value to set
@@ -206,7 +206,7 @@ class _SumPointData<T extends num> {
     value = newValue;
     lastUpdateTime = DateTime.now();
   }
-  
+
   @override
   String toString() => 'SumPointData(value: $value)';
 }

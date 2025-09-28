@@ -58,7 +58,7 @@ void main() {
         // First shutdown our custom processor
         await processor.shutdown();
         await fileExporter.shutdown();
-        
+
         // Then shutdown OTel
         await OTel.shutdown();
       } catch (e) {
@@ -103,7 +103,8 @@ void main() {
 
       // Verify the file has content
       final fileContent = await File(outputPath).readAsString();
-      print('File content after export (length=${fileContent.length}): $fileContent');
+      print(
+          'File content after export (length=${fileContent.length}): $fileContent');
 
       // Basic sanity check - the file should contain our span name
       expect(fileContent.contains('direct-test-span'), isTrue);
@@ -172,7 +173,8 @@ void main() {
 
       // Verify span was exported
       final fileContent = await File(outputPath).readAsString();
-      print('recordSpan file content (length=${fileContent.length}): $fileContent');
+      print(
+          'recordSpan file content (length=${fileContent.length}): $fileContent');
 
       expect(fileContent.contains('record-span-test'), isTrue);
 
@@ -213,13 +215,14 @@ void main() {
       print('Flushing after multiple spans...');
       await tracerProvider.forceFlush();
       await processor.forceFlush();
-      
+
       // Give extra time for file operations
       await Future<void>.delayed(const Duration(milliseconds: 300));
 
       // Verify spans were exported
       final fileContent = await File(outputPath).readAsString();
-      print('Multiple spans file content (length=${fileContent.length}): $fileContent');
+      print(
+          'Multiple spans file content (length=${fileContent.length}): $fileContent');
 
       expect(fileContent, isNotEmpty);
 
@@ -254,7 +257,8 @@ void main() {
           final expectedSpanName = 'multi-span-$i';
           final matchingSpan = allSpans.firstWhere(
             (span) => span['name'] == expectedSpanName,
-            orElse: () => throw StateError('Span $expectedSpanName not found in: ${allSpans.map((s) => s['name']).toList()}'),
+            orElse: () => throw StateError(
+                'Span $expectedSpanName not found in: ${allSpans.map((s) => s['name']).toList()}'),
           );
 
           expect(matchingSpan['attributes']['span.index'], equals(i));

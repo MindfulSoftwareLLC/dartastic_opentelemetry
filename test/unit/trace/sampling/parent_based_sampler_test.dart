@@ -81,7 +81,7 @@ void main() {
       // Create a context with a remote not-sampled parent
       final spanContext = OTel.spanContext(
         traceId: OTel.traceIdFrom('00000000000000000000000000000001'),
-        spanId:  OTel.spanIdFrom('0000000000000001'),
+        spanId: OTel.spanIdFrom('0000000000000001'),
         traceFlags: OTel.traceFlags(0),
         // Not sampled
         traceState: OTel.traceState({}),
@@ -107,7 +107,7 @@ void main() {
       // Create a context with a local sampled parent
       final spanContext = OTel.spanContext(
         traceId: OTel.traceIdFrom('00000000000000000000000000000001'),
-        spanId:  OTel.spanIdFrom('0000000000000001'),
+        spanId: OTel.spanIdFrom('0000000000000001'),
         traceFlags: TraceFlags.sampled,
         traceState: OTel.traceState({}),
         isRemote: false,
@@ -173,8 +173,8 @@ void main() {
       // 1. Remote + Sampled parent -> Should sample
       final remoteParentSampledContext =
           OTelAPI.context().withSpanContext(OTel.spanContext(
-            traceId: OTel.traceIdFrom('00000000000000000000000000000001'),
-            spanId: OTel.spanIdFrom('0000000000000001'),
+        traceId: OTel.traceIdFrom('00000000000000000000000000000001'),
+        spanId: OTel.spanIdFrom('0000000000000001'),
         traceFlags: TraceFlags.sampled,
         traceState: OTel.traceState({}),
         isRemote: true,

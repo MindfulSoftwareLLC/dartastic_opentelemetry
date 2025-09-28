@@ -9,10 +9,13 @@ class TestAttributes {
   static Map<String, Object> createTestAttributeMap({int count = 10}) {
     return {
       for (var i = 0; i < count; i++)
-        'key$i': i % 4 == 0 ? 'value$i'
-               : i % 4 == 1 ? i
-               : i % 4 == 2 ? i.toDouble()
-               : i % 2 == 0
+        'key$i': i % 4 == 0
+            ? 'value$i'
+            : i % 4 == 1
+                ? i
+                : i % 4 == 2
+                    ? i.toDouble()
+                    : i % 2 == 0
     };
   }
 

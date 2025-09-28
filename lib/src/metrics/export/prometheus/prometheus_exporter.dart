@@ -3,7 +3,8 @@
 
 import 'dart:async';
 
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart' show OTelLog;
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
+    show OTelLog;
 import '../../data/metric.dart';
 import '../../data/metric_data.dart';
 import '../../data/metric_point.dart';
@@ -70,7 +71,8 @@ class PrometheusExporter implements MetricExporter {
 
     try {
       if (OTelLog.isLogExport()) {
-        OTelLog.logExport('PrometheusExporter: Exporting ${data.metrics.length} metrics');
+        OTelLog.logExport(
+            'PrometheusExporter: Exporting ${data.metrics.length} metrics');
       }
 
       // Convert metrics to Prometheus format
@@ -95,11 +97,13 @@ class PrometheusExporter implements MetricExporter {
     for (final metric in data.metrics) {
       // Add HELP comment
       if (metric.description != null) {
-        buffer.writeln('# HELP ${_sanitizeName(metric.name)} ${_sanitizeComment(metric.description!)}');
+        buffer.writeln(
+            '# HELP ${_sanitizeName(metric.name)} ${_sanitizeComment(metric.description!)}');
       }
 
       // Add TYPE comment
-      buffer.writeln('# TYPE ${_sanitizeName(metric.name)} ${_getPrometheusType(metric)}');
+      buffer.writeln(
+          '# TYPE ${_sanitizeName(metric.name)} ${_getPrometheusType(metric)}');
 
       // Add metric data points
       for (final point in metric.points) {
@@ -114,7 +118,8 @@ class PrometheusExporter implements MetricExporter {
   }
 
   /// Writes a metric point in Prometheus format.
-  void _writeMetricPoint(StringBuffer buffer, Metric metric, MetricPoint<dynamic> point) {
+  void _writeMetricPoint(
+      StringBuffer buffer, Metric metric, MetricPoint<dynamic> point) {
     final metricName = _sanitizeName(metric.name);
 
     // Add labels
@@ -134,11 +139,13 @@ class PrometheusExporter implements MetricExporter {
       for (int i = 0; i < histogram.boundaries.length; i++) {
         final boundary = histogram.boundaries[i];
         final count = histogram.bucketCounts[i];
-        buffer.writeln('${metricName}_bucket{${_formatLabelsWithLe(point.attributes.toMap(), boundary)}} $count');
+        buffer.writeln(
+            '${metricName}_bucket{${_formatLabelsWithLe(point.attributes.toMap(), boundary)}} $count');
       }
 
       // Add +Inf bucket
-      buffer.writeln('${metricName}_bucket{${_formatLabelsWithLe(point.attributes.toMap(), double.infinity)}} ${histogram.count}');
+      buffer.writeln(
+          '${metricName}_bucket{${_formatLabelsWithLe(point.attributes.toMap(), double.infinity)}} ${histogram.count}');
     } else {
       // Simple metrics (counters, gauges)
       buffer.writeln('$metricName$labels ${point.value}');
@@ -147,7 +154,8 @@ class PrometheusExporter implements MetricExporter {
 
   /// Gets the Prometheus metric type from an OTel metric.
   String _getPrometheusType(Metric metric) {
-    if (metric.points.isNotEmpty && metric.points.first.value is HistogramValue) {
+    if (metric.points.isNotEmpty &&
+        metric.points.first.value is HistogramValue) {
       return 'histogram';
     } else if (metric.type == MetricType.sum) {
       return 'counter';
@@ -159,7 +167,7 @@ class PrometheusExporter implements MetricExporter {
   /// Formats attributes as Prometheus labels.
   String _formatLabels(Map<String, dynamic> attributes) {
     if (attributes.isEmpty) {
-      return '{}';  // Return empty braces for metrics without attributes
+      return '{}'; // Return empty braces for metrics without attributes
     }
 
     final labelPairs = attributes.entries.map((entry) {
@@ -205,14 +213,18 @@ class PrometheusExporter implements MetricExporter {
   /// Sanitizes a label value.
   String _sanitizeValue(dynamic value) {
     // Handle AttributeValue objects by extracting the raw value
-    if (value.toString().startsWith('AttributeValue(') && value.toString().endsWith(')')) {
+    if (value.toString().startsWith('AttributeValue(') &&
+        value.toString().endsWith(')')) {
       // Extract the value inside AttributeValue(...)
-      final rawValue = value.toString().substring('AttributeValue('.length, value.toString().length - 1);
+      final rawValue = value
+          .toString()
+          .substring('AttributeValue('.length, value.toString().length - 1);
       value = rawValue;
     }
-    
+
     // Escape quotes, backslashes, and newlines
-    return value.toString()
+    return value
+        .toString()
         .replaceAll(r'\', r'\\')
         .replaceAll('"', r'\"')
         .replaceAll('\n', '\\n');

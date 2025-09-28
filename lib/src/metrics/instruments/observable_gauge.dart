@@ -9,7 +9,8 @@ import '../../../dartastic_opentelemetry.dart';
 ///
 /// An ObservableGauge is used to asynchronously measure a non-additive current value
 /// that cannot be calculated synchronously.
-class ObservableGauge<T extends num> implements APIObservableGauge<T>, SDKInstrument {
+class ObservableGauge<T extends num>
+    implements APIObservableGauge<T>, SDKInstrument {
   /// The underlying API ObservableGauge.
   final APIObservableGauge<T> _apiGaugeDelegate;
 
@@ -23,8 +24,8 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T>, SDKInstru
   ObservableGauge({
     required APIObservableGauge<T> apiGauge,
     required Meter meter,
-  }) : _apiGaugeDelegate = apiGauge,
-       _meter = meter;
+  })  : _apiGaugeDelegate = apiGauge,
+        _meter = meter;
 
   @override
   String get name => _apiGaugeDelegate.name;
@@ -37,7 +38,7 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T>, SDKInstru
 
   @override
   bool get enabled {
-   return _meter.provider.enabled;
+    return _meter.provider.enabled;
   }
 
   @override
@@ -61,7 +62,7 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T>, SDKInstru
 
   @override
   void removeCallback(ObservableCallback<T> callback) {
-      _apiGaugeDelegate.removeCallback(callback);
+    _apiGaugeDelegate.removeCallback(callback);
   }
 
   /// Gets the current value of the gauge for a specific set of attributes.
@@ -75,7 +76,9 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T>, SDKInstru
       if (points.isEmpty) {
         value = 0;
       } else {
-        value = points.fold<num>(0, (sum, point) => sum + (point.value as num)) / points.length;
+        value =
+            points.fold<num>(0, (sum, point) => sum + (point.value as num)) /
+                points.length;
       }
     } else {
       // For specific attributes, get that value
@@ -119,13 +122,14 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T>, SDKInstru
         for (final measurement in observableResult.measurements) {
           // Type checking for the generic parameter
           final value = measurement.value;
-          
+
           final num numValue;
           numValue = value;
 
           // For observable gauges, we just record the latest value
           // For SDK storage, convert the num to the appropriate T type
-          final attributes = measurement.attributes ?? OTelFactory.otelFactory!.attributes();
+          final attributes =
+              measurement.attributes ?? OTelFactory.otelFactory!.attributes();
           if (T == int) {
             _storage.record(numValue.toInt() as T, attributes);
           } else if (T == double) {
@@ -133,11 +137,12 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T>, SDKInstru
           } else {
             _storage.record(numValue as T, attributes);
           }
-          
+
           result.add(measurement);
         }
       } catch (e) {
-        print('Error collecting measurements from ObservableGauge callback: $e');
+        print(
+            'Error collecting measurements from ObservableGauge callback: $e');
       }
     }
 
@@ -183,7 +188,8 @@ class ObservableGauge<T extends num> implements APIObservableGauge<T>, SDKInstru
 }
 
 /// Wrapper for APICallbackRegistration that also handles our internal state.
-class _ObservableGaugeCallbackRegistration<T extends num> implements APICallbackRegistration<T> {
+class _ObservableGaugeCallbackRegistration<T extends num>
+    implements APICallbackRegistration<T> {
   /// The API registration.
   final APICallbackRegistration<T> apiRegistration;
 

@@ -14,7 +14,8 @@ class RateLimitingSampler implements Sampler {
   late final Timer _tokenReplenishTimer;
 
   @override
-  String get description => 'RateLimitingSampler{$_maxTracesPerSecond per second}';
+  String get description =>
+      'RateLimitingSampler{$_maxTracesPerSecond per second}';
 
   /// Creates a rate limiting sampler.
   /// [maxTracesPerSecond] specifies how many traces can be sampled per second.
@@ -24,7 +25,8 @@ class RateLimitingSampler implements Sampler {
     Duration timeWindow = const Duration(milliseconds: 100),
   })  : _maxTracesPerSecond = maxTracesPerSecond,
         _timeWindow = timeWindow,
-        _tokenBalance = maxTracesPerSecond, // Start with tokens already available
+        _tokenBalance =
+            maxTracesPerSecond, // Start with tokens already available
         _lastTokenUpdate = DateTime.now() {
     if (maxTracesPerSecond <= 0) {
       throw ArgumentError('maxTracesPerSecond must be positive');
@@ -35,7 +37,8 @@ class RateLimitingSampler implements Sampler {
 
   void _updateTokens() {
     final now = DateTime.now();
-    final elapsedSeconds = now.difference(_lastTokenUpdate).inMilliseconds / 1000;
+    final elapsedSeconds =
+        now.difference(_lastTokenUpdate).inMilliseconds / 1000;
     _lastTokenUpdate = now;
 
     // Calculate how many tokens to add based on elapsed time and rate

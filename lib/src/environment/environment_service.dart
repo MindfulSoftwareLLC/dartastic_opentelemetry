@@ -13,7 +13,7 @@ import 'dart:io' as io;
 /// that can be accessed via [EnvironmentService.instance].
 class EnvironmentService {
   static final EnvironmentService _instance = EnvironmentService._();
-  
+
   /// The singleton instance of the EnvironmentService.
   static EnvironmentService get instance => _instance;
 

@@ -1,7 +1,8 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'package:dartastic_opentelemetry/proto/opentelemetry_proto_dart.dart' as proto;
+import 'package:dartastic_opentelemetry/proto/opentelemetry_proto_dart.dart'
+    as proto;
 import 'package:dartastic_opentelemetry/src/otel.dart';
 import 'package:dartastic_opentelemetry/src/trace/export/otlp/span_transformer.dart';
 import 'package:dartastic_opentelemetry/src/trace/span.dart';
@@ -68,7 +69,6 @@ Span createTestSpan({
     span.end(endTime: startTime.add(const Duration(seconds: 1)));
   }
 
-
   return span;
 }
 
@@ -80,7 +80,8 @@ void main() {
 
   group('OtlpSpanTransformer', () {
     test('transforms basic span correctly', () {
-      final timestamp = DateTime.fromMillisecondsSinceEpoch(1640995200000); // 2022-01-01 00:00:00 UTC
+      final timestamp = DateTime.fromMillisecondsSinceEpoch(
+          1640995200000); // 2022-01-01 00:00:00 UTC
       final span = createTestSpan(
         name: 'test-span',
         startTime: timestamp,
@@ -93,7 +94,8 @@ void main() {
       );
 
       final request = OtlpSpanTransformer.transformSpans([span]);
-      final protoSpan = request.resourceSpans.first.scopeSpans.first.spans.first;
+      final protoSpan =
+          request.resourceSpans.first.scopeSpans.first.spans.first;
 
       expect(protoSpan.name, equals('test-span'));
       expect(
@@ -102,7 +104,9 @@ void main() {
       );
       expect(
         protoSpan.endTimeUnixNano.toInt(),
-        equals(timestamp.add(const Duration(seconds: 1)).microsecondsSinceEpoch * 1000),
+        equals(
+            timestamp.add(const Duration(seconds: 1)).microsecondsSinceEpoch *
+                1000),
       );
 
       final attribute = protoSpan.attributes.first;
@@ -120,7 +124,8 @@ void main() {
       );
 
       final request = OtlpSpanTransformer.transformSpans([span]);
-      final status = request.resourceSpans.first.scopeSpans.first.spans.first.status;
+      final status =
+          request.resourceSpans.first.scopeSpans.first.spans.first.status;
 
       expect(status.code, equals(proto.Status_StatusCode.STATUS_CODE_ERROR));
       expect(status.message, equals('Error message'));
@@ -132,28 +137,33 @@ void main() {
     });
 
     test('transforms span events correctly', () {
-      final startTime = DateTime.fromMillisecondsSinceEpoch(1640995200000); // 2022-01-01 00:00:00 UTC
+      final startTime = DateTime.fromMillisecondsSinceEpoch(
+          1640995200000); // 2022-01-01 00:00:00 UTC
       final eventTime = startTime.add(const Duration(milliseconds: 100));
 
       final span = createTestSpan(
         name: 'event-test',
         startTime: startTime,
         events: [
-          OTel.spanEvent('test-event',
+          OTel.spanEvent(
+            'test-event',
             OTel.attributesFromMap({'event_key': 'event_value'}),
-            eventTime,),
+            eventTime,
+          ),
         ],
         traceId: '00112233445566778899aabbccddeeff',
         spanId: '0011223344556677',
       );
 
       final request = OtlpSpanTransformer.transformSpans([span]);
-      final events = request.resourceSpans.first.scopeSpans.first.spans.first.events;
+      final events =
+          request.resourceSpans.first.scopeSpans.first.spans.first.events;
 
       expect(events, hasLength(1));
       final event = events.first;
       expect(event.name, equals('test-event'));
-      expect(event.timeUnixNano.toInt(), equals(eventTime.microsecondsSinceEpoch * 1000));
+      expect(event.timeUnixNano.toInt(),
+          equals(eventTime.microsecondsSinceEpoch * 1000));
       expect(event.attributes.first.key, equals('event_key'));
       expect(event.attributes.first.value.stringValue, equals('event_value'));
     });
@@ -161,24 +171,28 @@ void main() {
     test('transforms span links correctly', () {
       final linkedContext = OTel.spanContext(
         traceId: OTel.traceIdFrom('ea2a896d85d8fd9373e092ece8cff414'),
-        spanId: OTel.spanIdFrom('85d8fd937373e092'),  // Must be 16 hex characters (8 bytes)
+        spanId: OTel.spanIdFrom(
+            '85d8fd937373e092'), // Must be 16 hex characters (8 bytes)
       );
 
       final span = createTestSpan(
         name: 'link-test',
         links: [
-          OTel.spanLink(linkedContext, attributes: OTel.attributesFromMap({'link.key': 'link.value'})),
+          OTel.spanLink(linkedContext,
+              attributes: OTel.attributesFromMap({'link.key': 'link.value'})),
         ],
         traceId: '00112233445566778899aabbccddeeff',
         spanId: '0011223344556677',
       );
 
       final request = OtlpSpanTransformer.transformSpans([span]);
-      final links = request.resourceSpans.first.scopeSpans.first.spans.first.links;
+      final links =
+          request.resourceSpans.first.scopeSpans.first.spans.first.links;
 
       expect(links, hasLength(1));
       final link = links.first;
-      expect(bytesToHex(link.traceId), equals('ea2a896d85d8fd9373e092ece8cff414'));
+      expect(
+          bytesToHex(link.traceId), equals('ea2a896d85d8fd9373e092ece8cff414'));
       expect(bytesToHex(link.spanId), equals('85d8fd937373e092'));
       expect(link.attributes, hasLength(1));
       expect(link.attributes.first.key, equals('link.key'));

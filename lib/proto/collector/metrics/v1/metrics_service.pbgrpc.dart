@@ -24,39 +24,48 @@ export 'metrics_service.pb.dart';
 
 @$pb.GrpcServiceName('opentelemetry.proto.collector.metrics.v1.MetricsService')
 class MetricsServiceClient extends $grpc.Client {
-  static final _$export = $grpc.ClientMethod<$1.ExportMetricsServiceRequest, $1.ExportMetricsServiceResponse>(
+  static final _$export = $grpc.ClientMethod<$1.ExportMetricsServiceRequest,
+          $1.ExportMetricsServiceResponse>(
       '/opentelemetry.proto.collector.metrics.v1.MetricsService/Export',
       ($1.ExportMetricsServiceRequest value) => value.writeToBuffer(),
-      ($core.List<$core.int> value) => $1.ExportMetricsServiceResponse.fromBuffer(value));
+      ($core.List<$core.int> value) =>
+          $1.ExportMetricsServiceResponse.fromBuffer(value));
 
   MetricsServiceClient($grpc.ClientChannel channel,
       {$grpc.CallOptions? options,
       $core.Iterable<$grpc.ClientInterceptor>? interceptors})
-      : super(channel, options: options,
-        interceptors: interceptors);
+      : super(channel, options: options, interceptors: interceptors);
 
-  $grpc.ResponseFuture<$1.ExportMetricsServiceResponse> export($1.ExportMetricsServiceRequest request, {$grpc.CallOptions? options}) {
+  $grpc.ResponseFuture<$1.ExportMetricsServiceResponse> export(
+      $1.ExportMetricsServiceRequest request,
+      {$grpc.CallOptions? options}) {
     return $createUnaryCall(_$export, request, options: options);
   }
 }
 
 @$pb.GrpcServiceName('opentelemetry.proto.collector.metrics.v1.MetricsService')
 abstract class MetricsServiceBase extends $grpc.Service {
-  $core.String get $name => 'opentelemetry.proto.collector.metrics.v1.MetricsService';
+  $core.String get $name =>
+      'opentelemetry.proto.collector.metrics.v1.MetricsService';
 
   MetricsServiceBase() {
-    $addMethod($grpc.ServiceMethod<$1.ExportMetricsServiceRequest, $1.ExportMetricsServiceResponse>(
+    $addMethod($grpc.ServiceMethod<$1.ExportMetricsServiceRequest,
+            $1.ExportMetricsServiceResponse>(
         'Export',
         export_Pre,
         false,
         false,
-        ($core.List<$core.int> value) => $1.ExportMetricsServiceRequest.fromBuffer(value),
+        ($core.List<$core.int> value) =>
+            $1.ExportMetricsServiceRequest.fromBuffer(value),
         ($1.ExportMetricsServiceResponse value) => value.writeToBuffer()));
   }
 
-  $async.Future<$1.ExportMetricsServiceResponse> export_Pre($grpc.ServiceCall call, $async.Future<$1.ExportMetricsServiceRequest> request) async {
+  $async.Future<$1.ExportMetricsServiceResponse> export_Pre(
+      $grpc.ServiceCall call,
+      $async.Future<$1.ExportMetricsServiceRequest> request) async {
     return export(call, await request);
   }
 
-  $async.Future<$1.ExportMetricsServiceResponse> export($grpc.ServiceCall call, $1.ExportMetricsServiceRequest request);
+  $async.Future<$1.ExportMetricsServiceResponse> export(
+      $grpc.ServiceCall call, $1.ExportMetricsServiceRequest request);
 }

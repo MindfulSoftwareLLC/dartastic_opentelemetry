@@ -29,15 +29,16 @@ Span createMockSpan({
   }
 
   // Create a named tracer provider for this specific resource to avoid conflicts
-  final providerName = 'test-provider-${DateTime.now().millisecondsSinceEpoch}-${resAttrs.hashCode}';
-  
+  final providerName =
+      'test-provider-${DateTime.now().millisecondsSinceEpoch}-${resAttrs.hashCode}';
+
   // Create instrumentation scope details
   final actualInstrumentationName = instrumentationName ?? 'test-tracer';
   final actualInstrumentationVersion = instrumentationVersion ?? '1.0.0';
-  
+
   // Create resource with the specific attributes
   final resource = OTel.resource(OTel.attributesFromMap(resAttrs));
-  
+
   // Create a named tracer provider with this specific resource
   final tracerProvider = OTel.addTracerProvider(
     providerName,
@@ -339,7 +340,7 @@ void main() {
     test('maintains span order within scopes', () {
       // Create spans with a predictable order and small delays between them
       final spans = <Span>[];
-      
+
       for (int i = 0; i < 5; i++) {
         final span = createMockSpan(
           name: 'span-$i',
@@ -364,8 +365,7 @@ void main() {
 
       // Get the transformed spans
       final transformedSpans = scopeSpan.spans;
-      expect(transformedSpans.length, equals(5),
-          reason: 'Should have 5 spans');
+      expect(transformedSpans.length, equals(5), reason: 'Should have 5 spans');
 
       // Since we can't control start times precisely, just verify that
       // the transformer preserves the order we created them in
@@ -388,7 +388,7 @@ void main() {
             break;
           }
         }
-        
+
         expect(isOrdered, isTrue,
             reason: 'Spans should be ordered by start time');
       }

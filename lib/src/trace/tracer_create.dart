@@ -1,7 +1,6 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-
 part of 'tracer.dart';
 
 /// Factory for creating Tracer instances.
@@ -16,15 +15,10 @@ class SDKTracerCreate {
   /// @param provider The TracerProvider that created this Tracer
   /// @param sampler Optional custom sampler for this Tracer
   /// @return A new APITracer instance (actually a Tracer implementation)
-  static APITracer create({
-    required APITracer delegate,
-    required TracerProvider provider,
-    Sampler? sampler
-  }) {
-    return Tracer._(
-      delegate: delegate,
-      provider: provider,
-      sampler: sampler
-    );
+  static APITracer create(
+      {required APITracer delegate,
+      required TracerProvider provider,
+      Sampler? sampler}) {
+    return Tracer._(delegate: delegate, provider: provider, sampler: sampler);
   }
 }

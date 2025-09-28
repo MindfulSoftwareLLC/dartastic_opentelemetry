@@ -267,8 +267,7 @@ void main() {
       // Second collection - check the new value
       gauge.collect();
       final metrics2 = gauge.collectMetrics();
-      expect(metrics2[0].points[0].value,
-          closeTo(98.9, 0.001));
+      expect(metrics2[0].points[0].value, closeTo(98.9, 0.001));
     });
 
     test('ObservableGauge with disabled meter', () {

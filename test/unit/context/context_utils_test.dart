@@ -22,14 +22,13 @@ void main() {
           isRemote: false,
         );
 
-        final context =OTel.context()
-            .withSpanContext(spanContext);
+        final context = OTel.context().withSpanContext(spanContext);
 
         expect(context.spanContext, equals(spanContext));
       });
 
       test('returns null when no span context present', () {
-        final context =OTel.context();
+        final context = OTel.context();
         expect(context.spanContext, isNull);
       });
     });
@@ -44,7 +43,7 @@ void main() {
           isRemote: false,
         );
 
-        final context =OTel.context();
+        final context = OTel.context();
         final newContext = context.withSpanContext(spanContext);
 
         expect(newContext.spanContext, equals(spanContext));
@@ -70,18 +69,22 @@ void main() {
             isRemote: false,
           );
 
-          final context = OTel.context()
-              .withSpanContext(spanContext);
+          final context = OTel.context().withSpanContext(spanContext);
 
           final serialized = context.serialize();
 
           // Verify the structure of serialized data
           expect(serialized['spanContext'], isA<Map<String, dynamic>>());
-          final serializedSpanContext = serialized['spanContext'] as Map<String, dynamic>;
-          expect(serializedSpanContext['traceId'], equals(spanContext.traceId.hexString));
-          expect(serializedSpanContext['spanId'], equals(spanContext.spanId.hexString));
-          expect(serializedSpanContext['traceFlags'], equals(spanContext.traceFlags.asByte));
-          expect(serializedSpanContext['isRemote'], equals(spanContext.isRemote));
+          final serializedSpanContext =
+              serialized['spanContext'] as Map<String, dynamic>;
+          expect(serializedSpanContext['traceId'],
+              equals(spanContext.traceId.hexString));
+          expect(serializedSpanContext['spanId'],
+              equals(spanContext.spanId.hexString));
+          expect(serializedSpanContext['traceFlags'],
+              equals(spanContext.traceFlags.asByte));
+          expect(
+              serializedSpanContext['isRemote'], equals(spanContext.isRemote));
           expect(serializedSpanContext['traceState'], equals({'key': 'value'}));
         });
 
@@ -94,8 +97,8 @@ void main() {
             isRemote: false,
           );
 
-          final originalContext = OTel.context()
-              .withSpanContext(originalSpanContext);
+          final originalContext =
+              OTel.context().withSpanContext(originalSpanContext);
 
           final serializedData = originalContext.serialize();
           final reconstructedContext = Context.deserialize(serializedData);

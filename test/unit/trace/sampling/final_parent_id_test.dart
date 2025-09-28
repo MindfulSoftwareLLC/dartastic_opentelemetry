@@ -24,12 +24,15 @@ void main() {
 
       // Print debug info
       print('Root span parent ID: ${rootSpan.spanContext.parentSpanId}');
-      print('Root span parent ID toString: ${rootSpan.spanContext.parentSpanId}');
-      print('Root span parent ID isValid: ${rootSpan.spanContext.parentSpanId!.isValid}');
+      print(
+          'Root span parent ID toString: ${rootSpan.spanContext.parentSpanId}');
+      print(
+          'Root span parent ID isValid: ${rootSpan.spanContext.parentSpanId!.isValid}');
 
       // Test that the parent ID is zero-filled
       expect(rootSpan.spanContext.parentSpanId, isNotNull);
-      expect(rootSpan.spanContext.parentSpanId.toString(), equals('0000000000000000'));
+      expect(rootSpan.spanContext.parentSpanId.toString(),
+          equals('0000000000000000'));
       expect(rootSpan.spanContext.parentSpanId!.isValid, isFalse);
 
       rootSpan.end();

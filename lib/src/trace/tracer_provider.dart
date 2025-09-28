@@ -2,6 +2,7 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 library;
+
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import '../../dartastic_opentelemetry.dart';
@@ -26,16 +27,16 @@ part 'tracer_provider_create.dart';
 class TracerProvider implements APITracerProvider {
   /// Registry of tracers managed by this provider.
   final Map<String, Tracer> _tracers = {};
-  
+
   /// Span processors registered with this provider.
   final List<SpanProcessor> _spanProcessors = [];
-  
+
   /// The underlying API TracerProvider implementation.
   final APITracerProvider _delegate;
-  
+
   /// The resource associated with this provider.
   Resource? resource;
-  
+
   /// The default sampler to use for new tracers.
   Sampler? sampler;
 
@@ -58,7 +59,8 @@ class TracerProvider implements APITracerProvider {
     Sampler? sampler,
   }) : _delegate = delegate {
     if (OTelLog.isDebug()) {
-      OTelLog.debug('TracerProvider: Created with resource: $resource, sampler: $sampler');
+      OTelLog.debug(
+          'TracerProvider: Created with resource: $resource, sampler: $sampler');
       if (resource != null) {
         OTelLog.debug('Resource attributes:');
         resource!.attributes.toList().forEach((attr) {
@@ -70,31 +72,55 @@ class TracerProvider implements APITracerProvider {
 
   @override
   Future<bool> shutdown() async {
-    if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Shutting down with ${_spanProcessors.length} processors');
-    if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Shutting down with ${_spanProcessors.length} processors');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug(
+          'TracerProvider: Shutting down with ${_spanProcessors.length} processors');
+    }
+    if (OTelLog.isDebug()) {
+      OTelLog.debug(
+          'TracerProvider: Shutting down with ${_spanProcessors.length} processors');
+    }
 
     if (!isShutdown) {
       // Shutdown all span processors
       for (final processor in _spanProcessors) {
-        if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Shutting down processor ${processor.runtimeType}');
-        if (OTelLog.isDebug()) OTelLog.debug('SDKTracerProvider: Shutting down processor ${processor.runtimeType}');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+              'TracerProvider: Shutting down processor ${processor.runtimeType}');
+        }
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+              'SDKTracerProvider: Shutting down processor ${processor.runtimeType}');
+        }
         try {
           await processor.shutdown();
-          if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Successfully shut down processor ${processor.runtimeType}');
+          if (OTelLog.isDebug()) {
+            OTelLog.debug(
+                'TracerProvider: Successfully shut down processor ${processor.runtimeType}');
+          }
         } catch (e) {
-          if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Error shutting down processor ${processor.runtimeType}: $e');
+          if (OTelLog.isDebug()) {
+            OTelLog.debug(
+                'TracerProvider: Error shutting down processor ${processor.runtimeType}: $e');
+          }
         }
       }
 
       // Clear cached tracers
       _tracers.clear();
-      if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Cleared cached tracers');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('TracerProvider: Cleared cached tracers');
+      }
 
       try {
         await _delegate.shutdown();
-        if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Delegate shutdown complete');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug('TracerProvider: Delegate shutdown complete');
+        }
       } catch (e) {
-        if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Error during delegate shutdown: $e');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug('TracerProvider: Error during delegate shutdown: $e');
+        }
       }
 
       isShutdown = true;
@@ -106,13 +132,17 @@ class TracerProvider implements APITracerProvider {
   }
 
   @override
-  Tracer getTracer(String name, {
+  Tracer getTracer(
+    String name, {
     String? version,
     String? schemaUrl,
     Attributes? attributes,
     Sampler? sampler,
   }) {
-    if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Getting tracer with name: $name, version: $version, schemaUrl: $schemaUrl');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug(
+          'TracerProvider: Getting tracer with name: $name, version: $version, schemaUrl: $schemaUrl');
+    }
     if (isShutdown) {
       throw StateError('TracerProvider has been shut down');
     }
@@ -122,17 +152,17 @@ class TracerProvider implements APITracerProvider {
 
     final key = '$name:${version ?? ''}';
     return _tracers.putIfAbsent(
-        key,
-        () => SDKTracerCreate.create(
-          delegate: _delegate.getTracer(
-            name,
-            version: version,
-            schemaUrl: schemaUrl,
-            attributes: attributes,
-          ),
-          provider: this,
-          sampler: sampler,
-        ) as Tracer,
+      key,
+      () => SDKTracerCreate.create(
+        delegate: _delegate.getTracer(
+          name,
+          version: version,
+          schemaUrl: schemaUrl,
+          attributes: attributes,
+        ),
+        provider: this,
+        sampler: sampler,
+      ) as Tracer,
     );
   }
 
@@ -146,15 +176,17 @@ class TracerProvider implements APITracerProvider {
     if (isShutdown) {
       throw StateError('TracerProvider has been shut down');
     }
-    if (OTelLog.isDebug()) OTelLog.debug('SDKTracerProvider: Adding span processor of type ${processor.runtimeType}');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug(
+          'SDKTracerProvider: Adding span processor of type ${processor.runtimeType}');
+    }
     _spanProcessors.add(processor);
   }
 
   /// Gets all registered span processors.
   ///
   /// @return An unmodifiable list of all span processors
-  List<SpanProcessor> get spanProcessors =>
-      List.unmodifiable(_spanProcessors);
+  List<SpanProcessor> get spanProcessors => List.unmodifiable(_spanProcessors);
 
   /// Ensures the resource for this provider is properly set.
   ///
@@ -216,23 +248,40 @@ class TracerProvider implements APITracerProvider {
   ///
   /// @return A Future that completes when all processors have been flushed
   Future<void> forceFlush() async {
-    if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Force flushing ${_spanProcessors.length} processors');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug(
+          'TracerProvider: Force flushing ${_spanProcessors.length} processors');
+    }
 
     if (isShutdown) {
-      if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Cannot force flush - provider is shut down');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+            'TracerProvider: Cannot force flush - provider is shut down');
+      }
       return;
     }
 
     for (var processor in _spanProcessors) {
       try {
-        if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Flushing processor ${processor.runtimeType}');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+              'TracerProvider: Flushing processor ${processor.runtimeType}');
+        }
         await processor.forceFlush();
-        if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Successfully flushed processor ${processor.runtimeType}');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+              'TracerProvider: Successfully flushed processor ${processor.runtimeType}');
+        }
       } catch (e) {
-        if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Error flushing processor ${processor.runtimeType}: $e');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+              'TracerProvider: Error flushing processor ${processor.runtimeType}: $e');
+        }
       }
     }
 
-    if (OTelLog.isDebug()) OTelLog.debug('TracerProvider: Force flush complete');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('TracerProvider: Force flush complete');
+    }
   }
 }

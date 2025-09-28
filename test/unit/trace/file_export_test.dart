@@ -17,7 +17,8 @@ void main() {
     late SimpleSpanProcessor processor;
     late TracerProvider tracerProvider;
     late Tracer tracer;
-    final outputPath = '${Directory.current.path}/test/testing_utils/test_spans.json';
+    final outputPath =
+        '${Directory.current.path}/test/testing_utils/test_spans.json';
 
     setUp(() async {
       print('=== Starting File Export Test ===');
@@ -100,26 +101,29 @@ void main() {
         // Parse JSON and check for span - handling the new batched format
         final dynamic parsedContent = jsonDecode(fileContent);
         if (parsedContent is! List) {
-          fail('Expected JSON content to be a List but got ${parsedContent.runtimeType}');
+          fail(
+              'Expected JSON content to be a List but got ${parsedContent.runtimeType}');
         }
-        
+
         // Use step-by-step casting to avoid type cast errors
         final batches = parsedContent;
         print('Found ${batches.length} batches in file');
 
-        expect(batches, isNotEmpty, reason: 'Expected at least one batch of spans');
+        expect(batches, isNotEmpty,
+            reason: 'Expected at least one batch of spans');
 
         bool found = false;
         // Iterate through batches
         for (final batchData in batches) {
-          expect(batchData, isA<List>(), reason: 'Expected batch to be a list of spans');
-          
+          expect(batchData, isA<List>(),
+              reason: 'Expected batch to be a list of spans');
+
           final batch = batchData as List;
           // Iterate through spans in the batch
           for (final spanData in batch) {
             expect(spanData, isA<Map>(), reason: 'Expected span to be a map');
             final span = spanData as Map<String, dynamic>;
-            
+
             if (span.containsKey('name')) {
               print('Found span: ${span["name"]}');
               if (span['name'] == 'test-with-span') {
@@ -128,18 +132,20 @@ void main() {
               }
             }
           }
-          
+
           if (found) break;
         }
 
-        expect(found, isTrue, reason: 'Expected to find span with name "test-with-span"');
+        expect(found, isTrue,
+            reason: 'Expected to find span with name "test-with-span"');
       } catch (e) {
         fail('Error parsing file content: $e');
       }
     });
 
     test('withSpanAsync executes async code with an active span', () async {
-      print('Starting test: withSpanAsync executes async code with an active span');
+      print(
+          'Starting test: withSpanAsync executes async code with an active span');
 
       // Arrange
       String result = '';
@@ -177,26 +183,29 @@ void main() {
         // Parse JSON and check for span - handling the new batched format
         final dynamic parsedContent = jsonDecode(fileContent);
         if (parsedContent is! List) {
-          fail('Expected JSON content to be a List but got ${parsedContent.runtimeType}');
+          fail(
+              'Expected JSON content to be a List but got ${parsedContent.runtimeType}');
         }
-        
+
         // Use step-by-step casting to avoid type cast errors
         final batches = parsedContent;
         print('Found ${batches.length} batches in file');
 
-        expect(batches, isNotEmpty, reason: 'Expected at least one batch of spans');
+        expect(batches, isNotEmpty,
+            reason: 'Expected at least one batch of spans');
 
         bool found = false;
         // Iterate through batches
         for (final batchData in batches) {
-          expect(batchData, isA<List>(), reason: 'Expected batch to be a list of spans');
-          
+          expect(batchData, isA<List>(),
+              reason: 'Expected batch to be a list of spans');
+
           final batch = batchData as List;
           // Iterate through spans in the batch
           for (final spanData in batch) {
             expect(spanData, isA<Map>(), reason: 'Expected span to be a map');
             final span = spanData as Map<String, dynamic>;
-            
+
             if (span.containsKey('name')) {
               print('Found span: ${span["name"]}');
               if (span['name'] == 'test-with-span-async') {
@@ -205,11 +214,12 @@ void main() {
               }
             }
           }
-          
+
           if (found) break;
         }
 
-        expect(found, isTrue, reason: 'Expected to find span with name "test-with-span-async"');
+        expect(found, isTrue,
+            reason: 'Expected to find span with name "test-with-span-async"');
       } catch (e) {
         fail('Error parsing file content: $e');
       }
@@ -242,26 +252,29 @@ void main() {
         // Parse JSON and check for span - handling the new batched format
         final dynamic parsedContent = jsonDecode(fileContent);
         if (parsedContent is! List) {
-          fail('Expected JSON content to be a List but got ${parsedContent.runtimeType}');
+          fail(
+              'Expected JSON content to be a List but got ${parsedContent.runtimeType}');
         }
-        
+
         // Use step-by-step casting to avoid type cast errors
         final batches = parsedContent;
         print('Found ${batches.length} batches in file');
 
-        expect(batches, isNotEmpty, reason: 'Expected at least one batch of spans');
+        expect(batches, isNotEmpty,
+            reason: 'Expected at least one batch of spans');
 
         bool found = false;
         // Iterate through batches
         for (final batchData in batches) {
-          expect(batchData, isA<List>(), reason: 'Expected batch to be a list of spans');
-          
+          expect(batchData, isA<List>(),
+              reason: 'Expected batch to be a list of spans');
+
           final batch = batchData as List;
           // Iterate through spans in the batch
           for (final spanData in batch) {
             expect(spanData, isA<Map>(), reason: 'Expected span to be a map');
             final span = spanData as Map<String, dynamic>;
-            
+
             if (span.containsKey('name')) {
               print('Found span: ${span["name"]}');
               if (span['name'] == 'auto-record-span') {
@@ -270,11 +283,12 @@ void main() {
               }
             }
           }
-          
+
           if (found) break;
         }
 
-        expect(found, isTrue, reason: 'Expected to find span with name "auto-record-span"');
+        expect(found, isTrue,
+            reason: 'Expected to find span with name "auto-record-span"');
       } catch (e) {
         fail('Error parsing file content: $e');
       }

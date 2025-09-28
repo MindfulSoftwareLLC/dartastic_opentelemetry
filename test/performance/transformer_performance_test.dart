@@ -23,8 +23,11 @@ void main() {
     // The default tracer is set up with an instrumentation scope, for example "http".
     httpTracer = tracerProvider!.getTracer('http');
     // To simulate a different instrumentation scope, we create a separate tracer.
-    dbTracer = tracerProvider!.getTracer('database',  version: '1.0.0',
-      attributes: OTel.attributesFromMap({'db_type': 'postgres'},));
+    dbTracer = tracerProvider!.getTracer('database',
+        version: '1.0.0',
+        attributes: OTel.attributesFromMap(
+          {'db_type': 'postgres'},
+        ));
   });
 
   tearDown(() async {
@@ -37,8 +40,7 @@ void main() {
         10000,
         (i) => tracer!.startSpan(
           'span-$i',
-          attributes:
-           OTel.attributesFromMap({
+          attributes: OTel.attributesFromMap({
             'attr1': 'value1',
             'attr2': i,
             'attr3': i % 2 == 0,
@@ -101,7 +103,6 @@ void main() {
       final spanDb = dbTracer!.startSpan('db-span');
 
       final spans = [spanHttp, spanDb];
-
 
       final request = OtlpSpanTransformer.transformSpans(spans);
       expect(request.resourceSpans.first.scopeSpans.length, equals(2));

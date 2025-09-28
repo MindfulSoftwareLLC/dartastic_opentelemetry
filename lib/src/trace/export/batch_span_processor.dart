@@ -59,37 +59,37 @@ class BatchSpanProcessorConfig {
 class BatchSpanProcessor implements SpanProcessor {
   /// The exporter used to send spans to the backend
   final SpanExporter exporter;
-  
+
   /// Configuration for the batch processor behavior
   final BatchSpanProcessorConfig _config;
-  
+
   /// Queue of spans waiting to be exported
   final Queue<Span> _spanQueue = Queue<Span>();
-  
+
   /// Whether the processor has been shut down
   bool _isShutdown = false;
-  
+
   /// Timer for scheduling periodic exports
   Timer? _timer;
-  
+
   /// Lock for synchronizing queue access
   final _lock = Lock();
 
   /// Creates a new BatchSpanProcessor with the specified exporter and configuration.
-  /// 
+  ///
   /// The BatchSpanProcessor collects finished spans in a queue and exports them in batches
   /// at regular intervals. This improves efficiency compared to exporting each span individually.
-  /// 
+  ///
   /// A timer is started when this processor is created based on the [config]'s scheduleDelay.
   /// The timer triggers periodic batch exports of completed spans to the configured exporter.
-  /// 
+  ///
   /// When the maximum queue size is reached, new spans will be dropped and not exported.
-  /// 
+  ///
   /// This processor does not modify spans on start or when their names are updated,
   /// it only processes spans when they end.
-  /// 
+  ///
   /// If an error occurs during export, it will be logged but not propagated.
-  /// 
+  ///
   /// [exporter] The SpanExporter to use for exporting batches of spans
   /// [config] Optional configuration for the batch processor
   BatchSpanProcessor(this.exporter, [BatchSpanProcessorConfig? config])
@@ -111,7 +111,9 @@ class BatchSpanProcessor implements SpanProcessor {
 
     return _lock.synchronized(() {
       if (_spanQueue.length >= _config.maxQueueSize) {
-        if (OTelLog.isDebug()) OTelLog.debug('BatchSpanProcessor queue full - dropping span');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug('BatchSpanProcessor queue full - dropping span');
+        }
         return;
       }
       _spanQueue.add(span);
@@ -119,7 +121,7 @@ class BatchSpanProcessor implements SpanProcessor {
   }
 
   @override
-  Future<void> onStart(Span span,Context? parentContext) async {
+  Future<void> onStart(Span span, Context? parentContext) async {
     // Nothing to do on start
   }
 
@@ -129,11 +131,11 @@ class BatchSpanProcessor implements SpanProcessor {
   }
 
   /// Exports a batch of spans from the queue to the configured exporter.
-  /// 
-  /// This method acquires a lock on the queue, extracts spans up to the maximum batch size, 
+  ///
+  /// This method acquires a lock on the queue, extracts spans up to the maximum batch size,
   /// and then sends them to the exporter. If an error occurs during export, it is logged
   /// but not propagated (no retry mechanism is implemented by default).
-  /// 
+  ///
   /// @return A future that completes when the export is finished
   Future<void> _exportBatch() async {
     if (_isShutdown) {
@@ -160,7 +162,9 @@ class BatchSpanProcessor implements SpanProcessor {
     try {
       await exporter.export(spansToExport);
     } catch (e) {
-      if (OTelLog.isError()) OTelLog.error('Error exporting batch of spans: $e');
+      if (OTelLog.isError()) {
+        OTelLog.error('Error exporting batch of spans: $e');
+      }
       // Consider implementing retry logic here
     }
   }

@@ -131,7 +131,8 @@ void main() {
       final gauge = meter.createGauge<double>(
         name: 'map-attributes-gauge',
         unit: 'celsius',
-      ) as Gauge<double>; // Cast to implementation class to access recordWithMap
+      ) as Gauge<
+          double>; // Cast to implementation class to access recordWithMap
 
       // Record using recordWithMap
       gauge.recordWithMap(23.5, {

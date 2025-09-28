@@ -15,7 +15,8 @@ class SDKTracerProviderCreate {
   /// @param delegate The API TracerProvider implementation to delegate to
   /// @param resource Optional Resource describing the entity producing telemetry
   /// @return A new TracerProvider instance
-  static TracerProvider create({required APITracerProvider delegate, Resource? resource}) {
+  static TracerProvider create(
+      {required APITracerProvider delegate, Resource? resource}) {
     return TracerProvider._(delegate: delegate, resource: resource);
   }
 }

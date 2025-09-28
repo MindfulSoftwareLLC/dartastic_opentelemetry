@@ -14,7 +14,7 @@ import '../../testing_utils/real_collector.dart';
 // Check if we're running in isolated mode
 final bool isIsolatedRun =
     Platform.environment['DART_OTEL_ISOLATED_TESTING'] == 'true' ||
-    const bool.fromEnvironment('ISOLATED_RUN', defaultValue: false);
+        const bool.fromEnvironment('ISOLATED_RUN', defaultValue: false);
 
 // Port management to avoid conflicts in parallel tests
 class _PortManager {
@@ -53,11 +53,13 @@ void main() {
 
     // Use a unique file for each test run to avoid conflicts
     final uniqueId = DateTime.now().millisecondsSinceEpoch;
-    final outputPath = '$testDir/test/testing_utils/spans_context_$uniqueId.json';
+    final outputPath =
+        '$testDir/test/testing_utils/spans_context_$uniqueId.json';
     final fallbackPath = '$outputPath.fallback';
 
     setUp(() async {
-      print('Setting up context_propagation_test in ${isIsolatedRun ? "ISOLATED" : "NORMAL"} mode');
+      print(
+          'Setting up context_propagation_test in ${isIsolatedRun ? "ISOLATED" : "NORMAL"} mode');
       print('Using port $testPort and output file $outputPath');
 
       // Ensure OTel is reset
@@ -123,7 +125,9 @@ void main() {
         OtlpGrpcExporterConfig(
           endpoint: 'http://localhost:${collector.getPort}',
           insecure: true,
-          timeout: isIsolatedRun ? const Duration(seconds: 10) : const Duration(seconds: 5),
+          timeout: isIsolatedRun
+              ? const Duration(seconds: 10)
+              : const Duration(seconds: 5),
           maxRetries: isIsolatedRun ? 3 : 2,
           baseDelay: const Duration(milliseconds: 50),
           maxDelay: const Duration(milliseconds: 500),
@@ -136,7 +140,9 @@ void main() {
       tracer = tracerProvider.getTracer('test-tracer-$uniqueId');
 
       // Stabilization time (longer when in isolation mode)
-      await Future<void>.delayed(isIsolatedRun ? const Duration(milliseconds: 500) : const Duration(milliseconds: 100));
+      await Future<void>.delayed(isIsolatedRun
+          ? const Duration(milliseconds: 500)
+          : const Duration(milliseconds: 100));
     });
 
     tearDown(() async {
@@ -152,7 +158,10 @@ void main() {
               'spanId': 'fallback-id-$uniqueId',
               'traceId': 'fallback-trace-$uniqueId',
               'attributes': [
-                {'key': 'test.key', 'value': {'stringValue': 'test-value'}},
+                {
+                  'key': 'test.key',
+                  'value': {'stringValue': 'test-value'}
+                },
               ]
             }
           ];
@@ -200,7 +209,9 @@ void main() {
       _PortManager.releasePort(collector.getPort);
 
       // Very short delay for cleanup
-      await Future<void>.delayed(isIsolatedRun ? const Duration(seconds: 1) : const Duration(milliseconds: 50));
+      await Future<void>.delayed(isIsolatedRun
+          ? const Duration(seconds: 1)
+          : const Duration(milliseconds: 50));
 
       print('TearDown complete');
     });
@@ -222,10 +233,11 @@ void main() {
 
       // Force flush to ensure immediate export
       await tracerProvider.forceFlush();
-      
+
       print('Waiting for span to be exported...');
       try {
-        await collector.waitForSpans(1, timeout: const Duration(seconds: 3)); // Reduced timeout
+        await collector.waitForSpans(1,
+            timeout: const Duration(seconds: 3)); // Reduced timeout
 
         print('Verifying span attributes...');
         await collector.assertSpanExists(
@@ -259,7 +271,8 @@ void main() {
       );
 
       // Verify parent-child relationship at the span level
-      expect(childSpan.spanContext.traceId, equals(parentSpan.spanContext.traceId),
+      expect(
+          childSpan.spanContext.traceId, equals(parentSpan.spanContext.traceId),
           reason: 'Child span should inherit trace ID from parent');
       expect(childSpan.parentSpanContext, equals(parentSpan.spanContext),
           reason: 'Child span should have parent span context');
@@ -273,7 +286,8 @@ void main() {
 
       print('Waiting for spans to be exported...');
       try {
-        await collector.waitForSpans(2, timeout: const Duration(seconds: 3)); // Reduced timeout
+        await collector.waitForSpans(2,
+            timeout: const Duration(seconds: 3)); // Reduced timeout
 
         final spans = await collector.getSpans();
         print('Got ${spans.length} spans');
@@ -283,9 +297,11 @@ void main() {
           print('  Span: ${span['name']}, ID: ${span['spanId']}');
         }
 
-        expect(spans.any((s) => s['name'] == 'parent-span-test-$uniqueId'), isTrue,
+        expect(
+            spans.any((s) => s['name'] == 'parent-span-test-$uniqueId'), isTrue,
             reason: 'Parent span should be exported');
-        expect(spans.any((s) => s['name'] == 'child-span-test-$uniqueId'), isTrue,
+        expect(
+            spans.any((s) => s['name'] == 'child-span-test-$uniqueId'), isTrue,
             reason: 'Child span should be exported');
 
         final parentExportedSpan = spans.firstWhere(
@@ -308,7 +324,8 @@ void main() {
           }
         }
       } catch (e) {
-        print('Export verification failed, but spans were created correctly: $e');
+        print(
+            'Export verification failed, but spans were created correctly: $e');
         // We already verified the relationship at span level above
         print('Context propagation verified at span level');
       }

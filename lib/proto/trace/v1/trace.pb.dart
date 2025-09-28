@@ -44,24 +44,32 @@ class TracesData extends $pb.GeneratedMessage {
     return $result;
   }
   TracesData._() : super();
-  factory TracesData.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory TracesData.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  factory TracesData.fromBuffer($core.List<$core.int> i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(i, r);
+  factory TracesData.fromJson($core.String i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'TracesData', package: const $pb.PackageName(_omitMessageNames ? '' : 'opentelemetry.proto.trace.v1'), createEmptyInstance: create)
-    ..pc<ResourceSpans>(1, _omitFieldNames ? '' : 'resourceSpans', $pb.PbFieldType.PM, subBuilder: ResourceSpans.create)
-    ..hasRequiredFields = false
-  ;
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'TracesData',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'opentelemetry.proto.trace.v1'),
+      createEmptyInstance: create)
+    ..pc<ResourceSpans>(
+        1, _omitFieldNames ? '' : 'resourceSpans', $pb.PbFieldType.PM,
+        subBuilder: ResourceSpans.create)
+    ..hasRequiredFields = false;
 
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+      'Will be removed in next major version')
   TracesData clone() => TracesData()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  TracesData copyWith(void Function(TracesData) updates) => super.copyWith((message) => updates(message as TracesData)) as TracesData;
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+      'Will be removed in next major version')
+  TracesData copyWith(void Function(TracesData) updates) =>
+      super.copyWith((message) => updates(message as TracesData)) as TracesData;
 
   $pb.BuilderInfo get info_ => _i;
 
@@ -70,7 +78,8 @@ class TracesData extends $pb.GeneratedMessage {
   TracesData createEmptyInstance() => create();
   static $pb.PbList<TracesData> createRepeated() => $pb.PbList<TracesData>();
   @$core.pragma('dart2js:noInline')
-  static TracesData getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TracesData>(create);
+  static TracesData getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<TracesData>(create);
   static TracesData? _defaultInstance;
 
   /// An array of ResourceSpans.
@@ -102,35 +111,46 @@ class ResourceSpans extends $pb.GeneratedMessage {
     return $result;
   }
   ResourceSpans._() : super();
-  factory ResourceSpans.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory ResourceSpans.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  factory ResourceSpans.fromBuffer($core.List<$core.int> i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(i, r);
+  factory ResourceSpans.fromJson($core.String i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ResourceSpans', package: const $pb.PackageName(_omitMessageNames ? '' : 'opentelemetry.proto.trace.v1'), createEmptyInstance: create)
-    ..aOM<$2.Resource>(1, _omitFieldNames ? '' : 'resource', subBuilder: $2.Resource.create)
-    ..pc<ScopeSpans>(2, _omitFieldNames ? '' : 'scopeSpans', $pb.PbFieldType.PM, subBuilder: ScopeSpans.create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ResourceSpans',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'opentelemetry.proto.trace.v1'),
+      createEmptyInstance: create)
+    ..aOM<$2.Resource>(1, _omitFieldNames ? '' : 'resource',
+        subBuilder: $2.Resource.create)
+    ..pc<ScopeSpans>(2, _omitFieldNames ? '' : 'scopeSpans', $pb.PbFieldType.PM,
+        subBuilder: ScopeSpans.create)
     ..aOS(3, _omitFieldNames ? '' : 'schemaUrl')
-    ..hasRequiredFields = false
-  ;
+    ..hasRequiredFields = false;
 
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+      'Will be removed in next major version')
   ResourceSpans clone() => ResourceSpans()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  ResourceSpans copyWith(void Function(ResourceSpans) updates) => super.copyWith((message) => updates(message as ResourceSpans)) as ResourceSpans;
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+      'Will be removed in next major version')
+  ResourceSpans copyWith(void Function(ResourceSpans) updates) =>
+      super.copyWith((message) => updates(message as ResourceSpans))
+          as ResourceSpans;
 
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
   static ResourceSpans create() => ResourceSpans._();
   ResourceSpans createEmptyInstance() => create();
-  static $pb.PbList<ResourceSpans> createRepeated() => $pb.PbList<ResourceSpans>();
+  static $pb.PbList<ResourceSpans> createRepeated() =>
+      $pb.PbList<ResourceSpans>();
   @$core.pragma('dart2js:noInline')
-  static ResourceSpans getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ResourceSpans>(create);
+  static ResourceSpans getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ResourceSpans>(create);
   static ResourceSpans? _defaultInstance;
 
   /// The resource for the spans in this message.
@@ -138,7 +158,10 @@ class ResourceSpans extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   $2.Resource get resource => $_getN(0);
   @$pb.TagNumber(1)
-  set resource($2.Resource v) { setField(1, v); }
+  set resource($2.Resource v) {
+    setField(1, v);
+  }
+
   @$pb.TagNumber(1)
   $core.bool hasResource() => $_has(0);
   @$pb.TagNumber(1)
@@ -158,7 +181,10 @@ class ResourceSpans extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   $core.String get schemaUrl => $_getSZ(2);
   @$pb.TagNumber(3)
-  set schemaUrl($core.String v) { $_setString(2, v); }
+  set schemaUrl($core.String v) {
+    $_setString(2, v);
+  }
+
   @$pb.TagNumber(3)
   $core.bool hasSchemaUrl() => $_has(2);
   @$pb.TagNumber(3)
@@ -185,26 +211,34 @@ class ScopeSpans extends $pb.GeneratedMessage {
     return $result;
   }
   ScopeSpans._() : super();
-  factory ScopeSpans.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory ScopeSpans.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  factory ScopeSpans.fromBuffer($core.List<$core.int> i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(i, r);
+  factory ScopeSpans.fromJson($core.String i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ScopeSpans', package: const $pb.PackageName(_omitMessageNames ? '' : 'opentelemetry.proto.trace.v1'), createEmptyInstance: create)
-    ..aOM<$1.InstrumentationScope>(1, _omitFieldNames ? '' : 'scope', subBuilder: $1.InstrumentationScope.create)
-    ..pc<Span>(2, _omitFieldNames ? '' : 'spans', $pb.PbFieldType.PM, subBuilder: Span.create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ScopeSpans',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'opentelemetry.proto.trace.v1'),
+      createEmptyInstance: create)
+    ..aOM<$1.InstrumentationScope>(1, _omitFieldNames ? '' : 'scope',
+        subBuilder: $1.InstrumentationScope.create)
+    ..pc<Span>(2, _omitFieldNames ? '' : 'spans', $pb.PbFieldType.PM,
+        subBuilder: Span.create)
     ..aOS(3, _omitFieldNames ? '' : 'schemaUrl')
-    ..hasRequiredFields = false
-  ;
+    ..hasRequiredFields = false;
 
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+      'Will be removed in next major version')
   ScopeSpans clone() => ScopeSpans()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  ScopeSpans copyWith(void Function(ScopeSpans) updates) => super.copyWith((message) => updates(message as ScopeSpans)) as ScopeSpans;
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+      'Will be removed in next major version')
+  ScopeSpans copyWith(void Function(ScopeSpans) updates) =>
+      super.copyWith((message) => updates(message as ScopeSpans)) as ScopeSpans;
 
   $pb.BuilderInfo get info_ => _i;
 
@@ -213,7 +247,8 @@ class ScopeSpans extends $pb.GeneratedMessage {
   ScopeSpans createEmptyInstance() => create();
   static $pb.PbList<ScopeSpans> createRepeated() => $pb.PbList<ScopeSpans>();
   @$core.pragma('dart2js:noInline')
-  static ScopeSpans getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ScopeSpans>(create);
+  static ScopeSpans getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ScopeSpans>(create);
   static ScopeSpans? _defaultInstance;
 
   /// The instrumentation scope information for the spans in this message.
@@ -222,7 +257,10 @@ class ScopeSpans extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   $1.InstrumentationScope get scope => $_getN(0);
   @$pb.TagNumber(1)
-  set scope($1.InstrumentationScope v) { setField(1, v); }
+  set scope($1.InstrumentationScope v) {
+    setField(1, v);
+  }
+
   @$pb.TagNumber(1)
   $core.bool hasScope() => $_has(0);
   @$pb.TagNumber(1)
@@ -241,7 +279,10 @@ class ScopeSpans extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   $core.String get schemaUrl => $_getSZ(2);
   @$pb.TagNumber(3)
-  set schemaUrl($core.String v) { $_setString(2, v); }
+  set schemaUrl($core.String v) {
+    $_setString(2, v);
+  }
+
   @$pb.TagNumber(3)
   $core.bool hasSchemaUrl() => $_has(2);
   @$pb.TagNumber(3)
@@ -273,27 +314,38 @@ class Span_Event extends $pb.GeneratedMessage {
     return $result;
   }
   Span_Event._() : super();
-  factory Span_Event.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory Span_Event.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  factory Span_Event.fromBuffer($core.List<$core.int> i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(i, r);
+  factory Span_Event.fromJson($core.String i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Span.Event', package: const $pb.PackageName(_omitMessageNames ? '' : 'opentelemetry.proto.trace.v1'), createEmptyInstance: create)
-    ..a<$fixnum.Int64>(1, _omitFieldNames ? '' : 'timeUnixNano', $pb.PbFieldType.OF6, defaultOrMaker: $fixnum.Int64.ZERO)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'Span.Event',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'opentelemetry.proto.trace.v1'),
+      createEmptyInstance: create)
+    ..a<$fixnum.Int64>(
+        1, _omitFieldNames ? '' : 'timeUnixNano', $pb.PbFieldType.OF6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
     ..aOS(2, _omitFieldNames ? '' : 'name')
-    ..pc<$1.KeyValue>(3, _omitFieldNames ? '' : 'attributes', $pb.PbFieldType.PM, subBuilder: $1.KeyValue.create)
-    ..a<$core.int>(4, _omitFieldNames ? '' : 'droppedAttributesCount', $pb.PbFieldType.OU3)
-    ..hasRequiredFields = false
-  ;
+    ..pc<$1.KeyValue>(
+        3, _omitFieldNames ? '' : 'attributes', $pb.PbFieldType.PM,
+        subBuilder: $1.KeyValue.create)
+    ..a<$core.int>(
+        4, _omitFieldNames ? '' : 'droppedAttributesCount', $pb.PbFieldType.OU3)
+    ..hasRequiredFields = false;
 
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+      'Will be removed in next major version')
   Span_Event clone() => Span_Event()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  Span_Event copyWith(void Function(Span_Event) updates) => super.copyWith((message) => updates(message as Span_Event)) as Span_Event;
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+      'Will be removed in next major version')
+  Span_Event copyWith(void Function(Span_Event) updates) =>
+      super.copyWith((message) => updates(message as Span_Event)) as Span_Event;
 
   $pb.BuilderInfo get info_ => _i;
 
@@ -302,14 +354,18 @@ class Span_Event extends $pb.GeneratedMessage {
   Span_Event createEmptyInstance() => create();
   static $pb.PbList<Span_Event> createRepeated() => $pb.PbList<Span_Event>();
   @$core.pragma('dart2js:noInline')
-  static Span_Event getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Span_Event>(create);
+  static Span_Event getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<Span_Event>(create);
   static Span_Event? _defaultInstance;
 
   /// time_unix_nano is the time the event occurred.
   @$pb.TagNumber(1)
   $fixnum.Int64 get timeUnixNano => $_getI64(0);
   @$pb.TagNumber(1)
-  set timeUnixNano($fixnum.Int64 v) { $_setInt64(0, v); }
+  set timeUnixNano($fixnum.Int64 v) {
+    $_setInt64(0, v);
+  }
+
   @$pb.TagNumber(1)
   $core.bool hasTimeUnixNano() => $_has(0);
   @$pb.TagNumber(1)
@@ -320,7 +376,10 @@ class Span_Event extends $pb.GeneratedMessage {
   @$pb.TagNumber(2)
   $core.String get name => $_getSZ(1);
   @$pb.TagNumber(2)
-  set name($core.String v) { $_setString(1, v); }
+  set name($core.String v) {
+    $_setString(1, v);
+  }
+
   @$pb.TagNumber(2)
   $core.bool hasName() => $_has(1);
   @$pb.TagNumber(2)
@@ -337,7 +396,10 @@ class Span_Event extends $pb.GeneratedMessage {
   @$pb.TagNumber(4)
   $core.int get droppedAttributesCount => $_getIZ(3);
   @$pb.TagNumber(4)
-  set droppedAttributesCount($core.int v) { $_setUnsignedInt32(3, v); }
+  set droppedAttributesCount($core.int v) {
+    $_setUnsignedInt32(3, v);
+  }
+
   @$pb.TagNumber(4)
   $core.bool hasDroppedAttributesCount() => $_has(3);
   @$pb.TagNumber(4)
@@ -379,29 +441,40 @@ class Span_Link extends $pb.GeneratedMessage {
     return $result;
   }
   Span_Link._() : super();
-  factory Span_Link.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory Span_Link.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  factory Span_Link.fromBuffer($core.List<$core.int> i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(i, r);
+  factory Span_Link.fromJson($core.String i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Span.Link', package: const $pb.PackageName(_omitMessageNames ? '' : 'opentelemetry.proto.trace.v1'), createEmptyInstance: create)
-    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'traceId', $pb.PbFieldType.OY)
-    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'spanId', $pb.PbFieldType.OY)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'Span.Link',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'opentelemetry.proto.trace.v1'),
+      createEmptyInstance: create)
+    ..a<$core.List<$core.int>>(
+        1, _omitFieldNames ? '' : 'traceId', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(
+        2, _omitFieldNames ? '' : 'spanId', $pb.PbFieldType.OY)
     ..aOS(3, _omitFieldNames ? '' : 'traceState')
-    ..pc<$1.KeyValue>(4, _omitFieldNames ? '' : 'attributes', $pb.PbFieldType.PM, subBuilder: $1.KeyValue.create)
-    ..a<$core.int>(5, _omitFieldNames ? '' : 'droppedAttributesCount', $pb.PbFieldType.OU3)
+    ..pc<$1.KeyValue>(
+        4, _omitFieldNames ? '' : 'attributes', $pb.PbFieldType.PM,
+        subBuilder: $1.KeyValue.create)
+    ..a<$core.int>(
+        5, _omitFieldNames ? '' : 'droppedAttributesCount', $pb.PbFieldType.OU3)
     ..a<$core.int>(6, _omitFieldNames ? '' : 'flags', $pb.PbFieldType.OF3)
-    ..hasRequiredFields = false
-  ;
+    ..hasRequiredFields = false;
 
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+      'Will be removed in next major version')
   Span_Link clone() => Span_Link()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  Span_Link copyWith(void Function(Span_Link) updates) => super.copyWith((message) => updates(message as Span_Link)) as Span_Link;
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+      'Will be removed in next major version')
+  Span_Link copyWith(void Function(Span_Link) updates) =>
+      super.copyWith((message) => updates(message as Span_Link)) as Span_Link;
 
   $pb.BuilderInfo get info_ => _i;
 
@@ -410,7 +483,8 @@ class Span_Link extends $pb.GeneratedMessage {
   Span_Link createEmptyInstance() => create();
   static $pb.PbList<Span_Link> createRepeated() => $pb.PbList<Span_Link>();
   @$core.pragma('dart2js:noInline')
-  static Span_Link getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Span_Link>(create);
+  static Span_Link getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Span_Link>(create);
   static Span_Link? _defaultInstance;
 
   /// A unique identifier of a trace that this linked span is part of. The ID is a
@@ -418,7 +492,10 @@ class Span_Link extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   $core.List<$core.int> get traceId => $_getN(0);
   @$pb.TagNumber(1)
-  set traceId($core.List<$core.int> v) { $_setBytes(0, v); }
+  set traceId($core.List<$core.int> v) {
+    $_setBytes(0, v);
+  }
+
   @$pb.TagNumber(1)
   $core.bool hasTraceId() => $_has(0);
   @$pb.TagNumber(1)
@@ -428,7 +505,10 @@ class Span_Link extends $pb.GeneratedMessage {
   @$pb.TagNumber(2)
   $core.List<$core.int> get spanId => $_getN(1);
   @$pb.TagNumber(2)
-  set spanId($core.List<$core.int> v) { $_setBytes(1, v); }
+  set spanId($core.List<$core.int> v) {
+    $_setBytes(1, v);
+  }
+
   @$pb.TagNumber(2)
   $core.bool hasSpanId() => $_has(1);
   @$pb.TagNumber(2)
@@ -438,7 +518,10 @@ class Span_Link extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   $core.String get traceState => $_getSZ(2);
   @$pb.TagNumber(3)
-  set traceState($core.String v) { $_setString(2, v); }
+  set traceState($core.String v) {
+    $_setString(2, v);
+  }
+
   @$pb.TagNumber(3)
   $core.bool hasTraceState() => $_has(2);
   @$pb.TagNumber(3)
@@ -455,7 +538,10 @@ class Span_Link extends $pb.GeneratedMessage {
   @$pb.TagNumber(5)
   $core.int get droppedAttributesCount => $_getIZ(4);
   @$pb.TagNumber(5)
-  set droppedAttributesCount($core.int v) { $_setUnsignedInt32(4, v); }
+  set droppedAttributesCount($core.int v) {
+    $_setUnsignedInt32(4, v);
+  }
+
   @$pb.TagNumber(5)
   $core.bool hasDroppedAttributesCount() => $_has(4);
   @$pb.TagNumber(5)
@@ -472,7 +558,10 @@ class Span_Link extends $pb.GeneratedMessage {
   @$pb.TagNumber(6)
   $core.int get flags => $_getIZ(5);
   @$pb.TagNumber(6)
-  set flags($core.int v) { $_setUnsignedInt32(5, v); }
+  set flags($core.int v) {
+    $_setUnsignedInt32(5, v);
+  }
+
   @$pb.TagNumber(6)
   $core.bool hasFlags() => $_has(5);
   @$pb.TagNumber(6)
@@ -553,39 +642,63 @@ class Span extends $pb.GeneratedMessage {
     return $result;
   }
   Span._() : super();
-  factory Span.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory Span.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  factory Span.fromBuffer($core.List<$core.int> i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(i, r);
+  factory Span.fromJson($core.String i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Span', package: const $pb.PackageName(_omitMessageNames ? '' : 'opentelemetry.proto.trace.v1'), createEmptyInstance: create)
-    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'traceId', $pb.PbFieldType.OY)
-    ..a<$core.List<$core.int>>(2, _omitFieldNames ? '' : 'spanId', $pb.PbFieldType.OY)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'Span',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'opentelemetry.proto.trace.v1'),
+      createEmptyInstance: create)
+    ..a<$core.List<$core.int>>(
+        1, _omitFieldNames ? '' : 'traceId', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(
+        2, _omitFieldNames ? '' : 'spanId', $pb.PbFieldType.OY)
     ..aOS(3, _omitFieldNames ? '' : 'traceState')
-    ..a<$core.List<$core.int>>(4, _omitFieldNames ? '' : 'parentSpanId', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(
+        4, _omitFieldNames ? '' : 'parentSpanId', $pb.PbFieldType.OY)
     ..aOS(5, _omitFieldNames ? '' : 'name')
-    ..e<Span_SpanKind>(6, _omitFieldNames ? '' : 'kind', $pb.PbFieldType.OE, defaultOrMaker: Span_SpanKind.SPAN_KIND_UNSPECIFIED, valueOf: Span_SpanKind.valueOf, enumValues: Span_SpanKind.values)
-    ..a<$fixnum.Int64>(7, _omitFieldNames ? '' : 'startTimeUnixNano', $pb.PbFieldType.OF6, defaultOrMaker: $fixnum.Int64.ZERO)
-    ..a<$fixnum.Int64>(8, _omitFieldNames ? '' : 'endTimeUnixNano', $pb.PbFieldType.OF6, defaultOrMaker: $fixnum.Int64.ZERO)
-    ..pc<$1.KeyValue>(9, _omitFieldNames ? '' : 'attributes', $pb.PbFieldType.PM, subBuilder: $1.KeyValue.create)
-    ..a<$core.int>(10, _omitFieldNames ? '' : 'droppedAttributesCount', $pb.PbFieldType.OU3)
-    ..pc<Span_Event>(11, _omitFieldNames ? '' : 'events', $pb.PbFieldType.PM, subBuilder: Span_Event.create)
-    ..a<$core.int>(12, _omitFieldNames ? '' : 'droppedEventsCount', $pb.PbFieldType.OU3)
-    ..pc<Span_Link>(13, _omitFieldNames ? '' : 'links', $pb.PbFieldType.PM, subBuilder: Span_Link.create)
-    ..a<$core.int>(14, _omitFieldNames ? '' : 'droppedLinksCount', $pb.PbFieldType.OU3)
-    ..aOM<Status>(15, _omitFieldNames ? '' : 'status', subBuilder: Status.create)
+    ..e<Span_SpanKind>(6, _omitFieldNames ? '' : 'kind', $pb.PbFieldType.OE,
+        defaultOrMaker: Span_SpanKind.SPAN_KIND_UNSPECIFIED,
+        valueOf: Span_SpanKind.valueOf,
+        enumValues: Span_SpanKind.values)
+    ..a<$fixnum.Int64>(
+        7, _omitFieldNames ? '' : 'startTimeUnixNano', $pb.PbFieldType.OF6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..a<$fixnum.Int64>(
+        8, _omitFieldNames ? '' : 'endTimeUnixNano', $pb.PbFieldType.OF6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..pc<$1.KeyValue>(
+        9, _omitFieldNames ? '' : 'attributes', $pb.PbFieldType.PM,
+        subBuilder: $1.KeyValue.create)
+    ..a<$core.int>(10, _omitFieldNames ? '' : 'droppedAttributesCount',
+        $pb.PbFieldType.OU3)
+    ..pc<Span_Event>(11, _omitFieldNames ? '' : 'events', $pb.PbFieldType.PM,
+        subBuilder: Span_Event.create)
+    ..a<$core.int>(
+        12, _omitFieldNames ? '' : 'droppedEventsCount', $pb.PbFieldType.OU3)
+    ..pc<Span_Link>(13, _omitFieldNames ? '' : 'links', $pb.PbFieldType.PM,
+        subBuilder: Span_Link.create)
+    ..a<$core.int>(
+        14, _omitFieldNames ? '' : 'droppedLinksCount', $pb.PbFieldType.OU3)
+    ..aOM<Status>(15, _omitFieldNames ? '' : 'status',
+        subBuilder: Status.create)
     ..a<$core.int>(16, _omitFieldNames ? '' : 'flags', $pb.PbFieldType.OF3)
-    ..hasRequiredFields = false
-  ;
+    ..hasRequiredFields = false;
 
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+      'Will be removed in next major version')
   Span clone() => Span()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  Span copyWith(void Function(Span) updates) => super.copyWith((message) => updates(message as Span)) as Span;
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+      'Will be removed in next major version')
+  Span copyWith(void Function(Span) updates) =>
+      super.copyWith((message) => updates(message as Span)) as Span;
 
   $pb.BuilderInfo get info_ => _i;
 
@@ -594,7 +707,8 @@ class Span extends $pb.GeneratedMessage {
   Span createEmptyInstance() => create();
   static $pb.PbList<Span> createRepeated() => $pb.PbList<Span>();
   @$core.pragma('dart2js:noInline')
-  static Span getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Span>(create);
+  static Span getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Span>(create);
   static Span? _defaultInstance;
 
   ///  A unique identifier for a trace. All spans from the same trace share
@@ -606,7 +720,10 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   $core.List<$core.int> get traceId => $_getN(0);
   @$pb.TagNumber(1)
-  set traceId($core.List<$core.int> v) { $_setBytes(0, v); }
+  set traceId($core.List<$core.int> v) {
+    $_setBytes(0, v);
+  }
+
   @$pb.TagNumber(1)
   $core.bool hasTraceId() => $_has(0);
   @$pb.TagNumber(1)
@@ -621,7 +738,10 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(2)
   $core.List<$core.int> get spanId => $_getN(1);
   @$pb.TagNumber(2)
-  set spanId($core.List<$core.int> v) { $_setBytes(1, v); }
+  set spanId($core.List<$core.int> v) {
+    $_setBytes(1, v);
+  }
+
   @$pb.TagNumber(2)
   $core.bool hasSpanId() => $_has(1);
   @$pb.TagNumber(2)
@@ -633,7 +753,10 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   $core.String get traceState => $_getSZ(2);
   @$pb.TagNumber(3)
-  set traceState($core.String v) { $_setString(2, v); }
+  set traceState($core.String v) {
+    $_setString(2, v);
+  }
+
   @$pb.TagNumber(3)
   $core.bool hasTraceState() => $_has(2);
   @$pb.TagNumber(3)
@@ -644,7 +767,10 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(4)
   $core.List<$core.int> get parentSpanId => $_getN(3);
   @$pb.TagNumber(4)
-  set parentSpanId($core.List<$core.int> v) { $_setBytes(3, v); }
+  set parentSpanId($core.List<$core.int> v) {
+    $_setBytes(3, v);
+  }
+
   @$pb.TagNumber(4)
   $core.bool hasParentSpanId() => $_has(3);
   @$pb.TagNumber(4)
@@ -664,7 +790,10 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(5)
   $core.String get name => $_getSZ(4);
   @$pb.TagNumber(5)
-  set name($core.String v) { $_setString(4, v); }
+  set name($core.String v) {
+    $_setString(4, v);
+  }
+
   @$pb.TagNumber(5)
   $core.bool hasName() => $_has(4);
   @$pb.TagNumber(5)
@@ -676,7 +805,10 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(6)
   Span_SpanKind get kind => $_getN(5);
   @$pb.TagNumber(6)
-  set kind(Span_SpanKind v) { setField(6, v); }
+  set kind(Span_SpanKind v) {
+    setField(6, v);
+  }
+
   @$pb.TagNumber(6)
   $core.bool hasKind() => $_has(5);
   @$pb.TagNumber(6)
@@ -691,7 +823,10 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(7)
   $fixnum.Int64 get startTimeUnixNano => $_getI64(6);
   @$pb.TagNumber(7)
-  set startTimeUnixNano($fixnum.Int64 v) { $_setInt64(6, v); }
+  set startTimeUnixNano($fixnum.Int64 v) {
+    $_setInt64(6, v);
+  }
+
   @$pb.TagNumber(7)
   $core.bool hasStartTimeUnixNano() => $_has(6);
   @$pb.TagNumber(7)
@@ -706,7 +841,10 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(8)
   $fixnum.Int64 get endTimeUnixNano => $_getI64(7);
   @$pb.TagNumber(8)
-  set endTimeUnixNano($fixnum.Int64 v) { $_setInt64(7, v); }
+  set endTimeUnixNano($fixnum.Int64 v) {
+    $_setInt64(7, v);
+  }
+
   @$pb.TagNumber(8)
   $core.bool hasEndTimeUnixNano() => $_has(7);
   @$pb.TagNumber(8)
@@ -733,7 +871,10 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(10)
   $core.int get droppedAttributesCount => $_getIZ(9);
   @$pb.TagNumber(10)
-  set droppedAttributesCount($core.int v) { $_setUnsignedInt32(9, v); }
+  set droppedAttributesCount($core.int v) {
+    $_setUnsignedInt32(9, v);
+  }
+
   @$pb.TagNumber(10)
   $core.bool hasDroppedAttributesCount() => $_has(9);
   @$pb.TagNumber(10)
@@ -748,7 +889,10 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(12)
   $core.int get droppedEventsCount => $_getIZ(11);
   @$pb.TagNumber(12)
-  set droppedEventsCount($core.int v) { $_setUnsignedInt32(11, v); }
+  set droppedEventsCount($core.int v) {
+    $_setUnsignedInt32(11, v);
+  }
+
   @$pb.TagNumber(12)
   $core.bool hasDroppedEventsCount() => $_has(11);
   @$pb.TagNumber(12)
@@ -764,7 +908,10 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(14)
   $core.int get droppedLinksCount => $_getIZ(13);
   @$pb.TagNumber(14)
-  set droppedLinksCount($core.int v) { $_setUnsignedInt32(13, v); }
+  set droppedLinksCount($core.int v) {
+    $_setUnsignedInt32(13, v);
+  }
+
   @$pb.TagNumber(14)
   $core.bool hasDroppedLinksCount() => $_has(13);
   @$pb.TagNumber(14)
@@ -775,7 +922,10 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(15)
   Status get status => $_getN(14);
   @$pb.TagNumber(15)
-  set status(Status v) { setField(15, v); }
+  set status(Status v) {
+    setField(15, v);
+  }
+
   @$pb.TagNumber(15)
   $core.bool hasStatus() => $_has(14);
   @$pb.TagNumber(15)
@@ -800,7 +950,10 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(16)
   $core.int get flags => $_getIZ(15);
   @$pb.TagNumber(16)
-  set flags($core.int v) { $_setUnsignedInt32(15, v); }
+  set flags($core.int v) {
+    $_setUnsignedInt32(15, v);
+  }
+
   @$pb.TagNumber(16)
   $core.bool hasFlags() => $_has(15);
   @$pb.TagNumber(16)
@@ -824,25 +977,34 @@ class Status extends $pb.GeneratedMessage {
     return $result;
   }
   Status._() : super();
-  factory Status.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory Status.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  factory Status.fromBuffer($core.List<$core.int> i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(i, r);
+  factory Status.fromJson($core.String i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Status', package: const $pb.PackageName(_omitMessageNames ? '' : 'opentelemetry.proto.trace.v1'), createEmptyInstance: create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'Status',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'opentelemetry.proto.trace.v1'),
+      createEmptyInstance: create)
     ..aOS(2, _omitFieldNames ? '' : 'message')
-    ..e<Status_StatusCode>(3, _omitFieldNames ? '' : 'code', $pb.PbFieldType.OE, defaultOrMaker: Status_StatusCode.STATUS_CODE_UNSET, valueOf: Status_StatusCode.valueOf, enumValues: Status_StatusCode.values)
-    ..hasRequiredFields = false
-  ;
+    ..e<Status_StatusCode>(3, _omitFieldNames ? '' : 'code', $pb.PbFieldType.OE,
+        defaultOrMaker: Status_StatusCode.STATUS_CODE_UNSET,
+        valueOf: Status_StatusCode.valueOf,
+        enumValues: Status_StatusCode.values)
+    ..hasRequiredFields = false;
 
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+      'Will be removed in next major version')
   Status clone() => Status()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  Status copyWith(void Function(Status) updates) => super.copyWith((message) => updates(message as Status)) as Status;
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+      'Will be removed in next major version')
+  Status copyWith(void Function(Status) updates) =>
+      super.copyWith((message) => updates(message as Status)) as Status;
 
   $pb.BuilderInfo get info_ => _i;
 
@@ -851,14 +1013,18 @@ class Status extends $pb.GeneratedMessage {
   Status createEmptyInstance() => create();
   static $pb.PbList<Status> createRepeated() => $pb.PbList<Status>();
   @$core.pragma('dart2js:noInline')
-  static Status getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Status>(create);
+  static Status getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Status>(create);
   static Status? _defaultInstance;
 
   /// A developer-facing human readable error message.
   @$pb.TagNumber(2)
   $core.String get message => $_getSZ(0);
   @$pb.TagNumber(2)
-  set message($core.String v) { $_setString(0, v); }
+  set message($core.String v) {
+    $_setString(0, v);
+  }
+
   @$pb.TagNumber(2)
   $core.bool hasMessage() => $_has(0);
   @$pb.TagNumber(2)
@@ -868,13 +1034,16 @@ class Status extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   Status_StatusCode get code => $_getN(1);
   @$pb.TagNumber(3)
-  set code(Status_StatusCode v) { setField(3, v); }
+  set code(Status_StatusCode v) {
+    setField(3, v);
+  }
+
   @$pb.TagNumber(3)
   $core.bool hasCode() => $_has(1);
   @$pb.TagNumber(3)
   void clearCode() => clearField(3);
 }
 
-
 const _omitFieldNames = $core.bool.fromEnvironment('protobuf.omit_field_names');
-const _omitMessageNames = $core.bool.fromEnvironment('protobuf.omit_message_names');
+const _omitMessageNames =
+    $core.bool.fromEnvironment('protobuf.omit_message_names');

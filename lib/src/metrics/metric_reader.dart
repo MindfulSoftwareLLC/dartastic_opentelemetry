@@ -3,7 +3,8 @@
 
 import 'dart:async';
 
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart' show OTelLog;
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
+    show OTelLog;
 
 import 'data/metric_data.dart';
 import 'meter_provider.dart';
@@ -65,8 +66,8 @@ class PeriodicExportingMetricReader extends MetricReader {
     this._exporter, {
     Duration interval = const Duration(seconds: 60),
     Duration timeout = const Duration(seconds: 30),
-  }) : _interval = interval,
-       _timeout = timeout {
+  })  : _interval = interval,
+        _timeout = timeout {
     // Start the timer
     _startTimer();
   }
@@ -104,7 +105,8 @@ class PeriodicExportingMetricReader extends MetricReader {
   Future<MetricData> collect() async {
     if (meterProvider == null) {
       if (OTelLog.isLogMetrics()) {
-        OTelLog.logMetric('PeriodicExportingMetricReader: No meter provider registered');
+        OTelLog.logMetric(
+            'PeriodicExportingMetricReader: No meter provider registered');
       }
       // Return an empty container with no metrics
       return MetricData.empty();
@@ -117,7 +119,8 @@ class PeriodicExportingMetricReader extends MetricReader {
     final metrics = await sdkMeterProvider.collectAllMetrics();
 
     if (OTelLog.isLogMetrics()) {
-      OTelLog.logMetric('PeriodicExportingMetricReader: Collected ${metrics.length} metrics');
+      OTelLog.logMetric(
+          'PeriodicExportingMetricReader: Collected ${metrics.length} metrics');
     }
 
     return MetricData(

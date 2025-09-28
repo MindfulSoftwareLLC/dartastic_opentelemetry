@@ -2,8 +2,10 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry/src/util/span_logger.dart' show logSpan, logSpans;
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart' show LogFunction, LogLevel;
+import 'package:dartastic_opentelemetry/src/trace/span_logger.dart'
+    show logSpan, logSpans;
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
+    show LogFunction, LogLevel;
 import 'package:test/test.dart';
 
 void main() {
@@ -33,7 +35,7 @@ void main() {
       // Restore original logging state
       OTelLog.logFunction = originalLogFunction;
       OTelLog.currentLevel = originalLogLevel;
-      
+
       // Clean up OTel
       await OTel.shutdown();
     });
@@ -77,10 +79,22 @@ void main() {
 
       // Verify only the right messages are logged
       expect(logs.length, equals(4)); // info, warn, error, fatal
-      expect(logs.any((log) => log.contains('INFO') && log.contains('Info message')), isTrue);
-      expect(logs.any((log) => log.contains('WARN') && log.contains('Warn message')), isTrue);
-      expect(logs.any((log) => log.contains('ERROR') && log.contains('Error message')), isTrue);
-      expect(logs.any((log) => log.contains('FATAL') && log.contains('Fatal message')), isTrue);
+      expect(
+          logs.any(
+              (log) => log.contains('INFO') && log.contains('Info message')),
+          isTrue);
+      expect(
+          logs.any(
+              (log) => log.contains('WARN') && log.contains('Warn message')),
+          isTrue);
+      expect(
+          logs.any(
+              (log) => log.contains('ERROR') && log.contains('Error message')),
+          isTrue);
+      expect(
+          logs.any(
+              (log) => log.contains('FATAL') && log.contains('Fatal message')),
+          isTrue);
       expect(logs.any((log) => log.contains('TRACE')), isFalse);
       expect(logs.any((log) => log.contains('DEBUG')), isFalse);
     });
@@ -127,7 +141,8 @@ void main() {
 
       // Verify format
       expect(logs.length, equals(1));
-      expect(logs.first, matches(r'\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+\]')); // timestamp
+      expect(logs.first,
+          matches(r'\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+\]')); // timestamp
       expect(logs.first, contains('[INFO]'));
       expect(logs.first, contains('Direct log message'));
     });

@@ -82,7 +82,14 @@ final $typed_data.Uint8List logRecordFlagsDescriptor = $convert.base64Decode(
 const LogsData$json = {
   '1': 'LogsData',
   '2': [
-    {'1': 'resource_logs', '3': 1, '4': 3, '5': 11, '6': '.opentelemetry.proto.logs.v1.ResourceLogs', '10': 'resourceLogs'},
+    {
+      '1': 'resource_logs',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.logs.v1.ResourceLogs',
+      '10': 'resourceLogs'
+    },
   ],
 };
 
@@ -95,8 +102,22 @@ final $typed_data.Uint8List logsDataDescriptor = $convert.base64Decode(
 const ResourceLogs$json = {
   '1': 'ResourceLogs',
   '2': [
-    {'1': 'resource', '3': 1, '4': 1, '5': 11, '6': '.opentelemetry.proto.resource.v1.Resource', '10': 'resource'},
-    {'1': 'scope_logs', '3': 2, '4': 3, '5': 11, '6': '.opentelemetry.proto.logs.v1.ScopeLogs', '10': 'scopeLogs'},
+    {
+      '1': 'resource',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.opentelemetry.proto.resource.v1.Resource',
+      '10': 'resource'
+    },
+    {
+      '1': 'scope_logs',
+      '3': 2,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.logs.v1.ScopeLogs',
+      '10': 'scopeLogs'
+    },
     {'1': 'schema_url', '3': 3, '4': 1, '5': 9, '10': 'schemaUrl'},
   ],
   '9': [
@@ -115,8 +136,22 @@ final $typed_data.Uint8List resourceLogsDescriptor = $convert.base64Decode(
 const ScopeLogs$json = {
   '1': 'ScopeLogs',
   '2': [
-    {'1': 'scope', '3': 1, '4': 1, '5': 11, '6': '.opentelemetry.proto.common.v1.InstrumentationScope', '10': 'scope'},
-    {'1': 'log_records', '3': 2, '4': 3, '5': 11, '6': '.opentelemetry.proto.logs.v1.LogRecord', '10': 'logRecords'},
+    {
+      '1': 'scope',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.opentelemetry.proto.common.v1.InstrumentationScope',
+      '10': 'scope'
+    },
+    {
+      '1': 'log_records',
+      '3': 2,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.logs.v1.LogRecord',
+      '10': 'logRecords'
+    },
     {'1': 'schema_url', '3': 3, '4': 1, '5': 9, '10': 'schemaUrl'},
   ],
 };
@@ -133,12 +168,45 @@ const LogRecord$json = {
   '1': 'LogRecord',
   '2': [
     {'1': 'time_unix_nano', '3': 1, '4': 1, '5': 6, '10': 'timeUnixNano'},
-    {'1': 'observed_time_unix_nano', '3': 11, '4': 1, '5': 6, '10': 'observedTimeUnixNano'},
-    {'1': 'severity_number', '3': 2, '4': 1, '5': 14, '6': '.opentelemetry.proto.logs.v1.SeverityNumber', '10': 'severityNumber'},
+    {
+      '1': 'observed_time_unix_nano',
+      '3': 11,
+      '4': 1,
+      '5': 6,
+      '10': 'observedTimeUnixNano'
+    },
+    {
+      '1': 'severity_number',
+      '3': 2,
+      '4': 1,
+      '5': 14,
+      '6': '.opentelemetry.proto.logs.v1.SeverityNumber',
+      '10': 'severityNumber'
+    },
     {'1': 'severity_text', '3': 3, '4': 1, '5': 9, '10': 'severityText'},
-    {'1': 'body', '3': 5, '4': 1, '5': 11, '6': '.opentelemetry.proto.common.v1.AnyValue', '10': 'body'},
-    {'1': 'attributes', '3': 6, '4': 3, '5': 11, '6': '.opentelemetry.proto.common.v1.KeyValue', '10': 'attributes'},
-    {'1': 'dropped_attributes_count', '3': 7, '4': 1, '5': 13, '10': 'droppedAttributesCount'},
+    {
+      '1': 'body',
+      '3': 5,
+      '4': 1,
+      '5': 11,
+      '6': '.opentelemetry.proto.common.v1.AnyValue',
+      '10': 'body'
+    },
+    {
+      '1': 'attributes',
+      '3': 6,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.common.v1.KeyValue',
+      '10': 'attributes'
+    },
+    {
+      '1': 'dropped_attributes_count',
+      '3': 7,
+      '4': 1,
+      '5': 13,
+      '10': 'droppedAttributesCount'
+    },
     {'1': 'flags', '3': 8, '4': 1, '5': 7, '10': 'flags'},
     {'1': 'trace_id', '3': 9, '4': 1, '5': 12, '10': 'traceId'},
     {'1': 'span_id', '3': 10, '4': 1, '5': 12, '10': 'spanId'},
@@ -160,4 +228,3 @@ final $typed_data.Uint8List logRecordDescriptor = $convert.base64Decode(
     'QYByABKA1SFmRyb3BwZWRBdHRyaWJ1dGVzQ291bnQSFAoFZmxhZ3MYCCABKAdSBWZsYWdzEhkK'
     'CHRyYWNlX2lkGAkgASgMUgd0cmFjZUlkEhcKB3NwYW5faWQYCiABKAxSBnNwYW5JZEoECAQQBQ'
     '==');
-

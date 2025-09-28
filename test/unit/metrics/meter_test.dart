@@ -83,9 +83,10 @@ void main() {
       // Get the metrics
       final metrics = memoryExporter.exportedMetrics;
       expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
-      
-      final metric = metrics.firstWhere((m) => m.name == 'test_counter', 
-         orElse: () => throw StateError('test_counter metric not found in exported metrics: $metrics'));
+
+      final metric = metrics.firstWhere((m) => m.name == 'test_counter',
+          orElse: () => throw StateError(
+              'test_counter metric not found in exported metrics: $metrics'));
 
       // Check the instrumentation scope information
       expect(metric.name, equals('test_counter'));
@@ -96,7 +97,8 @@ void main() {
 
       // Create one of each instrument type
       final counter = meter.createCounter<int>(name: 'test_counter');
-      final upDownCounter = meter.createUpDownCounter<int>(name: 'test_up_down_counter');
+      final upDownCounter =
+          meter.createUpDownCounter<int>(name: 'test_up_down_counter');
       final histogram = meter.createHistogram<double>(name: 'test_histogram');
       final gauge = meter.createGauge<double>(name: 'test_gauge');
       final observableCounter = meter.createObservableCounter<int>(
@@ -142,9 +144,10 @@ void main() {
       // Get the metrics
       final metrics = memoryExporter.exportedMetrics;
       expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
-      
+
       final metric = metrics.firstWhere((m) => m.name == 'schema_counter',
-          orElse: () => throw StateError('schema_counter metric not found in exported metrics: $metrics'));
+          orElse: () => throw StateError(
+              'schema_counter metric not found in exported metrics: $metrics'));
 
       // Verify metric is captured
       expect(metric.name, equals('schema_counter'));

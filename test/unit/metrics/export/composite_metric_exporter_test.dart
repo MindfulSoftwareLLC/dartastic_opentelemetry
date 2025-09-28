@@ -62,9 +62,11 @@ void main() {
 
       // Find the test_counter metric in each exporter
       final metric1 = metrics1.firstWhere((m) => m.name == 'test_counter',
-          orElse: () => throw StateError('test_counter not found in exporter1'));
+          orElse: () =>
+              throw StateError('test_counter not found in exporter1'));
       final metric2 = metrics2.firstWhere((m) => m.name == 'test_counter',
-          orElse: () => throw StateError('test_counter not found in exporter2'));
+          orElse: () =>
+              throw StateError('test_counter not found in exporter2'));
 
       // Verify the metrics exist
       expect(metric1, isNotNull);
@@ -75,7 +77,8 @@ void main() {
       expect(metric2.name, equals('test_counter'));
     });
 
-    test('CompositeMetricExporter handles exporter failures gracefully', () async {
+    test('CompositeMetricExporter handles exporter failures gracefully',
+        () async {
       // Create a test exporter that fails on export
       final failingExporter = _FailingMetricExporter();
 
@@ -117,7 +120,8 @@ void main() {
       expect(exporter1.exportedMetrics.isNotEmpty, isTrue);
     });
 
-    test('CompositeMetricExporter forceFlush and shutdown calls all exporters', () async {
+    test('CompositeMetricExporter forceFlush and shutdown calls all exporters',
+        () async {
       // Create tracked exporters
       final trackedExporter1 = _TrackedMetricExporter();
       final trackedExporter2 = _TrackedMetricExporter();
@@ -162,12 +166,12 @@ void main() {
 
 /// A test exporter that fails when export is called
 class _FailingMetricExporter implements MetricExporter {
-String get name => 'FailingMetricExporter';
+  String get name => 'FailingMetricExporter';
 
-@override
-Future<bool> export(MetricData data) async {
+  @override
+  Future<bool> export(MetricData data) async {
 // This exporter intentionally fails and returns false to test that the composite exporter correctly propagates failures
-  print('Intentional export failure that should be caught internally');
+    print('Intentional export failure that should be caught internally');
     return false;
   }
 

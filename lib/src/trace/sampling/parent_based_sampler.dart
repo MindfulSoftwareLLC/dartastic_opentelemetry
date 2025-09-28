@@ -47,9 +47,11 @@ class ParentBasedSampler implements Sampler {
     Sampler? localParentSampled,
     Sampler? localParentNotSampled,
   })  : _remoteParentSampled = remoteParentSampled ?? const AlwaysOnSampler(),
-        _remoteParentNotSampled = remoteParentNotSampled ?? const AlwaysOffSampler(),
+        _remoteParentNotSampled =
+            remoteParentNotSampled ?? const AlwaysOffSampler(),
         _localParentSampled = localParentSampled ?? const AlwaysOnSampler(),
-        _localParentNotSampled = localParentNotSampled ?? const AlwaysOffSampler();
+        _localParentNotSampled =
+            localParentNotSampled ?? const AlwaysOffSampler();
 
   /// Makes a sampling decision based on the parent context.
   ///

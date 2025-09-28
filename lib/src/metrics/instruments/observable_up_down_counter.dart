@@ -10,7 +10,8 @@ import '../../../dartastic_opentelemetry.dart';
 /// An ObservableUpDownCounter is used to measure a value that increases and
 /// decreases where measurements are made by a callback function. For example,
 /// number of active requests, queue size, pool size.
-class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCounter<T>, SDKInstrument {
+class ObservableUpDownCounter<T extends num>
+    implements APIObservableUpDownCounter<T>, SDKInstrument {
   /// The underlying API ObservableUpDownCounter.
   final APIObservableUpDownCounter<T> _apiCounter;
 
@@ -27,8 +28,8 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
   ObservableUpDownCounter({
     required APIObservableUpDownCounter<T> apiCounter,
     required Meter meter,
-  }) : _apiCounter = apiCounter,
-       _meter = meter;
+  })  : _apiCounter = apiCounter,
+        _meter = meter;
 
   @override
   String get name => _apiCounter.name;
@@ -76,7 +77,9 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
 
     if (attributes == null) {
       // For no attributes, sum all points
-      value = _storage.collectPoints().fold<num>(0, (sum, point) => sum + point.value);
+      value = _storage
+          .collectPoints()
+          .fold<num>(0, (sum, point) => sum + point.value);
     } else {
       // For specific attributes, get that value
       value = _storage.getValue(attributes);
@@ -126,8 +129,11 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
         for (final measurement in observableResult.measurements) {
           // Type checking for the generic parameter
           final dynamic rawValue = measurement.value;
-          final num value = (rawValue is num) ? rawValue : num.tryParse(rawValue.toString()) ?? 0;
-          final attributes = measurement.attributes ?? OTelFactory.otelFactory!.attributes();
+          final num value = (rawValue is num)
+              ? rawValue
+              : num.tryParse(rawValue.toString()) ?? 0;
+          final attributes =
+              measurement.attributes ?? OTelFactory.otelFactory!.attributes();
 
           // Per the spec, for ObservableUpDownCounter we record the absolute value
           // directly - not the delta
@@ -153,7 +159,8 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
           }
         }
       } catch (e) {
-        print('Error collecting measurements from ObservableUpDownCounter callback: $e');
+        print(
+            'Error collecting measurements from ObservableUpDownCounter callback: $e');
       }
     }
 
@@ -194,7 +201,7 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
         unit: unit,
         temporality: AggregationTemporality.cumulative,
         points: points,
-        isMonotonic: false,  // Up/down counters are non-monotonic
+        isMonotonic: false, // Up/down counters are non-monotonic
       )
     ];
   }
@@ -207,7 +214,8 @@ class ObservableUpDownCounter<T extends num> implements APIObservableUpDownCount
 }
 
 /// Wrapper for APICallbackRegistration that also handles our internal state.
-class _ObservableUpDownCounterCallbackRegistration<T extends num> implements APICallbackRegistration<T> {
+class _ObservableUpDownCounterCallbackRegistration<T extends num>
+    implements APICallbackRegistration<T> {
   /// The API registration.
   final APICallbackRegistration<T> apiRegistration;
 

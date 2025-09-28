@@ -150,14 +150,14 @@ void main() {
 
       // Verify callback was executed
       expect(callbackExecuted, isTrue);
-      
+
       // Verify measurements were recorded
       expect(measurements.isNotEmpty, isTrue);
       if (measurements.isNotEmpty) {
         expect(measurements.first.value, equals(capturedValue));
         expect(measurements.first.value, isA<int>());
       }
-      
+
       // Reset the counter
       counter.reset();
     });
@@ -186,14 +186,14 @@ void main() {
 
       // Verify callback was executed
       expect(callbackExecuted, isTrue);
-      
+
       // Verify measurements were recorded
       expect(measurements.isNotEmpty, isTrue);
       if (measurements.isNotEmpty) {
         expect(measurements.first.value, equals(capturedValue));
         expect(measurements.first.value, isA<double>());
       }
-      
+
       // Reset the counter
       counter.reset();
     });
@@ -204,7 +204,7 @@ void main() {
         name: 'attr-int-counter',
         unit: 'items',
       ) as Counter<int>;
-      
+
       final doubleCounter = meter.createCounter<double>(
         name: 'attr-double-counter',
         unit: 'seconds',
@@ -228,13 +228,13 @@ void main() {
       // Verify values with attributes maintain their types
       expect(intCounter.getValue(attributes1), equals(5));
       expect(intCounter.getValue(attributes1), isA<int>());
-      
+
       expect(intCounter.getValue(attributes2), equals(10));
       expect(intCounter.getValue(attributes2), isA<int>());
 
       expect(doubleCounter.getValue(attributes1), equals(5.5));
       expect(doubleCounter.getValue(attributes1), isA<double>());
-      
+
       expect(doubleCounter.getValue(attributes2), equals(10.25));
       expect(doubleCounter.getValue(attributes2), isA<double>());
     });

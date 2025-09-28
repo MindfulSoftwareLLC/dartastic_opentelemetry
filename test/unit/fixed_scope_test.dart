@@ -58,8 +58,10 @@ void main() {
       final httpScope = httpSpan.instrumentationScope;
       final dbScope = dbSpan.instrumentationScope;
 
-      print('HTTP Span Instrumentation Scope: ${httpScope.name}, version: ${httpScope.version}');
-      print('DB Span Instrumentation Scope: ${dbScope.name}, version: ${dbScope.version}');
+      print(
+          'HTTP Span Instrumentation Scope: ${httpScope.name}, version: ${httpScope.version}');
+      print(
+          'DB Span Instrumentation Scope: ${dbScope.name}, version: ${dbScope.version}');
 
       // Verify the instrumentation scopes
       expect(httpScope.name, equals('http-instrumentation'));
@@ -102,9 +104,9 @@ void main() {
 
       // Check for both instrumentation scopes
       expect(allScopeNames.contains('http-instrumentation'), isTrue,
-             reason: 'Should contain http-instrumentation scope');
+          reason: 'Should contain http-instrumentation scope');
       expect(allScopeNames.contains('db-instrumentation'), isTrue,
-             reason: 'Should contain db-instrumentation scope');
+          reason: 'Should contain db-instrumentation scope');
     });
   });
 }

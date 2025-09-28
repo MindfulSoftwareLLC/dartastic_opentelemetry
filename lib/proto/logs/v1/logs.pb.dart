@@ -44,24 +44,32 @@ class LogsData extends $pb.GeneratedMessage {
     return $result;
   }
   LogsData._() : super();
-  factory LogsData.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory LogsData.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  factory LogsData.fromBuffer($core.List<$core.int> i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(i, r);
+  factory LogsData.fromJson($core.String i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'LogsData', package: const $pb.PackageName(_omitMessageNames ? '' : 'opentelemetry.proto.logs.v1'), createEmptyInstance: create)
-    ..pc<ResourceLogs>(1, _omitFieldNames ? '' : 'resourceLogs', $pb.PbFieldType.PM, subBuilder: ResourceLogs.create)
-    ..hasRequiredFields = false
-  ;
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'LogsData',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'opentelemetry.proto.logs.v1'),
+      createEmptyInstance: create)
+    ..pc<ResourceLogs>(
+        1, _omitFieldNames ? '' : 'resourceLogs', $pb.PbFieldType.PM,
+        subBuilder: ResourceLogs.create)
+    ..hasRequiredFields = false;
 
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+      'Will be removed in next major version')
   LogsData clone() => LogsData()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  LogsData copyWith(void Function(LogsData) updates) => super.copyWith((message) => updates(message as LogsData)) as LogsData;
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+      'Will be removed in next major version')
+  LogsData copyWith(void Function(LogsData) updates) =>
+      super.copyWith((message) => updates(message as LogsData)) as LogsData;
 
   $pb.BuilderInfo get info_ => _i;
 
@@ -70,7 +78,8 @@ class LogsData extends $pb.GeneratedMessage {
   LogsData createEmptyInstance() => create();
   static $pb.PbList<LogsData> createRepeated() => $pb.PbList<LogsData>();
   @$core.pragma('dart2js:noInline')
-  static LogsData getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<LogsData>(create);
+  static LogsData getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<LogsData>(create);
   static LogsData? _defaultInstance;
 
   /// An array of ResourceLogs.
@@ -102,35 +111,46 @@ class ResourceLogs extends $pb.GeneratedMessage {
     return $result;
   }
   ResourceLogs._() : super();
-  factory ResourceLogs.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory ResourceLogs.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  factory ResourceLogs.fromBuffer($core.List<$core.int> i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(i, r);
+  factory ResourceLogs.fromJson($core.String i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ResourceLogs', package: const $pb.PackageName(_omitMessageNames ? '' : 'opentelemetry.proto.logs.v1'), createEmptyInstance: create)
-    ..aOM<$4.Resource>(1, _omitFieldNames ? '' : 'resource', subBuilder: $4.Resource.create)
-    ..pc<ScopeLogs>(2, _omitFieldNames ? '' : 'scopeLogs', $pb.PbFieldType.PM, subBuilder: ScopeLogs.create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ResourceLogs',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'opentelemetry.proto.logs.v1'),
+      createEmptyInstance: create)
+    ..aOM<$4.Resource>(1, _omitFieldNames ? '' : 'resource',
+        subBuilder: $4.Resource.create)
+    ..pc<ScopeLogs>(2, _omitFieldNames ? '' : 'scopeLogs', $pb.PbFieldType.PM,
+        subBuilder: ScopeLogs.create)
     ..aOS(3, _omitFieldNames ? '' : 'schemaUrl')
-    ..hasRequiredFields = false
-  ;
+    ..hasRequiredFields = false;
 
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+      'Will be removed in next major version')
   ResourceLogs clone() => ResourceLogs()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  ResourceLogs copyWith(void Function(ResourceLogs) updates) => super.copyWith((message) => updates(message as ResourceLogs)) as ResourceLogs;
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+      'Will be removed in next major version')
+  ResourceLogs copyWith(void Function(ResourceLogs) updates) =>
+      super.copyWith((message) => updates(message as ResourceLogs))
+          as ResourceLogs;
 
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
   static ResourceLogs create() => ResourceLogs._();
   ResourceLogs createEmptyInstance() => create();
-  static $pb.PbList<ResourceLogs> createRepeated() => $pb.PbList<ResourceLogs>();
+  static $pb.PbList<ResourceLogs> createRepeated() =>
+      $pb.PbList<ResourceLogs>();
   @$core.pragma('dart2js:noInline')
-  static ResourceLogs getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ResourceLogs>(create);
+  static ResourceLogs getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ResourceLogs>(create);
   static ResourceLogs? _defaultInstance;
 
   /// The resource for the logs in this message.
@@ -138,7 +158,10 @@ class ResourceLogs extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   $4.Resource get resource => $_getN(0);
   @$pb.TagNumber(1)
-  set resource($4.Resource v) { setField(1, v); }
+  set resource($4.Resource v) {
+    setField(1, v);
+  }
+
   @$pb.TagNumber(1)
   $core.bool hasResource() => $_has(0);
   @$pb.TagNumber(1)
@@ -158,7 +181,10 @@ class ResourceLogs extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   $core.String get schemaUrl => $_getSZ(2);
   @$pb.TagNumber(3)
-  set schemaUrl($core.String v) { $_setString(2, v); }
+  set schemaUrl($core.String v) {
+    $_setString(2, v);
+  }
+
   @$pb.TagNumber(3)
   $core.bool hasSchemaUrl() => $_has(2);
   @$pb.TagNumber(3)
@@ -185,26 +211,34 @@ class ScopeLogs extends $pb.GeneratedMessage {
     return $result;
   }
   ScopeLogs._() : super();
-  factory ScopeLogs.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory ScopeLogs.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  factory ScopeLogs.fromBuffer($core.List<$core.int> i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(i, r);
+  factory ScopeLogs.fromJson($core.String i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ScopeLogs', package: const $pb.PackageName(_omitMessageNames ? '' : 'opentelemetry.proto.logs.v1'), createEmptyInstance: create)
-    ..aOM<$3.InstrumentationScope>(1, _omitFieldNames ? '' : 'scope', subBuilder: $3.InstrumentationScope.create)
-    ..pc<LogRecord>(2, _omitFieldNames ? '' : 'logRecords', $pb.PbFieldType.PM, subBuilder: LogRecord.create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ScopeLogs',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'opentelemetry.proto.logs.v1'),
+      createEmptyInstance: create)
+    ..aOM<$3.InstrumentationScope>(1, _omitFieldNames ? '' : 'scope',
+        subBuilder: $3.InstrumentationScope.create)
+    ..pc<LogRecord>(2, _omitFieldNames ? '' : 'logRecords', $pb.PbFieldType.PM,
+        subBuilder: LogRecord.create)
     ..aOS(3, _omitFieldNames ? '' : 'schemaUrl')
-    ..hasRequiredFields = false
-  ;
+    ..hasRequiredFields = false;
 
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+      'Will be removed in next major version')
   ScopeLogs clone() => ScopeLogs()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  ScopeLogs copyWith(void Function(ScopeLogs) updates) => super.copyWith((message) => updates(message as ScopeLogs)) as ScopeLogs;
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+      'Will be removed in next major version')
+  ScopeLogs copyWith(void Function(ScopeLogs) updates) =>
+      super.copyWith((message) => updates(message as ScopeLogs)) as ScopeLogs;
 
   $pb.BuilderInfo get info_ => _i;
 
@@ -213,7 +247,8 @@ class ScopeLogs extends $pb.GeneratedMessage {
   ScopeLogs createEmptyInstance() => create();
   static $pb.PbList<ScopeLogs> createRepeated() => $pb.PbList<ScopeLogs>();
   @$core.pragma('dart2js:noInline')
-  static ScopeLogs getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ScopeLogs>(create);
+  static ScopeLogs getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ScopeLogs>(create);
   static ScopeLogs? _defaultInstance;
 
   /// The instrumentation scope information for the logs in this message.
@@ -222,7 +257,10 @@ class ScopeLogs extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   $3.InstrumentationScope get scope => $_getN(0);
   @$pb.TagNumber(1)
-  set scope($3.InstrumentationScope v) { setField(1, v); }
+  set scope($3.InstrumentationScope v) {
+    setField(1, v);
+  }
+
   @$pb.TagNumber(1)
   $core.bool hasScope() => $_has(0);
   @$pb.TagNumber(1)
@@ -241,7 +279,10 @@ class ScopeLogs extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   $core.String get schemaUrl => $_getSZ(2);
   @$pb.TagNumber(3)
-  set schemaUrl($core.String v) { $_setString(2, v); }
+  set schemaUrl($core.String v) {
+    $_setString(2, v);
+  }
+
   @$pb.TagNumber(3)
   $core.bool hasSchemaUrl() => $_has(2);
   @$pb.TagNumber(3)
@@ -297,33 +338,53 @@ class LogRecord extends $pb.GeneratedMessage {
     return $result;
   }
   LogRecord._() : super();
-  factory LogRecord.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory LogRecord.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  factory LogRecord.fromBuffer($core.List<$core.int> i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(i, r);
+  factory LogRecord.fromJson($core.String i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'LogRecord', package: const $pb.PackageName(_omitMessageNames ? '' : 'opentelemetry.proto.logs.v1'), createEmptyInstance: create)
-    ..a<$fixnum.Int64>(1, _omitFieldNames ? '' : 'timeUnixNano', $pb.PbFieldType.OF6, defaultOrMaker: $fixnum.Int64.ZERO)
-    ..e<SeverityNumber>(2, _omitFieldNames ? '' : 'severityNumber', $pb.PbFieldType.OE, defaultOrMaker: SeverityNumber.SEVERITY_NUMBER_UNSPECIFIED, valueOf: SeverityNumber.valueOf, enumValues: SeverityNumber.values)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'LogRecord',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'opentelemetry.proto.logs.v1'),
+      createEmptyInstance: create)
+    ..a<$fixnum.Int64>(
+        1, _omitFieldNames ? '' : 'timeUnixNano', $pb.PbFieldType.OF6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..e<SeverityNumber>(
+        2, _omitFieldNames ? '' : 'severityNumber', $pb.PbFieldType.OE,
+        defaultOrMaker: SeverityNumber.SEVERITY_NUMBER_UNSPECIFIED,
+        valueOf: SeverityNumber.valueOf,
+        enumValues: SeverityNumber.values)
     ..aOS(3, _omitFieldNames ? '' : 'severityText')
-    ..aOM<$3.AnyValue>(5, _omitFieldNames ? '' : 'body', subBuilder: $3.AnyValue.create)
-    ..pc<$3.KeyValue>(6, _omitFieldNames ? '' : 'attributes', $pb.PbFieldType.PM, subBuilder: $3.KeyValue.create)
-    ..a<$core.int>(7, _omitFieldNames ? '' : 'droppedAttributesCount', $pb.PbFieldType.OU3)
+    ..aOM<$3.AnyValue>(5, _omitFieldNames ? '' : 'body',
+        subBuilder: $3.AnyValue.create)
+    ..pc<$3.KeyValue>(
+        6, _omitFieldNames ? '' : 'attributes', $pb.PbFieldType.PM,
+        subBuilder: $3.KeyValue.create)
+    ..a<$core.int>(
+        7, _omitFieldNames ? '' : 'droppedAttributesCount', $pb.PbFieldType.OU3)
     ..a<$core.int>(8, _omitFieldNames ? '' : 'flags', $pb.PbFieldType.OF3)
-    ..a<$core.List<$core.int>>(9, _omitFieldNames ? '' : 'traceId', $pb.PbFieldType.OY)
-    ..a<$core.List<$core.int>>(10, _omitFieldNames ? '' : 'spanId', $pb.PbFieldType.OY)
-    ..a<$fixnum.Int64>(11, _omitFieldNames ? '' : 'observedTimeUnixNano', $pb.PbFieldType.OF6, defaultOrMaker: $fixnum.Int64.ZERO)
-    ..hasRequiredFields = false
-  ;
+    ..a<$core.List<$core.int>>(
+        9, _omitFieldNames ? '' : 'traceId', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(
+        10, _omitFieldNames ? '' : 'spanId', $pb.PbFieldType.OY)
+    ..a<$fixnum.Int64>(
+        11, _omitFieldNames ? '' : 'observedTimeUnixNano', $pb.PbFieldType.OF6,
+        defaultOrMaker: $fixnum.Int64.ZERO)
+    ..hasRequiredFields = false;
 
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+      'Will be removed in next major version')
   LogRecord clone() => LogRecord()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  LogRecord copyWith(void Function(LogRecord) updates) => super.copyWith((message) => updates(message as LogRecord)) as LogRecord;
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+      'Will be removed in next major version')
+  LogRecord copyWith(void Function(LogRecord) updates) =>
+      super.copyWith((message) => updates(message as LogRecord)) as LogRecord;
 
   $pb.BuilderInfo get info_ => _i;
 
@@ -332,7 +393,8 @@ class LogRecord extends $pb.GeneratedMessage {
   LogRecord createEmptyInstance() => create();
   static $pb.PbList<LogRecord> createRepeated() => $pb.PbList<LogRecord>();
   @$core.pragma('dart2js:noInline')
-  static LogRecord getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<LogRecord>(create);
+  static LogRecord getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<LogRecord>(create);
   static LogRecord? _defaultInstance;
 
   /// time_unix_nano is the time when the event occurred.
@@ -341,7 +403,10 @@ class LogRecord extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   $fixnum.Int64 get timeUnixNano => $_getI64(0);
   @$pb.TagNumber(1)
-  set timeUnixNano($fixnum.Int64 v) { $_setInt64(0, v); }
+  set timeUnixNano($fixnum.Int64 v) {
+    $_setInt64(0, v);
+  }
+
   @$pb.TagNumber(1)
   $core.bool hasTimeUnixNano() => $_has(0);
   @$pb.TagNumber(1)
@@ -352,7 +417,10 @@ class LogRecord extends $pb.GeneratedMessage {
   @$pb.TagNumber(2)
   SeverityNumber get severityNumber => $_getN(1);
   @$pb.TagNumber(2)
-  set severityNumber(SeverityNumber v) { setField(2, v); }
+  set severityNumber(SeverityNumber v) {
+    setField(2, v);
+  }
+
   @$pb.TagNumber(2)
   $core.bool hasSeverityNumber() => $_has(1);
   @$pb.TagNumber(2)
@@ -363,7 +431,10 @@ class LogRecord extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   $core.String get severityText => $_getSZ(2);
   @$pb.TagNumber(3)
-  set severityText($core.String v) { $_setString(2, v); }
+  set severityText($core.String v) {
+    $_setString(2, v);
+  }
+
   @$pb.TagNumber(3)
   $core.bool hasSeverityText() => $_has(2);
   @$pb.TagNumber(3)
@@ -375,7 +446,10 @@ class LogRecord extends $pb.GeneratedMessage {
   @$pb.TagNumber(5)
   $3.AnyValue get body => $_getN(3);
   @$pb.TagNumber(5)
-  set body($3.AnyValue v) { setField(5, v); }
+  set body($3.AnyValue v) {
+    setField(5, v);
+  }
+
   @$pb.TagNumber(5)
   $core.bool hasBody() => $_has(3);
   @$pb.TagNumber(5)
@@ -392,7 +466,10 @@ class LogRecord extends $pb.GeneratedMessage {
   @$pb.TagNumber(7)
   $core.int get droppedAttributesCount => $_getIZ(5);
   @$pb.TagNumber(7)
-  set droppedAttributesCount($core.int v) { $_setUnsignedInt32(5, v); }
+  set droppedAttributesCount($core.int v) {
+    $_setUnsignedInt32(5, v);
+  }
+
   @$pb.TagNumber(7)
   $core.bool hasDroppedAttributesCount() => $_has(5);
   @$pb.TagNumber(7)
@@ -406,7 +483,10 @@ class LogRecord extends $pb.GeneratedMessage {
   @$pb.TagNumber(8)
   $core.int get flags => $_getIZ(6);
   @$pb.TagNumber(8)
-  set flags($core.int v) { $_setUnsignedInt32(6, v); }
+  set flags($core.int v) {
+    $_setUnsignedInt32(6, v);
+  }
+
   @$pb.TagNumber(8)
   $core.bool hasFlags() => $_has(6);
   @$pb.TagNumber(8)
@@ -426,7 +506,10 @@ class LogRecord extends $pb.GeneratedMessage {
   @$pb.TagNumber(9)
   $core.List<$core.int> get traceId => $_getN(7);
   @$pb.TagNumber(9)
-  set traceId($core.List<$core.int> v) { $_setBytes(7, v); }
+  set traceId($core.List<$core.int> v) {
+    $_setBytes(7, v);
+  }
+
   @$pb.TagNumber(9)
   $core.bool hasTraceId() => $_has(7);
   @$pb.TagNumber(9)
@@ -447,7 +530,10 @@ class LogRecord extends $pb.GeneratedMessage {
   @$pb.TagNumber(10)
   $core.List<$core.int> get spanId => $_getN(8);
   @$pb.TagNumber(10)
-  set spanId($core.List<$core.int> v) { $_setBytes(8, v); }
+  set spanId($core.List<$core.int> v) {
+    $_setBytes(8, v);
+  }
+
   @$pb.TagNumber(10)
   $core.bool hasSpanId() => $_has(8);
   @$pb.TagNumber(10)
@@ -471,13 +557,16 @@ class LogRecord extends $pb.GeneratedMessage {
   @$pb.TagNumber(11)
   $fixnum.Int64 get observedTimeUnixNano => $_getI64(9);
   @$pb.TagNumber(11)
-  set observedTimeUnixNano($fixnum.Int64 v) { $_setInt64(9, v); }
+  set observedTimeUnixNano($fixnum.Int64 v) {
+    $_setInt64(9, v);
+  }
+
   @$pb.TagNumber(11)
   $core.bool hasObservedTimeUnixNano() => $_has(9);
   @$pb.TagNumber(11)
   void clearObservedTimeUnixNano() => clearField(11);
 }
 
-
 const _omitFieldNames = $core.bool.fromEnvironment('protobuf.omit_field_names');
-const _omitMessageNames = $core.bool.fromEnvironment('protobuf.omit_message_names');
+const _omitMessageNames =
+    $core.bool.fromEnvironment('protobuf.omit_message_names');

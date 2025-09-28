@@ -14,10 +14,8 @@ class SDKSpanCreate {
   /// @param delegateSpan The API Span implementation to delegate to
   /// @param sdkTracer The SDK Tracer that created this Span
   /// @return A new Span instance
-  static Span create({
-    required APISpan delegateSpan,
-    required Tracer sdkTracer
-  }) {
+  static Span create(
+      {required APISpan delegateSpan, required Tracer sdkTracer}) {
     return Span._(delegateSpan, sdkTracer);
   }
 }

@@ -23,7 +23,8 @@ void main() {
 
     test('HistogramStorage with double values', () {
       // Create a histogram with default boundaries
-      final storage = HistogramStorage<double>(boundaries: [0.0, 10.0, 100.0, 1000.0]);
+      final storage =
+          HistogramStorage<double>(boundaries: [0.0, 10.0, 100.0, 1000.0]);
 
       // Create attributes
       final attributes1 = {'service': 'api'}.toAttributes();
@@ -83,10 +84,10 @@ void main() {
       final storage = HistogramStorage<double>(boundaries: boundaries);
 
       // Record values that fall into different buckets
-      storage.record(5.0);   // Bucket 0 (≤10)
-      storage.record(15.0);  // Bucket 1 (>10, ≤20)
-      storage.record(30.0);  // Bucket 2 (>20, ≤50)
-      storage.record(75.0);  // Bucket 3 (>50, ≤100)
+      storage.record(5.0); // Bucket 0 (≤10)
+      storage.record(15.0); // Bucket 1 (>10, ≤20)
+      storage.record(30.0); // Bucket 2 (>20, ≤50)
+      storage.record(75.0); // Bucket 3 (>50, ≤100)
       storage.record(120.0); // Bucket 4 (>100)
 
       // Collect points to verify

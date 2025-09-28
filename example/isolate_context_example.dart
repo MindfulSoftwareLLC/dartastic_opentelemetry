@@ -13,7 +13,7 @@ Future<void> main() async {
 
   try {
     // Run a computation in a new isolate while preserving context
-    final result = await Context.current.runIsolate( () async {
+    final result = await Context.current.runIsolate(() async {
       // The context is automatically restored in the new isolate
       final isolateSpan = tracer.startSpan(
         'isolate-operation',

@@ -3,7 +3,8 @@
 
 import 'dart:async';
 
-import 'package:dartastic_opentelemetry/proto/opentelemetry_proto_dart.dart' as proto;
+import 'package:dartastic_opentelemetry/proto/opentelemetry_proto_dart.dart'
+    as proto;
 import 'package:grpc/grpc.dart' as grpc;
 
 class NetworkProxyService extends proto.TraceServiceBase {
@@ -19,19 +20,19 @@ class NetworkProxyService extends proto.TraceServiceBase {
 
   NetworkProxyService(this.targetHost, this.targetPort) {
     _targetChannel = grpc.ClientChannel(
-          targetHost,
-          port: targetPort,
-          options: const grpc.ChannelOptions(
-            credentials: grpc.ChannelCredentials.insecure(),
-          ),
+      targetHost,
+      port: targetPort,
+      options: const grpc.ChannelOptions(
+        credentials: grpc.ChannelCredentials.insecure(),
+      ),
     );
     _targetClient = proto.TraceServiceClient(_targetChannel);
   }
 
   @override
   Future<proto.ExportTraceServiceResponse> export(
-      grpc.ServiceCall call,
-      proto.ExportTraceServiceRequest request,
+    grpc.ServiceCall call,
+    proto.ExportTraceServiceRequest request,
   ) async {
     // Check for failures
     if (_shouldFail && _failureCount > 0 || _failurePattern.isNotEmpty) {
@@ -53,7 +54,8 @@ class NetworkProxyService extends proto.TraceServiceBase {
     return await _targetClient.export(request);
   }
 
-  void failNextRequests(int count, {int errorCode = grpc.StatusCode.unavailable}) {
+  void failNextRequests(int count,
+      {int errorCode = grpc.StatusCode.unavailable}) {
     _shouldFail = true;
     _failureCount = count;
     _curFailureCode = errorCode;
@@ -104,11 +106,12 @@ class NetworkProxy {
         print('Error stopping existing proxy server: $e');
       }
     }
-    
+
     _service = NetworkProxyService(targetHost, targetPort);
     _server = grpc.Server.create(services: [_service]);
     await _server!.serve(port: listenPort);
-    print('Network proxy listening on port $listenPort -> $targetHost:$targetPort');
+    print(
+        'Network proxy listening on port $listenPort -> $targetHost:$targetPort');
   }
 
   Future<void> stop() async {
@@ -123,7 +126,7 @@ class NetworkProxy {
         _server = null;
       }
     }
-    
+
     try {
       await _service.shutdown();
     } catch (e) {
@@ -131,7 +134,8 @@ class NetworkProxy {
     }
   }
 
-  void failNextRequests(int count, {int errorCode = grpc.StatusCode.unavailable}) {
+  void failNextRequests(int count,
+      {int errorCode = grpc.StatusCode.unavailable}) {
     _service.failNextRequests(count, errorCode: errorCode);
   }
 

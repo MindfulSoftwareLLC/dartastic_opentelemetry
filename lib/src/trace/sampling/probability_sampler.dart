@@ -19,7 +19,7 @@ import 'sampler.dart';
 class ProbabilitySampler implements Sampler {
   /// The probability of sampling a span, in the range [0.0, 1.0].
   final double probability;
-  
+
   /// Random number generator for sampling decisions.
   late final Random _random;
 
@@ -80,9 +80,8 @@ class ProbabilitySampler implements Sampler {
     final decision = _random.nextDouble() < probability;
 
     return SamplingResult(
-      decision: decision
-          ? SamplingDecision.recordAndSample
-          : SamplingDecision.drop,
+      decision:
+          decision ? SamplingDecision.recordAndSample : SamplingDecision.drop,
       source: SamplingDecisionSource.tracerConfig,
     );
   }

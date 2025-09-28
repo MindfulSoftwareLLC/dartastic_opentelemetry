@@ -30,33 +30,46 @@ class ExportTraceServiceRequest extends $pb.GeneratedMessage {
     return $result;
   }
   ExportTraceServiceRequest._() : super();
-  factory ExportTraceServiceRequest.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory ExportTraceServiceRequest.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  factory ExportTraceServiceRequest.fromBuffer($core.List<$core.int> i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(i, r);
+  factory ExportTraceServiceRequest.fromJson($core.String i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ExportTraceServiceRequest', package: const $pb.PackageName(_omitMessageNames ? '' : 'opentelemetry.proto.collector.trace.v1'), createEmptyInstance: create)
-    ..pc<$3.ResourceSpans>(1, _omitFieldNames ? '' : 'resourceSpans', $pb.PbFieldType.PM, subBuilder: $3.ResourceSpans.create)
-    ..hasRequiredFields = false
-  ;
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ExportTraceServiceRequest',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'opentelemetry.proto.collector.trace.v1'),
+      createEmptyInstance: create)
+    ..pc<$3.ResourceSpans>(
+        1, _omitFieldNames ? '' : 'resourceSpans', $pb.PbFieldType.PM,
+        subBuilder: $3.ResourceSpans.create)
+    ..hasRequiredFields = false;
 
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
-  ExportTraceServiceRequest clone() => ExportTraceServiceRequest()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  ExportTraceServiceRequest copyWith(void Function(ExportTraceServiceRequest) updates) => super.copyWith((message) => updates(message as ExportTraceServiceRequest)) as ExportTraceServiceRequest;
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+      'Will be removed in next major version')
+  ExportTraceServiceRequest clone() =>
+      ExportTraceServiceRequest()..mergeFromMessage(this);
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+      'Will be removed in next major version')
+  ExportTraceServiceRequest copyWith(
+          void Function(ExportTraceServiceRequest) updates) =>
+      super.copyWith((message) => updates(message as ExportTraceServiceRequest))
+          as ExportTraceServiceRequest;
 
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
   static ExportTraceServiceRequest create() => ExportTraceServiceRequest._();
   ExportTraceServiceRequest createEmptyInstance() => create();
-  static $pb.PbList<ExportTraceServiceRequest> createRepeated() => $pb.PbList<ExportTraceServiceRequest>();
+  static $pb.PbList<ExportTraceServiceRequest> createRepeated() =>
+      $pb.PbList<ExportTraceServiceRequest>();
   @$core.pragma('dart2js:noInline')
-  static ExportTraceServiceRequest getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ExportTraceServiceRequest>(create);
+  static ExportTraceServiceRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ExportTraceServiceRequest>(create);
   static ExportTraceServiceRequest? _defaultInstance;
 
   /// An array of ResourceSpans.
@@ -79,33 +92,46 @@ class ExportTraceServiceResponse extends $pb.GeneratedMessage {
     return $result;
   }
   ExportTraceServiceResponse._() : super();
-  factory ExportTraceServiceResponse.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory ExportTraceServiceResponse.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  factory ExportTraceServiceResponse.fromBuffer($core.List<$core.int> i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(i, r);
+  factory ExportTraceServiceResponse.fromJson($core.String i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ExportTraceServiceResponse', package: const $pb.PackageName(_omitMessageNames ? '' : 'opentelemetry.proto.collector.trace.v1'), createEmptyInstance: create)
-    ..aOM<ExportTracePartialSuccess>(1, _omitFieldNames ? '' : 'partialSuccess', subBuilder: ExportTracePartialSuccess.create)
-    ..hasRequiredFields = false
-  ;
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ExportTraceServiceResponse',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'opentelemetry.proto.collector.trace.v1'),
+      createEmptyInstance: create)
+    ..aOM<ExportTracePartialSuccess>(1, _omitFieldNames ? '' : 'partialSuccess',
+        subBuilder: ExportTracePartialSuccess.create)
+    ..hasRequiredFields = false;
 
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
-  ExportTraceServiceResponse clone() => ExportTraceServiceResponse()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  ExportTraceServiceResponse copyWith(void Function(ExportTraceServiceResponse) updates) => super.copyWith((message) => updates(message as ExportTraceServiceResponse)) as ExportTraceServiceResponse;
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+      'Will be removed in next major version')
+  ExportTraceServiceResponse clone() =>
+      ExportTraceServiceResponse()..mergeFromMessage(this);
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+      'Will be removed in next major version')
+  ExportTraceServiceResponse copyWith(
+          void Function(ExportTraceServiceResponse) updates) =>
+      super.copyWith(
+              (message) => updates(message as ExportTraceServiceResponse))
+          as ExportTraceServiceResponse;
 
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
   static ExportTraceServiceResponse create() => ExportTraceServiceResponse._();
   ExportTraceServiceResponse createEmptyInstance() => create();
-  static $pb.PbList<ExportTraceServiceResponse> createRepeated() => $pb.PbList<ExportTraceServiceResponse>();
+  static $pb.PbList<ExportTraceServiceResponse> createRepeated() =>
+      $pb.PbList<ExportTraceServiceResponse>();
   @$core.pragma('dart2js:noInline')
-  static ExportTraceServiceResponse getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ExportTraceServiceResponse>(create);
+  static ExportTraceServiceResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ExportTraceServiceResponse>(create);
   static ExportTraceServiceResponse? _defaultInstance;
 
   ///  The details of a partially successful export request.
@@ -126,7 +152,10 @@ class ExportTraceServiceResponse extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   ExportTracePartialSuccess get partialSuccess => $_getN(0);
   @$pb.TagNumber(1)
-  set partialSuccess(ExportTracePartialSuccess v) { setField(1, v); }
+  set partialSuccess(ExportTracePartialSuccess v) {
+    setField(1, v);
+  }
+
   @$pb.TagNumber(1)
   $core.bool hasPartialSuccess() => $_has(0);
   @$pb.TagNumber(1)
@@ -150,34 +179,45 @@ class ExportTracePartialSuccess extends $pb.GeneratedMessage {
     return $result;
   }
   ExportTracePartialSuccess._() : super();
-  factory ExportTracePartialSuccess.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory ExportTracePartialSuccess.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  factory ExportTracePartialSuccess.fromBuffer($core.List<$core.int> i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(i, r);
+  factory ExportTracePartialSuccess.fromJson($core.String i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'ExportTracePartialSuccess', package: const $pb.PackageName(_omitMessageNames ? '' : 'opentelemetry.proto.collector.trace.v1'), createEmptyInstance: create)
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ExportTracePartialSuccess',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'opentelemetry.proto.collector.trace.v1'),
+      createEmptyInstance: create)
     ..aInt64(1, _omitFieldNames ? '' : 'rejectedSpans')
     ..aOS(2, _omitFieldNames ? '' : 'errorMessage')
-    ..hasRequiredFields = false
-  ;
+    ..hasRequiredFields = false;
 
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
-  ExportTracePartialSuccess clone() => ExportTracePartialSuccess()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  ExportTracePartialSuccess copyWith(void Function(ExportTracePartialSuccess) updates) => super.copyWith((message) => updates(message as ExportTracePartialSuccess)) as ExportTracePartialSuccess;
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+      'Will be removed in next major version')
+  ExportTracePartialSuccess clone() =>
+      ExportTracePartialSuccess()..mergeFromMessage(this);
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+      'Will be removed in next major version')
+  ExportTracePartialSuccess copyWith(
+          void Function(ExportTracePartialSuccess) updates) =>
+      super.copyWith((message) => updates(message as ExportTracePartialSuccess))
+          as ExportTracePartialSuccess;
 
   $pb.BuilderInfo get info_ => _i;
 
   @$core.pragma('dart2js:noInline')
   static ExportTracePartialSuccess create() => ExportTracePartialSuccess._();
   ExportTracePartialSuccess createEmptyInstance() => create();
-  static $pb.PbList<ExportTracePartialSuccess> createRepeated() => $pb.PbList<ExportTracePartialSuccess>();
+  static $pb.PbList<ExportTracePartialSuccess> createRepeated() =>
+      $pb.PbList<ExportTracePartialSuccess>();
   @$core.pragma('dart2js:noInline')
-  static ExportTracePartialSuccess getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<ExportTracePartialSuccess>(create);
+  static ExportTracePartialSuccess getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ExportTracePartialSuccess>(create);
   static ExportTracePartialSuccess? _defaultInstance;
 
   ///  The number of rejected spans.
@@ -187,7 +227,10 @@ class ExportTracePartialSuccess extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   $fixnum.Int64 get rejectedSpans => $_getI64(0);
   @$pb.TagNumber(1)
-  set rejectedSpans($fixnum.Int64 v) { $_setInt64(0, v); }
+  set rejectedSpans($fixnum.Int64 v) {
+    $_setInt64(0, v);
+  }
+
   @$pb.TagNumber(1)
   $core.bool hasRejectedSpans() => $_has(0);
   @$pb.TagNumber(1)
@@ -203,13 +246,16 @@ class ExportTracePartialSuccess extends $pb.GeneratedMessage {
   @$pb.TagNumber(2)
   $core.String get errorMessage => $_getSZ(1);
   @$pb.TagNumber(2)
-  set errorMessage($core.String v) { $_setString(1, v); }
+  set errorMessage($core.String v) {
+    $_setString(1, v);
+  }
+
   @$pb.TagNumber(2)
   $core.bool hasErrorMessage() => $_has(1);
   @$pb.TagNumber(2)
   void clearErrorMessage() => clearField(2);
 }
 
-
 const _omitFieldNames = $core.bool.fromEnvironment('protobuf.omit_field_names');
-const _omitMessageNames = $core.bool.fromEnvironment('protobuf.omit_message_names');
+const _omitMessageNames =
+    $core.bool.fromEnvironment('protobuf.omit_message_names');

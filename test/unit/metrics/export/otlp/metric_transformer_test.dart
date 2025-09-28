@@ -2,7 +2,8 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry/proto/metrics/v1/metrics.pb.dart' as proto;
+import 'package:dartastic_opentelemetry/proto/metrics/v1/metrics.pb.dart'
+    as proto;
 import 'package:dartastic_opentelemetry/src/metrics/export/otlp/metric_transformer.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:test/test.dart';
@@ -36,8 +37,8 @@ void main() {
       expect(resourceProto.attributes.length, equals(6));
 
       // Check each attribute
-      final attributeMap = Map.fromEntries(resourceProto.attributes.map((kv) =>
-          MapEntry(kv.key, kv.value)));
+      final attributeMap = Map.fromEntries(
+          resourceProto.attributes.map((kv) => MapEntry(kv.key, kv.value)));
 
       expect(attributeMap['service.name']!.stringValue, equals('test-service'));
       expect(attributeMap['service.version']!.stringValue, equals('1.0.0'));
@@ -82,8 +83,10 @@ void main() {
       // Check point details
       final gaugePoint = metricProto.gauge.dataPoints.first;
       expect(gaugePoint.asDouble, equals(42.5));
-      expect(gaugePoint.startTimeUnixNano, equals(Int64(startTime.microsecondsSinceEpoch * 1000)));
-      expect(gaugePoint.timeUnixNano, equals(Int64(nowTime.microsecondsSinceEpoch * 1000)));
+      expect(gaugePoint.startTimeUnixNano,
+          equals(Int64(startTime.microsecondsSinceEpoch * 1000)));
+      expect(gaugePoint.timeUnixNano,
+          equals(Int64(nowTime.microsecondsSinceEpoch * 1000)));
 
       // Check attributes
       expect(gaugePoint.attributes.length, equals(1));
@@ -125,13 +128,18 @@ void main() {
       // Verify it was transformed as a sum
       expect(metricProto.sum.dataPoints.length, equals(1));
       expect(metricProto.sum.isMonotonic, isTrue);
-      expect(metricProto.sum.aggregationTemporality, equals(proto.AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE));
+      expect(
+          metricProto.sum.aggregationTemporality,
+          equals(
+              proto.AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE));
 
       // Check point details
       final sumPoint = metricProto.sum.dataPoints.first;
       expect(sumPoint.asDouble, equals(100.0));
-      expect(sumPoint.startTimeUnixNano, equals(Int64(startTime.microsecondsSinceEpoch * 1000)));
-      expect(sumPoint.timeUnixNano, equals(Int64(nowTime.microsecondsSinceEpoch * 1000)));
+      expect(sumPoint.startTimeUnixNano,
+          equals(Int64(startTime.microsecondsSinceEpoch * 1000)));
+      expect(sumPoint.timeUnixNano,
+          equals(Int64(nowTime.microsecondsSinceEpoch * 1000)));
 
       // Check attributes
       expect(sumPoint.attributes.length, equals(1));
@@ -182,7 +190,8 @@ void main() {
 
       // Verify it was transformed as a histogram
       expect(metricProto.histogram.dataPoints.length, equals(1));
-      expect(metricProto.histogram.aggregationTemporality, equals(proto.AggregationTemporality.AGGREGATION_TEMPORALITY_DELTA));
+      expect(metricProto.histogram.aggregationTemporality,
+          equals(proto.AggregationTemporality.AGGREGATION_TEMPORALITY_DELTA));
 
       // Check point details
       final histogramPoint = metricProto.histogram.dataPoints.first;
@@ -193,7 +202,8 @@ void main() {
 
       // Check buckets
       expect(histogramPoint.explicitBounds, equals([0, 10, 20, 50, 100]));
-      expect(histogramPoint.bucketCounts.map((c) => c.toInt()).toList(), equals([1, 1, 2, 1, 0]));
+      expect(histogramPoint.bucketCounts.map((c) => c.toInt()).toList(),
+          equals([1, 1, 2, 1, 0]));
 
       // Check attributes
       expect(histogramPoint.attributes.length, equals(1));
@@ -235,8 +245,8 @@ void main() {
       final protoAttributes = metricProto.gauge.dataPoints.first.attributes;
 
       // Create a map for easier verification
-      final attributeMap = Map.fromEntries(protoAttributes.map((kv) =>
-          MapEntry(kv.key, kv.value)));
+      final attributeMap = Map.fromEntries(
+          protoAttributes.map((kv) => MapEntry(kv.key, kv.value)));
 
       // Verify each attribute type was converted correctly
       expect(attributeMap['string_key']!.stringValue, equals('string_value'));

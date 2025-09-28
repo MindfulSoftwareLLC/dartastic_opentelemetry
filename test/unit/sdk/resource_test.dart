@@ -28,9 +28,11 @@ void main() {
       }.toAttributes();
 
       final resource = OTel.resource(attributes);
-      expect(resource.attributes.getString('service.name'), equals('test-service'));
+      expect(resource.attributes.getString('service.name'),
+          equals('test-service'));
       expect(resource.attributes.getString('service.version'), equals('1.0.0'));
-      expect(resource.attributes.getString('service.instance.id'), equals('12345'));
+      expect(resource.attributes.getString('service.instance.id'),
+          equals('12345'));
     });
 
     test('creates resource with all attribute types', () {
@@ -51,10 +53,13 @@ void main() {
       expect(resource.attributes.getBool('bool.key'), isTrue);
       expect(resource.attributes.getInt('int.key'), equals(42));
       expect(resource.attributes.getDouble('double.key'), equals(3.14));
-      expect(resource.attributes.getStringList('string.list.key'), equals(['a', 'b', 'c']));
-      expect(resource.attributes.getBoolList('bool.list.key'), equals([true, false]));
+      expect(resource.attributes.getStringList('string.list.key'),
+          equals(['a', 'b', 'c']));
+      expect(resource.attributes.getBoolList('bool.list.key'),
+          equals([true, false]));
       expect(resource.attributes.getIntList('int.list.key'), equals([1, 2, 3]));
-      expect(resource.attributes.getDoubleList('double.list.key'), equals([1.1, 2.2, 3.3]));
+      expect(resource.attributes.getDoubleList('double.list.key'),
+          equals([1.1, 2.2, 3.3]));
     });
 
     test('merges resources', () {
@@ -83,7 +88,8 @@ void main() {
       final resource = OTel.resource(attributes);
 
       // Modifying original attributes should not affect resource
-      final newAttributes = attributes.copyWithStringAttribute('key', 'new-value');
+      final newAttributes =
+          attributes.copyWithStringAttribute('key', 'new-value');
       expect(resource.attributes.getString('key'), equals('value'));
       expect(newAttributes.getString('key'), equals('new-value'));
     });

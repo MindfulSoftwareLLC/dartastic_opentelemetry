@@ -27,12 +27,11 @@ void main() {
   group('Context Propagation', () {
     test('should maintain same trace ID between parent and child spans', () {
       final parentSpan = tracer.startSpan('parent', context: rootContext);
-      final parentContext = Context.current
-          .copyWithSpanContext(parentSpan.spanContext);
+      final parentContext =
+          Context.current.copyWithSpanContext(parentSpan.spanContext);
 
       final childSpan = tracer.startSpan('child', context: parentContext);
-      (parentContext)
-          .copyWithSpanContext(childSpan.spanContext);
+      (parentContext).copyWithSpanContext(childSpan.spanContext);
 
       expect(
           childSpan.spanContext.traceId, equals(parentSpan.spanContext.traceId),
@@ -46,27 +45,25 @@ void main() {
 
     test('should properly propagate span context through multiple levels', () {
       final span1 = tracer.startSpan('span1', context: rootContext);
-      final context1 =
-          (rootContext).copyWithSpanContext(span1.spanContext);
+      final context1 = (rootContext).copyWithSpanContext(span1.spanContext);
 
       final span2 = tracer.startSpan('span2', context: context1);
-      final context2 = (context1)
-          .copyWithSpanContext(span2.spanContext);
+      final context2 = (context1).copyWithSpanContext(span2.spanContext);
 
       final span3 = tracer.startSpan('span3', context: context2);
 
       expect(span2.spanContext.traceId, equals(span1.spanContext.traceId));
       expect(span3.spanContext.traceId, equals(span1.spanContext.traceId));
-      expect((span2.spanContext).parentSpanId,
-          equals(span1.spanContext.spanId));
-      expect((span3.spanContext).parentSpanId,
-          equals(span2.spanContext.spanId));
+      expect(
+          (span2.spanContext).parentSpanId, equals(span1.spanContext.spanId));
+      expect(
+          (span3.spanContext).parentSpanId, equals(span2.spanContext.spanId));
     });
 
     test('should maintain context when using current context', () {
       final parentSpan = tracer.startSpan('parent', context: rootContext);
-      final parentContext = (rootContext)
-          .copyWithSpanContext(parentSpan.spanContext);
+      final parentContext =
+          (rootContext).copyWithSpanContext(parentSpan.spanContext);
 
       parentContext.run<void>(() async {
         final currentContext = Context.current;

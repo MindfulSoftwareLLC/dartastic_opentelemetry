@@ -50,7 +50,14 @@ final $typed_data.Uint8List dataPointFlagsDescriptor = $convert.base64Decode(
 const MetricsData$json = {
   '1': 'MetricsData',
   '2': [
-    {'1': 'resource_metrics', '3': 1, '4': 3, '5': 11, '6': '.opentelemetry.proto.metrics.v1.ResourceMetrics', '10': 'resourceMetrics'},
+    {
+      '1': 'resource_metrics',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.ResourceMetrics',
+      '10': 'resourceMetrics'
+    },
   ],
 };
 
@@ -63,8 +70,22 @@ final $typed_data.Uint8List metricsDataDescriptor = $convert.base64Decode(
 const ResourceMetrics$json = {
   '1': 'ResourceMetrics',
   '2': [
-    {'1': 'resource', '3': 1, '4': 1, '5': 11, '6': '.opentelemetry.proto.resource.v1.Resource', '10': 'resource'},
-    {'1': 'scope_metrics', '3': 2, '4': 3, '5': 11, '6': '.opentelemetry.proto.metrics.v1.ScopeMetrics', '10': 'scopeMetrics'},
+    {
+      '1': 'resource',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.opentelemetry.proto.resource.v1.Resource',
+      '10': 'resource'
+    },
+    {
+      '1': 'scope_metrics',
+      '3': 2,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.ScopeMetrics',
+      '10': 'scopeMetrics'
+    },
     {'1': 'schema_url', '3': 3, '4': 1, '5': 9, '10': 'schemaUrl'},
   ],
   '9': [
@@ -83,8 +104,22 @@ final $typed_data.Uint8List resourceMetricsDescriptor = $convert.base64Decode(
 const ScopeMetrics$json = {
   '1': 'ScopeMetrics',
   '2': [
-    {'1': 'scope', '3': 1, '4': 1, '5': 11, '6': '.opentelemetry.proto.common.v1.InstrumentationScope', '10': 'scope'},
-    {'1': 'metrics', '3': 2, '4': 3, '5': 11, '6': '.opentelemetry.proto.metrics.v1.Metric', '10': 'metrics'},
+    {
+      '1': 'scope',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.opentelemetry.proto.common.v1.InstrumentationScope',
+      '10': 'scope'
+    },
+    {
+      '1': 'metrics',
+      '3': 2,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.Metric',
+      '10': 'metrics'
+    },
     {'1': 'schema_url', '3': 3, '4': 1, '5': 9, '10': 'schemaUrl'},
   ],
 };
@@ -103,11 +138,51 @@ const Metric$json = {
     {'1': 'name', '3': 1, '4': 1, '5': 9, '10': 'name'},
     {'1': 'description', '3': 2, '4': 1, '5': 9, '10': 'description'},
     {'1': 'unit', '3': 3, '4': 1, '5': 9, '10': 'unit'},
-    {'1': 'gauge', '3': 5, '4': 1, '5': 11, '6': '.opentelemetry.proto.metrics.v1.Gauge', '9': 0, '10': 'gauge'},
-    {'1': 'sum', '3': 7, '4': 1, '5': 11, '6': '.opentelemetry.proto.metrics.v1.Sum', '9': 0, '10': 'sum'},
-    {'1': 'histogram', '3': 9, '4': 1, '5': 11, '6': '.opentelemetry.proto.metrics.v1.Histogram', '9': 0, '10': 'histogram'},
-    {'1': 'exponential_histogram', '3': 10, '4': 1, '5': 11, '6': '.opentelemetry.proto.metrics.v1.ExponentialHistogram', '9': 0, '10': 'exponentialHistogram'},
-    {'1': 'summary', '3': 11, '4': 1, '5': 11, '6': '.opentelemetry.proto.metrics.v1.Summary', '9': 0, '10': 'summary'},
+    {
+      '1': 'gauge',
+      '3': 5,
+      '4': 1,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.Gauge',
+      '9': 0,
+      '10': 'gauge'
+    },
+    {
+      '1': 'sum',
+      '3': 7,
+      '4': 1,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.Sum',
+      '9': 0,
+      '10': 'sum'
+    },
+    {
+      '1': 'histogram',
+      '3': 9,
+      '4': 1,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.Histogram',
+      '9': 0,
+      '10': 'histogram'
+    },
+    {
+      '1': 'exponential_histogram',
+      '3': 10,
+      '4': 1,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.ExponentialHistogram',
+      '9': 0,
+      '10': 'exponentialHistogram'
+    },
+    {
+      '1': 'summary',
+      '3': 11,
+      '4': 1,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.Summary',
+      '9': 0,
+      '10': 'summary'
+    },
   ],
   '8': [
     {'1': 'data'},
@@ -135,7 +210,14 @@ final $typed_data.Uint8List metricDescriptor = $convert.base64Decode(
 const Gauge$json = {
   '1': 'Gauge',
   '2': [
-    {'1': 'data_points', '3': 1, '4': 3, '5': 11, '6': '.opentelemetry.proto.metrics.v1.NumberDataPoint', '10': 'dataPoints'},
+    {
+      '1': 'data_points',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.NumberDataPoint',
+      '10': 'dataPoints'
+    },
   ],
 };
 
@@ -148,8 +230,22 @@ final $typed_data.Uint8List gaugeDescriptor = $convert.base64Decode(
 const Sum$json = {
   '1': 'Sum',
   '2': [
-    {'1': 'data_points', '3': 1, '4': 3, '5': 11, '6': '.opentelemetry.proto.metrics.v1.NumberDataPoint', '10': 'dataPoints'},
-    {'1': 'aggregation_temporality', '3': 2, '4': 1, '5': 14, '6': '.opentelemetry.proto.metrics.v1.AggregationTemporality', '10': 'aggregationTemporality'},
+    {
+      '1': 'data_points',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.NumberDataPoint',
+      '10': 'dataPoints'
+    },
+    {
+      '1': 'aggregation_temporality',
+      '3': 2,
+      '4': 1,
+      '5': 14,
+      '6': '.opentelemetry.proto.metrics.v1.AggregationTemporality',
+      '10': 'aggregationTemporality'
+    },
     {'1': 'is_monotonic', '3': 3, '4': 1, '5': 8, '10': 'isMonotonic'},
   ],
 };
@@ -166,8 +262,22 @@ final $typed_data.Uint8List sumDescriptor = $convert.base64Decode(
 const Histogram$json = {
   '1': 'Histogram',
   '2': [
-    {'1': 'data_points', '3': 1, '4': 3, '5': 11, '6': '.opentelemetry.proto.metrics.v1.HistogramDataPoint', '10': 'dataPoints'},
-    {'1': 'aggregation_temporality', '3': 2, '4': 1, '5': 14, '6': '.opentelemetry.proto.metrics.v1.AggregationTemporality', '10': 'aggregationTemporality'},
+    {
+      '1': 'data_points',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.HistogramDataPoint',
+      '10': 'dataPoints'
+    },
+    {
+      '1': 'aggregation_temporality',
+      '3': 2,
+      '4': 1,
+      '5': 14,
+      '6': '.opentelemetry.proto.metrics.v1.AggregationTemporality',
+      '10': 'aggregationTemporality'
+    },
   ],
 };
 
@@ -182,8 +292,22 @@ final $typed_data.Uint8List histogramDescriptor = $convert.base64Decode(
 const ExponentialHistogram$json = {
   '1': 'ExponentialHistogram',
   '2': [
-    {'1': 'data_points', '3': 1, '4': 3, '5': 11, '6': '.opentelemetry.proto.metrics.v1.ExponentialHistogramDataPoint', '10': 'dataPoints'},
-    {'1': 'aggregation_temporality', '3': 2, '4': 1, '5': 14, '6': '.opentelemetry.proto.metrics.v1.AggregationTemporality', '10': 'aggregationTemporality'},
+    {
+      '1': 'data_points',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.ExponentialHistogramDataPoint',
+      '10': 'dataPoints'
+    },
+    {
+      '1': 'aggregation_temporality',
+      '3': 2,
+      '4': 1,
+      '5': 14,
+      '6': '.opentelemetry.proto.metrics.v1.AggregationTemporality',
+      '10': 'aggregationTemporality'
+    },
   ],
 };
 
@@ -199,7 +323,14 @@ final $typed_data.Uint8List exponentialHistogramDescriptor = $convert.base64Deco
 const Summary$json = {
   '1': 'Summary',
   '2': [
-    {'1': 'data_points', '3': 1, '4': 3, '5': 11, '6': '.opentelemetry.proto.metrics.v1.SummaryDataPoint', '10': 'dataPoints'},
+    {
+      '1': 'data_points',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.SummaryDataPoint',
+      '10': 'dataPoints'
+    },
   ],
 };
 
@@ -212,12 +343,32 @@ final $typed_data.Uint8List summaryDescriptor = $convert.base64Decode(
 const NumberDataPoint$json = {
   '1': 'NumberDataPoint',
   '2': [
-    {'1': 'attributes', '3': 7, '4': 3, '5': 11, '6': '.opentelemetry.proto.common.v1.KeyValue', '10': 'attributes'},
-    {'1': 'start_time_unix_nano', '3': 2, '4': 1, '5': 6, '10': 'startTimeUnixNano'},
+    {
+      '1': 'attributes',
+      '3': 7,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.common.v1.KeyValue',
+      '10': 'attributes'
+    },
+    {
+      '1': 'start_time_unix_nano',
+      '3': 2,
+      '4': 1,
+      '5': 6,
+      '10': 'startTimeUnixNano'
+    },
     {'1': 'time_unix_nano', '3': 3, '4': 1, '5': 6, '10': 'timeUnixNano'},
     {'1': 'as_double', '3': 4, '4': 1, '5': 1, '9': 0, '10': 'asDouble'},
     {'1': 'as_int', '3': 6, '4': 1, '5': 16, '9': 0, '10': 'asInt'},
-    {'1': 'exemplars', '3': 5, '4': 3, '5': 11, '6': '.opentelemetry.proto.metrics.v1.Exemplar', '10': 'exemplars'},
+    {
+      '1': 'exemplars',
+      '3': 5,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.Exemplar',
+      '10': 'exemplars'
+    },
     {'1': 'flags', '3': 8, '4': 1, '5': 13, '10': 'flags'},
   ],
   '8': [
@@ -242,14 +393,34 @@ final $typed_data.Uint8List numberDataPointDescriptor = $convert.base64Decode(
 const HistogramDataPoint$json = {
   '1': 'HistogramDataPoint',
   '2': [
-    {'1': 'attributes', '3': 9, '4': 3, '5': 11, '6': '.opentelemetry.proto.common.v1.KeyValue', '10': 'attributes'},
-    {'1': 'start_time_unix_nano', '3': 2, '4': 1, '5': 6, '10': 'startTimeUnixNano'},
+    {
+      '1': 'attributes',
+      '3': 9,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.common.v1.KeyValue',
+      '10': 'attributes'
+    },
+    {
+      '1': 'start_time_unix_nano',
+      '3': 2,
+      '4': 1,
+      '5': 6,
+      '10': 'startTimeUnixNano'
+    },
     {'1': 'time_unix_nano', '3': 3, '4': 1, '5': 6, '10': 'timeUnixNano'},
     {'1': 'count', '3': 4, '4': 1, '5': 6, '10': 'count'},
     {'1': 'sum', '3': 5, '4': 1, '5': 1, '9': 0, '10': 'sum', '17': true},
     {'1': 'bucket_counts', '3': 6, '4': 3, '5': 6, '10': 'bucketCounts'},
     {'1': 'explicit_bounds', '3': 7, '4': 3, '5': 1, '10': 'explicitBounds'},
-    {'1': 'exemplars', '3': 8, '4': 3, '5': 11, '6': '.opentelemetry.proto.metrics.v1.Exemplar', '10': 'exemplars'},
+    {
+      '1': 'exemplars',
+      '3': 8,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.Exemplar',
+      '10': 'exemplars'
+    },
     {'1': 'flags', '3': 10, '4': 1, '5': 13, '10': 'flags'},
     {'1': 'min', '3': 11, '4': 1, '5': 1, '9': 1, '10': 'min', '17': true},
     {'1': 'max', '3': 12, '4': 1, '5': 1, '9': 2, '10': 'max', '17': true},
@@ -280,17 +451,53 @@ final $typed_data.Uint8List histogramDataPointDescriptor = $convert.base64Decode
 const ExponentialHistogramDataPoint$json = {
   '1': 'ExponentialHistogramDataPoint',
   '2': [
-    {'1': 'attributes', '3': 1, '4': 3, '5': 11, '6': '.opentelemetry.proto.common.v1.KeyValue', '10': 'attributes'},
-    {'1': 'start_time_unix_nano', '3': 2, '4': 1, '5': 6, '10': 'startTimeUnixNano'},
+    {
+      '1': 'attributes',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.common.v1.KeyValue',
+      '10': 'attributes'
+    },
+    {
+      '1': 'start_time_unix_nano',
+      '3': 2,
+      '4': 1,
+      '5': 6,
+      '10': 'startTimeUnixNano'
+    },
     {'1': 'time_unix_nano', '3': 3, '4': 1, '5': 6, '10': 'timeUnixNano'},
     {'1': 'count', '3': 4, '4': 1, '5': 6, '10': 'count'},
     {'1': 'sum', '3': 5, '4': 1, '5': 1, '9': 0, '10': 'sum', '17': true},
     {'1': 'scale', '3': 6, '4': 1, '5': 17, '10': 'scale'},
     {'1': 'zero_count', '3': 7, '4': 1, '5': 6, '10': 'zeroCount'},
-    {'1': 'positive', '3': 8, '4': 1, '5': 11, '6': '.opentelemetry.proto.metrics.v1.ExponentialHistogramDataPoint.Buckets', '10': 'positive'},
-    {'1': 'negative', '3': 9, '4': 1, '5': 11, '6': '.opentelemetry.proto.metrics.v1.ExponentialHistogramDataPoint.Buckets', '10': 'negative'},
+    {
+      '1': 'positive',
+      '3': 8,
+      '4': 1,
+      '5': 11,
+      '6':
+          '.opentelemetry.proto.metrics.v1.ExponentialHistogramDataPoint.Buckets',
+      '10': 'positive'
+    },
+    {
+      '1': 'negative',
+      '3': 9,
+      '4': 1,
+      '5': 11,
+      '6':
+          '.opentelemetry.proto.metrics.v1.ExponentialHistogramDataPoint.Buckets',
+      '10': 'negative'
+    },
     {'1': 'flags', '3': 10, '4': 1, '5': 13, '10': 'flags'},
-    {'1': 'exemplars', '3': 11, '4': 3, '5': 11, '6': '.opentelemetry.proto.metrics.v1.Exemplar', '10': 'exemplars'},
+    {
+      '1': 'exemplars',
+      '3': 11,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.Exemplar',
+      '10': 'exemplars'
+    },
     {'1': 'min', '3': 12, '4': 1, '5': 1, '9': 1, '10': 'min', '17': true},
     {'1': 'max', '3': 13, '4': 1, '5': 1, '9': 2, '10': 'max', '17': true},
     {'1': 'zero_threshold', '3': 14, '4': 1, '5': 1, '10': 'zeroThreshold'},
@@ -333,12 +540,32 @@ final $typed_data.Uint8List exponentialHistogramDataPointDescriptor = $convert.b
 const SummaryDataPoint$json = {
   '1': 'SummaryDataPoint',
   '2': [
-    {'1': 'attributes', '3': 7, '4': 3, '5': 11, '6': '.opentelemetry.proto.common.v1.KeyValue', '10': 'attributes'},
-    {'1': 'start_time_unix_nano', '3': 2, '4': 1, '5': 6, '10': 'startTimeUnixNano'},
+    {
+      '1': 'attributes',
+      '3': 7,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.common.v1.KeyValue',
+      '10': 'attributes'
+    },
+    {
+      '1': 'start_time_unix_nano',
+      '3': 2,
+      '4': 1,
+      '5': 6,
+      '10': 'startTimeUnixNano'
+    },
     {'1': 'time_unix_nano', '3': 3, '4': 1, '5': 6, '10': 'timeUnixNano'},
     {'1': 'count', '3': 4, '4': 1, '5': 6, '10': 'count'},
     {'1': 'sum', '3': 5, '4': 1, '5': 1, '10': 'sum'},
-    {'1': 'quantile_values', '3': 6, '4': 3, '5': 11, '6': '.opentelemetry.proto.metrics.v1.SummaryDataPoint.ValueAtQuantile', '10': 'quantileValues'},
+    {
+      '1': 'quantile_values',
+      '3': 6,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.SummaryDataPoint.ValueAtQuantile',
+      '10': 'quantileValues'
+    },
     {'1': 'flags', '3': 8, '4': 1, '5': 13, '10': 'flags'},
   ],
   '3': [SummaryDataPoint_ValueAtQuantile$json],
@@ -371,7 +598,14 @@ final $typed_data.Uint8List summaryDataPointDescriptor = $convert.base64Decode(
 const Exemplar$json = {
   '1': 'Exemplar',
   '2': [
-    {'1': 'filtered_attributes', '3': 7, '4': 3, '5': 11, '6': '.opentelemetry.proto.common.v1.KeyValue', '10': 'filteredAttributes'},
+    {
+      '1': 'filtered_attributes',
+      '3': 7,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.common.v1.KeyValue',
+      '10': 'filteredAttributes'
+    },
     {'1': 'time_unix_nano', '3': 2, '4': 1, '5': 6, '10': 'timeUnixNano'},
     {'1': 'as_double', '3': 3, '4': 1, '5': 1, '9': 0, '10': 'asDouble'},
     {'1': 'as_int', '3': 6, '4': 1, '5': 16, '9': 0, '10': 'asInt'},
@@ -393,4 +627,3 @@ final $typed_data.Uint8List exemplarDescriptor = $convert.base64Decode(
     'aXhfbmFubxgCIAEoBlIMdGltZVVuaXhOYW5vEh0KCWFzX2RvdWJsZRgDIAEoAUgAUghhc0RvdW'
     'JsZRIXCgZhc19pbnQYBiABKBBIAFIFYXNJbnQSFwoHc3Bhbl9pZBgEIAEoDFIGc3BhbklkEhkK'
     'CHRyYWNlX2lkGAUgASgMUgd0cmFjZUlkQgcKBXZhbHVlSgQIARAC');
-

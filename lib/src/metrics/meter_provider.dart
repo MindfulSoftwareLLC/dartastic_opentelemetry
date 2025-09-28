@@ -40,7 +40,9 @@ class MeterProvider implements APIMeterProvider {
     required this.delegate,
     this.resource,
   }) {
-    if (OTelLog.isDebug()) OTelLog.debug('MeterProvider: Created with resource: $resource');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('MeterProvider: Created with resource: $resource');
+    }
   }
 
   @override
@@ -82,12 +84,17 @@ class MeterProvider implements APIMeterProvider {
   set isShutdown(bool value) => delegate.isShutdown = value;
 
   @override
-  APIMeter getMeter({required String name, String? version, String? schemaUrl, Attributes? attributes}) {
+  APIMeter getMeter(
+      {required String name,
+      String? version,
+      String? schemaUrl,
+      Attributes? attributes}) {
     // Check if provider is shutdown
     if (isShutdown) {
       // Return a no-op meter instead of throwing
       if (OTelLog.isDebug()) {
-        OTelLog.debug('MeterProvider: Attempting to get meter "$name" after shutdown. Returning a no-op meter.');
+        OTelLog.debug(
+            'MeterProvider: Attempting to get meter "$name" after shutdown. Returning a no-op meter.');
       }
       return NoopMeter(name: name, version: version, schemaUrl: schemaUrl);
     }
@@ -101,8 +108,11 @@ class MeterProvider implements APIMeterProvider {
     }
 
     // Call the API implementation first
-    final apiMeter = delegate.getMeter(name: name,
-        version: version, schemaUrl: schemaUrl, attributes: attributes);
+    final apiMeter = delegate.getMeter(
+        name: name,
+        version: version,
+        schemaUrl: schemaUrl,
+        attributes: attributes);
 
     // Wrap it with our SDK implementation
     final meter = MeterCreate.create(
@@ -117,7 +127,8 @@ class MeterProvider implements APIMeterProvider {
     _instruments[meterKey] = {};
 
     if (OTelLog.isLogMetrics()) {
-      OTelLog.logMetric('MeterProvider: Created meter "$name" (version: $version)');
+      OTelLog.logMetric(
+          'MeterProvider: Created meter "$name" (version: $version)');
     }
 
     return meter;
@@ -179,7 +190,8 @@ class MeterProvider implements APIMeterProvider {
     _instruments[meterKey]!.add(instrument);
 
     if (OTelLog.isLogMetrics()) {
-      OTelLog.logMetric('MeterProvider: Registered instrument "${instrument.name}" for meter "${instrument.meter.name}"');
+      OTelLog.logMetric(
+          'MeterProvider: Registered instrument "${instrument.name}" for meter "${instrument.meter.name}"');
     }
   }
 
@@ -201,7 +213,8 @@ class MeterProvider implements APIMeterProvider {
       final instruments = entry.value;
 
       if (OTelLog.isLogMetrics()) {
-        OTelLog.logMetric('MeterProvider: Collecting metrics from ${instruments.length} instruments in meter "$meterName"');
+        OTelLog.logMetric(
+            'MeterProvider: Collecting metrics from ${instruments.length} instruments in meter "$meterName"');
       }
 
       // Collect metrics from each instrument
@@ -212,19 +225,22 @@ class MeterProvider implements APIMeterProvider {
             allMetrics.addAll(metrics);
 
             if (OTelLog.isLogMetrics()) {
-              OTelLog.logMetric('MeterProvider: Collected ${metrics.length} metrics from instrument "${instrument.name}"');
+              OTelLog.logMetric(
+                  'MeterProvider: Collected ${metrics.length} metrics from instrument "${instrument.name}"');
             }
           }
         } catch (e) {
           if (OTelLog.isLogMetrics()) {
-            OTelLog.logMetric('MeterProvider: Error collecting metrics from instrument "${instrument.name}": $e');
+            OTelLog.logMetric(
+                'MeterProvider: Error collecting metrics from instrument "${instrument.name}": $e');
           }
         }
       }
     }
 
     if (OTelLog.isLogMetrics()) {
-      OTelLog.logMetric('MeterProvider: Collected ${allMetrics.length} total metrics');
+      OTelLog.logMetric(
+          'MeterProvider: Collected ${allMetrics.length} total metrics');
     }
 
     return allMetrics;
@@ -246,7 +262,8 @@ class MeterProvider implements APIMeterProvider {
     }
 
     if (OTelLog.isLogExport()) {
-      OTelLog.logExport('MeterProvider: Force flushing metrics through ${_metricReaders.length} readers');
+      OTelLog.logExport(
+          'MeterProvider: Force flushing metrics through ${_metricReaders.length} readers');
     }
 
     bool success = true;
@@ -267,7 +284,7 @@ class MeterProvider implements APIMeterProvider {
   @override
   Future<bool> shutdown() async {
     if (isShutdown) {
-      return true;  // Already shut down
+      return true; // Already shut down
     }
 
     // Mark as shut down immediately to prevent new interactions

@@ -20,7 +20,14 @@ import 'dart:typed_data' as $typed_data;
 const ExportTraceServiceRequest$json = {
   '1': 'ExportTraceServiceRequest',
   '2': [
-    {'1': 'resource_spans', '3': 1, '4': 3, '5': 11, '6': '.opentelemetry.proto.trace.v1.ResourceSpans', '10': 'resourceSpans'},
+    {
+      '1': 'resource_spans',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.trace.v1.ResourceSpans',
+      '10': 'resourceSpans'
+    },
   ],
 };
 
@@ -33,15 +40,23 @@ final $typed_data.Uint8List exportTraceServiceRequestDescriptor = $convert.base6
 const ExportTraceServiceResponse$json = {
   '1': 'ExportTraceServiceResponse',
   '2': [
-    {'1': 'partial_success', '3': 1, '4': 1, '5': 11, '6': '.opentelemetry.proto.collector.trace.v1.ExportTracePartialSuccess', '10': 'partialSuccess'},
+    {
+      '1': 'partial_success',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.opentelemetry.proto.collector.trace.v1.ExportTracePartialSuccess',
+      '10': 'partialSuccess'
+    },
   ],
 };
 
 /// Descriptor for `ExportTraceServiceResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List exportTraceServiceResponseDescriptor = $convert.base64Decode(
-    'ChpFeHBvcnRUcmFjZVNlcnZpY2VSZXNwb25zZRJqCg9wYXJ0aWFsX3N1Y2Nlc3MYASABKAsyQS'
-    '5vcGVudGVsZW1ldHJ5LnByb3RvLmNvbGxlY3Rvci50cmFjZS52MS5FeHBvcnRUcmFjZVBhcnRp'
-    'YWxTdWNjZXNzUg5wYXJ0aWFsU3VjY2Vzcw==');
+final $typed_data.Uint8List exportTraceServiceResponseDescriptor =
+    $convert.base64Decode(
+        'ChpFeHBvcnRUcmFjZVNlcnZpY2VSZXNwb25zZRJqCg9wYXJ0aWFsX3N1Y2Nlc3MYASABKAsyQS'
+        '5vcGVudGVsZW1ldHJ5LnByb3RvLmNvbGxlY3Rvci50cmFjZS52MS5FeHBvcnRUcmFjZVBhcnRp'
+        'YWxTdWNjZXNzUg5wYXJ0aWFsU3VjY2Vzcw==');
 
 @$core.Deprecated('Use exportTracePartialSuccessDescriptor instead')
 const ExportTracePartialSuccess$json = {
@@ -53,7 +68,7 @@ const ExportTracePartialSuccess$json = {
 };
 
 /// Descriptor for `ExportTracePartialSuccess`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List exportTracePartialSuccessDescriptor = $convert.base64Decode(
-    'ChlFeHBvcnRUcmFjZVBhcnRpYWxTdWNjZXNzEiUKDnJlamVjdGVkX3NwYW5zGAEgASgDUg1yZW'
-    'plY3RlZFNwYW5zEiMKDWVycm9yX21lc3NhZ2UYAiABKAlSDGVycm9yTWVzc2FnZQ==');
-
+final $typed_data.Uint8List exportTracePartialSuccessDescriptor =
+    $convert.base64Decode(
+        'ChlFeHBvcnRUcmFjZVBhcnRpYWxTdWNjZXNzEiUKDnJlamVjdGVkX3NwYW5zGAEgASgDUg1yZW'
+        'plY3RlZFNwYW5zEiMKDWVycm9yX21lc3NhZ2UYAiABKAlSDGVycm9yTWVzc2FnZQ==');

@@ -1,7 +1,8 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart' show OTelLog;
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
+    show OTelLog;
 
 import '../data/metric_data.dart';
 import '../metric_exporter.dart';
@@ -20,7 +21,7 @@ import '../metric_exporter.dart';
 class CompositeMetricExporter implements MetricExporter {
   /// The list of delegate exporters.
   final List<MetricExporter> _exporters;
-  
+
   /// Whether this exporter has been shut down.
   bool _shutdown = false;
 
@@ -41,7 +42,8 @@ class CompositeMetricExporter implements MetricExporter {
   Future<bool> export(MetricData data) async {
     if (_shutdown) {
       if (OTelLog.isLogExport()) {
-        OTelLog.logExport('CompositeMetricExporter: Cannot export after shutdown');
+        OTelLog.logExport(
+            'CompositeMetricExporter: Cannot export after shutdown');
       }
       return false;
     }
@@ -53,7 +55,8 @@ class CompositeMetricExporter implements MetricExporter {
         success = success && result;
       } catch (e) {
         if (OTelLog.isLogExport()) {
-          OTelLog.logExport('CompositeMetricExporter: Export failed for $exporter: $e');
+          OTelLog.logExport(
+              'CompositeMetricExporter: Export failed for $exporter: $e');
         }
         success = false;
       }

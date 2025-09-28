@@ -9,8 +9,7 @@ Future<void> main(List<String> arguments) async {
 
   print('Initializing with a SimpleSpanProcessor and a ConsoleExporter...');
   final consoleExporter = ConsoleExporter();
-  await OTel.initialize(
-      spanProcessor: SimpleSpanProcessor(consoleExporter));
+  await OTel.initialize(spanProcessor: SimpleSpanProcessor(consoleExporter));
 
   // Get the default tracer
   final tracer = OTel.tracer();

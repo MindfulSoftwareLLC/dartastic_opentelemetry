@@ -75,106 +75,110 @@ void main() {
     test('MeterProvider with views applies pattern matching', () async {
       // Set up a meter provider with views
       final provider = OTel.meterProvider();
-      
+
       // Create different views with pattern matching
       final exactView = View(
         instrumentNamePattern: 'test_counter',
         name: 'exact-match-view',
       );
-      
+
       final wildcardView = View(
         instrumentNamePattern: 'test_*',
         name: 'wildcard-view',
       );
-      
+
       final allView = View(
         instrumentNamePattern: '*',
         name: 'all-view',
       );
-      
+
       // Add views to provider
       provider.addView(exactView);
       provider.addView(wildcardView);
       provider.addView(allView);
-      
+
       // Verify views were added
       expect(provider.views.length, equals(3));
-      expect(provider.views.map((v) => v.name), 
-             containsAll(['exact-match-view', 'wildcard-view', 'all-view']));
+      expect(provider.views.map((v) => v.name),
+          containsAll(['exact-match-view', 'wildcard-view', 'all-view']));
     });
 
     test('View with type filtering selects correct instruments', () async {
       // Set up a meter provider with views
       final provider = OTel.meterProvider();
-      
+
       // Create different views with type filtering
       final counterView = View(
         instrumentNamePattern: '*',
         instrumentType: APICounter,
         name: 'counter-view',
       );
-      
+
       final histogramView = View(
         instrumentNamePattern: '*',
         instrumentType: APIHistogram,
         name: 'histogram-view',
       );
-      
+
       // Add views to provider
       provider.addView(counterView);
       provider.addView(histogramView);
-      
+
       // Verify views were added with correct type filtering
       expect(provider.views.length, equals(2));
-      expect(provider.views.map((v) => v.name), 
-             containsAll(['counter-view', 'histogram-view']));
-      
+      expect(provider.views.map((v) => v.name),
+          containsAll(['counter-view', 'histogram-view']));
+
       // Verify the views have correct instrument types
       final cView = provider.views.firstWhere((v) => v.name == 'counter-view');
-      final hView = provider.views.firstWhere((v) => v.name == 'histogram-view');
-      
+      final hView =
+          provider.views.firstWhere((v) => v.name == 'histogram-view');
+
       expect(cView.instrumentType, equals(APICounter));
       expect(hView.instrumentType, equals(APIHistogram));
     });
 
-    test('View with meter name filtering selects correct instruments', () async {
+    test('View with meter name filtering selects correct instruments',
+        () async {
       // Set up a meter provider with views
       final provider = OTel.meterProvider();
-      
+
       // Create different views with meter name filtering
       final meter1View = View(
         instrumentNamePattern: '*',
         meterName: 'meter1',
         name: 'meter1-view',
       );
-      
+
       final meter2View = View(
         instrumentNamePattern: '*',
         meterName: 'meter2',
         name: 'meter2-view',
       );
-      
+
       // Add views to provider
       provider.addView(meter1View);
       provider.addView(meter2View);
-      
+
       // Verify views were added with correct meter filtering
       expect(provider.views.length, equals(2));
-      expect(provider.views.map((v) => v.name), 
-             containsAll(['meter1-view', 'meter2-view']));
-      
+      expect(provider.views.map((v) => v.name),
+          containsAll(['meter1-view', 'meter2-view']));
+
       // Verify the views have correct meter names
       final m1View = provider.views.firstWhere((v) => v.name == 'meter1-view');
       final m2View = provider.views.firstWhere((v) => v.name == 'meter2-view');
-      
+
       expect(m1View.meterName, equals('meter1'));
       expect(m2View.meterName, equals('meter2'));
     });
 
-    test('View with combined criteria selects instruments matching all conditions', () async {
+    test(
+        'View with combined criteria selects instruments matching all conditions',
+        () async {
       // Set up a meter provider with a view that has multiple criteria
       final provider = OTel.meterProvider();
-      
+
       // Create a view with multiple criteria
       final complexView = View(
         instrumentNamePattern: 'test_*',
@@ -182,14 +186,14 @@ void main() {
         meterName: 'meter1',
         name: 'complex-view',
       );
-      
+
       // Add view to provider
       provider.addView(complexView);
-      
+
       // Verify view was added with correct combined criteria
       expect(provider.views.length, equals(1));
       final view = provider.views.first;
-      
+
       expect(view.name, equals('complex-view'));
       expect(view.instrumentNamePattern, equals('test_*'));
       expect(view.instrumentType, equals(APICounter));

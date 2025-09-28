@@ -1,7 +1,8 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart' show OTelLog;
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
+    show OTelLog;
 import 'package:fixnum/fixnum.dart';
 
 import '../../../../proto/common/v1/common.pb.dart' as common_proto;
@@ -19,7 +20,10 @@ class MetricTransformer {
     final attributes = resource.attributes;
 
     resourceProto.attributes.addAll(
-      attributes.toMap().entries.map((entry) => _createKeyValue(entry.key, entry.value.value)),
+      attributes
+          .toMap()
+          .entries
+          .map((entry) => _createKeyValue(entry.key, entry.value.value)),
     );
 
     return resourceProto;
@@ -39,9 +43,10 @@ class MetricTransformer {
     }
 
     if (OTelLog.isLogMetrics()) {
-      OTelLog.logMetric('MetricTransformer: Transforming metric ${metric.name} of type ${metric.type}');
+      OTelLog.logMetric(
+          'MetricTransformer: Transforming metric ${metric.name} of type ${metric.type}');
     }
-    
+
     // Set data based on metric type
     switch (metric.type) {
       case MetricType.histogram:
@@ -53,18 +58,19 @@ class MetricTransformer {
             histogramDataPoints.add(dataPoint);
           }
         }
-        
+
         // Create a new histogram with the correct temporality and data points
         final histogram = proto.Histogram(
-          aggregationTemporality: metric.temporality == AggregationTemporality.delta
+          aggregationTemporality: metric.temporality ==
+                  AggregationTemporality.delta
               ? proto.AggregationTemporality.AGGREGATION_TEMPORALITY_DELTA
               : proto.AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE,
           dataPoints: histogramDataPoints,
         );
-        
+
         metricProto.histogram = histogram;
         break;
-        
+
       case MetricType.sum:
         // Sum metric
         final numberDataPoints = <proto.NumberDataPoint>[];
@@ -72,19 +78,21 @@ class MetricTransformer {
           final dataPoint = _createNumberDataPoint(point);
           numberDataPoints.add(dataPoint);
         }
-        
+
         // Create a new sum with the correct temporality and data points
         final sum = proto.Sum(
-          isMonotonic: metric.isMonotonic ?? true, // Assuming sum metrics are monotonic by default
-          aggregationTemporality: metric.temporality == AggregationTemporality.delta
+          isMonotonic: metric.isMonotonic ??
+              true, // Assuming sum metrics are monotonic by default
+          aggregationTemporality: metric.temporality ==
+                  AggregationTemporality.delta
               ? proto.AggregationTemporality.AGGREGATION_TEMPORALITY_DELTA
               : proto.AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE,
           dataPoints: numberDataPoints,
         );
-        
+
         metricProto.sum = sum;
         break;
-        
+
       case MetricType.gauge:
         // Gauge metric
         final numberDataPoints = <proto.NumberDataPoint>[];
@@ -92,7 +100,7 @@ class MetricTransformer {
           final dataPoint = _createNumberDataPoint(point);
           numberDataPoints.add(dataPoint);
         }
-        
+
         // Create a new gauge with the data points
         final gauge = proto.Gauge(dataPoints: numberDataPoints);
         metricProto.gauge = gauge;
@@ -103,15 +111,16 @@ class MetricTransformer {
   }
 
   /// Creates a histogram data point for the given MetricPoint.
-  static proto.HistogramDataPoint _createHistogramDataPoint(MetricPoint<dynamic> point) {
+  static proto.HistogramDataPoint _createHistogramDataPoint(
+      MetricPoint<dynamic> point) {
     final histogramValue = point.value as HistogramValue;
-    
+
     // Prepare attributes
     final attributes = point.attributes.toMap();
     final attributeKeyValues = attributes.entries
         .map((entry) => _createKeyValue(entry.key, entry.value.value))
         .toList();
-    
+
     // Prepare exemplars if available
     final exemplars = <proto.Exemplar>[];
     if (point.hasExemplars) {
@@ -123,12 +132,11 @@ class MetricTransformer {
         exemplars.add(exemplarProto);
       }
     }
-    
+
     // Create bucket counts as Int64 list
-    final bucketCountsInt64 = histogramValue.bucketCounts
-        .map(Int64.new)
-        .toList();
-    
+    final bucketCountsInt64 =
+        histogramValue.bucketCounts.map(Int64.new).toList();
+
     // Create the HistogramDataPoint with all fields set
     return proto.HistogramDataPoint(
       attributes: attributeKeyValues,
@@ -145,13 +153,14 @@ class MetricTransformer {
   }
 
   /// Creates a number data point for the given MetricPoint.
-  static proto.NumberDataPoint _createNumberDataPoint(MetricPoint<dynamic> point) {
+  static proto.NumberDataPoint _createNumberDataPoint(
+      MetricPoint<dynamic> point) {
     // Prepare attributes
     final attributes = point.attributes.toMap();
     final attributeKeyValues = attributes.entries
         .map((entry) => _createKeyValue(entry.key, entry.value.value))
         .toList();
-    
+
     // Prepare exemplars if available
     final exemplars = <proto.Exemplar>[];
     if (point.hasExemplars) {
@@ -163,13 +172,15 @@ class MetricTransformer {
         exemplars.add(exemplarProto);
       }
     }
-    
+
     // Create the NumberDataPoint with all fields set
     return proto.NumberDataPoint(
       attributes: attributeKeyValues,
       startTimeUnixNano: Int64(point.startTime.microsecondsSinceEpoch * 1000),
       timeUnixNano: Int64(point.endTime.microsecondsSinceEpoch * 1000),
-      asDouble: (point.value is num) ? (point.value as num).toDouble() : double.tryParse(point.value.toString()) ?? 0.0,
+      asDouble: (point.value is num)
+          ? (point.value as num).toDouble()
+          : double.tryParse(point.value.toString()) ?? 0.0,
       exemplars: exemplars,
     );
   }

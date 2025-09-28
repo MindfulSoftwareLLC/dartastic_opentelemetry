@@ -37,7 +37,8 @@ void main() {
 
       // Try with 10 different trace IDs
       for (int i = 0; i < 10; i++) {
-        final traceId = '000000000000000000000000000000${i.toRadixString(16).padLeft(2, '0')}';
+        final traceId =
+            '000000000000000000000000000000${i.toRadixString(16).padLeft(2, '0')}';
 
         final result = sampler.shouldSample(
           parentContext: parentContext,
@@ -58,7 +59,8 @@ void main() {
 
       // Try with 10 different trace IDs
       for (int i = 0; i < 10; i++) {
-        final traceId = '000000000000000000000000000000${i.toRadixString(16).padLeft(2, '0')}';
+        final traceId =
+            '000000000000000000000000000000${i.toRadixString(16).padLeft(2, '0')}';
 
         final result = sampler.shouldSample(
           parentContext: parentContext,
@@ -79,8 +81,10 @@ void main() {
 
       // Create predictable trace IDs that will cover both sides of the decision boundary
       // The sampler uses the last 16 hex chars (8 bytes) of the trace ID
-      final lowTraceId = '00000000000000000000000000000000'; // Should be sampled
-      final highTraceId = 'ffffffffffffffffffffffffffffffff'; // Should not be sampled
+      final lowTraceId =
+          '00000000000000000000000000000000'; // Should be sampled
+      final highTraceId =
+          'ffffffffffffffffffffffffffffffff'; // Should not be sampled
 
       final lowResult = sampler.shouldSample(
         parentContext: parentContext,
@@ -117,7 +121,8 @@ void main() {
         // Create a random trace ID using random bytes
         final buffer = StringBuffer();
         for (int j = 0; j < 32; j++) {
-          buffer.write(random.nextInt(16).toRadixString(16)); // Random hex digit
+          buffer
+              .write(random.nextInt(16).toRadixString(16)); // Random hex digit
         }
         final traceId = buffer.toString();
 
@@ -138,7 +143,8 @@ void main() {
       // Check if the sampling rate is roughly within expected bounds
       // Allow for some statistical variation (±10%)
       final samplingRate = sampledCount / totalRuns;
-      print('Sampled $sampledCount out of $totalRuns traces (rate: $samplingRate)');
+      print(
+          'Sampled $sampledCount out of $totalRuns traces (rate: $samplingRate)');
       expect(samplingRate, closeTo(0.3, 0.1));
     });
   });

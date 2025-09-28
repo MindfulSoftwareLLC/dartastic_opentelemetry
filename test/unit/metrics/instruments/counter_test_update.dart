@@ -11,13 +11,13 @@ void main() {
     late Counter<int> counter;
 
     setUp(() async {
-    // Initialize OpenTelemetry with test endpoint to avoid network issues
-    await OTel.reset();
-    await OTel.initialize(
-      serviceName: 'test-service',
-      endpoint: 'http://localhost:4317',
-      detectPlatformResources: false, // Disable for testing
-    );
+      // Initialize OpenTelemetry with test endpoint to avoid network issues
+      await OTel.reset();
+      await OTel.initialize(
+        serviceName: 'test-service',
+        endpoint: 'http://localhost:4317',
+        detectPlatformResources: false, // Disable for testing
+      );
 
       // Get a meter provider and create a meter
       meterProvider = OTel.meterProvider();
@@ -56,7 +56,7 @@ void main() {
     test('records positive values', () {
       // Reset to ensure clean state
       counter.reset();
-      
+
       // Act
       counter.add(5);
       counter.add(10);
@@ -71,21 +71,25 @@ void main() {
       final attributes1 = {'key1': 'value1'}.toAttributes();
       final attributes2 = {'key1': 'value2'}.toAttributes();
       final emptyAttributes = OTel.attributes();
-      
+
       // Reset to ensure clean state
       counter.reset();
-      
+
       // Act - add values with different attributes
       counter.add(5, attributes1);
       counter.add(10, attributes2);
       counter.add(15, attributes1);
       counter.add(20, emptyAttributes); // Empty attributes
-      
+
       // Assert - verify each attribute combination separately
-      expect(counter.getValue(attributes1), equals(20), reason: 'Should have 5+15=20 for attributes1');
-      expect(counter.getValue(attributes2), equals(10), reason: 'Should have 10 for attributes2');
-      expect(counter.getValue(emptyAttributes), equals(20), reason: 'Should have 20 for empty attributes');
-      expect(counter.getValue(), equals(50), reason: 'Total should be 5+10+15+20=50');
+      expect(counter.getValue(attributes1), equals(20),
+          reason: 'Should have 5+15=20 for attributes1');
+      expect(counter.getValue(attributes2), equals(10),
+          reason: 'Should have 10 for attributes2');
+      expect(counter.getValue(emptyAttributes), equals(20),
+          reason: 'Should have 20 for empty attributes');
+      expect(counter.getValue(), equals(50),
+          reason: 'Total should be 5+10+15+20=50');
     });
 
     test('throws when adding negative value', () {
@@ -106,15 +110,17 @@ void main() {
 
       // Assert
       expect(metrics, isNotNull);
-      expect(metrics.isNotEmpty, isTrue, reason: 'Should have at least one metric');
-      
+      expect(metrics.isNotEmpty, isTrue,
+          reason: 'Should have at least one metric');
+
       final metric = metrics.first;
       expect(metric.name, equals('test-counter'));
       expect(metric.description, equals('A test counter'));
       expect(metric.unit, equals('items'));
       expect(metric.type, equals(MetricType.sum));
-      
-      expect(metric.points.isNotEmpty, isTrue, reason: 'Should have at least one point');
+
+      expect(metric.points.isNotEmpty, isTrue,
+          reason: 'Should have at least one point');
       expect(metric.points.first.value, equals(42));
     });
 
@@ -122,29 +128,32 @@ void main() {
       // Arrange - add value and verify
       counter.reset(); // Clear any existing data
       counter.add(42);
-      expect(counter.getValue(), equals(42), reason: 'Counter should have 42 before reset');
+      expect(counter.getValue(), equals(42),
+          reason: 'Counter should have 42 before reset');
 
       // Act - reset the counter
       counter.reset();
 
       // Assert - value should be 0 after reset
-      expect(counter.getValue(), equals(0), reason: 'Counter should be 0 after reset');
+      expect(counter.getValue(), equals(0),
+          reason: 'Counter should be 0 after reset');
     });
-    
+
     test('handles multiple attributes with addWithMap', () {
       // Arrange
       counter.reset();
-      
+
       // Act - use addWithMap
       counter.addWithMap(100, {'service': 'api', 'method': 'GET'});
       counter.addWithMap(200, {'service': 'api', 'method': 'POST'});
-      
+
       // Assert - check total value
       expect(counter.getValue(), equals(300), reason: 'Total should be 300');
-      
+
       // Get the points and check their attributes
       final points = counter.collectPoints();
-      expect(points.length, equals(2), reason: 'Should have 2 points for different attribute combinations');
+      expect(points.length, equals(2),
+          reason: 'Should have 2 points for different attribute combinations');
     });
   });
 }

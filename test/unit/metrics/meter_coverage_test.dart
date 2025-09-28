@@ -2,7 +2,8 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart' show LogFunction, OTelAPI;
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
+    show LogFunction, OTelAPI;
 import 'package:test/test.dart';
 import '../../testing_utils/memory_metric_exporter.dart';
 
@@ -58,21 +59,25 @@ void main() {
       expect(meter.enabled, isTrue);
     });
 
-    test('NoopMeter instruments create NoOp implementations when SDK not initialized', () async {
+    test(
+        'NoopMeter instruments create NoOp implementations when SDK not initialized',
+        () async {
       // Reset the SDK state to force NoOp behavior
       await OTel.reset();
       OTelAPI.initialize();
 
       // Get a meter WITHOUT initializing the SDK - this should return NoOp implementations
       final noopMeter = OTel.meter('noop-test-meter');
-      
+
       // Verify the meter is a NoOp implementation (API factory creates disabled meters)
       expect(noopMeter.enabled, isFalse);
 
       // Create instruments and verify they work without errors (NoOp behavior)
       final counter = noopMeter.createCounter<int>(name: 'noop_counter');
-      final upDownCounter = noopMeter.createUpDownCounter<int>(name: 'noop_up_down');
-      final histogram = noopMeter.createHistogram<double>(name: 'noop_histogram');
+      final upDownCounter =
+          noopMeter.createUpDownCounter<int>(name: 'noop_up_down');
+      final histogram =
+          noopMeter.createHistogram<double>(name: 'noop_histogram');
       final gauge = noopMeter.createGauge<double>(name: 'noop_gauge');
       final obsCounter = noopMeter.createObservableCounter<int>(
         name: 'noop_obs_counter',
@@ -92,7 +97,7 @@ void main() {
           result.observe(789.0);
         },
       );
-      
+
       // Verify instruments are disabled (NoOp implementations)
       expect(counter.enabled, isFalse);
       expect(upDownCounter.enabled, isFalse);
@@ -101,33 +106,33 @@ void main() {
       expect(obsCounter.enabled, isFalse);
       expect(obsUpDown.enabled, isFalse);
       expect(obsGauge.enabled, isFalse);
-      
+
       // Exercise the APIs to ensure no exceptions - NoOp implementations should do nothing
       counter.add(10);
       upDownCounter.add(30);
       upDownCounter.add(-15);
       histogram.record(50.5);
       gauge.record(70.5);
-      
+
       // Check instrument properties
       expect(counter.name, equals('noop_counter'));
       expect(counter.isCounter, isTrue);
       expect(counter.isGauge, isFalse);
       expect(counter.isHistogram, isFalse);
       expect(counter.isUpDownCounter, isFalse);
-      
+
       expect(upDownCounter.name, equals('noop_up_down'));
       expect(upDownCounter.isCounter, isFalse);
       expect(upDownCounter.isGauge, isFalse);
       expect(upDownCounter.isHistogram, isFalse);
       expect(upDownCounter.isUpDownCounter, isTrue);
-      
+
       expect(histogram.name, equals('noop_histogram'));
       expect(histogram.isCounter, isFalse);
       expect(histogram.isGauge, isFalse);
       expect(histogram.isHistogram, isTrue);
       expect(histogram.isUpDownCounter, isFalse);
-      
+
       expect(gauge.name, equals('noop_gauge'));
       expect(gauge.isCounter, isFalse);
       expect(gauge.isGauge, isTrue);
@@ -137,10 +142,10 @@ void main() {
       // Test observable instrument methods
       expect(obsCounter.callbacks.length, equals(1));
       expect(obsCounter.collect(), isEmpty);
-      
+
       expect(obsUpDown.callbacks.length, equals(1));
       expect(obsUpDown.collect(), isEmpty);
-      
+
       expect(obsGauge.callbacks.length, equals(1));
       expect(obsGauge.collect(), isEmpty);
 
@@ -206,15 +211,15 @@ void main() {
 
     test('MeterProvider endpoint and service settings are exposed', () {
       final meterProvider = OTel.meterProvider();
-      
+
       // Set and verify endpoint
       meterProvider.endpoint = 'https://example.com/otlp';
       expect(meterProvider.endpoint, equals('https://example.com/otlp'));
-      
+
       // Set and verify service name
       meterProvider.serviceName = 'test-service-updated';
       expect(meterProvider.serviceName, equals('test-service-updated'));
-      
+
       // Set and verify service version
       meterProvider.serviceVersion = '2.0.0';
       expect(meterProvider.serviceVersion, equals('2.0.0'));
@@ -222,26 +227,26 @@ void main() {
 
     test('MeterProvider handles views properly', () {
       final meterProvider = OTel.meterProvider();
-      
+
       // Initially no views
       expect(meterProvider.views, isEmpty);
-      
+
       // Add views
       final view1 = View(
         instrumentNamePattern: 'test_metric*',
         name: 'test-view-1',
         description: 'Test view 1',
       );
-      
+
       final view2 = View(
         instrumentNamePattern: 'another_metric*',
         name: 'test-view-2',
         description: 'Test view 2',
       );
-      
+
       meterProvider.addView(view1);
       meterProvider.addView(view2);
-      
+
       // Verify views added
       expect(meterProvider.views.length, equals(2));
       expect(meterProvider.views[0].name, equals('test-view-1'));
@@ -250,19 +255,19 @@ void main() {
 
     test('MeterProvider exposes metric readers', () {
       final meterProvider = OTel.meterProvider();
-      
+
       // Verify our metric reader was added during initialization
       expect(meterProvider.metricReaders.length, equals(1));
-      
+
       // Create and add additional metric reader
       final additionalExporter = MemoryMetricExporter();
       final additionalReader = MemoryMetricReader(exporter: additionalExporter);
-      
+
       meterProvider.addMetricReader(additionalReader);
-      
+
       // Verify the additional reader was added
       expect(meterProvider.metricReaders.length, equals(2));
-      
+
       // Adding same reader again should not duplicate
       meterProvider.addMetricReader(additionalReader);
       expect(meterProvider.metricReaders.length, equals(2));
@@ -270,22 +275,22 @@ void main() {
 
     test('MeterProvider does not flush after shutting down', () async {
       final meterProvider = OTel.meterProvider();
-      
+
       // Verify initial state
       expect(meterProvider.isShutdown, isFalse);
-      
+
       // Should succeed initially
       bool flushResult = await meterProvider.forceFlush();
       expect(flushResult, isTrue);
-      
+
       // Shutdown the provider
       await meterProvider.shutdown();
       expect(meterProvider.isShutdown, isTrue);
-      
+
       // Should fail after shutdown
       flushResult = await meterProvider.forceFlush();
       expect(flushResult, isFalse);
-      
+
       // Calling shutdown again should just return success
       final bool secondShutdown = await meterProvider.shutdown();
       expect(secondShutdown, isTrue);
@@ -304,18 +309,18 @@ void main() {
       wasLoggingEnabled = OTelLog.isDebug();
       originalLogFunction = OTelLog.logFunction;
       originalMetricLogFunction = OTelLog.metricLogFunction;
-      
+
       // Clear captured logs
       capturedLogs = [];
-      
+
       // Set up log capture
       OTelLog.logFunction = (String message) {
         capturedLogs.add(message);
       };
-      
+
       // Enable debug logging
       OTelLog.enableDebugLogging();
-      
+
       await OTel.reset();
     });
 
@@ -330,7 +335,7 @@ void main() {
       }
       OTelLog.logFunction = originalLogFunction;
       OTelLog.metricLogFunction = originalMetricLogFunction;
-      
+
       await OTel.reset();
     });
 
@@ -345,21 +350,21 @@ void main() {
       // Set up metrics log capture
       final List<String> metricLogs = [];
       OTelLog.metricLogFunction = metricLogs.add;
-      
+
       // Log a metric message
       OTelLog.logMetric('Test metric message');
-      
+
       // Verify log was captured
       expect(metricLogs.length, equals(1));
       expect(metricLogs.first, contains('metric'));
       expect(metricLogs.first, contains('Test metric message'));
-      
+
       // Disable metric logging
       OTelLog.metricLogFunction = null;
-      
+
       // Try logging again
       OTelLog.logMetric('This should not be captured');
-      
+
       // Verify no additional logs were captured
       expect(metricLogs.length, equals(1));
     });
@@ -368,18 +373,21 @@ void main() {
       // Set up metrics log capture
       final List<String> metricLogs = [];
       OTelLog.metricLogFunction = metricLogs.add;
-      
+
       // Initialize OTel
       await OTel.initialize(
         serviceName: 'logging-test-service',
         detectPlatformResources: false,
       );
-      
+
       // Create a meter, which should trigger logging
       OTel.meter('log-test-meter');
-      
+
       // Verify a log was captured about meter creation
-      expect(metricLogs.any((log) => log.contains('Created meter') && log.contains('log-test-meter')), isTrue);
+      expect(
+          metricLogs.any((log) =>
+              log.contains('Created meter') && log.contains('log-test-meter')),
+          isTrue);
     });
   });
 }

@@ -105,24 +105,34 @@ void main() {
       expect(measurements1.length, equals(2));
 
       // Values should match our initial increments (delta calculation doesn't apply to first observation)
-      expect(measurements1.where((m) => m.attributes == attributes1).first.value, equals(5));
-      expect(measurements1.where((m) => m.attributes == attributes2).first.value, equals(3));
+      expect(
+          measurements1.where((m) => m.attributes == attributes1).first.value,
+          equals(5));
+      expect(
+          measurements1.where((m) => m.attributes == attributes2).first.value,
+          equals(3));
 
       // Second collection
       final measurements2 = counter.collect();
       expect(measurements2.length, equals(2));
 
       // Values should be the deltas of the second observation
-      expect(measurements2.where((m) => m.attributes == attributes1).first.value, equals(10));
-      expect(measurements2.where((m) => m.attributes == attributes2).first.value, equals(6));
+      expect(
+          measurements2.where((m) => m.attributes == attributes1).first.value,
+          equals(10));
+      expect(
+          measurements2.where((m) => m.attributes == attributes2).first.value,
+          equals(6));
 
       // Get metric points (cumulative)
       final points = counter.collectPoints();
       expect(points.length, equals(2));
 
       // Points should still have cumulative values
-      expect(points.where((p) => p.attributes == attributes1).first.value, equals(10));
-      expect(points.where((p) => p.attributes == attributes2).first.value, equals(6));
+      expect(points.where((p) => p.attributes == attributes1).first.value,
+          equals(10));
+      expect(points.where((p) => p.attributes == attributes2).first.value,
+          equals(6));
     });
 
     test('ObservableCounter with multiple callbacks', () {
@@ -135,7 +145,8 @@ void main() {
       // First callback
       int callback1Value = 100;
       final attributes1 = {'source': 'callback1'}.toAttributes();
-      final registration1 = counter.addCallback((APIObservableResult<int> result) {
+      final registration1 =
+          counter.addCallback((APIObservableResult<int> result) {
         result.observe(callback1Value, attributes1);
         callback1Value += 50; // Increment for next call
       });
@@ -143,7 +154,8 @@ void main() {
       // Second callback
       int callback2Value = 200;
       final attributes2 = {'source': 'callback2'}.toAttributes();
-      final registration2 = counter.addCallback((APIObservableResult<int> result) {
+      final registration2 =
+          counter.addCallback((APIObservableResult<int> result) {
         result.observe(callback2Value, attributes2);
         callback2Value += 100; // Increment for next call
       });
@@ -154,14 +166,22 @@ void main() {
       // First collection should have both values
       final measurements1 = counter.collect();
       expect(measurements1.length, equals(2));
-      expect(measurements1.where((m) => m.attributes == attributes1).first.value, equals(100));
-      expect(measurements1.where((m) => m.attributes == attributes2).first.value, equals(200));
+      expect(
+          measurements1.where((m) => m.attributes == attributes1).first.value,
+          equals(100));
+      expect(
+          measurements1.where((m) => m.attributes == attributes2).first.value,
+          equals(200));
 
       // Second collection should have deltas
       final measurements2 = counter.collect();
       expect(measurements2.length, equals(2));
-      expect(measurements2.where((m) => m.attributes == attributes1).first.value, equals(150));
-      expect(measurements2.where((m) => m.attributes == attributes2).first.value, equals(300));
+      expect(
+          measurements2.where((m) => m.attributes == attributes1).first.value,
+          equals(150));
+      expect(
+          measurements2.where((m) => m.attributes == attributes2).first.value,
+          equals(300));
 
       // Unregister first callback
       registration1.unregister();
@@ -377,7 +397,8 @@ void main() {
       newCounter.collect();
       final metrics3 = newCounter.collectMetrics();
       expect(metrics3[0].points.length, equals(1));
-      expect(metrics3[0].points[0].value, equals(200)); // New value after shutdown/reset
+      expect(metrics3[0].points[0].value,
+          equals(200)); // New value after shutdown/reset
     });
   });
 }

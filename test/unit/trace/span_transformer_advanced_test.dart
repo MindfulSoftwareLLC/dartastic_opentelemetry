@@ -1,7 +1,8 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'package:dartastic_opentelemetry/proto/opentelemetry_proto_dart.dart' as proto;
+import 'package:dartastic_opentelemetry/proto/opentelemetry_proto_dart.dart'
+    as proto;
 import 'package:dartastic_opentelemetry/src/otel.dart';
 import 'package:dartastic_opentelemetry/src/trace/export/otlp/span_transformer.dart';
 import 'package:dartastic_opentelemetry/src/trace/tracer.dart';
@@ -87,7 +88,8 @@ void main() {
 
       final link = links[0];
       expect(bytesToHex(link.spanId), equals(linkedContext.spanId.toString()));
-      expect(bytesToHex(link.traceId), equals(linkedContext.traceId.toString()));
+      expect(
+          bytesToHex(link.traceId), equals(linkedContext.traceId.toString()));
 
       final linkAttrs = Map.fromEntries(
         links[0].attributes.map((a) => MapEntry(a.key, a.value)),
@@ -100,7 +102,6 @@ void main() {
       expect(arrayAttr?.values[0].intValue, equals(Int64(1)));
       expect(arrayAttr?.values[1].intValue, equals(Int64(2)));
       expect(arrayAttr?.values[2].intValue, equals(Int64(3)));
-
     });
 
     test('handles span kind mapping', () {

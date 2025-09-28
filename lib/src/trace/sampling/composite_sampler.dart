@@ -11,13 +11,16 @@ class CompositeSampler implements Sampler {
   final _Operation _operation;
 
   @override
-  String get description => 'CompositeSampler{${_operation.name},[${_samplers.map((s) => s.description).join(',')}]}';
+  String get description =>
+      'CompositeSampler{${_operation.name},[${_samplers.map((s) => s.description).join(',')}]}';
 
   /// Creates a CompositeSampler that requires all samplers to accept.
-  const CompositeSampler.and(List<Sampler> samplers) : this._(samplers, _Operation.and);
+  const CompositeSampler.and(List<Sampler> samplers)
+      : this._(samplers, _Operation.and);
 
   /// Creates a CompositeSampler that requires any sampler to accept.
-  const CompositeSampler.or(List<Sampler> samplers) : this._(samplers, _Operation.or);
+  const CompositeSampler.or(List<Sampler> samplers)
+      : this._(samplers, _Operation.or);
 
   const CompositeSampler._(this._samplers, this._operation);
 
@@ -51,15 +54,17 @@ class CompositeSampler implements Sampler {
 
       // For AND, if any sampler drops, return drop
       // For OR, if any sampler samples, return sample
-      if (_operation == _Operation.and && result.decision == SamplingDecision.drop) {
+      if (_operation == _Operation.and &&
+          result.decision == SamplingDecision.drop) {
         return result;
-      } else if (_operation == _Operation.or && result.decision == SamplingDecision.recordAndSample) {
+      } else if (_operation == _Operation.or &&
+          result.decision == SamplingDecision.recordAndSample) {
         return result;
       }
 
       // Combine attributes if present
       if (result.attributes != null) {
-        combinedAttributes ??  OTel.attributes(); //TODO simplify
+        combinedAttributes ?? OTel.attributes(); //TODO simplify
         combinedAttributes!.copyWithAttributes(result.attributes!);
       }
     }

@@ -17,11 +17,11 @@ part 'meter_create.dart';
 /// SDK implementation of the APIMeter interface.
 ///
 /// A Meter is the entry point for creating instruments that collect measurements for a specific
-/// instrumentation scope. Meters are obtained from a MeterProvider, and each Meter is associated 
+/// instrumentation scope. Meters are obtained from a MeterProvider, and each Meter is associated
 /// with a specific instrumentation library, version, and optional schema URL.
 ///
-/// The Meter follows the OpenTelemetry metrics data model which consists of instruments that 
-/// record measurements, which are then aggregated into metrics. This implementation delegates 
+/// The Meter follows the OpenTelemetry metrics data model which consists of instruments that
+/// record measurements, which are then aggregated into metrics. This implementation delegates
 /// to the API implementation while adding SDK-specific behaviors.
 ///
 /// More information:
@@ -41,8 +41,8 @@ class Meter implements APIMeter {
   Meter._({
     required APIMeter delegate,
     required MeterProvider provider,
-  }) : _delegate = delegate,
-       _provider = provider;
+  })  : _delegate = delegate,
+        _provider = provider;
 
   /// Gets the name of the instrumentation scope.
   ///
@@ -83,7 +83,7 @@ class Meter implements APIMeter {
 
   /// Creates a Counter instrument for recording cumulative, monotonically increasing values.
   ///
-  /// Counters are used to measure a non-negative, monotonically increasing value. They only 
+  /// Counters are used to measure a non-negative, monotonically increasing value. They only
   /// allow positive increments and are appropriate for values that never decrease, such as
   /// request counts, completed operations, or error counts.
   ///
@@ -91,13 +91,15 @@ class Meter implements APIMeter {
   /// @param unit Optional unit of measurement (e.g., "ms", "bytes", "requests")
   /// @param description Optional description of what the instrument measures
   /// @return A Counter instrument of the specified numeric type
-  /// 
+  ///
   /// More information:
   /// https://opentelemetry.io/docs/specs/otel/metrics/api/#counter
   @override
-  APICounter<T> createCounter<T extends num>({required String name, String? unit, String? description}) {
+  APICounter<T> createCounter<T extends num>(
+      {required String name, String? unit, String? description}) {
     // First call the API implementation to get the API object
-    final apiCounter = _delegate.createCounter<T>(name: name, unit: unit, description: description);
+    final apiCounter = _delegate.createCounter<T>(
+        name: name, unit: unit, description: description);
 
     // Now wrap it with our SDK implementation
     return Counter<T>(
@@ -115,13 +117,15 @@ class Meter implements APIMeter {
   /// @param unit Optional unit of measurement (e.g., "ms", "bytes", "requests")
   /// @param description Optional description of what the instrument measures
   /// @return An UpDownCounter instrument of the specified numeric type
-  /// 
+  ///
   /// More information:
   /// https://opentelemetry.io/docs/specs/otel/metrics/api/#updowncounter
   @override
-  APIUpDownCounter<T> createUpDownCounter<T extends num>({required String name, String? unit, String? description}) {
+  APIUpDownCounter<T> createUpDownCounter<T extends num>(
+      {required String name, String? unit, String? description}) {
     // First call the API implementation to get the API object
-    final apiCounter = _delegate.createUpDownCounter<T>(name: name, unit: unit, description: description);
+    final apiCounter = _delegate.createUpDownCounter<T>(
+        name: name, unit: unit, description: description);
 
     // Now wrap it with our SDK implementation
     return UpDownCounter<T>(
@@ -141,18 +145,21 @@ class Meter implements APIMeter {
   /// @param description Optional description of what the instrument measures
   /// @param boundaries Optional explicit histogram bucket boundaries in increasing order
   /// @return A Histogram instrument of the specified numeric type
-  /// 
+  ///
   /// More information:
   /// https://opentelemetry.io/docs/specs/otel/metrics/api/#histogram
   @override
-  APIHistogram<T> createHistogram<T extends num>({required String name, String? unit, String? description, List<double>? boundaries}) {
+  APIHistogram<T> createHistogram<T extends num>(
+      {required String name,
+      String? unit,
+      String? description,
+      List<double>? boundaries}) {
     // First call the API implementation to get the API object
     final apiHistogram = _delegate.createHistogram<T>(
-      name: name,
-      unit: unit,
-      description: description,
-      boundaries: boundaries
-    );
+        name: name,
+        unit: unit,
+        description: description,
+        boundaries: boundaries);
 
     // Now wrap it with our SDK implementation
     return Histogram<T>(
@@ -171,13 +178,15 @@ class Meter implements APIMeter {
   /// @param unit Optional unit of measurement (e.g., "ms", "bytes", "percent")
   /// @param description Optional description of what the instrument measures
   /// @return A Gauge instrument of the specified numeric type
-  /// 
+  ///
   /// More information:
   /// https://opentelemetry.io/docs/specs/otel/metrics/api/#gauge
   @override
-  APIGauge<T> createGauge<T extends num>({required String name, String? unit, String? description}) {
+  APIGauge<T> createGauge<T extends num>(
+      {required String name, String? unit, String? description}) {
     // First call the API implementation to get the API object
-    final apiGauge = _delegate.createGauge<T>(name: name, unit: unit, description: description);
+    final apiGauge = _delegate.createGauge<T>(
+        name: name, unit: unit, description: description);
 
     // Now wrap it with our SDK implementation
     return Gauge<T>(
@@ -197,11 +206,15 @@ class Meter implements APIMeter {
   /// @param description Optional description of what the instrument measures
   /// @param callback Optional callback function that will be called when measurements are collected
   /// @return An ObservableCounter instrument of the specified numeric type
-  /// 
+  ///
   /// More information:
   /// https://opentelemetry.io/docs/specs/otel/metrics/api/#asynchronous-counter
   @override
-  APIObservableCounter<T> createObservableCounter<T extends num>({required String name, String? unit, String? description, ObservableCallback<T>? callback}) {
+  APIObservableCounter<T> createObservableCounter<T extends num>(
+      {required String name,
+      String? unit,
+      String? description,
+      ObservableCallback<T>? callback}) {
     // First call the API implementation to get the API object
     final apiCounter = _delegate.createObservableCounter<T>(
       name: name,
@@ -233,11 +246,15 @@ class Meter implements APIMeter {
   /// @param description Optional description of what the instrument measures
   /// @param callback Optional callback function that will be called when measurements are collected
   /// @return An ObservableUpDownCounter instrument of the specified numeric type
-  /// 
+  ///
   /// More information:
   /// https://opentelemetry.io/docs/specs/otel/metrics/api/#asynchronous-updowncounter
   @override
-  APIObservableUpDownCounter<T> createObservableUpDownCounter<T extends num>({required String name, String? unit, String? description, ObservableCallback<T>? callback}) {
+  APIObservableUpDownCounter<T> createObservableUpDownCounter<T extends num>(
+      {required String name,
+      String? unit,
+      String? description,
+      ObservableCallback<T>? callback}) {
     // First call the API implementation to get the API object
     final apiCounter = _delegate.createObservableUpDownCounter<T>(
       name: name,
@@ -269,11 +286,15 @@ class Meter implements APIMeter {
   /// @param description Optional description of what the instrument measures
   /// @param callback Optional callback function that will be called when measurements are collected
   /// @return An ObservableGauge instrument of the specified numeric type
-  /// 
+  ///
   /// More information:
   /// https://opentelemetry.io/docs/specs/otel/metrics/api/#asynchronous-gauge
   @override
-  APIObservableGauge<T> createObservableGauge<T extends num>({required String name, String? unit, String? description, ObservableCallback<T>? callback}) {
+  APIObservableGauge<T> createObservableGauge<T extends num>(
+      {required String name,
+      String? unit,
+      String? description,
+      ObservableCallback<T>? callback}) {
     // First call the API implementation to get the API object
     final apiGauge = _delegate.createObservableGauge<T>(
       name: name,
@@ -306,19 +327,19 @@ class Meter implements APIMeter {
 class NoopMeter implements APIMeter {
   @override
   final String name;
-  
+
   @override
   final String? version;
-  
+
   @override
   final String? schemaUrl;
-  
+
   @override
   final Attributes? attributes = null;
-  
+
   @override
   final bool enabled = false;
-  
+
   /// Creates a new NoopMeter with the specified name and optional version and schema URL.
   ///
   /// @param name The name of the instrumentation scope
@@ -329,40 +350,67 @@ class NoopMeter implements APIMeter {
     this.version,
     this.schemaUrl,
   });
-  
+
   @override
-  APICounter<T> createCounter<T extends num>({required String name, String? unit, String? description}) {
+  APICounter<T> createCounter<T extends num>(
+      {required String name, String? unit, String? description}) {
     return NoopCounter<T>(name: name, unit: unit, description: description);
   }
-  
+
   @override
-  APIUpDownCounter<T> createUpDownCounter<T extends num>({required String name, String? unit, String? description}) {
-    return NoopUpDownCounter<T>(name: name, unit: unit, description: description);
+  APIUpDownCounter<T> createUpDownCounter<T extends num>(
+      {required String name, String? unit, String? description}) {
+    return NoopUpDownCounter<T>(
+        name: name, unit: unit, description: description);
   }
-  
+
   @override
-  APIHistogram<T> createHistogram<T extends num>({required String name, String? unit, String? description, List<double>? boundaries}) {
-    return NoopHistogram<T>(name: name, unit: unit, description: description, boundaries: boundaries);
+  APIHistogram<T> createHistogram<T extends num>(
+      {required String name,
+      String? unit,
+      String? description,
+      List<double>? boundaries}) {
+    return NoopHistogram<T>(
+        name: name,
+        unit: unit,
+        description: description,
+        boundaries: boundaries);
   }
-  
+
   @override
-  APIGauge<T> createGauge<T extends num>({required String name, String? unit, String? description}) {
+  APIGauge<T> createGauge<T extends num>(
+      {required String name, String? unit, String? description}) {
     return NoopGauge<T>(name: name, unit: unit, description: description);
   }
-  
+
   @override
-  APIObservableCounter<T> createObservableCounter<T extends num>({required String name, String? unit, String? description, ObservableCallback<T>? callback}) {
-    return NoopObservableCounter<T>(name: name, unit: unit, description: description, callback: callback);
+  APIObservableCounter<T> createObservableCounter<T extends num>(
+      {required String name,
+      String? unit,
+      String? description,
+      ObservableCallback<T>? callback}) {
+    return NoopObservableCounter<T>(
+        name: name, unit: unit, description: description, callback: callback);
   }
-  
+
   @override
-  APIObservableUpDownCounter<T> createObservableUpDownCounter<T extends num>({required String name, String? unit, String? description, ObservableCallback<T>? callback}) {
-    return NoopObservableUpDownCounter<T>(name: name, unit: unit, description: description, callback: callback);
+  APIObservableUpDownCounter<T> createObservableUpDownCounter<T extends num>(
+      {required String name,
+      String? unit,
+      String? description,
+      ObservableCallback<T>? callback}) {
+    return NoopObservableUpDownCounter<T>(
+        name: name, unit: unit, description: description, callback: callback);
   }
-  
+
   @override
-  APIObservableGauge<T> createObservableGauge<T extends num>({required String name, String? unit, String? description, ObservableCallback<T>? callback}) {
-    return NoopObservableGauge<T>(name: name, unit: unit, description: description, callback: callback);
+  APIObservableGauge<T> createObservableGauge<T extends num>(
+      {required String name,
+      String? unit,
+      String? description,
+      ObservableCallback<T>? callback}) {
+    return NoopObservableGauge<T>(
+        name: name, unit: unit, description: description, callback: callback);
   }
 }
 
@@ -373,27 +421,27 @@ class NoopMeter implements APIMeter {
 class NoopCounter<T extends num> implements APICounter<T> {
   @override
   final String name;
-  
+
   @override
   final String? description;
-  
+
   @override
   final String? unit;
-  
+
   @override
   final bool enabled = false;
-  
+
   @override
   final APIMeter meter;
-  
+
   /// Creates a new NoopCounter with the specified name, unit, and description.
   ///
   /// @param name The name of the instrument
   /// @param unit Optional unit of measurement
   /// @param description Optional description of what the instrument measures
-  NoopCounter({required this.name, this.unit, this.description}) : 
-    meter = NoopMeter(name: 'noop-meter');
-  
+  NoopCounter({required this.name, this.unit, this.description})
+      : meter = NoopMeter(name: 'noop-meter');
+
   /// Records a measurement (no-op implementation).
   ///
   /// @param value The measurement value (ignored)
@@ -402,7 +450,7 @@ class NoopCounter<T extends num> implements APICounter<T> {
   void add(T value, [Attributes? attributes]) {
     // No-op
   }
-  
+
   /// Records a measurement with attributes as a map (no-op implementation).
   ///
   /// @param value The measurement value (ignored)
@@ -411,16 +459,16 @@ class NoopCounter<T extends num> implements APICounter<T> {
   void addWithMap(T value, Map<String, Object> attributeMap) {
     // No-op
   }
-  
+
   @override
   bool get isCounter => true;
-  
+
   @override
   bool get isGauge => false;
-  
+
   @override
   bool get isHistogram => false;
-  
+
   @override
   bool get isUpDownCounter => false;
 }
@@ -432,27 +480,27 @@ class NoopCounter<T extends num> implements APICounter<T> {
 class NoopUpDownCounter<T extends num> implements APIUpDownCounter<T> {
   @override
   final String name;
-  
+
   @override
   final String? description;
-  
+
   @override
   final String? unit;
-  
+
   @override
   final bool enabled = false;
-  
+
   @override
   final APIMeter meter;
-  
+
   /// Creates a new NoopUpDownCounter with the specified name, unit, and description.
   ///
   /// @param name The name of the instrument
   /// @param unit Optional unit of measurement
   /// @param description Optional description of what the instrument measures
-  NoopUpDownCounter({required this.name, this.unit, this.description}) : 
-    meter = NoopMeter(name: 'noop-meter');
-  
+  NoopUpDownCounter({required this.name, this.unit, this.description})
+      : meter = NoopMeter(name: 'noop-meter');
+
   /// Records a measurement (no-op implementation).
   ///
   /// @param value The measurement value (ignored)
@@ -461,7 +509,7 @@ class NoopUpDownCounter<T extends num> implements APIUpDownCounter<T> {
   void add(T value, [Attributes? attributes]) {
     // No-op
   }
-  
+
   /// Records a measurement with attributes as a map (no-op implementation).
   ///
   /// @param value The measurement value (ignored)
@@ -470,16 +518,16 @@ class NoopUpDownCounter<T extends num> implements APIUpDownCounter<T> {
   void addWithMap(T value, Map<String, Object> attributeMap) {
     // No-op
   }
-  
+
   @override
   bool get isCounter => false;
-  
+
   @override
   bool get isGauge => false;
-  
+
   @override
   bool get isHistogram => false;
-  
+
   @override
   bool get isUpDownCounter => true;
 }
@@ -491,31 +539,32 @@ class NoopUpDownCounter<T extends num> implements APIUpDownCounter<T> {
 class NoopHistogram<T extends num> implements APIHistogram<T> {
   @override
   final String name;
-  
+
   @override
   final String? description;
-  
+
   @override
   final String? unit;
-  
+
   @override
   final List<double>? boundaries;
-  
+
   @override
   final bool enabled = false;
-  
+
   @override
   final APIMeter meter;
-  
+
   /// Creates a new NoopHistogram with the specified name, unit, description, and boundaries.
   ///
   /// @param name The name of the instrument
   /// @param unit Optional unit of measurement
   /// @param description Optional description of what the instrument measures
   /// @param boundaries Optional explicit histogram bucket boundaries
-  NoopHistogram({required this.name, this.unit, this.description, this.boundaries}) : 
-    meter = NoopMeter(name: 'noop-meter');
-  
+  NoopHistogram(
+      {required this.name, this.unit, this.description, this.boundaries})
+      : meter = NoopMeter(name: 'noop-meter');
+
   /// Records a measurement (no-op implementation).
   ///
   /// @param value The measurement value (ignored)
@@ -524,7 +573,7 @@ class NoopHistogram<T extends num> implements APIHistogram<T> {
   void record(T value, [Attributes? attributes]) {
     // No-op
   }
-  
+
   /// Records a measurement with attributes as a map (no-op implementation).
   ///
   /// @param value The measurement value (ignored)
@@ -533,16 +582,16 @@ class NoopHistogram<T extends num> implements APIHistogram<T> {
   void recordWithMap(T value, Map<String, Object> attributeMap) {
     // No-op
   }
-  
+
   @override
   bool get isCounter => false;
-  
+
   @override
   bool get isGauge => false;
-  
+
   @override
   bool get isHistogram => true;
-  
+
   @override
   bool get isUpDownCounter => false;
 }
@@ -554,27 +603,27 @@ class NoopHistogram<T extends num> implements APIHistogram<T> {
 class NoopGauge<T extends num> implements APIGauge<T> {
   @override
   final String name;
-  
+
   @override
   final String? description;
-  
+
   @override
   final String? unit;
-  
+
   @override
   final bool enabled = false;
-  
+
   @override
   final APIMeter meter;
-  
+
   /// Creates a new NoopGauge with the specified name, unit, and description.
   ///
   /// @param name The name of the instrument
   /// @param unit Optional unit of measurement
   /// @param description Optional description of what the instrument measures
-  NoopGauge({required this.name, this.unit, this.description}) : 
-    meter = NoopMeter(name: 'noop-meter');
-  
+  NoopGauge({required this.name, this.unit, this.description})
+      : meter = NoopMeter(name: 'noop-meter');
+
   /// Records a measurement (no-op implementation).
   ///
   /// @param value The measurement value (ignored)
@@ -583,7 +632,7 @@ class NoopGauge<T extends num> implements APIGauge<T> {
   void record(T value, [Attributes? attributes]) {
     // No-op
   }
-  
+
   /// Records a measurement with attributes as a map (no-op implementation).
   ///
   /// @param value The measurement value (ignored)
@@ -592,16 +641,16 @@ class NoopGauge<T extends num> implements APIGauge<T> {
   void recordWithMap(T value, Map<String, Object> attributeMap) {
     // No-op
   }
-  
+
   @override
   bool get isCounter => false;
-  
+
   @override
   bool get isGauge => true;
-  
+
   @override
   bool get isHistogram => false;
-  
+
   @override
   bool get isUpDownCounter => false;
 }
@@ -613,40 +662,44 @@ class NoopGauge<T extends num> implements APIGauge<T> {
 class NoopObservableCounter<T extends num> implements APIObservableCounter<T> {
   @override
   final String name;
-  
+
   @override
   final String? description;
-  
+
   @override
   final String? unit;
-  
+
   @override
   final bool enabled = false;
-  
+
   @override
   final APIMeter meter;
-  
+
   final List<ObservableCallback<T>> _callbacks = [];
-  
+
   /// Creates a new NoopObservableCounter with the specified name, unit, description, and callback.
   ///
   /// @param name The name of the instrument
   /// @param unit Optional unit of measurement
   /// @param description Optional description of what the instrument measures
   /// @param callback Optional callback function that will be called when measurements are collected
-  NoopObservableCounter({required this.name, this.unit, this.description, ObservableCallback<T>? callback}) : 
-    meter = NoopMeter(name: 'noop-meter') {
+  NoopObservableCounter(
+      {required this.name,
+      this.unit,
+      this.description,
+      ObservableCallback<T>? callback})
+      : meter = NoopMeter(name: 'noop-meter') {
     if (callback != null) {
       addCallback(callback);
     }
   }
-  
+
   /// Gets all registered callbacks.
   ///
   /// @return An unmodifiable list of registered callbacks
   @override
   List<ObservableCallback<T>> get callbacks => List.unmodifiable(_callbacks);
-  
+
   /// Registers a callback function for collecting measurements.
   ///
   /// @param callback The callback function to register
@@ -656,7 +709,7 @@ class NoopObservableCounter<T extends num> implements APIObservableCounter<T> {
     _callbacks.add(callback);
     return _NoopCallbackRegistration<T>(this, callback);
   }
-  
+
   /// Unregisters a previously registered callback function.
   ///
   /// @param callback The callback function to unregister
@@ -664,7 +717,7 @@ class NoopObservableCounter<T extends num> implements APIObservableCounter<T> {
   void removeCallback(ObservableCallback<T> callback) {
     _callbacks.remove(callback);
   }
-  
+
   /// Collects measurements from all registered callbacks (no-op implementation).
   ///
   /// @return An empty list of measurements
@@ -678,43 +731,48 @@ class NoopObservableCounter<T extends num> implements APIObservableCounter<T> {
 ///
 /// This implementation conforms to the OpenTelemetry specification for no-op implementations,
 /// maintaining the same interface as a functional ObservableUpDownCounter but performing no operations.
-class NoopObservableUpDownCounter<T extends num> implements APIObservableUpDownCounter<T> {
+class NoopObservableUpDownCounter<T extends num>
+    implements APIObservableUpDownCounter<T> {
   @override
   final String name;
-  
+
   @override
   final String? description;
-  
+
   @override
   final String? unit;
-  
+
   @override
   final bool enabled = false;
-  
+
   @override
   final APIMeter meter;
-  
+
   final List<ObservableCallback<T>> _callbacks = [];
-  
+
   /// Creates a new NoopObservableUpDownCounter with the specified name, unit, description, and callback.
   ///
   /// @param name The name of the instrument
   /// @param unit Optional unit of measurement
   /// @param description Optional description of what the instrument measures
   /// @param callback Optional callback function that will be called when measurements are collected
-  NoopObservableUpDownCounter({required this.name, this.unit, this.description, ObservableCallback<T>? callback}) : 
-    meter = NoopMeter(name: 'noop-meter') {
+  NoopObservableUpDownCounter(
+      {required this.name,
+      this.unit,
+      this.description,
+      ObservableCallback<T>? callback})
+      : meter = NoopMeter(name: 'noop-meter') {
     if (callback != null) {
       addCallback(callback);
     }
   }
-  
+
   /// Gets all registered callbacks.
   ///
   /// @return An unmodifiable list of registered callbacks
   @override
   List<ObservableCallback<T>> get callbacks => List.unmodifiable(_callbacks);
-  
+
   /// Registers a callback function for collecting measurements.
   ///
   /// @param callback The callback function to register
@@ -724,7 +782,7 @@ class NoopObservableUpDownCounter<T extends num> implements APIObservableUpDownC
     _callbacks.add(callback);
     return _NoopCallbackRegistration<T>(this, callback);
   }
-  
+
   /// Unregisters a previously registered callback function.
   ///
   /// @param callback The callback function to unregister
@@ -732,7 +790,7 @@ class NoopObservableUpDownCounter<T extends num> implements APIObservableUpDownC
   void removeCallback(ObservableCallback<T> callback) {
     _callbacks.remove(callback);
   }
-  
+
   /// Collects measurements from all registered callbacks (no-op implementation).
   ///
   /// @return An empty list of measurements
@@ -749,40 +807,44 @@ class NoopObservableUpDownCounter<T extends num> implements APIObservableUpDownC
 class NoopObservableGauge<T extends num> implements APIObservableGauge<T> {
   @override
   final String name;
-  
+
   @override
   final String? description;
-  
+
   @override
   final String? unit;
-  
+
   @override
   final bool enabled = false;
-  
+
   @override
   final APIMeter meter;
-  
+
   final List<ObservableCallback<T>> _callbacks = [];
-  
+
   /// Creates a new NoopObservableGauge with the specified name, unit, description, and callback.
   ///
   /// @param name The name of the instrument
   /// @param unit Optional unit of measurement
   /// @param description Optional description of what the instrument measures
   /// @param callback Optional callback function that will be called when measurements are collected
-  NoopObservableGauge({required this.name, this.unit, this.description, ObservableCallback<T>? callback}) : 
-    meter = NoopMeter(name: 'noop-meter') {
+  NoopObservableGauge(
+      {required this.name,
+      this.unit,
+      this.description,
+      ObservableCallback<T>? callback})
+      : meter = NoopMeter(name: 'noop-meter') {
     if (callback != null) {
       addCallback(callback);
     }
   }
-  
+
   /// Gets all registered callbacks.
   ///
   /// @return An unmodifiable list of registered callbacks
   @override
   List<ObservableCallback<T>> get callbacks => List.unmodifiable(_callbacks);
-  
+
   /// Registers a callback function for collecting measurements.
   ///
   /// @param callback The callback function to register
@@ -792,7 +854,7 @@ class NoopObservableGauge<T extends num> implements APIObservableGauge<T> {
     _callbacks.add(callback);
     return _NoopCallbackRegistration<T>(this, callback);
   }
-  
+
   /// Unregisters a previously registered callback function.
   ///
   /// @param callback The callback function to unregister
@@ -800,7 +862,7 @@ class NoopObservableGauge<T extends num> implements APIObservableGauge<T> {
   void removeCallback(ObservableCallback<T> callback) {
     _callbacks.remove(callback);
   }
-  
+
   /// Collects measurements from all registered callbacks (no-op implementation).
   ///
   /// @return An empty list of measurements
@@ -813,7 +875,8 @@ class NoopObservableGauge<T extends num> implements APIObservableGauge<T> {
 /// No-op implementation of callback registration for observable instruments.
 ///
 /// This implementation allows unregistering callbacks from no-op instruments.
-class _NoopCallbackRegistration<T extends num> implements APICallbackRegistration<T> {
+class _NoopCallbackRegistration<T extends num>
+    implements APICallbackRegistration<T> {
   final dynamic _instrument;
   final ObservableCallback<T> _callback;
 

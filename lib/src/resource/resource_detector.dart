@@ -82,7 +82,8 @@ class HostResourceDetector implements ResourceDetector {
 
     attributes['os.version'] = io.Platform.operatingSystemVersion;
 
-    return ResourceCreate.create(OTelFactory.otelFactory!.attributesFromMap(attributes));
+    return ResourceCreate.create(
+        OTelFactory.otelFactory!.attributesFromMap(attributes));
   }
 }
 
@@ -111,7 +112,8 @@ class EnvVarResourceDetector implements ResourceDetector {
     }
 
     //TODO - OTEL_RESOURCE_ATTRIBUTES?
-    final resourceAttrs = _environmentService.getValue('OTEL_RESOURCE_ATTRIBUTES');
+    final resourceAttrs =
+        _environmentService.getValue('OTEL_RESOURCE_ATTRIBUTES');
     if (resourceAttrs == null || resourceAttrs.isEmpty) {
       return Resource.empty;
     }
@@ -217,7 +219,9 @@ class PlatformResourceDetector {
           HostResourceDetector(),
         ]);
       } catch (e) {
-        if (OTelLog.isError()) OTelLog.error('Error adding native detectors: $e');
+        if (OTelLog.isError()) {
+          OTelLog.error('Error adding native detectors: $e');
+        }
       }
     }
     // For web platforms

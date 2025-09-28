@@ -13,7 +13,8 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 /// Baggage allows for propagating key-value pairs alongside the trace context
 /// across service boundaries. This enables the correlation of related telemetry
 /// using application-specific or domain-specific properties.
-class W3CBaggagePropagator implements TextMapPropagator<Map<String, String>, String> {
+class W3CBaggagePropagator
+    implements TextMapPropagator<Map<String, String>, String> {
   /// The standard header name for W3C baggage as defined in the specification
   static const _baggageHeader = 'baggage';
 
@@ -27,7 +28,8 @@ class W3CBaggagePropagator implements TextMapPropagator<Map<String, String>, Str
   /// @param getter The getter used to extract values from the carrier
   /// @return A new Context with the extracted baggage
   @override
-  Context extract(Context context, Map<String, String> carrier, TextMapGetter<String> getter) {
+  Context extract(Context context, Map<String, String> carrier,
+      TextMapGetter<String> getter) {
     final value = getter.get(_baggageHeader);
     OTelLog.debug('Extracting baggage: $value');
     if (value == null || value.isEmpty) {
@@ -70,11 +72,17 @@ class W3CBaggagePropagator implements TextMapPropagator<Map<String, String>, Str
   /// @param carrier The carrier to inject the baggage header into
   /// @param setter The setter used to add values to the carrier
   @override
-  void inject(Context context, Map<String, String> carrier, TextMapSetter<String> setter) {
-    if (OTelLog.isDebug()) OTelLog.debug('Injecting baggage. Context: $context');
+  void inject(Context context, Map<String, String> carrier,
+      TextMapSetter<String> setter) {
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('Injecting baggage. Context: $context');
+    }
     final contextBaggage = context.baggage;
     if (contextBaggage != null) {
-      if (OTelLog.isDebug()) OTelLog.debug('Context baggage: $contextBaggage (${contextBaggage.runtimeType})');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+            'Context baggage: $contextBaggage (${contextBaggage.runtimeType})');
+      }
 
       final baggage = contextBaggage;
       final entries = baggage.getAllEntries();
@@ -91,7 +99,7 @@ class W3CBaggagePropagator implements TextMapPropagator<Map<String, String>, Str
         final metadata = entry.value.metadata;
         if (OTelLog.isDebug()) {
           OTelLog.debug(
-            'Processing entry - Key: $key, Value: $value, Metadata: $metadata');
+              'Processing entry - Key: $key, Value: $value, Metadata: $metadata');
         }
         if (metadata != null && metadata.isNotEmpty) {
           return '$key=$value;$metadata';
@@ -99,7 +107,9 @@ class W3CBaggagePropagator implements TextMapPropagator<Map<String, String>, Str
         return '$key=$value';
       }).join(',');
 
-      if (OTelLog.isDebug()) OTelLog.debug('Setting baggage header to: $serializedEntries');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('Setting baggage header to: $serializedEntries');
+      }
       if (serializedEntries.isNotEmpty) {
         setter.set(_baggageHeader, serializedEntries);
       }

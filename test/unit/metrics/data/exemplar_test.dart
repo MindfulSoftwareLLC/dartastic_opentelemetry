@@ -78,7 +78,8 @@ void main() {
 
       // Create a measurement using factory
       final value = 123.45;
-      final measurement = createTestMeasurement(value, attributesWithMultipleEntries);
+      final measurement =
+          createTestMeasurement(value, attributesWithMultipleEntries);
       final timestamp = DateTime.now();
 
       // Create exemplar from measurement
@@ -115,8 +116,10 @@ void main() {
         }
       }
 
-      expect(foundInstanceId, isTrue, reason: "instance.id attribute missing or wrong value");
-      expect(foundCustomerId, isTrue, reason: "customer.id attribute missing or wrong value");
+      expect(foundInstanceId, isTrue,
+          reason: "instance.id attribute missing or wrong value");
+      expect(foundCustomerId, isTrue,
+          reason: "customer.id attribute missing or wrong value");
 
       // End the span
       span.end();
@@ -163,8 +166,10 @@ void main() {
         }
       }
 
-      expect(foundExtra1, isTrue, reason: "extra1 attribute missing or wrong value");
-      expect(foundExtra2, isTrue, reason: "extra2 attribute missing or wrong value");
+      expect(foundExtra1, isTrue,
+          reason: "extra1 attribute missing or wrong value");
+      expect(foundExtra2, isTrue,
+          reason: "extra2 attribute missing or wrong value");
 
       // Verify excluded attributes - check they're not in the list
       bool hasCommon1 = false;
@@ -177,9 +182,12 @@ void main() {
         if (attr.key == 'other') hasOther = true;
       }
 
-      expect(hasCommon1, isFalse, reason: "common1 shouldn't be in filtered attributes");
-      expect(hasCommon2, isFalse, reason: "common2 shouldn't be in filtered attributes");
-      expect(hasOther, isFalse, reason: "other shouldn't be in filtered attributes");
+      expect(hasCommon1, isFalse,
+          reason: "common1 shouldn't be in filtered attributes");
+      expect(hasCommon2, isFalse,
+          reason: "common2 shouldn't be in filtered attributes");
+      expect(hasOther, isFalse,
+          reason: "other shouldn't be in filtered attributes");
     });
 
     test('Exemplar._filterAttributes handles empty attributes', () {
@@ -199,7 +207,8 @@ void main() {
       expect(exemplar1.filteredAttributes.toList(), isEmpty);
 
       // Empty aggregation attributes
-      final someMeasurementAttrs = Attributes.of({'key1': 'value1', 'key2': 'value2'});
+      final someMeasurementAttrs =
+          Attributes.of({'key1': 'value1', 'key2': 'value2'});
       final emptyAggregationAttrs = OTelFactory.otelFactory!.attributes();
 
       final measurement2 = createTestMeasurement(100, someMeasurementAttrs);
@@ -292,19 +301,23 @@ void main() {
         if (attr.key == 'bool' && attr.value == true) {
           foundBool = true;
         }
-        if (attr.key == 'stringArray' && attr.value is List &&
+        if (attr.key == 'stringArray' &&
+            attr.value is List &&
             listEquals(attr.value as List, ['a', 'b', 'c'])) {
           foundStringArray = true;
         }
-        if (attr.key == 'intArray' && attr.value is List &&
+        if (attr.key == 'intArray' &&
+            attr.value is List &&
             listEquals(attr.value as List, [1, 2, 3])) {
           foundIntArray = true;
         }
-        if (attr.key == 'doubleArray' && attr.value is List &&
+        if (attr.key == 'doubleArray' &&
+            attr.value is List &&
             listEquals(attr.value as List, [1.1, 2.2, 3.3])) {
           foundDoubleArray = true;
         }
-        if (attr.key == 'boolArray' && attr.value is List &&
+        if (attr.key == 'boolArray' &&
+            attr.value is List &&
             listEquals(attr.value as List, [true, false, true])) {
           foundBoolArray = true;
         }
@@ -333,7 +346,9 @@ Measurement createTestMeasurement(num value, Attributes? attributes) {
 
   // Access the last recorded measurement (for testing purposes only)
   // In a real implementation, you'd get this from the SDK internals
-  return MockMeasurement(value: value, attributes: attributes ?? OTelFactory.otelFactory!.attributes());
+  return MockMeasurement(
+      value: value,
+      attributes: attributes ?? OTelFactory.otelFactory!.attributes());
 }
 
 // Mock Measurement class for testing

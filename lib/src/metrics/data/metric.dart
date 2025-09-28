@@ -16,18 +16,18 @@ enum MetricPointKind {
   ///
   /// Sum points record a running total of a value that increases or decreases over time.
   sum,
-  
+
   /// Gauge represents the last value.
   ///
   /// Gauge points record the instantaneous value of a measurement at a specific time.
   gauge,
-  
+
   /// Histogram represents a distribution of values.
   ///
   /// Histogram points record a statistical distribution of values, with count, sum,
   /// and frequency counts for different bucket ranges.
   histogram,
-  
+
   /// ExponentialHistogram represents a distribution of values using
   /// exponential scale bucket boundaries.
   ///
@@ -47,12 +47,12 @@ enum MetricType {
   ///
   /// Sum metrics accumulate values over time and are used for counters.
   sum,
-  
+
   /// Gauge represents the last value.
   ///
   /// Gauge metrics record the current value at a specific time.
   gauge,
-  
+
   /// Histogram represents a distribution of values.
   ///
   /// Histogram metrics record statistical distributions of values.
@@ -71,7 +71,7 @@ enum AggregationTemporality {
   /// Cumulative temporality means that each data point contains the total sum
   /// of all measurements since the start time.
   cumulative,
-  
+
   /// Delta aggregation reports the change since the last measurement.
   ///
   /// Delta temporality means that each data point contains only the change
@@ -93,45 +93,45 @@ class Metric {
   /// This should be unique within the instrumentation scope and should follow
   /// the naming convention recommended by OpenTelemetry.
   final String name;
-  
+
   /// The description of the metric.
   ///
   /// A human-readable description of what the metric measures.
   final String? description;
-  
+
   /// The unit of the metric.
   ///
   /// The unit of measure for the metric values. Should follow
   /// the UCUM convention where possible (e.g., "ms", "bytes").
   final String? unit;
-  
+
   /// The kind of metric.
   ///
   /// Defines whether this metric is a Sum, Gauge, or Histogram.
   final MetricType type;
-  
+
   /// The aggregation temporality of the metric.
   ///
   /// Defines whether the metric values are cumulative or delta.
   final AggregationTemporality temporality;
-  
+
   /// The instrumentation scope that created this metric.
   ///
   /// Identifies the library or component that created this metric.
   final InstrumentationScope? instrumentationScope;
-  
+
   /// The data points for this metric.
   ///
   /// Each data point contains a set of attributes, a value or values,
   /// and timestamps.
   final List<MetricPoint<dynamic>> points;
-  
+
   /// Whether this metric is monotonic (sum metrics only).
   ///
   /// A monotonic metric only increases or only decreases over time.
   /// This is applicable only for sum metrics.
   final bool? isMonotonic;
-  
+
   /// Creates a new Metric instance.
   ///
   /// @param name The name of the metric
@@ -152,7 +152,7 @@ class Metric {
     required this.points,
     this.isMonotonic,
   });
-  
+
   /// Creates a sum metric.
   ///
   /// Sum metrics represent values that accumulate over time, such as
@@ -186,7 +186,7 @@ class Metric {
       isMonotonic: isMonotonic,
     );
   }
-  
+
   /// Creates a gauge metric.
   ///
   /// Gauge metrics represent current values that can go up and down,
@@ -210,12 +210,13 @@ class Metric {
       description: description,
       unit: unit,
       type: MetricType.gauge,
-      temporality: AggregationTemporality.cumulative, // Gauges are always cumulative
+      temporality:
+          AggregationTemporality.cumulative, // Gauges are always cumulative
       instrumentationScope: instrumentationScope,
       points: points,
     );
   }
-  
+
   /// Creates a histogram metric.
   ///
   /// Histogram metrics represent distributions of values, such as

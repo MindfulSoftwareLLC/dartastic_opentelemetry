@@ -27,21 +27,21 @@ class TraceIdRatioSampler implements Sampler {
 
   /// Converts a trace ID to a value between 0.0 and 1.0 for sampling decisions.
   /// Uses the lowest 8 bytes (16 hex characters) of the trace ID as per the specification.
-  /// 
+  ///
   /// @param traceId The trace ID as a hex string
   /// @return A value between 0.0 and 1.0 based on the trace ID
   double _traceIdToValue(String traceId) {
-  // Get the last 16 hex chars (8 bytes) of trace ID
-  final lastBytes = traceId.substring(math.max(0, traceId.length - 16));
+    // Get the last 16 hex chars (8 bytes) of trace ID
+    final lastBytes = traceId.substring(math.max(0, traceId.length - 16));
 
-  // Parse hex string to integer with BigInt to avoid precision issues
-  final value = BigInt.parse(lastBytes, radix: 16);
+    // Parse hex string to integer with BigInt to avoid precision issues
+    final value = BigInt.parse(lastBytes, radix: 16);
 
-  // Maximum possible value for 8 bytes (64 bits) is 2^64 - 1
-  final maxValue = BigInt.parse('ffffffffffffffff', radix: 16);
+    // Maximum possible value for 8 bytes (64 bits) is 2^64 - 1
+    final maxValue = BigInt.parse('ffffffffffffffff', radix: 16);
 
-  // Convert to a double between 0.0 and 1.0
-  return value.toDouble() / maxValue.toDouble();
+    // Convert to a double between 0.0 and 1.0
+    return value.toDouble() / maxValue.toDouble();
   }
 
   @override

@@ -41,8 +41,8 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
   Counter({
     required APICounter<T> apiCounter,
     required Meter meter,
-  }) : _apiCounter = apiCounter,
-       _meter = meter {
+  })  : _apiCounter = apiCounter,
+        _meter = meter {
     _meter.provider.registerInstrument(_meter.name, this);
   }
 
@@ -119,7 +119,8 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
   @override
   void addWithMap(T value, Map<String, Object> attributeMap) {
     // Just convert to Attributes and call add
-    final attributes = attributeMap.isEmpty ? null : attributeMap.toAttributes();
+    final attributes =
+        attributeMap.isEmpty ? null : attributeMap.toAttributes();
     add(value, attributes);
   }
 

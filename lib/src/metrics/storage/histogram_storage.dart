@@ -46,7 +46,7 @@ class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
       )..record(value);
     }
   }
-  
+
   /// Helper to get empty attributes safely
   Attributes _emptyAttributes() {
     // If OTelFactory is not initialized yet, create an empty attributes directly
@@ -55,11 +55,12 @@ class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
     }
     return OTelFactory.otelFactory!.attributes();
   }
-  
+
   /// Finds a key in the points map that equals the given key
   Attributes? _findMatchingKey(Attributes key) {
     for (final existingKey in _points.keys) {
-      if (existingKey == key) { // Using the == operator which should call equals
+      if (existingKey == key) {
+        // Using the == operator which should call equals
         return existingKey;
       }
     }
@@ -72,27 +73,44 @@ class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
   HistogramValue getValue([Attributes? attributes]) {
     if (attributes == null) {
       // Combine across all attribute sets
-      final num totalSum = _points.values.fold<num>(0, (sum, data) => sum + data.sum);
-      final int totalCount = _points.values.fold<int>(0, (count, data) => count + data.count);
-      
+      final num totalSum =
+          _points.values.fold<num>(0, (sum, data) => sum + data.sum);
+      final int totalCount =
+          _points.values.fold<int>(0, (count, data) => count + data.count);
+
       // Combine bucket counts
-      final List<int> combinedCounts = List<int>.filled(boundaries.length + 1, 0);
+      final List<int> combinedCounts =
+          List<int>.filled(boundaries.length + 1, 0);
       for (final data in _points.values) {
         for (int i = 0; i < data.counts.length; i++) {
           combinedCounts[i] += data.counts[i];
         }
       }
-      
+
       // Find overall min and max
       num? overallMin;
       num? overallMax;
       if (recordMinMax && _points.isNotEmpty) {
-        overallMin = _points.values.map((data) => data.min).where((min) => min != double.infinity).isEmpty ? null :
-                    _points.values.map((data) => data.min).where((min) => min != double.infinity).reduce((a, b) => a < b ? a : b);
-        overallMax = _points.values.map((data) => data.max).where((max) => max != double.negativeInfinity).isEmpty ? null :
-                    _points.values.map((data) => data.max).where((max) => max != double.negativeInfinity).reduce((a, b) => a > b ? a : b);
+        overallMin = _points.values
+                .map((data) => data.min)
+                .where((min) => min != double.infinity)
+                .isEmpty
+            ? null
+            : _points.values
+                .map((data) => data.min)
+                .where((min) => min != double.infinity)
+                .reduce((a, b) => a < b ? a : b);
+        overallMax = _points.values
+                .map((data) => data.max)
+                .where((max) => max != double.negativeInfinity)
+                .isEmpty
+            ? null
+            : _points.values
+                .map((data) => data.max)
+                .where((max) => max != double.negativeInfinity)
+                .reduce((a, b) => a > b ? a : b);
       }
-      
+
       return HistogramValue(
         sum: totalSum,
         count: totalCount,
@@ -102,7 +120,7 @@ class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
         max: overallMax,
       );
     }
-    
+
     // Find matching attributes
     final existingKey = _findMatchingKey(attributes);
     if (existingKey != null) {
@@ -113,7 +131,9 @@ class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
         boundaries: boundaries,
         bucketCounts: data.counts,
         min: recordMinMax && data.min != double.infinity ? data.min : null,
-        max: recordMinMax && data.max != double.negativeInfinity ? data.max : null,
+        max: recordMinMax && data.max != double.negativeInfinity
+            ? data.max
+            : null,
       );
     } else {
       // Return empty histogram
@@ -135,7 +155,7 @@ class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
 
     return _points.entries.map((entry) {
       final data = entry.value;
-      
+
       // Create a HistogramValue directly
       final histogramValue = HistogramValue(
         sum: data.sum,
@@ -143,7 +163,9 @@ class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
         boundaries: boundaries,
         bucketCounts: data.counts,
         min: recordMinMax && data.min != double.infinity ? data.min : null,
-        max: recordMinMax && data.max != double.negativeInfinity ? data.max : null,
+        max: recordMinMax && data.max != double.negativeInfinity
+            ? data.max
+            : null,
       );
 
       // Create a MetricPoint<HistogramValue> - no type casting needed!
@@ -168,7 +190,7 @@ class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
   void addExemplar(Exemplar exemplar, [Attributes? attributes]) {
     // Create a normalized key for lookup
     final key = attributes ?? _emptyAttributes();
-    
+
     // Find matching attributes
     final existingKey = _findMatchingKey(key);
     if (existingKey != null) {

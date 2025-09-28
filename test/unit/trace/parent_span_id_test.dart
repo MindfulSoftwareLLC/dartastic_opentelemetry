@@ -36,7 +36,8 @@ void main() {
       final childSpan = tracer.startSpan('child', context: parentContext);
 
       // Parent span ID should be set to the parent's span ID
-      expect(childSpan.spanContext.parentSpanId, equals(parentSpan.spanContext.spanId));
+      expect(childSpan.spanContext.parentSpanId,
+          equals(parentSpan.spanContext.spanId));
       expect(childSpan.spanContext.parentSpanId!.isValid, isTrue);
 
       childSpan.end();
@@ -60,9 +61,12 @@ void main() {
 
       // Verify parent relationships
       expect(rootSpan.spanContext.parentSpanId.toString(), equals('0' * 16));
-      expect(child1.spanContext.parentSpanId, equals(rootSpan.spanContext.spanId));
-      expect(child2.spanContext.parentSpanId, equals(child1.spanContext.spanId));
-      expect(child3.spanContext.parentSpanId, equals(child2.spanContext.spanId));
+      expect(
+          child1.spanContext.parentSpanId, equals(rootSpan.spanContext.spanId));
+      expect(
+          child2.spanContext.parentSpanId, equals(child1.spanContext.spanId));
+      expect(
+          child3.spanContext.parentSpanId, equals(child2.spanContext.spanId));
 
       // End all spans
       child3.end();

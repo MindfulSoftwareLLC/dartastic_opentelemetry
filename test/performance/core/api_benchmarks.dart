@@ -21,7 +21,8 @@ class AttributesBenchmark extends BenchmarkBase {
 
   @override
   void run() {
-    final attributes = OTel.attributesFromMap({stringKey: 'value1', intKey: 42, boolKey: true});
+    final attributes = OTel.attributesFromMap(
+        {stringKey: 'value1', intKey: 42, boolKey: true});
     attributes.getString(stringKey);
     attributes.getInt(intKey);
     attributes.getBool(boolKey);

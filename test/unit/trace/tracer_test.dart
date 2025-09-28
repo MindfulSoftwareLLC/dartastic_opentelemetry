@@ -102,7 +102,8 @@ void main() {
       expect(result, equals('active-success'));
     });
 
-    test('startActiveSpanAsync executes with active span for async code', () async {
+    test('startActiveSpanAsync executes with active span for async code',
+        () async {
       // Execute async code with a new span that is automatically started and ended
       final result = await tracer.startActiveSpanAsync(
         name: 'active-async-span',
@@ -142,7 +143,8 @@ void main() {
       expect(result, equals('record-success'));
     });
 
-    test('recordSpanAsync automatically handles async span creation and ending', () async {
+    test('recordSpanAsync automatically handles async span creation and ending',
+        () async {
       // Use recordSpanAsync to execute async code with a new span
       final result = await tracer.recordSpanAsync(
         name: 'record-async-span',

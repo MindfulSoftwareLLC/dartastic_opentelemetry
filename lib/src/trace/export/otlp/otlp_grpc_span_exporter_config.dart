@@ -11,24 +11,34 @@ import 'dart:io';
 class OtlpGrpcExporterConfig {
   /// The endpoint to which the exporter will send spans, in the format 'host:port'.
   final String endpoint;
+
   /// Custom headers to include in each gRPC request, for authentication or metadata.
   final Map<String, String> headers;
+
   /// Timeout for gRPC operations, after which they'll fail.
   final Duration timeout;
+
   /// Whether to enable gRPC compression for requests.
   final bool compression;
+
   /// Whether to use an insecure connection (true) or TLS (false).
   final bool insecure;
+
   /// Maximum number of retry attempts for failed exports.
   final int maxRetries;
+
   /// Base delay for retry backoff calculation.
   final Duration baseDelay;
+
   /// Maximum delay between retry attempts.
   final Duration maxDelay;
+
   /// Path to the TLS certificate file for secure connections.
   final String? certificate;
+
   /// Path to the client key file for secure connections with client authentication.
   final String? clientKey;
+
   /// Path to the client certificate file for secure connections with client authentication.
   final String? clientCertificate;
 
@@ -60,12 +70,12 @@ class OtlpGrpcExporterConfig {
     this.certificate,
     this.clientKey,
     this.clientCertificate,
-  }) : endpoint = _validateEndpoint(endpoint),
-       headers = _validateHeaders(headers ?? {}),
-       timeout = _validateTimeout(timeout),
-       maxRetries = _validateRetries(maxRetries),
-       baseDelay = _validateDelay(baseDelay, 'baseDelay'),
-       maxDelay = _validateDelay(maxDelay, 'maxDelay') {
+  })  : endpoint = _validateEndpoint(endpoint),
+        headers = _validateHeaders(headers ?? {}),
+        timeout = _validateTimeout(timeout),
+        maxRetries = _validateRetries(maxRetries),
+        baseDelay = _validateDelay(baseDelay, 'baseDelay'),
+        maxDelay = _validateDelay(maxDelay, 'maxDelay') {
     if (baseDelay.compareTo(maxDelay) > 0) {
       throw ArgumentError('maxDelay cannot be less than baseDelay');
     }
@@ -117,11 +127,14 @@ class OtlpGrpcExporterConfig {
           // No port specified in URL format, add default
           return '${uri.scheme}://${uri.host}:4317${uri.path}';
         }
-        if (uri.port == 0 && endpoint.contains(':') && !endpoint.contains('://:')) {
+        if (uri.port == 0 &&
+            endpoint.contains(':') &&
+            !endpoint.contains('://:')) {
           // Port part exists but might be invalid
           final portStr = endpoint.split(':').last;
           if (int.tryParse(portStr) == null) {
-            throw ArgumentError('Invalid port format in endpoint URL: $endpoint');
+            throw ArgumentError(
+                'Invalid port format in endpoint URL: $endpoint');
           }
         }
         return endpoint;
@@ -149,17 +162,20 @@ class OtlpGrpcExporterConfig {
         return endpoint;
       }
 
-      throw ArgumentError('Invalid endpoint format: $endpoint. Expected format: "host:port" or a valid URI');
+      throw ArgumentError(
+          'Invalid endpoint format: $endpoint. Expected format: "host:port" or a valid URI');
     } catch (e) {
       if (e is ArgumentError) rethrow; // Re-throw our own errors
 
       // Any other parsing error
-      throw ArgumentError('Invalid endpoint format: $endpoint. Expected format: "host:port" or a valid URI');
+      throw ArgumentError(
+          'Invalid endpoint format: $endpoint. Expected format: "host:port" or a valid URI');
     }
   }
 
   static Duration _validateTimeout(Duration timeout) {
-    if (timeout < const Duration(milliseconds: 1) || timeout > const Duration(minutes: 10)) {
+    if (timeout < const Duration(milliseconds: 1) ||
+        timeout > const Duration(minutes: 10)) {
       throw ArgumentError('Timeout must be between 1ms and 10 minutes');
     }
     return timeout;
@@ -173,13 +189,15 @@ class OtlpGrpcExporterConfig {
   }
 
   static Duration _validateDelay(Duration delay, String name) {
-    if (delay < const Duration(milliseconds: 1) || delay > const Duration(minutes: 5)) {
+    if (delay < const Duration(milliseconds: 1) ||
+        delay > const Duration(minutes: 5)) {
       throw ArgumentError('$name must be between 1ms and 5 minutes');
     }
     return delay;
   }
 
-  static void _validateCertificates(String? cert, String? key, String? clientCert) {
+  static void _validateCertificates(
+      String? cert, String? key, String? clientCert) {
     bool isValidPath(String? path) {
       if (path == null) return true;
       if (path.startsWith('test://')) return true;

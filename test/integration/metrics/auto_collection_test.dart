@@ -44,7 +44,8 @@ class MockSystemMetricsCollector {
     // Simulate memory usage fluctuations (±256MB)
     final memoryDeltaMB = _random.nextInt(512) - 256;
     final memoryDeltaBytes = memoryDeltaMB * 1024 * 1024;
-    _usedMemoryBytes = max(0, min(_totalMemoryBytes, _usedMemoryBytes + memoryDeltaBytes));
+    _usedMemoryBytes =
+        max(0, min(_totalMemoryBytes, _usedMemoryBytes + memoryDeltaBytes));
 
     // Simulate CPU usage fluctuations (±5%)
     final cpuDelta = (_random.nextDouble() * 10) - 5;
@@ -53,7 +54,8 @@ class MockSystemMetricsCollector {
     // Simulate disk usage fluctuations (±1GB)
     final diskDeltaMB = _random.nextInt(2048) - 1024;
     final diskDeltaBytes = diskDeltaMB * 1024 * 1024;
-    _diskUsedBytes = max(0, min(_diskTotalBytes, _diskUsedBytes + diskDeltaBytes));
+    _diskUsedBytes =
+        max(0, min(_diskTotalBytes, _diskUsedBytes + diskDeltaBytes));
   }
 }
 
@@ -336,10 +338,14 @@ void main() {
       );
 
       // Record measurements with different attributes
-      cpuGauge.record(systemCollector.cpuUsagePercent * 0.9, {'core': '0', 'type': 'user'}.toAttributes());
-      cpuGauge.record(systemCollector.cpuUsagePercent * 0.1, {'core': '0', 'type': 'system'}.toAttributes());
-      cpuGauge.record(systemCollector.cpuUsagePercent * 0.8, {'core': '1', 'type': 'user'}.toAttributes());
-      cpuGauge.record(systemCollector.cpuUsagePercent * 0.2, {'core': '1', 'type': 'system'}.toAttributes());
+      cpuGauge.record(systemCollector.cpuUsagePercent * 0.9,
+          {'core': '0', 'type': 'user'}.toAttributes());
+      cpuGauge.record(systemCollector.cpuUsagePercent * 0.1,
+          {'core': '0', 'type': 'system'}.toAttributes());
+      cpuGauge.record(systemCollector.cpuUsagePercent * 0.8,
+          {'core': '1', 'type': 'user'}.toAttributes());
+      cpuGauge.record(systemCollector.cpuUsagePercent * 0.2,
+          {'core': '1', 'type': 'system'}.toAttributes());
 
       // Update system metrics
       systemCollector.updateMetrics();
@@ -354,14 +360,17 @@ void main() {
 
       // Try to find our metric if it was collected
       try {
-        final cpuCoreMetric = metrics.firstWhere((m) => m.name == 'system.cpu.core.usage');
-        print('Found CPU core metric with ${cpuCoreMetric.points.length} data points');
-        
+        final cpuCoreMetric =
+            metrics.firstWhere((m) => m.name == 'system.cpu.core.usage');
+        print(
+            'Found CPU core metric with ${cpuCoreMetric.points.length} data points');
+
         // Verify we have data points (implementation may vary)
         expect(cpuCoreMetric.points, isA<List>());
-        
+
         if (cpuCoreMetric.points.isNotEmpty) {
-          print('Sample data point value: ${cpuCoreMetric.points.first.valueAsString}');
+          print(
+              'Sample data point value: ${cpuCoreMetric.points.first.valueAsString}');
         }
       } catch (e) {
         print('Metric not found or not fully implemented yet: $e');
@@ -394,14 +403,15 @@ void main() {
 
       // Try to find and test the histogram metric if implemented
       try {
-        final histogramMetric = metrics.firstWhere((m) => m.name == 'app.request.duration');
+        final histogramMetric =
+            metrics.firstWhere((m) => m.name == 'app.request.duration');
         print('Found histogram metric: ${histogramMetric.name}');
         expect(histogramMetric.type, equals(MetricType.histogram));
-        
+
         // Test that we have some data points
         expect(histogramMetric.points, isA<List>());
         print('Histogram has ${histogramMetric.points.length} data points');
-        
+
         // If we have points, test basic structure
         if (histogramMetric.points.isNotEmpty) {
           for (final point in histogramMetric.points) {
@@ -434,15 +444,17 @@ void main() {
       // Verify basic functionality with resources
       expect(resourceMetrics, isA<List<Metric>>());
       print('Resource test collected ${resourceMetrics.length} metrics');
-      
+
       // Try to find our counter metric
       try {
-        final requestCountMetric = resourceMetrics.firstWhere((m) => m.name == 'app.request.count');
-        print('Found request count metric with ${requestCountMetric.points.length} points');
-        
+        final requestCountMetric =
+            resourceMetrics.firstWhere((m) => m.name == 'app.request.count');
+        print(
+            'Found request count metric with ${requestCountMetric.points.length} points');
+
         // Verify basic structure
         expect(requestCountMetric.points, isA<List>());
-        
+
         // Log some info about the points if they exist
         for (final point in requestCountMetric.points) {
           print('Point value: ${point.valueAsString}');

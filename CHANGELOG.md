@@ -5,8 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.6] - 2025-06-17
-- Minor, cleaning, doc.
+## [0.8.7] - 2025-09-29
+- Upgraded to api 0.8.7. Upgraded all dependencies including grpc to 4.1
+- Respected all OTel env vars when no explicit values are specified, uses OTEL_CONSOLE_EXPORTER 
+- Fixed default export, uses http/protobuf by default, not grpc
+- Fixed issue with creation of the grpc exporter
+- ConsoleExporter now only created on env vars or explicity
+- Minor, doc, dart format, improved .gitignore, removed generated mistakenly committed 
+
+## [0.8.6] - 2025-09-24
+- Minor, cleaning, format, doc.
 
 ## [0.8.5] - 2025-06-14
 - prep for wondrous otel demo, upgrade to api 0.8.3, span toString 

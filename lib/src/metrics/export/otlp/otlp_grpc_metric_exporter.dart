@@ -24,19 +24,24 @@ class OtlpGrpcMetricExporter implements MetricExporter {
   /// Creates a new OtlpGrpcMetricExporter with the given configuration.
   OtlpGrpcMetricExporter(this._config) : _client = _createClient(_config);
 
-  static MetricsServiceClient _createClient(OtlpGrpcMetricExporterConfig config) {
+  static MetricsServiceClient _createClient(
+      OtlpGrpcMetricExporterConfig config) {
     final channelOptions = ChannelOptions(
-      credentials: config.insecure ? const ChannelCredentials.insecure() : const ChannelCredentials.secure(),
+      credentials: config.insecure
+          ? const ChannelCredentials.insecure()
+          : const ChannelCredentials.secure(),
       codecRegistry: CodecRegistry(codecs: const [GzipCodec()]),
     );
 
     // Parse host and port from endpoint
     final Uri uri = Uri.parse(config.endpoint);
     final String host = uri.host;
-    final int port = uri.port > 0 ? uri.port : (uri.scheme == 'https' ? 443 : 80);
+    final int port =
+        uri.port > 0 ? uri.port : (uri.scheme == 'https' ? 443 : 80);
 
     if (OTelLog.isLogExport()) {
-      OTelLog.logExport('OtlpGrpcMetricExporter: Creating client for $host:$port');
+      OTelLog.logExport(
+          'OtlpGrpcMetricExporter: Creating client for $host:$port');
     }
 
     // We store the channel separately to be able to shut it down later
@@ -48,7 +53,8 @@ class OtlpGrpcMetricExporter implements MetricExporter {
 
     return MetricsServiceClient(
       _channel,
-      options: CallOptions(timeout: Duration(milliseconds: config.timeoutMillis)),
+      options:
+          CallOptions(timeout: Duration(milliseconds: config.timeoutMillis)),
     );
   }
 
@@ -56,7 +62,8 @@ class OtlpGrpcMetricExporter implements MetricExporter {
   Future<bool> export(MetricData data) async {
     if (_shutdown) {
       if (OTelLog.isLogExport()) {
-        OTelLog.logExport('OtlpGrpcMetricExporter: Cannot export after shutdown');
+        OTelLog.logExport(
+            'OtlpGrpcMetricExporter: Cannot export after shutdown');
       }
       return false;
     }
@@ -70,9 +77,11 @@ class OtlpGrpcMetricExporter implements MetricExporter {
 
     try {
       if (OTelLog.isLogExport()) {
-        OTelLog.logExport('OtlpGrpcMetricExporter: Exporting ${data.metrics.length} metrics');
+        OTelLog.logExport(
+            'OtlpGrpcMetricExporter: Exporting ${data.metrics.length} metrics');
         for (final metric in data.metrics) {
-          OTelLog.logExport('  - ${metric.name} (${metric.type}): ${metric.points.length} data points');
+          OTelLog.logExport(
+              '  - ${metric.name} (${metric.type}): ${metric.points.length} data points');
         }
       }
 
@@ -102,15 +111,18 @@ class OtlpGrpcMetricExporter implements MetricExporter {
 
     // Add resource
     if (data.resource != null) {
-      resourceMetrics.resource = MetricTransformer.transformResource(data.resource!);
+      resourceMetrics.resource =
+          MetricTransformer.transformResource(data.resource!);
     } else {
       // Create empty resource if none provided
-      resourceMetrics.resource = MetricTransformer.transformResource(OTel.resource(null));
+      resourceMetrics.resource =
+          MetricTransformer.transformResource(OTel.resource(null));
     }
 
     // Add scope metrics
     final scopeMetrics = proto.ScopeMetrics();
-    scopeMetrics.metrics.addAll(data.metrics.map(MetricTransformer.transformMetric));
+    scopeMetrics.metrics
+        .addAll(data.metrics.map(MetricTransformer.transformMetric));
 
     // Add instrumentation scope (hardcoded for now)
     final scope = common_proto.InstrumentationScope();

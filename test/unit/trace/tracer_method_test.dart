@@ -25,14 +25,14 @@ void main() {
       );
 
       tracerProvider = OTel.tracerProvider();
-      
+
       // Create in-memory exporter and processor
       exporter = InMemorySpanExporter();
       processor = SimpleSpanProcessor(exporter);
-      
+
       // Add the processor to capture spans
       tracerProvider.addSpanProcessor(processor);
-      
+
       tracer = tracerProvider.getTracer('test-tracer-methods');
     });
 
@@ -59,7 +59,7 @@ void main() {
           return result;
         },
       );
-      
+
       // End the span explicitly since withSpan doesn't end it
       span.end();
 
@@ -90,7 +90,7 @@ void main() {
           return result;
         },
       );
-      
+
       // End the span explicitly since withSpanAsync doesn't end it
       span.end();
 
@@ -121,12 +121,13 @@ void main() {
       expect(result, equals('success'));
       expect(exporter.spans, hasLength(1));
       expect(exporter.hasSpanWithName('auto-record-span'), isTrue);
-      
+
       final exportedSpan = exporter.findSpanByName('auto-record-span')!;
       expect(exportedSpan.isEnded, isTrue);
     });
 
-    test('recordSpanAsync creates and automatically ends an async span', () async {
+    test('recordSpanAsync creates and automatically ends an async span',
+        () async {
       exporter.clear();
 
       // Act
@@ -145,7 +146,7 @@ void main() {
       expect(result, equals('async success'));
       expect(exporter.spans, hasLength(1));
       expect(exporter.hasSpanWithName('async-record-span'), isTrue);
-      
+
       final exportedSpan = exporter.findSpanByName('async-record-span')!;
       expect(exportedSpan.isEnded, isTrue);
     });
@@ -170,7 +171,7 @@ void main() {
       // Verify span was created and exported even though exception was thrown
       expect(exporter.spans, hasLength(1));
       expect(exporter.hasSpanWithName('error-span'), isTrue);
-      
+
       final exportedSpan = exporter.findSpanByName('error-span')!;
       expect(exportedSpan.isEnded, isTrue);
       expect(exportedSpan.status, equals(SpanStatusCode.Error));
@@ -197,12 +198,13 @@ void main() {
       expect(result, equals('active span success'));
       expect(exporter.spans, hasLength(1));
       expect(exporter.hasSpanWithName('active-span'), isTrue);
-      
+
       final exportedSpan = exporter.findSpanByName('active-span')!;
       expect(exportedSpan.isEnded, isTrue);
     });
 
-    test('startActiveSpanAsync activates span during async execution', () async {
+    test('startActiveSpanAsync activates span during async execution',
+        () async {
       exporter.clear();
 
       // Act
@@ -226,7 +228,7 @@ void main() {
       expect(result, equals('active async span success'));
       expect(exporter.spans, hasLength(1));
       expect(exporter.hasSpanWithName('active-async-span'), isTrue);
-      
+
       final exportedSpan = exporter.findSpanByName('active-async-span')!;
       expect(exportedSpan.isEnded, isTrue);
     });
@@ -241,11 +243,12 @@ void main() {
         parentSpan,
         () {
           // Start a child span within the parent context
-          final childSpan = tracer.startSpan('child-span', context: parentContext);
+          final childSpan =
+              tracer.startSpan('child-span', context: parentContext);
           childSpan.end();
         },
       );
-      
+
       parentSpan.end();
 
       await processor.forceFlush();
@@ -258,11 +261,11 @@ void main() {
       // Verify parent-child relationship
       final parentExported = exporter.findSpanByName('parent-span')!;
       final childExported = exporter.findSpanByName('child-span')!;
-      
-      expect(childExported.parentSpanContext!.spanId, 
-             equals(parentExported.spanContext.spanId));
-      expect(childExported.spanContext.traceId, 
-             equals(parentExported.spanContext.traceId));
+
+      expect(childExported.parentSpanContext!.spanId,
+          equals(parentExported.spanContext.spanId));
+      expect(childExported.spanContext.traceId,
+          equals(parentExported.spanContext.traceId));
     });
   });
 }

@@ -5,15 +5,16 @@ import 'package:dartastic_opentelemetry/src/trace/export/span_exporter.dart';
 import 'package:dartastic_opentelemetry/src/trace/span.dart';
 
 /// A composite exporter that delegates export operations to multiple exporters.
-/// 
+///
 /// This exporter combines multiple exporters, making it possible to export spans
 /// to multiple backend systems simultaneously.
 /// Used for debugging, it prints exported spans
 class CompositeExporter extends SpanExporter {
   /// The list of exporters to delegate to.
   final List<SpanExporter> spanExporters;
+
   /// Creates a new CompositeExporter with the specified exporters.
-  /// 
+  ///
   /// @param spanExporters The list of exporters to delegate to
   CompositeExporter(this.spanExporters);
 

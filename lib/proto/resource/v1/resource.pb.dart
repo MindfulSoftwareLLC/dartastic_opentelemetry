@@ -34,25 +34,34 @@ class Resource extends $pb.GeneratedMessage {
     return $result;
   }
   Resource._() : super();
-  factory Resource.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
-  factory Resource.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+  factory Resource.fromBuffer($core.List<$core.int> i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(i, r);
+  factory Resource.fromJson($core.String i,
+          [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(i, r);
 
-  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Resource', package: const $pb.PackageName(_omitMessageNames ? '' : 'opentelemetry.proto.resource.v1'), createEmptyInstance: create)
-    ..pc<$1.KeyValue>(1, _omitFieldNames ? '' : 'attributes', $pb.PbFieldType.PM, subBuilder: $1.KeyValue.create)
-    ..a<$core.int>(2, _omitFieldNames ? '' : 'droppedAttributesCount', $pb.PbFieldType.OU3)
-    ..hasRequiredFields = false
-  ;
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'Resource',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'opentelemetry.proto.resource.v1'),
+      createEmptyInstance: create)
+    ..pc<$1.KeyValue>(
+        1, _omitFieldNames ? '' : 'attributes', $pb.PbFieldType.PM,
+        subBuilder: $1.KeyValue.create)
+    ..a<$core.int>(
+        2, _omitFieldNames ? '' : 'droppedAttributesCount', $pb.PbFieldType.OU3)
+    ..hasRequiredFields = false;
 
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
-  'Will be removed in next major version')
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+      'Will be removed in next major version')
   Resource clone() => Resource()..mergeFromMessage(this);
-  @$core.Deprecated(
-  'Using this can add significant overhead to your binary. '
-  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
-  'Will be removed in next major version')
-  Resource copyWith(void Function(Resource) updates) => super.copyWith((message) => updates(message as Resource)) as Resource;
+  @$core.Deprecated('Using this can add significant overhead to your binary. '
+      'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+      'Will be removed in next major version')
+  Resource copyWith(void Function(Resource) updates) =>
+      super.copyWith((message) => updates(message as Resource)) as Resource;
 
   $pb.BuilderInfo get info_ => _i;
 
@@ -61,7 +70,8 @@ class Resource extends $pb.GeneratedMessage {
   Resource createEmptyInstance() => create();
   static $pb.PbList<Resource> createRepeated() => $pb.PbList<Resource>();
   @$core.pragma('dart2js:noInline')
-  static Resource getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Resource>(create);
+  static Resource getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Resource>(create);
   static Resource? _defaultInstance;
 
   /// Set of attributes that describe the resource.
@@ -75,13 +85,16 @@ class Resource extends $pb.GeneratedMessage {
   @$pb.TagNumber(2)
   $core.int get droppedAttributesCount => $_getIZ(1);
   @$pb.TagNumber(2)
-  set droppedAttributesCount($core.int v) { $_setUnsignedInt32(1, v); }
+  set droppedAttributesCount($core.int v) {
+    $_setUnsignedInt32(1, v);
+  }
+
   @$pb.TagNumber(2)
   $core.bool hasDroppedAttributesCount() => $_has(1);
   @$pb.TagNumber(2)
   void clearDroppedAttributesCount() => clearField(2);
 }
 
-
 const _omitFieldNames = $core.bool.fromEnvironment('protobuf.omit_field_names');
-const _omitMessageNames = $core.bool.fromEnvironment('protobuf.omit_message_names');
+const _omitMessageNames =
+    $core.bool.fromEnvironment('protobuf.omit_message_names');

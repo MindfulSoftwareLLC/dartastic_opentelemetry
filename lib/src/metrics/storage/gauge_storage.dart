@@ -46,7 +46,7 @@ class GaugeStorage<T extends num> extends NumericStorage<T> {
 
     // Find matching attributes
     final existingKey = _findMatchingKey(key);
-    
+
     if (existingKey != null) {
       return _points[existingKey]!.value;
     } else {
@@ -64,7 +64,8 @@ class GaugeStorage<T extends num> extends NumericStorage<T> {
   /// Finds a key in the points map that equals the given key
   Attributes? _findMatchingKey(Attributes key) {
     for (final existingKey in _points.keys) {
-      if (existingKey == key) { // Using the == operator which should call equals
+      if (existingKey == key) {
+        // Using the == operator which should call equals
         return existingKey;
       }
     }

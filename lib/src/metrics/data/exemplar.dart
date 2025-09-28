@@ -51,9 +51,8 @@ class Exemplar {
   }) {
     // Determine which attributes are filtered out
     final filteredAttrs = _filterAttributes(
-      measurement.attributes ?? OTelFactory.otelFactory!.attributes(),
-      aggregationAttributes
-    );
+        measurement.attributes ?? OTelFactory.otelFactory!.attributes(),
+        aggregationAttributes);
 
     return Exemplar(
       attributes: aggregationAttributes,
@@ -67,9 +66,7 @@ class Exemplar {
 
   /// Filters attributes to get those that are not included in the aggregation.
   static Attributes _filterAttributes(
-    Attributes measurementAttrs,
-    Attributes aggregationAttrs
-  ) {
+      Attributes measurementAttrs, Attributes aggregationAttrs) {
     final result = <Attribute<Object>>[];
 
     // Get the attribute keys that are in the measurement but not in the aggregation

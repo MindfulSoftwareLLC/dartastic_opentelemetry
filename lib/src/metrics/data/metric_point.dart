@@ -93,8 +93,16 @@ class MetricPoint<T> {
         count: count,
         boundaries: boundaries,
         bucketCounts: counts,
-        min: min is num ? min : min != null ? num.tryParse(min.toString()) : null,
-        max: max is num ? max : max != null ? num.tryParse(max.toString()) : null,
+        min: min is num
+            ? min
+            : min != null
+                ? num.tryParse(min.toString())
+                : null,
+        max: max is num
+            ? max
+            : max != null
+                ? num.tryParse(max.toString())
+                : null,
       ) as T,
       exemplars: exemplars,
     );

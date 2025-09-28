@@ -16,7 +16,7 @@ void main() {
 
     group('Basic context operations', () {
       test('creates empty context', () {
-        final context =OTel.context();
+        final context = OTel.context();
         expect(context, isA<Context>());
         expect(context.span, isNull);
         expect(context.span?.spanContext, isNull);
@@ -26,7 +26,7 @@ void main() {
       test('stores and retrieves values with typed keys', () {
         final key = OTel.contextKey<String>('test-key');
         final value = 'test-value';
-        final context =OTel.context().copyWith(key, value);
+        final context = OTel.context().copyWith(key, value);
 
         expect(context.get(key), equals(value));
       });
@@ -35,7 +35,7 @@ void main() {
         final key1 = OTel.contextKey<String>('key1');
         final key2 = OTel.contextKey<int>('key2');
 
-        final context1 =OTel.context().copyWith(key1, 'value1');
+        final context1 = OTel.context().copyWith(key1, 'value1');
         final context2 = context1.copyWith(key2, 42);
 
         expect(context1.get(key1), equals('value1'));
@@ -72,11 +72,8 @@ void main() {
       test('prevents changing trace ID via withSpanContext', () {
         final context = OTel.context().withSpanContext(spanContext1);
 
-        expect(
-                () => context.withSpanContext(spanContext2),
-            throwsArgumentError,
-            reason: 'Should not allow changing trace ID via withSpanContext'
-        );
+        expect(() => context.withSpanContext(spanContext2), throwsArgumentError,
+            reason: 'Should not allow changing trace ID via withSpanContext');
       });
 
       test('maintains context immutability when adding span contexts', () {
@@ -85,8 +82,8 @@ void main() {
 
         // Create a new span context with same trace ID but different span ID
         final spanContext1b = OTel.spanContext(
-          traceId: spanContext1.traceId,  // Same trace ID as spanContext1
-          spanId: OTel.spanIdFrom('e' * 16),  // Different span ID
+          traceId: spanContext1.traceId, // Same trace ID as spanContext1
+          spanId: OTel.spanIdFrom('e' * 16), // Different span ID
           traceFlags: OTel.traceFlags(1),
           traceState: OTel.traceState({}),
           isRemote: false,
@@ -104,7 +101,8 @@ void main() {
             reason: 'New context should have new span context');
 
         // Verify both contexts have same trace ID
-        expect(context1.spanContext?.traceId, equals(context2.spanContext?.traceId),
+        expect(context1.spanContext?.traceId,
+            equals(context2.spanContext?.traceId),
             reason: 'Both contexts should have same trace ID');
       });
     });
@@ -116,12 +114,11 @@ void main() {
           'key2': OTel.baggageEntry('value2'),
         });
 
-        final context =OTel.context(baggage: baggage);
+        final context = OTel.context(baggage: baggage);
 
         print('Context operations debug:');
         print('Original baggage: ${baggage.getAllEntries()}');
-        print(
-            'Using BaggageContextKey directly: ${context.baggage}');
+        print('Using BaggageContextKey directly: ${context.baggage}');
         print('Using baggage getter: ${context.baggage!.getAllEntries()}');
 
         expect(context.baggage, equals(baggage));
@@ -148,7 +145,7 @@ void main() {
           'key2': OTel.baggageEntry('value2'),
         });
 
-        final context1 =OTel.context(baggage: baggage1);
+        final context1 = OTel.context(baggage: baggage1);
 
         final context2 = context1.withBaggage(baggage2);
 
@@ -172,7 +169,7 @@ void main() {
       test('propagates context through async operations', () async {
         final key = OTel.contextKey<String>('test-key');
         final value = 'test-value';
-        final context =OTel.context().copyWith(key, value);
+        final context = OTel.context().copyWith(key, value);
 
         final result = await context.run(() async {
           await Future<void>.delayed(Duration.zero);
@@ -190,8 +187,8 @@ void main() {
       test('maintains separate contexts in parallel async operations',
           () async {
         final key = OTel.contextKey<String>('key');
-        final context1 =OTel.context().copyWith(key, 'value1');
-        final context2 =OTel.context().copyWith(key, 'value2');
+        final context1 = OTel.context().copyWith(key, 'value1');
+        final context2 = OTel.context().copyWith(key, 'value2');
 
         final future1 = context1.run(() async {
           await Future<void>.delayed(Duration.zero);
@@ -216,7 +213,7 @@ void main() {
       test('serializes and deserializes basic context values', () {
         final key = OTel.contextKey<String>('test-key');
         final value = 'test-value';
-        final originalContext =OTel.context().copyWith(key, value);
+        final originalContext = OTel.context().copyWith(key, value);
 
         final serializedData = originalContext.serialize();
         final deserializedContext = Context.deserialize(serializedData);
@@ -233,7 +230,7 @@ void main() {
           isRemote: false,
         );
 
-        final originalContext =OTel.context().withSpanContext(spanContext);
+        final originalContext = OTel.context().withSpanContext(spanContext);
         final serializedData = originalContext.serialize();
         final deserializedContext = Context.deserialize(serializedData);
 
@@ -256,7 +253,7 @@ void main() {
           'key2': OTel.baggageEntry('value2', 'meta2'),
         });
 
-        final originalContext =OTel.context(baggage: baggage);
+        final originalContext = OTel.context(baggage: baggage);
 
         final serializedData = originalContext.serialize();
         final deserializedContext = Context.deserialize(serializedData);
@@ -280,7 +277,7 @@ void main() {
         final nonSerializable = Object();
         final key = OTel.contextKey<Object>('non-serializable');
 
-        final context =OTel.context().copyWith(key, nonSerializable);
+        final context = OTel.context().copyWith(key, nonSerializable);
         final serializedData = context.serialize();
         final deserializedContext = Context.deserialize(serializedData);
 
@@ -291,23 +288,24 @@ void main() {
         // Create two keys with the same name but different uniqueIds
         final key1 = OTel.contextKey<String>('same-name');
         final key2 = OTel.contextKey<String>('same-name');
-        
+
         // Verify they are different keys despite same name
-        expect(key1 == key2, isFalse, reason: 'Keys with same name should be different objects due to different uniqueIds');
-        
+        expect(key1 == key2, isFalse,
+            reason:
+                'Keys with same name should be different objects due to different uniqueIds');
+
         // Create context with both keys
-        final originalContext = OTel.context()
-            .copyWith(key1, 'value1')
-            .copyWith(key2, 'value2');
-        
+        final originalContext =
+            OTel.context().copyWith(key1, 'value1').copyWith(key2, 'value2');
+
         // Verify both values are accessible with their respective keys
         expect(originalContext.get(key1), equals('value1'));
         expect(originalContext.get(key2), equals('value2'));
-        
+
         // Serialize and deserialize
         final serializedData = originalContext.serialize();
         final deserializedContext = Context.deserialize(serializedData);
-        
+
         // Verify both values are still accessible
         expect(deserializedContext.get(key1), equals('value1'));
         expect(deserializedContext.get(key2), equals('value2'));
@@ -321,11 +319,11 @@ void main() {
           'baggage-key': OTel.baggageEntry('baggage-value'),
         });
 
-        final originalContext =OTel.context(baggage: baggage)
-            .copyWith(key, 'test-value');
+        final originalContext =
+            OTel.context(baggage: baggage).copyWith(key, 'test-value');
 
         await originalContext.run(() async {
-          final result = await originalContext.runIsolate( () async {
+          final result = await originalContext.runIsolate(() async {
             final isolateContext = Context.current;
             return {
               'test-key': isolateContext.get(key),
@@ -343,8 +341,8 @@ void main() {
 
       test('maintains isolation between different isolates', () async {
         final key = OTel.contextKey<String>('key');
-        final context1 =OTel.context().copyWith(key, 'value1');
-        final context2 =OTel.context().copyWith(key, 'value2');
+        final context1 = OTel.context().copyWith(key, 'value1');
+        final context2 = OTel.context().copyWith(key, 'value2');
 
         final future1 = context1.run(() async {
           return await context1.runIsolate(() async {

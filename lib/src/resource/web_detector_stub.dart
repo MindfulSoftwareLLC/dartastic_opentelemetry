@@ -16,6 +16,7 @@ import 'resource_detector.dart';
 class WebResourceDetector implements ResourceDetector {
   @override
   Future<Resource> detect() async {
-    throw UnsupportedError('WebResourceDetector is only available on web platforms');
+    throw UnsupportedError(
+        'WebResourceDetector is only available on web platforms');
   }
 }

@@ -8,33 +8,33 @@ import 'package:test/test.dart';
 class MockSpan implements Span {
   @override
   final String name;
-  
+
   @override
   final SpanContext spanContext;
-  
+
   @override
   final Resource resource;
-  
+
   @override
   final InstrumentationScope instrumentationScope;
-  
+
   @override
   final SpanKind kind;
-  
+
   @override
   final Attributes attributes;
-  
+
   @override
   final DateTime startTime;
-  
+
   @override
   final DateTime? endTime;
-  
+
   final Span? _parentSpan;
   bool _isEnded = false;
   SpanStatusCode _status = SpanStatusCode.Ok;
   String? _statusDescription;
-  
+
   MockSpan({
     required this.name,
     required this.spanContext,
@@ -85,7 +85,6 @@ class MockSpan implements Span {
     _status = code;
     _statusDescription = description;
   }
-
 
   @override
   void setIntAttribute(String key, int value) {}
@@ -172,53 +171,14 @@ class MockSpan implements Span {
   }
 
   @override
-  void recordException(Object exception, {StackTrace? stackTrace, Attributes? attributes, bool? escaped}) {
+  void recordException(Object exception,
+      {StackTrace? stackTrace, Attributes? attributes, bool? escaped}) {
     // TODO: implement recordException
   }
 
   @override
   void setStringAttribute<T>(String name, String value) {
     // TODO: implement setStringAttribute
-  }
-
-  @override
-  void addAttributeBool(String key, bool value) {
-    // TODO: implement addAttributeBool
-  }
-
-  @override
-  void addAttributeBoolList(String key, List<bool> value) {
-    // TODO: implement addAttributeBoolList
-  }
-
-  @override
-  void addAttributeDouble(String key, double value) {
-    // TODO: implement addAttributeDouble
-  }
-
-  @override
-  void addAttributeDoubleList(String key, List<double> value) {
-    // TODO: implement addAttributeDoubleList
-  }
-
-  @override
-  void addAttributeInt(String key, int value) {
-    // TODO: implement addAttributeInt
-  }
-
-  @override
-  void addAttributeIntList(String key, List<int> value) {
-    // TODO: implement addAttributeIntList
-  }
-
-  @override
-  void addAttributeString(String key, String value) {
-    // TODO: implement addAttributeString
-  }
-
-  @override
-  void addAttributeStringList(String key, List<String> value) {
-    // TODO: implement addAttributeStringList
   }
 }
 
@@ -253,7 +213,9 @@ Span createTestSpan({
     resource: resource,
     instrumentationScope: instrumentationScope,
     kind: SpanKind.internal,
-    attributes: attributes != null ? OTel.attributesFromMap(attributes) : OTel.attributes(),
+    attributes: attributes != null
+        ? OTel.attributesFromMap(attributes)
+        : OTel.attributes(),
     startTime: startTime ?? DateTime.now(),
     endTime: endTime,
     parentSpan: parentSpan,
@@ -291,21 +253,23 @@ void main() {
 
       // Verify the structure
       expect(request.resourceSpans, hasLength(1));
-      
+
       final resourceSpan = request.resourceSpans.first;
       expect(resourceSpan.scopeSpans, hasLength(1));
-      
+
       final scopeSpan = resourceSpan.scopeSpans.first;
       expect(scopeSpan.spans, hasLength(1));
-      
+
       final protoSpan = scopeSpan.spans.first;
       expect(protoSpan.name, equals('test-span'));
-      
+
       // Verify attributes
-      final testKeyAttr = protoSpan.attributes.firstWhere((a) => a.key == 'test.key');
+      final testKeyAttr =
+          protoSpan.attributes.firstWhere((a) => a.key == 'test.key');
       expect(testKeyAttr.value.stringValue, equals('test.value'));
-      
-      final testNumberAttr = protoSpan.attributes.firstWhere((a) => a.key == 'test.number');
+
+      final testNumberAttr =
+          protoSpan.attributes.firstWhere((a) => a.key == 'test.number');
       expect(testNumberAttr.value.intValue.toInt(), equals(42));
     });
 
@@ -337,8 +301,9 @@ void main() {
       for (var i = 0; i < 3; i++) {
         final protoSpan = scopeSpan.spans[i];
         expect(protoSpan.name, equals('span-$i'));
-        
-        final indexAttr = protoSpan.attributes.firstWhere((a) => a.key == 'index');
+
+        final indexAttr =
+            protoSpan.attributes.firstWhere((a) => a.key == 'index');
         expect(indexAttr.value.intValue.toInt(), equals(i));
       }
     });
@@ -346,7 +311,7 @@ void main() {
     test('preserves span context information', () {
       const traceId = '00112233445566778899aabbccddeeff';
       const spanId = '0011223344556677';
-      
+
       final testSpan = createTestSpan(
         name: 'context-test-span',
         traceId: traceId,
@@ -354,13 +319,14 @@ void main() {
       );
 
       final request = OtlpSpanTransformer.transformSpans([testSpan]);
-      final protoSpan = request.resourceSpans.first.scopeSpans.first.spans.first;
+      final protoSpan =
+          request.resourceSpans.first.scopeSpans.first.spans.first;
 
       // Verify trace and span IDs are preserved
       expect(protoSpan.traceId, isNotNull);
       expect(protoSpan.spanId, isNotNull);
       expect(protoSpan.traceId.length, equals(16)); // 16 bytes
-      expect(protoSpan.spanId.length, equals(8));   // 8 bytes
+      expect(protoSpan.spanId.length, equals(8)); // 8 bytes
     });
 
     test('includes resource information', () {
@@ -399,26 +365,31 @@ void main() {
       );
 
       final request = OtlpSpanTransformer.transformSpans([testSpan]);
-      final protoSpan = request.resourceSpans.first.scopeSpans.first.spans.first;
+      final protoSpan =
+          request.resourceSpans.first.scopeSpans.first.spans.first;
 
       // Verify each attribute type
-      final stringAttr = protoSpan.attributes.firstWhere((a) => a.key == 'string.attr');
+      final stringAttr =
+          protoSpan.attributes.firstWhere((a) => a.key == 'string.attr');
       expect(stringAttr.value.stringValue, equals('string.value'));
 
-      final intAttr = protoSpan.attributes.firstWhere((a) => a.key == 'int.attr');
+      final intAttr =
+          protoSpan.attributes.firstWhere((a) => a.key == 'int.attr');
       expect(intAttr.value.intValue.toInt(), equals(123));
 
-      final boolAttr = protoSpan.attributes.firstWhere((a) => a.key == 'bool.attr');
+      final boolAttr =
+          protoSpan.attributes.firstWhere((a) => a.key == 'bool.attr');
       expect(boolAttr.value.boolValue, equals(true));
 
-      final doubleAttr = protoSpan.attributes.firstWhere((a) => a.key == 'double.attr');
+      final doubleAttr =
+          protoSpan.attributes.firstWhere((a) => a.key == 'double.attr');
       expect(doubleAttr.value.doubleValue, equals(45.67));
     });
 
     test('handles span timing information', () {
       final startTime = DateTime.now();
       final endTime = startTime.add(const Duration(milliseconds: 100));
-      
+
       final testSpan = createTestSpan(
         name: 'timing-test-span',
         startTime: startTime,
@@ -426,10 +397,12 @@ void main() {
       );
 
       final request = OtlpSpanTransformer.transformSpans([testSpan]);
-      final protoSpan = request.resourceSpans.first.scopeSpans.first.spans.first;
+      final protoSpan =
+          request.resourceSpans.first.scopeSpans.first.spans.first;
 
       expect(protoSpan.startTimeUnixNano.toInt(), greaterThan(0));
-      expect(protoSpan.endTimeUnixNano.toInt(), greaterThan(protoSpan.startTimeUnixNano.toInt()));
+      expect(protoSpan.endTimeUnixNano.toInt(),
+          greaterThan(protoSpan.startTimeUnixNano.toInt()));
     });
 
     test('groups spans by resource correctly', () {
@@ -476,18 +449,24 @@ void main() {
       // Verify each resource has its respective span
       final service1ResourceSpan = request.resourceSpans.firstWhere(
         (rs) => rs.resource.attributes.any(
-          (attr) => attr.key == 'service.name' && attr.value.stringValue == 'service1',
+          (attr) =>
+              attr.key == 'service.name' &&
+              attr.value.stringValue == 'service1',
         ),
       );
 
       final service2ResourceSpan = request.resourceSpans.firstWhere(
         (rs) => rs.resource.attributes.any(
-          (attr) => attr.key == 'service.name' && attr.value.stringValue == 'service2',
+          (attr) =>
+              attr.key == 'service.name' &&
+              attr.value.stringValue == 'service2',
         ),
       );
 
-      expect(service1ResourceSpan.scopeSpans.first.spans.first.name, equals('span1'));
-      expect(service2ResourceSpan.scopeSpans.first.spans.first.name, equals('span2'));
+      expect(service1ResourceSpan.scopeSpans.first.spans.first.name,
+          equals('span1'));
+      expect(service2ResourceSpan.scopeSpans.first.spans.first.name,
+          equals('span2'));
     });
 
     test('handles parent-child span relationships', () {
@@ -506,12 +485,15 @@ void main() {
         parentSpan: parentSpan,
       );
 
-      final request = OtlpSpanTransformer.transformSpans([parentSpan, childSpan]);
+      final request =
+          OtlpSpanTransformer.transformSpans([parentSpan, childSpan]);
       final protoSpans = request.resourceSpans.first.scopeSpans.first.spans;
 
       // Find parent and child spans
-      final parentProtoSpan = protoSpans.firstWhere((s) => s.name == 'parent-span');
-      final childProtoSpan = protoSpans.firstWhere((s) => s.name == 'child-span');
+      final parentProtoSpan =
+          protoSpans.firstWhere((s) => s.name == 'parent-span');
+      final childProtoSpan =
+          protoSpans.firstWhere((s) => s.name == 'child-span');
 
       // Parent should not have parentSpanId
       expect(parentProtoSpan.hasParentSpanId(), isFalse);

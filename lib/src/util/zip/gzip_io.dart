@@ -11,8 +11,10 @@ import 'dart:typed_data';
 /// implementations in browsers.
 class GZip {
   /// Compress the [data] using gzip compression.
-  Future<List<int>> compress(Uint8List data) async => gzip.encoder.convert(data);
+  Future<List<int>> compress(Uint8List data) async =>
+      gzip.encoder.convert(data);
 
   /// Decode the gzip-compressed [data].
-  Future<List<int>> decompress(Uint8List data) async => gzip.decoder.convert(data);
+  Future<List<int>> decompress(Uint8List data) async =>
+      gzip.decoder.convert(data);
 }

@@ -10,7 +10,7 @@ void main() {
     setUpAll(() async {
       await OTel.reset();
     });
-    
+
     setUp(() async {
       // This will create a fresh OTel instance before each test
       await OTel.reset();
@@ -23,7 +23,7 @@ void main() {
       // Add a small delay to allow for proper cleanup
       await Future<void>.delayed(const Duration(milliseconds: 500));
     });
-    
+
     // Ensure final cleanup
     tearDownAll(() async {
       await OTel.reset();
@@ -59,7 +59,7 @@ void main() {
       // Verify custom tracer uses AlwaysOffSampler
       final customSpan = customTracer.startSpan('test-custom');
       expect(customSpan.spanContext.traceFlags.isSampled, isFalse);
-      
+
       // End spans to release resources
       defaultSpan.end();
       customSpan.end();
@@ -81,7 +81,7 @@ void main() {
 
       final span = tracer.startSpan('test');
       expect(span.spanContext.traceFlags.isSampled, isFalse);
-      
+
       // End span to release resources
       span.end();
     });
@@ -106,7 +106,7 @@ void main() {
         context: parentContext,
       );
       expect(child.spanContext.traceFlags.isSampled, isTrue);
-      
+
       // End spans to release resources
       child.end();
       parent.end();

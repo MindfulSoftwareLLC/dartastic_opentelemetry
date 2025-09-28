@@ -3,21 +3,15 @@
   "packages": [
     {
       "name": "_fe_analyzer_shared",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/_fe_analyzer_shared-82.0.0",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/_fe_analyzer_shared-88.0.0",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
+      "languageVersion": "3.7"
     },
     {
       "name": "analyzer",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/analyzer-7.4.5",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/analyzer-8.1.1",
       "packageUri": "lib/",
-      "languageVersion": "3.5"
-    },
-    {
-      "name": "archive",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/archive-3.6.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.7"
     },
     {
       "name": "args",
@@ -45,15 +39,15 @@
     },
     {
       "name": "build",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/build-2.5.1",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/build-4.0.0",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "build_config",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/build_config-1.1.2",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/build_config-1.2.0",
       "packageUri": "lib/",
-      "languageVersion": "3.6"
+      "languageVersion": "3.7"
     },
     {
       "name": "build_daemon",
@@ -62,20 +56,8 @@
       "languageVersion": "3.6"
     },
     {
-      "name": "build_resolvers",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/build_resolvers-2.5.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.7"
-    },
-    {
       "name": "build_runner",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/build_runner-2.5.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.7"
-    },
-    {
-      "name": "build_runner_core",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/build_runner_core-9.0.1",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/build_runner-2.8.0",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
@@ -141,13 +123,13 @@
     },
     {
       "name": "dart_style",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/dart_style-3.1.0",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/dart_style-3.1.2",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
     {
       "name": "dartastic_opentelemetry_api",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/dartastic_opentelemetry_api-0.8.5",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/dartastic_opentelemetry_api-0.8.7",
       "packageUri": "lib/",
       "languageVersion": "3.0"
     },
@@ -183,9 +165,9 @@
     },
     {
       "name": "googleapis_auth",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/googleapis_auth-1.6.0",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/googleapis_auth-2.0.0",
       "packageUri": "lib/",
-      "languageVersion": "3.2"
+      "languageVersion": "3.6"
     },
     {
       "name": "graphs",
@@ -195,13 +177,13 @@
     },
     {
       "name": "grpc",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/grpc-3.2.4",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/grpc-4.2.0",
       "packageUri": "lib/",
-      "languageVersion": "3.0"
+      "languageVersion": "3.8"
     },
     {
       "name": "http",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/http-1.4.0",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/http-1.5.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
     },
@@ -243,9 +225,9 @@
     },
     {
       "name": "lints",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/lints-5.1.1",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/lints-6.0.0",
       "packageUri": "lib/",
-      "languageVersion": "3.6"
+      "languageVersion": "3.8"
     },
     {
       "name": "logging",
@@ -273,7 +255,7 @@
     },
     {
       "name": "mockito",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/mockito-5.4.6",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/mockito-5.5.1",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
@@ -303,15 +285,15 @@
     },
     {
       "name": "protobuf",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/protobuf-3.1.0",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/protobuf-4.2.0",
       "packageUri": "lib/",
-      "languageVersion": "2.19"
+      "languageVersion": "3.7"
     },
     {
       "name": "protoc_plugin",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/protoc_plugin-21.1.2",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/protoc_plugin-22.5.0",
       "packageUri": "lib/",
-      "languageVersion": "2.19"
+      "languageVersion": "3.7"
     },
     {
       "name": "pub_semver",
@@ -351,9 +333,9 @@
     },
     {
       "name": "source_gen",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/source_gen-2.0.0",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/source_gen-4.0.1",
       "packageUri": "lib/",
-      "languageVersion": "3.6"
+      "languageVersion": "3.7"
     },
     {
       "name": "source_map_stack_trace",
@@ -399,9 +381,9 @@
     },
     {
       "name": "synchronized",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/synchronized-3.3.1",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/synchronized-3.4.0",
       "packageUri": "lib/",
-      "languageVersion": "3.7"
+      "languageVersion": "3.8"
     },
     {
       "name": "term_glyph",
@@ -411,27 +393,21 @@
     },
     {
       "name": "test",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/test-1.26.2",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/test-1.26.3",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "test_api",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/test_api-0.7.6",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/test_api-0.7.7",
       "packageUri": "lib/",
       "languageVersion": "3.5"
     },
     {
       "name": "test_core",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/test_core-0.6.11",
+      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/test_core-0.6.12",
       "packageUri": "lib/",
       "languageVersion": "3.5"
-    },
-    {
-      "name": "timing",
-      "rootUri": "file:///Users/mbushe/.pub-cache/hosted/pub.dev/timing-1.0.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
     },
     {
       "name": "typed_data",
@@ -489,8 +465,8 @@
     }
   ],
   "generator": "pub",
-  "generatorVersion": "3.9.0-333.2.beta",
+  "generatorVersion": "3.9.2",
   "flutterRoot": "file:///Users/mbushe/dev/flutter",
-  "flutterVersion": "3.35.0-0.2.pre",
+  "flutterVersion": "3.35.4",
   "pubCache": "file:///Users/mbushe/.pub-cache"
 }

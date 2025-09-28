@@ -27,7 +27,7 @@ class OtlpHttpMetricExporter implements MetricExporter {
 
   /// Creates a new OTLP HTTP metric exporter with the specified configuration.
   /// If no configuration is provided, default settings will be used.
-  /// 
+  ///
   /// @param config Optional configuration for the exporter
   OtlpHttpMetricExporter([OtlpHttpMetricExporterConfig? config])
       : _config = config ?? OtlpHttpMetricExporterConfig();
@@ -59,20 +59,32 @@ class OtlpHttpMetricExporter implements MetricExporter {
     }
 
     if (metrics.metrics.isEmpty) {
-      if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: No metrics to export');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('OtlpHttpMetricExporter: No metrics to export');
+      }
       return true;
     }
 
-    if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Beginning export of ${metrics.metrics.length} metrics');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug(
+          'OtlpHttpMetricExporter: Beginning export of ${metrics.metrics.length} metrics');
+    }
 
     try {
       final result = await _export(metrics);
-      if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Export completed successfully');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('OtlpHttpMetricExporter: Export completed successfully');
+      }
       return result;
     } catch (e) {
-      if (_isShutdown && e is StateError && e.message.contains('shut down during')) {
+      if (_isShutdown &&
+          e is StateError &&
+          e.message.contains('shut down during')) {
         // Gracefully handle the case where shutdown interrupted the export
-        if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Export was interrupted by shutdown, suppressing error');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+              'OtlpHttpMetricExporter: Export was interrupted by shutdown, suppressing error');
+        }
         return false;
       } else {
         // Re-throw other errors
@@ -86,7 +98,10 @@ class OtlpHttpMetricExporter implements MetricExporter {
       throw StateError('Exporter was shut down during export');
     }
 
-    if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Attempting to export ${metrics.metrics.length} metrics to ${_config.endpoint}');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug(
+          'OtlpHttpMetricExporter: Attempting to export ${metrics.metrics.length} metrics to ${_config.endpoint}');
+    }
 
     var attempts = 0;
     final maxAttempts = _config.maxRetries + 1; // Initial attempt + retries
@@ -98,20 +113,31 @@ class OtlpHttpMetricExporter implements MetricExporter {
       try {
         // Only check for shutdown on retry attempts to ensure in-progress exports can complete
         if (wasShutdownDuringRetry && attempts > 0) {
-          if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Export interrupted by shutdown');
+          if (OTelLog.isDebug()) {
+            OTelLog.debug(
+                'OtlpHttpMetricExporter: Export interrupted by shutdown');
+          }
           throw StateError('Exporter was shut down during export');
         }
 
         final success = await _tryExport(metrics);
-        if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Successfully exported metrics');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+              'OtlpHttpMetricExporter: Successfully exported metrics');
+        }
         return success;
       } on http.ClientException catch (e, stackTrace) {
-        if (OTelLog.isError()) OTelLog.error('OtlpHttpMetricExporter: HTTP error during export: $e');
+        if (OTelLog.isError()) {
+          OTelLog.error('OtlpHttpMetricExporter: HTTP error during export: $e');
+        }
         if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
 
         // Check if the exporter was shut down while we were waiting
         if (wasShutdownDuringRetry) {
-          if (OTelLog.isError()) OTelLog.error('OtlpHttpMetricExporter: Export interrupted by shutdown');
+          if (OTelLog.isError()) {
+            OTelLog.error(
+                'OtlpHttpMetricExporter: Export interrupted by shutdown');
+          }
           throw StateError('Exporter was shut down during export');
         }
 
@@ -127,21 +153,33 @@ class OtlpHttpMetricExporter implements MetricExporter {
         }
 
         if (!shouldRetry) {
-          if (OTelLog.isError()) OTelLog.error('OtlpHttpMetricExporter: Non-retryable HTTP error, stopping retry attempts');
+          if (OTelLog.isError()) {
+            OTelLog.error(
+                'OtlpHttpMetricExporter: Non-retryable HTTP error, stopping retry attempts');
+          }
           return false;
         }
 
         if (attempts >= maxAttempts - 1) {
-          if (OTelLog.isError()) OTelLog.error('OtlpHttpMetricExporter: Max attempts reached ($attempts out of $maxAttempts), giving up');
+          if (OTelLog.isError()) {
+            OTelLog.error(
+                'OtlpHttpMetricExporter: Max attempts reached ($attempts out of $maxAttempts), giving up');
+          }
           return false;
         }
 
         final delay = _calculateJitteredDelay(attempts);
-        if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Retrying export after ${delay.inMilliseconds}ms...');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+              'OtlpHttpMetricExporter: Retrying export after ${delay.inMilliseconds}ms...');
+        }
         await Future<void>.delayed(delay);
         attempts++;
       } catch (e, stackTrace) {
-        if (OTelLog.isError()) OTelLog.error('OtlpHttpMetricExporter: Unexpected error during export: $e');
+        if (OTelLog.isError()) {
+          OTelLog.error(
+              'OtlpHttpMetricExporter: Unexpected error during export: $e');
+        }
         if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
 
         // Check if we should stop retrying due to shutdown
@@ -154,7 +192,10 @@ class OtlpHttpMetricExporter implements MetricExporter {
         }
 
         final delay = _calculateJitteredDelay(attempts);
-        if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Retrying export after ${delay.inMilliseconds}ms...');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+              'OtlpHttpMetricExporter: Retrying export after ${delay.inMilliseconds}ms...');
+        }
         await Future<void>.delayed(delay);
         attempts++;
       }
@@ -169,14 +210,18 @@ class OtlpHttpMetricExporter implements MetricExporter {
     }
 
     if (OTelLog.isLogMetrics()) {
-      OTelLog.logMetric("Exporting metrics via HTTP: ${metrics.metrics.length} metrics");
+      OTelLog.logMetric(
+          "Exporting metrics via HTTP: ${metrics.metrics.length} metrics");
     }
 
     if (OTelLog.isDebug()) {
-      OTelLog.debug('OtlpHttpMetricExporter: Preparing to export ${metrics.metrics.length} metrics');
+      OTelLog.debug(
+          'OtlpHttpMetricExporter: Preparing to export ${metrics.metrics.length} metrics');
     }
 
-    if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Transforming metrics');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('OtlpHttpMetricExporter: Transforming metrics');
+    }
 
     // Create the export request
     final request = ExportMetricsServiceRequest();
@@ -184,9 +229,11 @@ class OtlpHttpMetricExporter implements MetricExporter {
 
     // Add resource
     if (metrics.resource != null) {
-      resourceMetrics.resource = MetricTransformer.transformResource(metrics.resource!);
+      resourceMetrics.resource =
+          MetricTransformer.transformResource(metrics.resource!);
     } else {
-      resourceMetrics.resource = MetricTransformer.transformResource(OTel.resource(null));
+      resourceMetrics.resource =
+          MetricTransformer.transformResource(OTel.resource(null));
     }
 
     // Create scope metrics
@@ -207,7 +254,9 @@ class OtlpHttpMetricExporter implements MetricExporter {
     // Add resource metrics to request
     request.resourceMetrics.add(resourceMetrics);
 
-    if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Successfully transformed metrics');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('OtlpHttpMetricExporter: Successfully transformed metrics');
+    }
 
     // Prepare headers
     final headers = Map<String, String>.from(_config.headers);
@@ -230,20 +279,29 @@ class OtlpHttpMetricExporter implements MetricExporter {
 
     // Get the endpoint URL with the correct path
     final endpointUrl = _getEndpointUrl();
-    if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Sending export request to $endpointUrl');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug(
+          'OtlpHttpMetricExporter: Sending export request to $endpointUrl');
+    }
 
     try {
-      final http.Response response = await http.post(
-        Uri.parse(endpointUrl),
-        headers: headers,
-        body: bodyBytes,
-      ).timeout(_config.timeout);
+      final http.Response response = await http
+          .post(
+            Uri.parse(endpointUrl),
+            headers: headers,
+            body: bodyBytes,
+          )
+          .timeout(_config.timeout);
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Export request completed successfully');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+              'OtlpHttpMetricExporter: Export request completed successfully');
+        }
         return true;
       } else {
-        final String errorMessage = 'OtlpHttpMetricExporter: Export request failed with status code ${response.statusCode}';
+        final String errorMessage =
+            'OtlpHttpMetricExporter: Export request failed with status code ${response.statusCode}';
         if (OTelLog.isError()) OTelLog.error(errorMessage);
         throw http.ClientException(errorMessage);
       }
@@ -258,36 +316,56 @@ class OtlpHttpMetricExporter implements MetricExporter {
 
   @override
   Future<bool> forceFlush() async {
-    if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Force flush requested');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('OtlpHttpMetricExporter: Force flush requested');
+    }
     if (_isShutdown) {
-      if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Exporter is already shut down, nothing to flush');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+            'OtlpHttpMetricExporter: Exporter is already shut down, nothing to flush');
+      }
       return true;
     }
 
     // Wait for any pending export operations to complete
     if (_pendingExports.isNotEmpty) {
-      if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Waiting for ${_pendingExports.length} pending exports to complete');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+            'OtlpHttpMetricExporter: Waiting for ${_pendingExports.length} pending exports to complete');
+      }
       try {
         await Future.wait(_pendingExports);
-        if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: All pending exports completed');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+              'OtlpHttpMetricExporter: All pending exports completed');
+        }
         return true;
       } catch (e) {
-        if (OTelLog.isError()) OTelLog.error('OtlpHttpMetricExporter: Error during force flush: $e');
+        if (OTelLog.isError()) {
+          OTelLog.error('OtlpHttpMetricExporter: Error during force flush: $e');
+        }
         return false;
       }
     } else {
-      if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: No pending exports to flush');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('OtlpHttpMetricExporter: No pending exports to flush');
+      }
       return true;
     }
   }
 
   @override
   Future<bool> shutdown() async {
-    if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Shutdown requested');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('OtlpHttpMetricExporter: Shutdown requested');
+    }
     if (_isShutdown) {
       return true;
     }
-    if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Shutting down - waiting for ${_pendingExports.length} pending exports');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug(
+          'OtlpHttpMetricExporter: Shutting down - waiting for ${_pendingExports.length} pending exports');
+    }
 
     // Set shutdown flag first
     _isShutdown = true;
@@ -298,21 +376,33 @@ class OtlpHttpMetricExporter implements MetricExporter {
     // Wait for pending exports but don't start any new ones
     // Use a timeout to prevent hanging if exports take too long
     if (pendingExportsCopy.isNotEmpty) {
-      if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Waiting for ${pendingExportsCopy.length} pending exports with timeout');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+            'OtlpHttpMetricExporter: Waiting for ${pendingExportsCopy.length} pending exports with timeout');
+      }
       try {
         // Use a generous timeout but don't wait forever
-        await Future.wait(pendingExportsCopy).timeout(const Duration(seconds: 10), onTimeout: () {
-          if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Timeout waiting for exports to complete');
+        await Future.wait(pendingExportsCopy)
+            .timeout(const Duration(seconds: 10), onTimeout: () {
+          if (OTelLog.isDebug()) {
+            OTelLog.debug(
+                'OtlpHttpMetricExporter: Timeout waiting for exports to complete');
+          }
           return Future.value([]);
         });
         return true;
       } catch (e) {
-        if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Error during shutdown while waiting for exports: $e');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+              'OtlpHttpMetricExporter: Error during shutdown while waiting for exports: $e');
+        }
         return false;
       }
     }
 
-    if (OTelLog.isDebug()) OTelLog.debug('OtlpHttpMetricExporter: Shutdown complete');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('OtlpHttpMetricExporter: Shutdown complete');
+    }
     return true;
   }
 }

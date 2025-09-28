@@ -60,7 +60,8 @@ void main() {
       expect(exporter.hasSpanWithName('direct-test-span'), isTrue);
 
       final exportedSpan = exporter.findSpanByName('direct-test-span')!;
-      expect(exportedSpan.attributes.getString('test.key'), equals('test.value'));
+      expect(
+          exportedSpan.attributes.getString('test.key'), equals('test.value'));
       expect(exportedSpan.attributes.getInt('test.number'), equals(42));
       expect(exportedSpan.isEnded, isTrue);
     });

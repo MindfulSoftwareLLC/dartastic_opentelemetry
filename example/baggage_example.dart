@@ -18,7 +18,7 @@ Future<void> main() async {
 
   // Baggage is always associated with a Context
   // This allows it to automatically propagate through your application
-  final context =OTel.context().withBaggage(enrichedBaggage);
+  final context = OTel.context().withBaggage(enrichedBaggage);
 
   // Run your code within the context to have access to the baggage
   await context.run(() async {
@@ -27,7 +27,8 @@ Future<void> main() async {
     final currentBaggage = Context.currentWithBaggage().baggage;
 
     // Baggage entries can be accessed individually
-    print('Current customer ID: ${currentBaggage!.getEntry('customer.id')?.value}');
+    print(
+        'Current customer ID: ${currentBaggage!.getEntry('customer.id')?.value}');
 
     // Or you can get all entries at once
     // Best practice: Check getAllEntries when debugging propagation issues
@@ -43,7 +44,7 @@ Future<void> main() async {
     // Baggage can cross isolate boundaries automatically
     // The context system handles serialization/deserialization
     final topCurrent = Context.current;
-    await topCurrent.runIsolate( () async {
+    await topCurrent.runIsolate(() async {
       //Now context.current is a new current but baggage propagates
       final isolateContext = Context.currentWithBaggage();
       final isolateBaggage = isolateContext.baggage;
@@ -59,9 +60,8 @@ Future<void> main() async {
       // Each isolate can modify its own copy of the baggage
       // Changes don't affect the parent isolate
       // Best practice: Document any baggage modifications for debugging
-      final updatedBaggage = isolateBaggage
-          .copyWith('server.id', 'worker-1')
-          ..copyWithout('deployment.environment');
+      final updatedBaggage = isolateBaggage.copyWith('server.id', 'worker-1')
+        ..copyWithout('deployment.environment');
 
       return isolateContext.withBaggage(updatedBaggage);
     });
@@ -83,14 +83,14 @@ Future<void> distributedTracingExample() async {
   await context.run(() async {
     // Each service can add its own entries
     // This helps with debugging and monitoring
-    final serviceBaggage = Context.currentWithBaggage().baggage!
+    final serviceBaggage = Context.currentWithBaggage()
+        .baggage!
         .copyWith('service.instance', 'backend-01')
         .copyWith('service.version', '2.1.0');
 
     // Best practice: Update context when baggage changes
     // This ensures proper propagation
-    final enhancedContext =
-        Context.current.withBaggage(serviceBaggage);
+    final enhancedContext = Context.current.withBaggage(serviceBaggage);
 
     await enhancedContext.run(() async {
       // When making outgoing requests, baggage is automatically included
@@ -109,7 +109,7 @@ Future<void> monitoringExample() async {
   // Best practice: Start with low-cardinality data
   // These are values that have a small set of possible values
   // Examples: service names, regions, environments
-  final baseContext =OTel.context().withBaggage(OTel.baggage()
+  final baseContext = OTel.context().withBaggage(OTel.baggage()
       .copyWith('service.name', 'payment-processor')
       .copyWith('deployment.region', 'us-west-2'));
 
@@ -117,15 +117,16 @@ Future<void> monitoringExample() async {
     // High-cardinality data has many possible values
     // Examples: user IDs, transaction IDs, timestamps
     // Warning: Too much high-cardinality data can impact performance
-    final processingBaggage = Context.currentWithBaggage().baggage!
-        .copyWith('transaction.id', 'tx_789012') // High cardinality: Many possible values
-        .copyWith('user.tenant', 'tenant_456'); // High cardinality: Many possible values
+    final processingBaggage = Context.currentWithBaggage()
+        .baggage!
+        .copyWith('transaction.id',
+            'tx_789012') // High cardinality: Many possible values
+        .copyWith('user.tenant',
+            'tenant_456'); // High cardinality: Many possible values
 
     // Best practice: Scope high-cardinality baggage
     // Only use it where the detailed information is needed
-    await Context.current
-        .withBaggage(processingBaggage)
-        .run(() async {
+    await Context.current.withBaggage(processingBaggage).run(() async {
       // This code has access to all baggage entries
       // Useful for detailed debugging or error handling
       final debugBaggage = Context.currentWithBaggage().baggage;

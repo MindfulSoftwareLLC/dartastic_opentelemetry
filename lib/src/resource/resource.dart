@@ -33,7 +33,7 @@ class Resource {
 
   /// Gets the attributes describing this resource.
   Attributes get attributes => _attributes;
-  
+
   /// Gets the schema URL for this resource's attributes, if any.
   String? get schemaUrl => _schemaUrl;
 
@@ -86,7 +86,8 @@ class Resource {
       mergedSchemaUrl = other._schemaUrl;
     }
 
-    final result = Resource._(OTel.attributesFromMap(mergedMap), mergedSchemaUrl);
+    final result =
+        Resource._(OTel.attributesFromMap(mergedMap), mergedSchemaUrl);
 
     if (OTelLog.isDebug()) {
       OTelLog.debug('Resource merge result attributes:');

@@ -13,7 +13,8 @@ import 'base_instrument.dart';
 ///
 /// An UpDownCounter is used to measure a value that increases and decreases.
 /// For example, the number of active requests, queue size, pool size.
-class UpDownCounter<T extends num> implements APIUpDownCounter<T>, SDKInstrument {
+class UpDownCounter<T extends num>
+    implements APIUpDownCounter<T>, SDKInstrument {
   /// The underlying API UpDownCounter.
   final APIUpDownCounter<T> _apiCounter;
 
@@ -27,11 +28,11 @@ class UpDownCounter<T extends num> implements APIUpDownCounter<T>, SDKInstrument
   UpDownCounter({
     required APIUpDownCounter<T> apiCounter,
     required Meter meter,
-  }) : _apiCounter = apiCounter,
-       _meter = meter {
+  })  : _apiCounter = apiCounter,
+        _meter = meter {
     // Register this instrument with the meter provider
-      _meter.provider.registerInstrument(_meter.name, this);
-    }
+    _meter.provider.registerInstrument(_meter.name, this);
+  }
 
   @override
   String get name => _apiCounter.name;
@@ -75,7 +76,8 @@ class UpDownCounter<T extends num> implements APIUpDownCounter<T>, SDKInstrument
   @override
   void addWithMap(T value, Map<String, Object> attributeMap) {
     // Just convert to Attributes and call add
-    final attributes = attributeMap.isEmpty ? null : attributeMap.toAttributes();
+    final attributes =
+        attributeMap.isEmpty ? null : attributeMap.toAttributes();
     add(value, attributes);
   }
 

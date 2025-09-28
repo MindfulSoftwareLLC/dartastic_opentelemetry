@@ -9,7 +9,7 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 enum SamplingDecisionSource {
   /// The sampling decision was based on the parent span's sampling decision.
   parentBased,
-  
+
   /// The sampling decision was based on the tracer's configuration.
   tracerConfig,
 }
@@ -24,13 +24,13 @@ enum SamplingDecision {
   /// This means the span will be processed by span processors and exporters,
   /// and the sampling bit in the trace flags will be set.
   recordAndSample,
-  
+
   /// The span should be recorded but not sampled.
   ///
   /// This means the span will be processed by span processors and exporters,
   /// but the sampling bit in the trace flags will not be set.
   recordOnly,
-  
+
   /// The span should be dropped.
   ///
   /// This means the span will not be processed by span processors or exporters.

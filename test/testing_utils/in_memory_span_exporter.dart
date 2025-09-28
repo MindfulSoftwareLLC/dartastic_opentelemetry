@@ -39,9 +39,9 @@ class InMemorySpanExporter implements SpanExporter {
   /// Find a span by name
   Span? findSpanByName(String name) {
     return _spans.cast<Span?>().firstWhere(
-      (span) => span?.name == name,
-      orElse: () => null,
-    );
+          (span) => span?.name == name,
+          orElse: () => null,
+        );
   }
 
   /// Check if a span with the given name exists

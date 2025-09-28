@@ -87,6 +87,7 @@ class WebResourceDetector implements ResourceDetector {
       attributes['browser.languages'] = '';
     }
 
-    return ResourceCreate.create(OTelFactory.otelFactory!.attributesFromMap(attributes));
+    return ResourceCreate.create(
+        OTelFactory.otelFactory!.attributesFromMap(attributes));
   }
 }

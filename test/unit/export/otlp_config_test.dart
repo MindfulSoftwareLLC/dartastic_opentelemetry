@@ -130,10 +130,12 @@ void main() {
         endpoint: 'localhost:4317',
         headers: validHeaders,
       );
-      expect(config.headers, equals({
-        'authorization': 'Bearer token',
-        'custom-header': 'value',
-      }));
+      expect(
+          config.headers,
+          equals({
+            'authorization': 'Bearer token',
+            'custom-header': 'value',
+          }));
     });
 
     test('supports header case insensitivity', () {

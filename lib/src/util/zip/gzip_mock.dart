@@ -9,10 +9,11 @@ import 'dart:typed_data';
 /// This is a mock implementation that throws UnimplementedError.
 class GZip {
   /// Compress the [data] using gzip compression.
-  Future<List<int>> compress(Uint8List data) async =>
-      throw UnimplementedError('GZip.compress is not implemented on this platform');
+  Future<List<int>> compress(Uint8List data) async => throw UnimplementedError(
+      'GZip.compress is not implemented on this platform');
 
   /// Decode the gzip-compressed [data].
   Future<List<int>> decompress(Uint8List data) async =>
-      throw UnimplementedError('GZip.decompress is not implemented on this platform');
+      throw UnimplementedError(
+          'GZip.decompress is not implemented on this platform');
 }

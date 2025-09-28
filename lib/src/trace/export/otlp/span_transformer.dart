@@ -22,8 +22,9 @@ class OtlpSpanTransformer {
 
     for (final span in spans) {
       final resource = span.resource;
-      final key = resource != null ?
-        _getResourceServiceName(resource.attributes) : 'default-service';
+      final key = resource != null
+          ? _getResourceServiceName(resource.attributes)
+          : 'default-service';
       resourceGroups.putIfAbsent(key, () => []).add(span);
     }
 
@@ -35,7 +36,7 @@ class OtlpSpanTransformer {
       // Extract resource attributes from the span's resource
       final resource = spanList.first.resource;
       final resourceAttrs = resource?.attributes ?? OTel.createAttributes();
-      
+
       if (OTelLog.isDebug()) {
         OTelLog.debug('Extracting resource attributes for export:');
         resourceAttrs.toList().forEach((attr) {
@@ -66,8 +67,7 @@ class OtlpSpanTransformer {
       }
 
       // Create ResourceSpans
-      final resourceSpan = proto.ResourceSpans()
-        ..resource = protoResource;
+      final resourceSpan = proto.ResourceSpans()..resource = protoResource;
 
       // Process each instrumentation scope group
       for (final scopeEntry in scopeGroups.entries) {
@@ -76,8 +76,7 @@ class OtlpSpanTransformer {
 
         // Get instrumentation scope information from the first span
         final scope = scopeSpanList.first.instrumentationScope;
-        final otlpScope = proto.InstrumentationScope()
-          ..name = scope.name;
+        final otlpScope = proto.InstrumentationScope()..name = scope.name;
         if (scope.version != null) {
           otlpScope.version = scope.version!;
         }
@@ -130,8 +129,7 @@ class OtlpSpanTransformer {
       ..spanId = context.spanId.bytes
       ..name = span.name
       ..kind = transformSpanKind(span.kind)
-      ..startTimeUnixNano =
-          Int64(span.startTime.microsecondsSinceEpoch * 1000);
+      ..startTimeUnixNano = Int64(span.startTime.microsecondsSinceEpoch * 1000);
 
     if (span.endTime != null) {
       otlpSpan.endTimeUnixNano =
@@ -178,7 +176,8 @@ class OtlpSpanTransformer {
   }
 
   /// Convert span status to OTLP Status
-  static proto.Status transformStatus(SpanStatusCode status, String? description) {
+  static proto.Status transformStatus(
+      SpanStatusCode status, String? description) {
     final otlpStatus = proto.Status();
 
     switch (status) {
@@ -224,8 +223,7 @@ class OtlpSpanTransformer {
         ..name = event.name;
 
       if (event.attributes != null) {
-        spanEvent.attributes
-            .addAll(transformAttributeMap(event.attributes!));
+        spanEvent.attributes.addAll(transformAttributeMap(event.attributes!));
       }
 
       return spanEvent;
@@ -251,8 +249,7 @@ class OtlpSpanTransformer {
   }
 
   /// Convert attribute map to OTLP KeyValue list
-  static List<proto.KeyValue> transformAttributeMap(
-      Attributes attributes) {
+  static List<proto.KeyValue> transformAttributeMap(Attributes attributes) {
     final result = <proto.KeyValue>[];
 
     attributes.toList().forEach((attr) {
@@ -267,8 +264,7 @@ class OtlpSpanTransformer {
   }
 
   /// Convert AttributeValue to OTLP AnyValue
-  static proto.AnyValue _transformAttributeValue(
-      Attribute attr) {
+  static proto.AnyValue _transformAttributeValue(Attribute attr) {
     final anyValue = proto.AnyValue();
 
     if (attr.value is String) {
@@ -281,23 +277,23 @@ class OtlpSpanTransformer {
       anyValue.doubleValue = attr.value as double;
     } else if (attr.value is List<String>) {
       final arrayValue = proto.ArrayValue();
-      arrayValue.values.addAll(
-          (attr.value as List<String>).map((v) => proto.AnyValue()..stringValue = v));
+      arrayValue.values.addAll((attr.value as List<String>)
+          .map((v) => proto.AnyValue()..stringValue = v));
       anyValue.arrayValue = arrayValue;
     } else if (attr.value is List<bool>) {
       final arrayValue = proto.ArrayValue();
-      arrayValue.values.addAll(
-          (attr.value as List<bool>).map((v) => proto.AnyValue()..boolValue = v));
+      arrayValue.values.addAll((attr.value as List<bool>)
+          .map((v) => proto.AnyValue()..boolValue = v));
       anyValue.arrayValue = arrayValue;
     } else if (attr.value is List<int>) {
       final arrayValue = proto.ArrayValue();
-      arrayValue.values.addAll(
-          (attr.value as List<int>).map((v) => proto.AnyValue()..intValue = Int64(v)));
+      arrayValue.values.addAll((attr.value as List<int>)
+          .map((v) => proto.AnyValue()..intValue = Int64(v)));
       anyValue.arrayValue = arrayValue;
     } else if (attr.value is List<double>) {
       final arrayValue = proto.ArrayValue();
-      arrayValue.values.addAll(
-          (attr.value as List<double>).map((v) => proto.AnyValue()..doubleValue = v));
+      arrayValue.values.addAll((attr.value as List<double>)
+          .map((v) => proto.AnyValue()..doubleValue = v));
       anyValue.arrayValue = arrayValue;
     } else {
       // For any other type, convert to string

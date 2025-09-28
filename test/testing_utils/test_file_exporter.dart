@@ -28,27 +28,35 @@ class TestFileExporter implements SpanExporter {
       // Clear the file
       file.writeAsStringSync('');
     }
-    if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Created with file path $_filePath');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('TestFileExporter: Created with file path $_filePath');
+    }
   }
 
   @override
   Future<void> export(List<Span> spans) async {
     print('TestFileExporter: export called with ${spans.length} spans');
     if (_isShutdown) {
-      if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Cannot export - exporter is shut down');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+            'TestFileExporter: Cannot export - exporter is shut down');
+      }
       print('TestFileExporter: Cannot export - exporter is shut down');
       throw StateError('Exporter is shutdown');
     }
 
     if (spans.isEmpty) {
-      if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: No spans to export');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('TestFileExporter: No spans to export');
+      }
       print('TestFileExporter: No spans to export');
       return;
     }
 
     // Debug information about the spans
     for (var span in spans) {
-      print('TestFileExporter: Exporting span ${span.name} with ID ${span.spanContext.spanId} and traceID ${span.spanContext.traceId}');
+      print(
+          'TestFileExporter: Exporting span ${span.name} with ID ${span.spanContext.spanId} and traceID ${span.spanContext.traceId}');
       print('TestFileExporter:   isRecording: ${span.isRecording}');
       print('TestFileExporter:   isEnded: ${span.isEnded}');
       print('TestFileExporter:   status: ${span.status}');
@@ -56,14 +64,18 @@ class TestFileExporter implements SpanExporter {
 
       // Check if the span is properly ended
       if (!span.isEnded) {
-        print('TestFileExporter: WARNING - Span ${span.name} is not properly ended, which may cause export issues');
+        print(
+            'TestFileExporter: WARNING - Span ${span.name} is not properly ended, which may cause export issues');
       }
     }
 
     try {
       final file = File(_filePath);
 
-      if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Exporting ${spans.length} spans to $_filePath');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+            'TestFileExporter: Exporting ${spans.length} spans to $_filePath');
+      }
 
       // Convert spans to simplified JSON format - handle attributes safely
       final jsonSpans = spans.map((span) {
@@ -72,7 +84,8 @@ class TestFileExporter implements SpanExporter {
           // Try to get the attributes and convert to JSON
           attributesJson = span.attributes.toJson();
         } catch (e) {
-          print('TestFileExporter: Warning - could not serialize attributes for span ${span.name}: $e');
+          print(
+              'TestFileExporter: Warning - could not serialize attributes for span ${span.name}: $e');
           // Fallback to empty attributes
           attributesJson = {};
         }
@@ -101,18 +114,24 @@ class TestFileExporter implements SpanExporter {
 
       // Verify file was written
       final fileSize = file.lengthSync();
-      print('TestFileExporter: Wrote ${newContent.length} characters to file. File size is now $fileSize bytes');
+      print(
+          'TestFileExporter: Wrote ${newContent.length} characters to file. File size is now $fileSize bytes');
       print('TestFileExporter: File absolute path: ${file.absolute.path}');
 
       // Read back to verify it was written correctly
       final readBack = file.readAsStringSync();
       if (readBack.isNotEmpty && readBack.contains(spans.first.name)) {
-        print('TestFileExporter: Verified file write was successful - found span name in file');
+        print(
+            'TestFileExporter: Verified file write was successful - found span name in file');
       } else {
-        print('TestFileExporter: WARNING - File write verification failed. Content: $readBack');
+        print(
+            'TestFileExporter: WARNING - File write verification failed. Content: $readBack');
       }
 
-      if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Successfully exported ${spans.length} spans');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+            'TestFileExporter: Successfully exported ${spans.length} spans');
+      }
     } catch (e, stackTrace) {
       if (OTelLog.isError()) {
         OTelLog.error('TestFileExporter: Failed to export spans: $e');
@@ -127,7 +146,9 @@ class TestFileExporter implements SpanExporter {
   @override
   Future<void> forceFlush() async {
     // No buffering in this exporter, so nothing to flush
-    if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Force flush requested (no-op)');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('TestFileExporter: Force flush requested (no-op)');
+    }
     print('TestFileExporter: Force flush called');
   }
 

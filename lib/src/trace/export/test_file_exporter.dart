@@ -3,7 +3,8 @@
 
 import 'dart:convert';
 import 'dart:io';
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart' show OTelLog;
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart'
+    show OTelLog;
 import 'package:dartastic_opentelemetry/src/trace/span.dart';
 import 'span_exporter.dart';
 
@@ -14,21 +15,21 @@ class TestFileExporter implements SpanExporter {
   bool _isShutdown = false;
 
   /// Creates a new TestFileExporter that writes spans to the specified file path.
-  /// 
+  ///
   /// This constructor creates or clears the target file and writes an initialization
   /// marker. It also creates parent directories if they don't exist.
-  /// 
+  ///
   /// @param filePath The path to the file where spans will be written
   TestFileExporter(this._filePath) {
     print('Creating TestFileExporter with path: $_filePath');
-    
+
     // Create parent directories if they don't exist
     final dir = Directory(File(_filePath).parent.path);
     if (!dir.existsSync()) {
       print('Creating parent directory: ${dir.path}');
       dir.createSync(recursive: true);
     }
-    
+
     // Create or clear the file
     try {
       final file = File(_filePath);
@@ -39,37 +40,47 @@ class TestFileExporter implements SpanExporter {
         print('File already exists, clearing content');
         file.writeAsStringSync('');
       }
-      
+
       // Test file access
       file.writeAsStringSync('TestFileExporter initialized\n');
       print('Successfully wrote initialization marker to file');
     } catch (e) {
       print('Error initializing file: $e');
     }
-    
-    if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Created with file path $_filePath');
+
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('TestFileExporter: Created with file path $_filePath');
+    }
   }
 
   @override
   Future<void> export(List<Span> spans) async {
     if (_isShutdown) {
       print('TestFileExporter: Cannot export - exporter is shut down');
-      if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Cannot export - exporter is shut down');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+            'TestFileExporter: Cannot export - exporter is shut down');
+      }
       throw StateError('Exporter is shutdown');
     }
 
     if (spans.isEmpty) {
       print('TestFileExporter: No spans to export');
-      if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: No spans to export');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('TestFileExporter: No spans to export');
+      }
       return;
     }
 
     try {
       final file = File(_filePath);
-      
+
       print('TestFileExporter: Exporting ${spans.length} spans to $_filePath');
-      if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Exporting ${spans.length} spans to $_filePath');
-      
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+            'TestFileExporter: Exporting ${spans.length} spans to $_filePath');
+      }
+
       // Convert spans to simplified JSON - avoiding properties that might not be accessible
       final jsonSpans = spans.map((span) {
         return {
@@ -88,9 +99,12 @@ class TestFileExporter implements SpanExporter {
       // Write to file, using synchronous operations to ensure completion
       final jsonStr = jsonEncode(jsonSpans);
       file.writeAsStringSync('$jsonStr\n', mode: FileMode.append, flush: true);
-      
+
       print('TestFileExporter: Successfully exported ${spans.length} spans');
-      if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Successfully exported ${spans.length} spans');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+            'TestFileExporter: Successfully exported ${spans.length} spans');
+      }
     } catch (e, stackTrace) {
       print('TestFileExporter ERROR: Failed to export spans: $e');
       print('Stack trace: $stackTrace');
@@ -106,7 +120,9 @@ class TestFileExporter implements SpanExporter {
   Future<void> forceFlush() async {
     // No buffering in this exporter, so nothing to flush
     print('TestFileExporter: Force flush requested (no-op)');
-    if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Force flush requested (no-op)');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('TestFileExporter: Force flush requested (no-op)');
+    }
   }
 
   @override
@@ -114,7 +130,7 @@ class TestFileExporter implements SpanExporter {
     if (_isShutdown) {
       return;
     }
-    
+
     print('TestFileExporter: Shutting down');
     if (OTelLog.isDebug()) OTelLog.debug('TestFileExporter: Shutting down');
     _isShutdown = true;

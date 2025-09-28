@@ -38,7 +38,8 @@ class TestPropagator implements TextMapPropagator<Map<String, String>, String> {
   List<String> fields() => ['test-field'];
 
   @override
-  void inject(Context context, Map<String, String> carrier, TextMapSetter<String> setter) {
+  void inject(Context context, Map<String, String> carrier,
+      TextMapSetter<String> setter) {
     final span = context.span;
     if (span != null) {
       setter.set('test-field', span.spanContext.traceId.toString());
@@ -46,7 +47,8 @@ class TestPropagator implements TextMapPropagator<Map<String, String>, String> {
   }
 
   @override
-  Context extract(Context context, Map<String, String> carrier, TextMapGetter<String> getter) {
+  Context extract(Context context, Map<String, String> carrier,
+      TextMapGetter<String> getter) {
     final value = getter.get('test-field');
     if (value != null) {
       // In a real implementation, you would parse the value and create a span
@@ -92,7 +94,8 @@ void main() {
       expect(carrier.headers['test-field'], isNotNull);
 
       // Extract and verify context
-      final extractedContext = propagator.extract(Context.root, carrier.headers, getter);
+      final extractedContext =
+          propagator.extract(Context.root, carrier.headers, getter);
       expect(extractedContext, isNotNull);
     });
 
@@ -104,7 +107,8 @@ void main() {
       ]);
 
       propagator.inject(context, carrier.headers, setter);
-      final extractedContext = propagator.extract(Context.root, carrier.headers, getter);
+      final extractedContext =
+          propagator.extract(Context.root, carrier.headers, getter);
 
       expect(extractedContext, isNotNull);
     });

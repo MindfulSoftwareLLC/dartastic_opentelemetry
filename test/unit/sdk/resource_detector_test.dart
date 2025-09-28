@@ -16,7 +16,8 @@ void main() {
       await OTel.initialize();
     });
 
-    test('ProcessResourceDetector provides basic process information', () async {
+    test('ProcessResourceDetector provides basic process information',
+        () async {
       final detector = ProcessResourceDetector();
       final resource = await detector.detect();
       final attrs = resource.attributes.toMap();
@@ -49,7 +50,8 @@ void main() {
     test('EnvVarResourceDetector handles OTEL_RESOURCE_ATTRIBUTES', () async {
       final envService = EnvironmentService.instance;
       envService.setupTestEnvironment({
-        'OTEL_RESOURCE_ATTRIBUTES': 'key1=value1,key2=value2,key3=value%20with%20spaces'
+        'OTEL_RESOURCE_ATTRIBUTES':
+            'key1=value1,key2=value2,key3=value%20with%20spaces'
       });
 
       final detector = EnvVarResourceDetector(envService);
@@ -66,9 +68,8 @@ void main() {
 
     test('EnvVarResourceDetector handles escaped commas', () async {
       final envService = EnvironmentService.instance;
-      envService.setupTestEnvironment({
-        'OTEL_RESOURCE_ATTRIBUTES': 'key1=value1\\,part2,key2=value2'
-      });
+      envService.setupTestEnvironment(
+          {'OTEL_RESOURCE_ATTRIBUTES': 'key1=value1\\,part2,key2=value2'});
 
       final detector = EnvVarResourceDetector(envService);
       final resource = await detector.detect();
@@ -104,7 +105,8 @@ void main() {
       expect(attrs['os.type']?.value, equals('macos'));
     });
 
-    test('CompositeResourceDetector continues after detector failure', () async {
+    test('CompositeResourceDetector continues after detector failure',
+        () async {
       final failingDetector = _FailingResourceDetector();
       final workingDetector = ProcessResourceDetector();
 

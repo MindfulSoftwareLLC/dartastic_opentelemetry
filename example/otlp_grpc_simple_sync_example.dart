@@ -60,7 +60,6 @@ void main() async {
   // Wait a bit to ensure export completes
   await Future<void>.delayed(const Duration(seconds: 1));
 
-
   // Shutdown
   await tracerProvider.shutdown();
 }

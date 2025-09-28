@@ -6,11 +6,12 @@ import 'dart:typed_data';
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:meta/meta.dart';
+import 'environment/otel_env.dart';
 
 /// Main entry point for the OpenTelemetry SDK.
 ///
-/// The [OTel] class provides static methods for initializing the SDK and 
-/// creating OpenTelemetry objects such as Tracers, Spans, Meters, and other 
+/// The [OTel] class provides static methods for initializing the SDK and
+/// creating OpenTelemetry objects such as Tracers, Spans, Meters, and other
 /// components necessary for instrumentation.
 ///
 /// To use the SDK, you must first call [initialize] to set up the global
@@ -38,28 +39,28 @@ import 'package:meta/meta.dart';
 class OTel {
   static OTelSDKFactory? _otelFactory;
   static Sampler? _defaultSampler;
-  
+
   /// Default resource for the SDK.
   ///
   /// This is set during initialization and used by tracer and meter providers
   /// that don't have a specific resource set.
   static Resource? defaultResource;
-  
+
   /// API key for Dartastic.io backend, if used.
   static String? dartasticApiKey;
-  
+
   /// Default service name used if none is provided.
   static const defaultServiceName = "@dart/dartastic_opentelemetry";
 
   /// Default OTEL endpoint
-  static const defaultEndpoint = "http://localhost;4317";
+  static const defaultEndpoint = "http://localhost:4317";
 
   /// Default tracer name used if none is provided.
   static const String _defaultTracerName = 'dartastic';
-  
+
   /// Default tracer name that can be customized.
   static String defaultTracerName = _defaultTracerName;
-  
+
   /// Default tracer version.
   static String defaultTracerVersion = "1.0.0";
 
@@ -67,6 +68,10 @@ class OTel {
   ///
   /// This method must be called before any other OpenTelemetry operations.
   /// It sets up the global configuration and installs the SDK implementation.
+  ///
+  /// When OTelLog.debug is true or the environmental variable
+  /// OTEL_CONSOLE_EXPORTER is set to true, a ConsoleExporter is added to the
+  /// exports to print spans.
   ///
   /// @param endpoint The endpoint URL for the OpenTelemetry collector (default: http://localhost:4317)
   /// @param secure Whether to use TLS for the connection (default: true)
@@ -89,10 +94,10 @@ class OTel {
   /// @throws StateError if called more than once
   /// @throws ArgumentError if required parameters are invalid
   static Future<void> initialize({
-    String endpoint = OTelFactory.defaultEndpoint,
-    bool secure = true,
-    String serviceName = OTelAPI.defaultServiceName,
-    String? serviceVersion = OTelAPI.defaultServiceVersion,
+    String? endpoint,
+    bool? secure,
+    String? serviceName,
+    String? serviceVersion,
     String? tracerName,
     String? tracerVersion,
     Attributes? resourceAttributes,
@@ -108,10 +113,62 @@ class OTel {
     OTelFactoryCreationFunction? oTelFactoryCreationFunction =
         otelSDKFactoryFactoryFunction,
   }) async {
+    // Apply environment variables only if parameters are not provided
+    final envServiceName = serviceName == null ? OTelEnv.getServiceConfig()['serviceName'] as String? : null;
+    final envServiceVersion = serviceVersion == null ? OTelEnv.getServiceConfig()['serviceVersion'] as String? : null;
+    
+    serviceName ??= envServiceName;
+    serviceVersion ??= envServiceVersion;
+    
+    final otlpConfig = (endpoint == null || secure == null) ? OTelEnv.getOtlpConfig(signal: 'traces') : <String, dynamic>{};
+    final envEndpoint = endpoint == null ? otlpConfig['endpoint'] as String? : null;
+    final envInsecure = secure == null ? otlpConfig['insecure'] as bool? : null;
+    
+    endpoint ??= envEndpoint;
+    if (secure == null) {
+      if (envInsecure != null) {
+        secure = !envInsecure;
+      } else {
+        secure = true;
+      }
+    }
+    
+    // Apply defaults if still null
+    serviceName ??= defaultServiceName;
+    serviceVersion ??= '1.0.0';
+    endpoint ??= defaultEndpoint;
+    // secure is guaranteed non-null from above
+    
+    // Log environment variable usage
+    if (OTelLog.isDebug()) {
+      if (envServiceName != null) OTelLog.debug('Using service name from environment: $serviceName');
+      if (envServiceVersion != null) OTelLog.debug('Using service version from environment: $serviceVersion');
+      if (envEndpoint != null) OTelLog.debug('Using endpoint from environment: $endpoint');
+      if (envInsecure != null) OTelLog.debug('Using insecure setting from environment: $envInsecure');
+    }
+    
+    // Get otlpConfig for exporter creation later
+    final otlpConfigForExporter = OTelEnv.getOtlpConfig(signal: 'traces');
+    
+    // Get resource attributes from environment and merge with provided ones
+    final envResourceAttrs = OTelEnv.getResourceAttributes();
+    if (envResourceAttrs.isNotEmpty) {
+      if (resourceAttributes != null) {
+        // Merge with provided attributes - provided ones take precedence
+        final mergedAttrs = Map<String, Object>.from(envResourceAttrs);
+        resourceAttributes.toList().forEach((attr) {
+          mergedAttrs[attr.key] = attr.value;
+        });
+        resourceAttributes = OTel.attributesFromMap(mergedAttrs);
+      } else {
+        resourceAttributes = OTel.attributesFromMap(envResourceAttrs);
+      }
+    }
     if (OTelFactory.otelFactory != null) {
       throw StateError(
           'OTelAPI can only be initialized once. If you need multiple endpoints or service names or versions create a named TracerProvider');
     }
+    
     if (endpoint.isEmpty) {
       throw ArgumentError(
           'endpoint must not be the empty string.'); //TODO validate url
@@ -119,9 +176,9 @@ class OTel {
     if (serviceName.isEmpty) {
       throw ArgumentError('serviceName must not be the empty string.');
     }
-    if (serviceVersion == null || serviceVersion.isEmpty) {
+    if (serviceVersion.isEmpty) {
       throw ArgumentError(
-          'serviceVersion must not be null or the empty string.');
+          'serviceVersion must not be the empty string.');
     }
     final factoryFactory =
         oTelFactoryCreationFunction ?? otelSDKFactoryFactoryFunction;
@@ -139,7 +196,8 @@ class OTel {
         apiServiceVersion: serviceVersion);
 
     if (OTelLog.isDebug()) {
-      OTelLog.debug('OTel initialized with endpoint: $endpoint, service: $serviceName');
+      OTelLog.debug(
+          'OTel initialized with endpoint: $endpoint, service: $serviceName');
     }
 
     final serviceResourceAttributes = {
@@ -147,12 +205,17 @@ class OTel {
       'service.version': serviceVersion,
     };
     // Create initial resource with service attributes
-    var baseResource = OTel.resource(OTel.attributesFromMap(serviceResourceAttributes));
+    var baseResource =
+        OTel.resource(OTel.attributesFromMap(serviceResourceAttributes));
 
     if (tenantId != null) {
       // Create a separate tenant_id resource to ensure it's preserved
-      final tenantResource = OTel.resource(OTel.attributesFromMap({'tenant_id': tenantId}));
-      if (OTelLog.isDebug()) OTelLog.debug('OTel.initialize: Creating tenant_id resource with: $tenantId');
+      final tenantResource =
+          OTel.resource(OTel.attributesFromMap({'tenant_id': tenantId}));
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+            'OTel.initialize: Creating tenant_id resource with: $tenantId');
+      }
       // Merge tenant into the base resource
       baseResource = baseResource.merge(tenantResource);
     }
@@ -210,35 +273,84 @@ class OTel {
           if (OTelLog.isDebug()) {
             OTelLog.debug('tenant_id was missing - adding it as fallback');
           }
-          final tenantResource = OTel.resource(
-              OTel.attributesFromMap({'tenant_id': tenantId}));
+          final tenantResource =
+              OTel.resource(OTel.attributesFromMap({'tenant_id': tenantId}));
           OTel.defaultResource = OTel.defaultResource!.merge(tenantResource);
         }
       }
     }
 
     if (spanProcessor == null) {
-      // Create a gRPC exporter - Flutterrific will override with platform-specific if needed
-      final exporter = OtlpGrpcSpanExporter(
-        OtlpGrpcExporterConfig(
-          endpoint: endpoint,
-          insecure: !secure,
-        ),
-      );
+      // Determine which exporter to create based on environment or defaults
+      final exporterType = OTelEnv.getExporter(signal: 'traces') ?? 'otlp';
+      
+      if (exporterType != 'none') {
+        // Determine protocol - default to http/protobuf if not set
+        final protocol = otlpConfigForExporter['protocol'] as String? ?? 'http/protobuf';
+        
+        SpanExporter exporter;
+        if (exporterType == 'console') {
+          exporter = ConsoleExporter();
+        } else if (exporterType == 'otlp') {
+          // Create appropriate exporter based on protocol
+          if (protocol == 'grpc') {
+            exporter = OtlpGrpcSpanExporter(
+              OtlpGrpcExporterConfig(
+                endpoint: endpoint,
+                insecure: !secure,
+                headers: otlpConfigForExporter['headers'] as Map<String, String>? ?? {},
+                timeout: otlpConfigForExporter['timeout'] as Duration? ?? const Duration(seconds: 10),
+                compression: otlpConfigForExporter['compression'] == 'gzip',
+              ),
+            );
+          } else {
+            // Default to http/protobuf
+            // For HTTP, adjust endpoint if it's the gRPC default
+            String httpEndpoint = endpoint;
+            if (endpoint == defaultEndpoint) {
+              httpEndpoint = 'http://localhost:4318';
+            }
+            exporter = OtlpHttpSpanExporter(
+              OtlpHttpExporterConfig(
+                endpoint: httpEndpoint,
+                headers: otlpConfigForExporter['headers'] as Map<String, String>? ?? {},
+                timeout: otlpConfigForExporter['timeout'] as Duration? ?? const Duration(seconds: 10),
+                compression: otlpConfigForExporter['compression'] == 'gzip',
+              ),
+            );
+          }
+        } else {
+          // Fallback to gRPC for backward compatibility
+          exporter = OtlpGrpcSpanExporter(
+            OtlpGrpcExporterConfig(
+              endpoint: endpoint,
+              insecure: !secure,
+            ),
+          );
+        }
 
-      spanProcessor = BatchSpanProcessor(
-        //TODO - flag console
-        CompositeExporter([exporter, ConsoleExporter()]),
-        const BatchSpanProcessorConfig(
-          maxQueueSize: 2048,
-          scheduleDelay: Duration(seconds: 1),
-          maxExportBatchSize: 512,
-        ),
-      );
+        // Only add ConsoleExporter in debug mode or if explicitly requested
+        final exporters = <SpanExporter>[exporter];
+        if (OTelLog.isDebug() || const bool.fromEnvironment('OTEL_CONSOLE_EXPORTER', defaultValue: false)) {
+          exporters.add(ConsoleExporter());
+        }
+
+        spanProcessor = BatchSpanProcessor(
+          exporters.length == 1 ? exporter : CompositeExporter(exporters),
+          const BatchSpanProcessorConfig(
+            maxQueueSize: 2048,
+            scheduleDelay: Duration(seconds: 1),
+            maxExportBatchSize: 512,
+          ),
+        );
+      }
+      // If exporterType == 'none', spanProcessor remains null and no processor is added
     }
 
     // Create and configure TracerProvider
-    OTel.tracerProvider().addSpanProcessor(spanProcessor);
+    if (spanProcessor != null) {
+      OTel.tracerProvider().addSpanProcessor(spanProcessor);
+    }
 
     // Configure metrics if enabled
     if (enableMetrics) {
@@ -265,7 +377,7 @@ class OTel {
   /// Creates a Resource with the specified attributes and schema URL.
   ///
   /// Resources represent the entity producing telemetry, such as a service,
-  /// process, or device. They are a collection of attributes that provide 
+  /// process, or device. They are a collection of attributes that provide
   /// identifying information about the entity.
   ///
   /// @param attributes Attributes describing the resource
@@ -676,13 +788,19 @@ class OTel {
   /// to the matching typed attribute. DateTime gets converted to a
   /// String attribute with the UTC time string.
   ///
+  /// Unlike most methods, this does not create the OTelFactory if
+  /// one does not exist, instead it uses the OTelAPI's attributesFromMap.
+  ///
   /// Alternatively, consider using the toAttributes()
   /// extension on \<String, Map>{}.
   /// @param namedMap Map of attribute names to values
   /// @return A new Attributes collection
   static Attributes attributesFromMap(Map<String, Object> namedMap) {
-    _getAndCacheOtelFactory();
-    return _otelFactory!.attributesFromMap(namedMap);
+    if (_otelFactory == null) {
+      return OTelAPI.attributesFromMap(namedMap);
+    } else {
+      return _otelFactory!.attributesFromMap(namedMap);
+    }
   }
 
   /// Creates an Attributes collection from a list of Attribute objects.
@@ -830,7 +948,6 @@ class OTel {
     }
   }
 
-
   /// Flushes and shuts down trace and metric providers,
   /// processors and exporters.  Typically called from [OTel.shutdown]
   static Future<void> shutdown() async {
@@ -838,41 +955,53 @@ class OTel {
     try {
       final tracerProviders = OTel.tracerProviders();
       for (final tracerProvider in tracerProviders) {
-        if (OTelLog.isDebug()) OTelLog.debug('OTel: Shutting down tracer providers');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug('OTel: Shutting down tracer providers');
+        }
         if (tracerProvider is TracerProvider) {
           try {
             await tracerProvider.forceFlush();
             if (OTelLog.isDebug()) {
-              OTelLog.debug(
-                'OTel: Tracer provider flush complete');
+              OTelLog.debug('OTel: Tracer provider flush complete');
             }
           } catch (e) {
             if (OTelLog.isDebug()) {
-              OTelLog.debug(
-                'OTel: Error during tracer provider flush: $e');
+              OTelLog.debug('OTel: Error during tracer provider flush: $e');
             }
           }
         }
         try {
           await tracerProvider.shutdown();
-          if (OTelLog.isDebug()) OTelLog.debug('OTel: Tracer provider shutdown complete');
+          if (OTelLog.isDebug()) {
+            OTelLog.debug('OTel: Tracer provider shutdown complete');
+          }
         } catch (e) {
-          if (OTelLog.isDebug()) OTelLog.debug('OTel: Error during tracer provider shutdown: $e');
+          if (OTelLog.isDebug()) {
+            OTelLog.debug('OTel: Error during tracer provider shutdown: $e');
+          }
         }
       }
     } catch (e) {
-      if (OTelLog.isDebug()) OTelLog.debug('OTel: Error accessing tracer provider: $e');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('OTel: Error accessing tracer provider: $e');
+      }
     }
 
     // Shutdown meter providers to clean up metric readers and exporters
     final meterProviders = OTel.meterProviders();
     for (var meterProvider in meterProviders) {
       try {
-        if (OTelLog.isDebug()) OTelLog.debug('OTel: Shutting down meter provider');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug('OTel: Shutting down meter provider');
+        }
         await meterProvider.shutdown();
-        if (OTelLog.isDebug()) OTelLog.debug('OTel: Meter provider shutdown complete');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug('OTel: Meter provider shutdown complete');
+        }
       } catch (e) {
-        if (OTelLog.isDebug()) OTelLog.debug('OTel: Error during meter provider shutdown: $e');
+        if (OTelLog.isDebug()) {
+          OTelLog.debug('OTel: Error during meter provider shutdown: $e');
+        }
       }
     }
   }
@@ -908,6 +1037,10 @@ class OTel {
     // Reset OTelFactory
     OTelFactory.otelFactory = null;
     if (OTelLog.isDebug()) OTelLog.debug('OTel: Reset OTelFactory');
+    
+    // Clear test environment to prevent test pollution
+    EnvironmentService.instance.clearTestEnvironment();
+    if (OTelLog.isDebug()) OTelLog.debug('OTel: Cleared test environment');
 
     // Add a short delay to ensure resources are released
     await Future<void>.delayed(const Duration(milliseconds: 250));
@@ -922,9 +1055,13 @@ class OTel {
   /// [attributes] is optional and specifies instrumentation scope attributes
   static InstrumentationScope instrumentationScope(
       {required String name,
-        String version = '1.0.0',
-        String? schemaUrl,
-        Attributes? attributes}) {
-    return OTelAPI.instrumentationScope(name: name, version: version, schemaUrl: schemaUrl, attributes: attributes);
+      String version = '1.0.0',
+      String? schemaUrl,
+      Attributes? attributes}) {
+    return OTelAPI.instrumentationScope(
+        name: name,
+        version: version,
+        schemaUrl: schemaUrl,
+        attributes: attributes);
   }
 }

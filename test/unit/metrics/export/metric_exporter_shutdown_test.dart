@@ -42,8 +42,9 @@ void main() {
 
     setUp(() async {
       exporter = MockMetricExporter();
-      reader = PeriodicExportingMetricReader(exporter, interval: const Duration(milliseconds: 100));
-      
+      reader = PeriodicExportingMetricReader(exporter,
+          interval: const Duration(milliseconds: 100));
+
       await OTel.reset();
       await OTel.initialize(
         serviceName: 'test-service',
@@ -63,29 +64,29 @@ void main() {
         name: 'test-counter',
         unit: 'count',
       );
-      
+
       counter.add(5);
-      
+
       // Force flush to ensure data is exported
       await reader.forceFlush();
-      
+
       // Verify data was exported
       expect(exporter.exportedData.isNotEmpty, isTrue);
       expect(exporter.isShutdown, isFalse);
-      
+
       // Shutdown the exporter
       await exporter.shutdown();
       expect(exporter.isShutdown, isTrue);
-      
+
       // Clear the exported data to verify nothing new comes in
       exporter._exportedData.clear();
-      
+
       // Record more data
       counter.add(10);
-      
+
       // Try to flush again
       await reader.forceFlush();
-      
+
       // Verify no new data was exported
       expect(exporter.exportedData.isEmpty, isTrue);
     });
@@ -97,56 +98,57 @@ void main() {
         name: 'propagation-counter',
         unit: 'count',
       );
-      
+
       counter.add(42);
-      
+
       // Verify exporter is not yet shutdown
       expect(exporter.isShutdown, isFalse);
-      
+
       // Shutdown the reader
       await reader.shutdown();
-      
+
       // Verify exporter was also shutdown
       expect(exporter.isShutdown, isTrue);
-      
+
       // Try to record more data
       counter.add(100);
-      
+
       // Try to flush again - this should not add more data
       await reader.forceFlush();
-      
+
       // Check that only the first data point was exported
       expect(exporter.exportedData.length, equals(1));
     });
 
-    test('MeterProvider shutdown propagates to readers and exporters', () async {
+    test('MeterProvider shutdown propagates to readers and exporters',
+        () async {
       // Create a metric
       final meter = OTel.meter('shutdown-test');
       final counter = meter.createCounter<int>(
         name: 'provider-shutdown-counter',
         unit: 'count',
       );
-      
+
       counter.add(7);
-      
+
       // Get meter provider
       final meterProvider = OTel.meterProvider();
-      
+
       // Verify exporter is not yet shutdown
       expect(exporter.isShutdown, isFalse);
-      
+
       // Shutdown the meter provider
       await meterProvider.shutdown();
-      
+
       // Verify exporter was also shutdown
       expect(exporter.isShutdown, isTrue);
-      
+
       // Verify the provider's isShutdown state
       expect(meterProvider.isShutdown, isTrue);
-      
+
       // Try to create a new meter with the shutdown provider
       final newMeter = meterProvider.getMeter(name: 'shutdown-test-2');
-      
+
       // Creating a meter with a shutdown provider should succeed but meters will be disabled
       expect(newMeter, isNotNull);
     });
@@ -158,15 +160,15 @@ void main() {
         name: 'reset-counter',
         unit: 'count',
       );
-      
+
       counter.add(3);
-      
+
       // Verify exporter is not yet shutdown
       expect(exporter.isShutdown, isFalse);
-      
+
       // Reset OTel
       await OTel.reset();
-      
+
       // Verify exporter was shutdown
       expect(exporter.isShutdown, isTrue);
     });

@@ -20,20 +20,35 @@ import 'dart:typed_data' as $typed_data;
 const ExportLogsServiceRequest$json = {
   '1': 'ExportLogsServiceRequest',
   '2': [
-    {'1': 'resource_logs', '3': 1, '4': 3, '5': 11, '6': '.opentelemetry.proto.logs.v1.ResourceLogs', '10': 'resourceLogs'},
+    {
+      '1': 'resource_logs',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.logs.v1.ResourceLogs',
+      '10': 'resourceLogs'
+    },
   ],
 };
 
 /// Descriptor for `ExportLogsServiceRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List exportLogsServiceRequestDescriptor = $convert.base64Decode(
-    'ChhFeHBvcnRMb2dzU2VydmljZVJlcXVlc3QSTgoNcmVzb3VyY2VfbG9ncxgBIAMoCzIpLm9wZW'
-    '50ZWxlbWV0cnkucHJvdG8ubG9ncy52MS5SZXNvdXJjZUxvZ3NSDHJlc291cmNlTG9ncw==');
+final $typed_data.Uint8List exportLogsServiceRequestDescriptor =
+    $convert.base64Decode(
+        'ChhFeHBvcnRMb2dzU2VydmljZVJlcXVlc3QSTgoNcmVzb3VyY2VfbG9ncxgBIAMoCzIpLm9wZW'
+        '50ZWxlbWV0cnkucHJvdG8ubG9ncy52MS5SZXNvdXJjZUxvZ3NSDHJlc291cmNlTG9ncw==');
 
 @$core.Deprecated('Use exportLogsServiceResponseDescriptor instead')
 const ExportLogsServiceResponse$json = {
   '1': 'ExportLogsServiceResponse',
   '2': [
-    {'1': 'partial_success', '3': 1, '4': 1, '5': 11, '6': '.opentelemetry.proto.collector.logs.v1.ExportLogsPartialSuccess', '10': 'partialSuccess'},
+    {
+      '1': 'partial_success',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.opentelemetry.proto.collector.logs.v1.ExportLogsPartialSuccess',
+      '10': 'partialSuccess'
+    },
   ],
 };
 
@@ -47,7 +62,13 @@ final $typed_data.Uint8List exportLogsServiceResponseDescriptor = $convert.base6
 const ExportLogsPartialSuccess$json = {
   '1': 'ExportLogsPartialSuccess',
   '2': [
-    {'1': 'rejected_log_records', '3': 1, '4': 1, '5': 3, '10': 'rejectedLogRecords'},
+    {
+      '1': 'rejected_log_records',
+      '3': 1,
+      '4': 1,
+      '5': 3,
+      '10': 'rejectedLogRecords'
+    },
     {'1': 'error_message', '3': 2, '4': 1, '5': 9, '10': 'errorMessage'},
   ],
 };
@@ -57,4 +78,3 @@ final $typed_data.Uint8List exportLogsPartialSuccessDescriptor = $convert.base64
     'ChhFeHBvcnRMb2dzUGFydGlhbFN1Y2Nlc3MSMAoUcmVqZWN0ZWRfbG9nX3JlY29yZHMYASABKA'
     'NSEnJlamVjdGVkTG9nUmVjb3JkcxIjCg1lcnJvcl9tZXNzYWdlGAIgASgJUgxlcnJvck1lc3Nh'
     'Z2U=');
-

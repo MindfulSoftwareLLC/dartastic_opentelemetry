@@ -28,19 +28,33 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
     required APIHistogram<T> apiHistogram,
     required Meter meter,
     List<double>? boundaries,
-  }) : _apiHistogram = apiHistogram,
-       _meter = meter,
-       _storage = HistogramStorage(
-        boundaries: boundaries ?? _defaultBoundaries,
-        recordMinMax: true,
-       ) {
-      // Register this instrument with the meter provider
-      _meter.provider.registerInstrument(_meter.name, this);
-    }
+  })  : _apiHistogram = apiHistogram,
+        _meter = meter,
+        _storage = HistogramStorage(
+          boundaries: boundaries ?? _defaultBoundaries,
+          recordMinMax: true,
+        ) {
+    // Register this instrument with the meter provider
+    _meter.provider.registerInstrument(_meter.name, this);
+  }
 
   /// Default bucket boundaries.
   static const List<double> _defaultBoundaries = [
-    0, 5, 10, 25, 50, 75, 100, 250, 500, 750, 1000, 2500, 5000, 7500, 10000
+    0,
+    5,
+    10,
+    25,
+    50,
+    75,
+    100,
+    250,
+    500,
+    750,
+    1000,
+    2500,
+    5000,
+    7500,
+    10000
   ];
 
   @override
@@ -88,7 +102,8 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
   @override
   void recordWithMap(T value, Map<String, Object> attributeMap) {
     // Just convert to Attributes and call record
-    final attributes = attributeMap.isEmpty ? null : attributeMap.toAttributes();
+    final attributes =
+        attributeMap.isEmpty ? null : attributeMap.toAttributes();
     record(value, attributes);
   }
 

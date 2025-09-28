@@ -20,42 +20,65 @@ import 'dart:typed_data' as $typed_data;
 const ExportMetricsServiceRequest$json = {
   '1': 'ExportMetricsServiceRequest',
   '2': [
-    {'1': 'resource_metrics', '3': 1, '4': 3, '5': 11, '6': '.opentelemetry.proto.metrics.v1.ResourceMetrics', '10': 'resourceMetrics'},
+    {
+      '1': 'resource_metrics',
+      '3': 1,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.metrics.v1.ResourceMetrics',
+      '10': 'resourceMetrics'
+    },
   ],
 };
 
 /// Descriptor for `ExportMetricsServiceRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List exportMetricsServiceRequestDescriptor = $convert.base64Decode(
-    'ChtFeHBvcnRNZXRyaWNzU2VydmljZVJlcXVlc3QSWgoQcmVzb3VyY2VfbWV0cmljcxgBIAMoCz'
-    'IvLm9wZW50ZWxlbWV0cnkucHJvdG8ubWV0cmljcy52MS5SZXNvdXJjZU1ldHJpY3NSD3Jlc291'
-    'cmNlTWV0cmljcw==');
+final $typed_data.Uint8List exportMetricsServiceRequestDescriptor =
+    $convert.base64Decode(
+        'ChtFeHBvcnRNZXRyaWNzU2VydmljZVJlcXVlc3QSWgoQcmVzb3VyY2VfbWV0cmljcxgBIAMoCz'
+        'IvLm9wZW50ZWxlbWV0cnkucHJvdG8ubWV0cmljcy52MS5SZXNvdXJjZU1ldHJpY3NSD3Jlc291'
+        'cmNlTWV0cmljcw==');
 
 @$core.Deprecated('Use exportMetricsServiceResponseDescriptor instead')
 const ExportMetricsServiceResponse$json = {
   '1': 'ExportMetricsServiceResponse',
   '2': [
-    {'1': 'partial_success', '3': 1, '4': 1, '5': 11, '6': '.opentelemetry.proto.collector.metrics.v1.ExportMetricsPartialSuccess', '10': 'partialSuccess'},
+    {
+      '1': 'partial_success',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6':
+          '.opentelemetry.proto.collector.metrics.v1.ExportMetricsPartialSuccess',
+      '10': 'partialSuccess'
+    },
   ],
 };
 
 /// Descriptor for `ExportMetricsServiceResponse`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List exportMetricsServiceResponseDescriptor = $convert.base64Decode(
-    'ChxFeHBvcnRNZXRyaWNzU2VydmljZVJlc3BvbnNlEm4KD3BhcnRpYWxfc3VjY2VzcxgBIAEoCz'
-    'JFLm9wZW50ZWxlbWV0cnkucHJvdG8uY29sbGVjdG9yLm1ldHJpY3MudjEuRXhwb3J0TWV0cmlj'
-    'c1BhcnRpYWxTdWNjZXNzUg5wYXJ0aWFsU3VjY2Vzcw==');
+final $typed_data.Uint8List exportMetricsServiceResponseDescriptor =
+    $convert.base64Decode(
+        'ChxFeHBvcnRNZXRyaWNzU2VydmljZVJlc3BvbnNlEm4KD3BhcnRpYWxfc3VjY2VzcxgBIAEoCz'
+        'JFLm9wZW50ZWxlbWV0cnkucHJvdG8uY29sbGVjdG9yLm1ldHJpY3MudjEuRXhwb3J0TWV0cmlj'
+        'c1BhcnRpYWxTdWNjZXNzUg5wYXJ0aWFsU3VjY2Vzcw==');
 
 @$core.Deprecated('Use exportMetricsPartialSuccessDescriptor instead')
 const ExportMetricsPartialSuccess$json = {
   '1': 'ExportMetricsPartialSuccess',
   '2': [
-    {'1': 'rejected_data_points', '3': 1, '4': 1, '5': 3, '10': 'rejectedDataPoints'},
+    {
+      '1': 'rejected_data_points',
+      '3': 1,
+      '4': 1,
+      '5': 3,
+      '10': 'rejectedDataPoints'
+    },
     {'1': 'error_message', '3': 2, '4': 1, '5': 9, '10': 'errorMessage'},
   ],
 };
 
 /// Descriptor for `ExportMetricsPartialSuccess`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List exportMetricsPartialSuccessDescriptor = $convert.base64Decode(
-    'ChtFeHBvcnRNZXRyaWNzUGFydGlhbFN1Y2Nlc3MSMAoUcmVqZWN0ZWRfZGF0YV9wb2ludHMYAS'
-    'ABKANSEnJlamVjdGVkRGF0YVBvaW50cxIjCg1lcnJvcl9tZXNzYWdlGAIgASgJUgxlcnJvck1l'
-    'c3NhZ2U=');
-
+final $typed_data.Uint8List exportMetricsPartialSuccessDescriptor =
+    $convert.base64Decode(
+        'ChtFeHBvcnRNZXRyaWNzUGFydGlhbFN1Y2Nlc3MSMAoUcmVqZWN0ZWRfZGF0YV9wb2ludHMYAS'
+        'ABKANSEnJlamVjdGVkRGF0YVBvaW50cxIjCg1lcnJvcl9tZXNzYWdlGAIgASgJUgxlcnJvck1l'
+        'c3NhZ2U=');

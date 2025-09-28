@@ -67,11 +67,10 @@ void main() {
       // Initialize OTel with service name
       final serviceName = 'example-service';
       await OTel.initialize(
-        endpoint: 'http://localhost:${collector.port}',
-        serviceName: serviceName,
-        tenantId: '123456789',
-        spanProcessor: null
-      );
+          endpoint: 'http://localhost:${collector.port}',
+          serviceName: serviceName,
+          tenantId: '123456789',
+          spanProcessor: null);
 
       // Create exporter
       final exporter = OtlpGrpcSpanExporter(
@@ -110,7 +109,7 @@ void main() {
 
       await tracerProvider.shutdown();
     });
-    
+
     test('verify service.name handling in tracer provider', () async {
       // Reset OTel state to start fresh
       await OTel.reset();
@@ -266,7 +265,8 @@ void main() {
 
       // Merge resources - platform first, then service, then tenant_id
       // The order is critical: tenant_id must be merged last to take precedence
-      final mergedResource = platformResource.merge(serviceResource).merge(tenantResource);
+      final mergedResource =
+          platformResource.merge(serviceResource).merge(tenantResource);
       OTel.defaultResource = mergedResource;
 
       // Create exporter and processor

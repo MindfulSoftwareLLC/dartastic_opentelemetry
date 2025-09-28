@@ -54,7 +54,6 @@ void main() {
       await OTel.shutdown();
     });
 
-
     test('exports span on end even when isRecording is false', () async {
       // Clear any existing spans
       exporter.clear();
@@ -72,13 +71,15 @@ void main() {
       );
 
       // Verify that isRecording is true before ending
-      expect(span.isRecording, isTrue, reason: 'Span should be recording before end()');
+      expect(span.isRecording, isTrue,
+          reason: 'Span should be recording before end()');
 
       // End the span
       span.end();
 
       // Verify that isRecording is false after ending
-      expect(span.isRecording, isFalse, reason: 'Span should NOT be recording after end()');
+      expect(span.isRecording, isFalse,
+          reason: 'Span should NOT be recording after end()');
 
       // Wait a bit for async operations to complete
       await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -86,7 +87,7 @@ void main() {
       // Check that the span was exported despite isRecording being false
       expect(exporter.exportedSpans, hasLength(1));
       expect(exporter.exportedSpans.first.name, equals('test-span-recording'));
-      
+
       await processor.shutdown();
     });
 
@@ -112,7 +113,7 @@ void main() {
 
       // Wait a bit for async operations to complete
       await Future<void>.delayed(const Duration(milliseconds: 100));
-      
+
       await processor.shutdown();
     });
 
@@ -216,7 +217,7 @@ void main() {
 
       // Should not throw
       await processor.forceFlush();
-      
+
       await processor.shutdown();
     });
 
@@ -253,11 +254,13 @@ void main() {
 
       // Create batch processor with small batch size for testing
       final processor = BatchSpanProcessor(
-        exporter, const BatchSpanProcessorConfig(
-        maxExportBatchSize: 2,
-        exportTimeout: Duration(milliseconds:1000),
-        scheduleDelay: Duration(milliseconds:100,)
-      ));
+          exporter,
+          const BatchSpanProcessorConfig(
+              maxExportBatchSize: 2,
+              exportTimeout: Duration(milliseconds: 1000),
+              scheduleDelay: Duration(
+                milliseconds: 100,
+              )));
 
       // Register the processor with the tracer provider
       tracerProvider.addSpanProcessor(processor);
@@ -276,11 +279,12 @@ void main() {
 
       // Verify all spans were exported
       expect(exporter.exportedSpans, hasLength(5));
-      
+
       // Verify span names
       for (var i = 0; i < 5; i++) {
         expect(
-          exporter.exportedSpans.any((span) => span.name == 'batch-test-span-$i'),
+          exporter.exportedSpans
+              .any((span) => span.name == 'batch-test-span-$i'),
           isTrue,
           reason: 'Should find span with name batch-test-span-$i',
         );

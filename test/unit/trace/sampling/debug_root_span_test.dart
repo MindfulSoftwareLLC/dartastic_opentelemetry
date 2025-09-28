@@ -27,11 +27,13 @@ void main() {
       print('Trace ID: ${span.spanContext.traceId}');
       print('Parent Span ID: ${span.spanContext.parentSpanId}');
       print('Parent Span ID to string: ${span.spanContext.parentSpanId}');
-      print('Parent Span ID isValid: ${span.spanContext.parentSpanId?.isValid}');
+      print(
+          'Parent Span ID isValid: ${span.spanContext.parentSpanId?.isValid}');
 
       // Check that the parent span ID is all zeros for a root span
       expect(span.spanContext.parentSpanId, isNotNull);
-      expect(span.spanContext.parentSpanId.toString(), equals('0000000000000000'));
+      expect(
+          span.spanContext.parentSpanId.toString(), equals('0000000000000000'));
 
       span.end();
     });

@@ -67,7 +67,7 @@ class CountingSampler implements Sampler {
 /// to override its default behavior based on span properties.
 abstract class SamplingCondition implements Sampler {
   /// Determines whether a span should be sampled based on its properties.
-  /// 
+  ///
   /// @param name The name of the span
   /// @param spanKind The kind of span
   /// @param attributes The attributes of the span
@@ -103,7 +103,7 @@ abstract class SamplingCondition implements Sampler {
 }
 
 /// A sampling condition that forces sampling when a span has an error status.
-/// 
+///
 /// This condition can be used to ensure that all spans with errors are sampled,
 /// regardless of other sampling decisions.
 class ErrorSamplingCondition extends SamplingCondition {
@@ -120,8 +120,9 @@ class ErrorSamplingCondition extends SamplingCondition {
   String get description => 'ErrorSamplingCondition';
 
   @override
+
   /// Determines whether a span should be sampled based on its properties.
-  /// 
+  ///
   /// @param name The name of the span
   /// @param spanKind The kind of span
   /// @param attributes The attributes of the span
@@ -138,12 +139,12 @@ class ErrorSamplingCondition extends SamplingCondition {
     final statusMessage = attributes.getString('otel.status_description');
 
     return (statusCode == 'ERROR' ||
-            (statusMessage != null && statusMessage.isNotEmpty));
+        (statusMessage != null && statusMessage.isNotEmpty));
   }
 }
 
 /// A sampling condition that forces sampling when a span's name matches a pattern.
-/// 
+///
 /// This condition can be used to ensure that spans with names matching a specific
 /// pattern are always sampled, regardless of other sampling decisions.
 class NamePatternSamplingCondition extends SamplingCondition {
@@ -163,10 +164,11 @@ class NamePatternSamplingCondition extends SamplingCondition {
   String get description => 'NamePatternSamplingCondition{$pattern}';
 
   @override
+
   /// Determines whether a span should be sampled based on its properties.
-  /// 
+  ///
   /// This method checks if the span name matches the pattern specified in the constructor.
-  /// 
+  ///
   /// @param name The name of the span to check against the pattern
   /// @param spanKind The kind of span (not used in this implementation)
   /// @param attributes The attributes of the span (not used in this implementation)
@@ -181,27 +183,27 @@ class NamePatternSamplingCondition extends SamplingCondition {
 }
 
 /// A sampling condition that forces sampling when a span has a specific attribute value.
-/// 
+///
 /// This condition can be used to ensure that spans with particular attribute values
 /// are always sampled, regardless of other sampling decisions.
 class AttributeSamplingCondition extends SamplingCondition {
   /// The attribute key to check when determining whether to sample.
   final String key;
-  
+
   /// The string value to match against the attribute, if this is a string attribute.
   final String? stringValue;
-  
+
   /// The boolean value to match against the attribute, if this is a boolean attribute.
   final bool? boolValue;
-  
+
   /// The integer value to match against the attribute, if this is an integer attribute.
   final int? intValue;
-  
+
   /// The double value to match against the attribute, if this is a double attribute.
   final double? doubleValue;
 
   /// Returns a string description of this sampling condition.
-  /// 
+  ///
   /// Used for logging and debugging purposes.
   @override
   String get description => 'AttributeSamplingCondition{$key}';
@@ -209,7 +211,7 @@ class AttributeSamplingCondition extends SamplingCondition {
   /// Creates a new AttributeSamplingCondition that matches spans with a specific attribute value.
   ///
   /// This condition samples spans that have an attribute with the specified key and value.
-  /// Only one of the type-specific values (stringValue, boolValue, intValue, doubleValue) 
+  /// Only one of the type-specific values (stringValue, boolValue, intValue, doubleValue)
   /// should be provided.
   ///
   /// @param key The attribute key to match
@@ -239,11 +241,12 @@ class AttributeSamplingCondition extends SamplingCondition {
   }
 
   @override
+
   /// Determines whether a span should be sampled based on its properties.
-  /// 
+  ///
   /// This method checks if the span has attributes matching the specific key and value
   /// configured in this condition.
-  /// 
+  ///
   /// @param name The name of the span
   /// @param spanKind The kind of span
   /// @param attributes The attributes of the span

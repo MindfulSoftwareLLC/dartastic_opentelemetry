@@ -2,6 +2,7 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 library;
+
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:meta/meta.dart';
 
@@ -36,7 +37,9 @@ class Span implements APISpan {
   Span._(APISpan delegate, Tracer sdkTracer)
       : _delegate = delegate,
         _sdkTracer = sdkTracer {
-    if (OTelLog.isDebug()) OTelLog.debug('SDKSpan: Created new span with name ${delegate.name}');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('SDKSpan: Created new span with name ${delegate.name}');
+    }
   }
 
   /// Gets the resource associated with this span's tracer.
@@ -46,28 +49,45 @@ class Span implements APISpan {
 
   @override
   void end({DateTime? endTime, SpanStatusCode? spanStatus}) {
-    if (OTelLog.isDebug()) OTelLog.debug('SDKSpan: Starting to end span ${spanContext.spanId} with name $name');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug(
+          'SDKSpan: Starting to end span ${spanContext.spanId} with name $name');
+    }
 
     if (spanStatus != null) {
       setStatus(spanStatus);
     }
 
     try {
-      if (OTelLog.isDebug()) OTelLog.debug('SDKSpan: Calling delegate.end() for span $name');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('SDKSpan: Calling delegate.end() for span $name');
+      }
       _delegate.end(endTime: endTime, spanStatus: spanStatus);
-      if (OTelLog.isDebug()) OTelLog.debug('SDKSpan: Delegate.end() completed for span $name');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('SDKSpan: Delegate.end() completed for span $name');
+      }
 
       // Notify span processors that this span has ended
       final provider = _sdkTracer.provider;
-      if (OTelLog.isDebug()) OTelLog.debug('SDKSpan: Notifying ${provider.spanProcessors.length} span processors');
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+            'SDKSpan: Notifying ${provider.spanProcessors.length} span processors');
+      }
       for (final processor in provider.spanProcessors) {
         try {
-          if (OTelLog.isDebug()) OTelLog.debug('SDKSpan: Calling onEnd for processor ${processor.runtimeType}');
+          if (OTelLog.isDebug()) {
+            OTelLog.debug(
+                'SDKSpan: Calling onEnd for processor ${processor.runtimeType}');
+          }
           processor.onEnd(this);
-          if (OTelLog.isDebug()) OTelLog.debug('SDKSpan: Successfully called onEnd for processor ${processor.runtimeType}');
+          if (OTelLog.isDebug()) {
+            OTelLog.debug(
+                'SDKSpan: Successfully called onEnd for processor ${processor.runtimeType}');
+          }
         } catch (e, stackTrace) {
           if (OTelLog.isError()) {
-            OTelLog.error('SDKSpan: Error calling onEnd for processor ${processor.runtimeType}: $e');
+            OTelLog.error(
+                'SDKSpan: Error calling onEnd for processor ${processor.runtimeType}: $e');
             OTelLog.error('Stack trace: $stackTrace');
           }
         }
@@ -80,22 +100,27 @@ class Span implements APISpan {
   }
 
   @override
-  set attributes(Attributes newAttributes) => _delegate.attributes = newAttributes;
+  set attributes(Attributes newAttributes) =>
+      _delegate.attributes = newAttributes;
 
   @override
-  void addAttributes(Attributes attributes) => _delegate.addAttributes(attributes);
+  void addAttributes(Attributes attributes) =>
+      _delegate.addAttributes(attributes);
 
   @override
   void addEvent(SpanEvent spanEvent) => _delegate.addEvent(spanEvent);
 
   @override
-  void addEventNow(String name, [Attributes? attributes]) => _delegate.addEventNow(name, attributes);
+  void addEventNow(String name, [Attributes? attributes]) =>
+      _delegate.addEventNow(name, attributes);
 
   @override
-  void addEvents(Map<String, Attributes?> spanEvents) => _delegate.addEvents(spanEvents);
+  void addEvents(Map<String, Attributes?> spanEvents) =>
+      _delegate.addEvents(spanEvents);
 
   @override
-  void addLink(SpanContext spanContext, [Attributes? attributes]) => _delegate.addLink(spanContext, attributes);
+  void addLink(SpanContext spanContext, [Attributes? attributes]) =>
+      _delegate.addLink(spanContext, attributes);
 
   @override
   void addSpanLink(SpanLink spanLink) => _delegate.addSpanLink(spanLink);
@@ -120,44 +145,54 @@ class Span implements APISpan {
 
   @override
   void recordException(Object exception,
-      {StackTrace? stackTrace, Attributes? attributes, bool? escaped}) =>
-          _delegate.recordException(exception,
-              stackTrace: stackTrace,
-              attributes: attributes,
-              escaped: escaped);
+          {StackTrace? stackTrace, Attributes? attributes, bool? escaped}) =>
+      _delegate.recordException(exception,
+          stackTrace: stackTrace, attributes: attributes, escaped: escaped);
 
   @override
-  void setBoolAttribute(String name, bool value) => _delegate.setBoolAttribute(name, value);
+  void setBoolAttribute(String name, bool value) =>
+      _delegate.setBoolAttribute(name, value);
 
   @override
-  void setBoolListAttribute(String name, List<bool> value) => _delegate.setBoolListAttribute(name, value);
+  void setBoolListAttribute(String name, List<bool> value) =>
+      _delegate.setBoolListAttribute(name, value);
 
   @override
-  void setDoubleAttribute(String name, double value) => _delegate.setDoubleAttribute(name, value);
+  void setDoubleAttribute(String name, double value) =>
+      _delegate.setDoubleAttribute(name, value);
 
   @override
-  void setDoubleListAttribute(String name, List<double> value) => _delegate.setDoubleListAttribute(name, value);
+  void setDoubleListAttribute(String name, List<double> value) =>
+      _delegate.setDoubleListAttribute(name, value);
 
   @override
-  void setIntAttribute(String name, int value) => _delegate.setIntAttribute(name, value);
+  void setIntAttribute(String name, int value) =>
+      _delegate.setIntAttribute(name, value);
 
   @override
-  void setIntListAttribute(String name, List<int> value) => _delegate.setIntListAttribute(name, value);
+  void setIntListAttribute(String name, List<int> value) =>
+      _delegate.setIntListAttribute(name, value);
 
   @override
   void setStatus(SpanStatusCode statusCode, [String? description]) {
     _delegate.setStatus(statusCode, description);
-    if (OTelLog.isDebug()) OTelLog.debug('SDKSpan: Set status to $statusCode for span ${spanContext.spanId}');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug(
+          'SDKSpan: Set status to $statusCode for span ${spanContext.spanId}');
+    }
   }
 
   @override
-  void setStringAttribute<T>(String name, String value) => _delegate.setStringAttribute<T>(name, value);
+  void setStringAttribute<T>(String name, String value) =>
+      _delegate.setStringAttribute<T>(name, value);
 
   @override
-  void setStringListAttribute<T>(String name, List<String> value) => _delegate.setStringListAttribute<T>(name, value);
+  void setStringListAttribute<T>(String name, List<String> value) =>
+      _delegate.setStringListAttribute<T>(name, value);
 
   @override
-  void setDateTimeAsStringAttribute(String name, DateTime value) => _delegate.setDateTimeAsStringAttribute(name, value);
+  void setDateTimeAsStringAttribute(String name, DateTime value) =>
+      _delegate.setDateTimeAsStringAttribute(name, value);
 
   @override
   SpanContext get spanContext => _delegate.spanContext;
@@ -190,13 +225,12 @@ class Span implements APISpan {
     }
   }
 
-
   @override
-  InstrumentationScope get instrumentationScope => _delegate.instrumentationScope;
-  
+  InstrumentationScope get instrumentationScope =>
+      _delegate.instrumentationScope;
+
   @override
   SpanContext? get parentSpanContext => _delegate.parentSpanContext;
-
 
   @override
   String toString() {
@@ -240,9 +274,7 @@ class Span implements APISpan {
     return buffer.toString();
   }
 
-
-
-/// Returns whether this span context is valid
+  /// Returns whether this span context is valid
   /// A span context is valid when it has a non-zero traceId and a non-zero spanId.
   @override
   bool get isValid => spanContext.isValid;
@@ -255,53 +287,11 @@ class Span implements APISpan {
   // This check is always true because the method is part of the interface implementation
   // and the delegate is already an APISpan.
   /// Checks if this object is an instance of the specified type.
-  /// 
+  ///
   /// This method is used for type checking and compatibility with the API Span implementation.
   /// It returns true if the specified type is APISpan or the exact runtime type of this object.
-  /// 
+  ///
   /// @param type The type to check against
   /// @return true if this object is an instance of the specified type, false otherwise
   bool isInstanceOf(Type type) => type == APISpan || runtimeType == type;
-
-  @override
-  void addAttributeString(String key, String value) {
-    _delegate.addAttributeString(key, value);
-  }
-
-  @override
-  void addAttributeStringList(String key, List<String> value) {
-    _delegate.addAttributeStringList(key, value);
-  }
-
-  @override
-  void addAttributeBool(String key, bool value) {
-    _delegate.addAttributeBool(key, value);
-  }
-
-  @override
-  void addAttributeBoolList(String key, List<bool> value) {
-    _delegate.addAttributeBoolList(key, value);
-  }
-
-  @override
-  void addAttributeInt(String key, int value) {
-    _delegate.addAttributeInt(key, value);
-  }
-
-  @override
-  void addAttributeIntList(String key, List<int> value) {
-    _delegate.addAttributeIntList(key, value);
-  }
-
-  @override
-  void addAttributeDouble(String key, double value) {
-    _delegate.addAttributeDouble(key, value);
-  }
-
-  @override
-  void addAttributeDoubleList(String key, List<double> value) {
-    _delegate.addAttributeDoubleList(key, value);
-  }
-
-
 }
