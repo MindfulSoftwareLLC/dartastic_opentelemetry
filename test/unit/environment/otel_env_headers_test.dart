@@ -31,8 +31,9 @@ void main() {
 
     test('should parse headers with base64 values containing equals signs', () {
       // This simulates a Grafana Cloud Authorization header with base64 encoding
-      const base64Value = 'Basic MTEwMjg5MDpnbGNfZXlKdklqb2lNVEk0TXpFME55SXNJbTRpT2lKemRHRmpheTB4TVRBeU9Ea3dMVzkwYkhBdGQzSnBkR1V0WkdGeWRHRnpkR2xqTFhOdGIydGxJaXdpYXlJNklrczVjR3ROTVRCaFUxWTJPSFYyTTFSTE5GZ3hPRU15WVNJc0ltMGlPbnNpY2lJNkluQnliMlF0ZFhNdFpXRnpkQzB3SW4xOQ==';
-      
+      const base64Value =
+          'Basic MTEwMjg5MDpnbGNfZXlKdklqb2lNVEk0TXpFME55SXNJbTRpT2lKemRHRmpheTB4TVRBeU9Ea3dMVzkwYkhBdGQzSnBkR1V0WkdGeWRHRnpkR2xqTFhOdGIydGxJaXdpYXlJNklrczVjR3ROTVRCaFUxWTJPSFYyTTFSTE5GZ3hPRU15WVNJc0ltMGlPbnNpY2lJNkluQnliMlF0ZFhNdFpXRnpkQzB3SW4xOQ==';
+
       EnvironmentService.instance.setupTestEnvironment({
         'OTEL_EXPORTER_OTLP_HEADERS': 'Authorization=$base64Value',
       });
@@ -46,10 +47,12 @@ void main() {
     });
 
     test('should parse multiple headers including base64 authorization', () {
-      const base64Value = 'Basic MTEwMjg5MDpnbGNfZXlKdklqb2lNVEk0TXpFME55SXNJbTRpT2lKemRHRmpheTB4TVRBeU9Ea3dMVzkwYkhBdGQzSnBkR1V0WkdGeWRHRnpkR2xqTFhOdGIydGxJaXdpYXlJNklrczVjR3ROTVRCaFUxWTJPSFYyTTFSTE5GZ3hPRU15WVNJc0ltMGlPbnNpY2lJNkluQnliMlF0ZFhNdFpXRnpkQzB3SW4xOQ==';
-      
+      const base64Value =
+          'Basic MTEwMjg5MDpnbGNfZXlKdklqb2lNVEk0TXpFME55SXNJbTRpT2lKemRHRmpheTB4TVRBeU9Ea3dMVzkwYkhBdGQzSnBkR1V0WkdGeWRHRnpkR2xqTFhOdGIydGxJaXdpYXlJNklrczVjR3ROTVRCaFUxWTJPSFYyTTFSTE5GZ3hPRU15WVNJc0ltMGlPbnNpY2lJNkluQnliMlF0ZFhNdFpXRnpkQzB3SW4xOQ==';
+
       EnvironmentService.instance.setupTestEnvironment({
-        'OTEL_EXPORTER_OTLP_HEADERS': 'Authorization=$base64Value,Custom-Header=value',
+        'OTEL_EXPORTER_OTLP_HEADERS':
+            'Authorization=$base64Value,Custom-Header=value',
       });
 
       final config = OTelEnv.getOtlpConfig(signal: 'traces');

@@ -41,10 +41,10 @@ class CertificateUtils {
               'CertificateUtils: Using test certificate: $certificate');
         }
       } else {
-          final certFile = File(certificate);
+        final certFile = File(certificate);
         context.setTrustedCertificatesBytes(certFile.readAsBytesSync());
-          if (OTelLog.isDebug()) {
-            OTelLog.debug(
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
               'CertificateUtils: Loaded CA certificate from $certificate');
         }
       }
@@ -60,13 +60,13 @@ class CertificateUtils {
               'CertificateUtils: Using test client certificate and key');
         }
       } else {
-          final certFile = File(clientCertificate);
-          final keyFile = File(clientKey);
-          context.useCertificateChainBytes(certFile.readAsBytesSync());
-          context.usePrivateKeyBytes(keyFile.readAsBytesSync());
-          if (OTelLog.isDebug()) {
-            OTelLog.debug(
-                'CertificateUtils: Loaded client certificate from $clientCertificate and key from $clientKey');
+        final certFile = File(clientCertificate);
+        final keyFile = File(clientKey);
+        context.useCertificateChainBytes(certFile.readAsBytesSync());
+        context.usePrivateKeyBytes(keyFile.readAsBytesSync());
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+              'CertificateUtils: Loaded client certificate from $clientCertificate and key from $clientKey');
         }
       }
     }

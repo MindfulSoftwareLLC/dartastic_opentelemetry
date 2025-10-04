@@ -39,8 +39,10 @@ class OtlpHttpSpanExporter implements SpanExporter {
   OtlpHttpSpanExporter([OtlpHttpExporterConfig? config])
       : _config = config ?? OtlpHttpExporterConfig() {
     if (OTelLog.isDebug()) {
-      OTelLog.debug('OtlpHttpSpanExporter: Created with endpoint: ${_config.endpoint}');
-      OTelLog.debug('OtlpHttpSpanExporter: Configured headers count: ${_config.headers.length}');
+      OTelLog.debug(
+          'OtlpHttpSpanExporter: Created with endpoint: ${_config.endpoint}');
+      OTelLog.debug(
+          'OtlpHttpSpanExporter: Configured headers count: ${_config.headers.length}');
       _config.headers.forEach((key, value) {
         if (key.toLowerCase() == 'authorization') {
           OTelLog.debug('  $key: [REDACTED - length: ${value.length}]');
