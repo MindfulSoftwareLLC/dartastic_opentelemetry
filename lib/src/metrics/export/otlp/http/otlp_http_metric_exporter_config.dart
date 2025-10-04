@@ -1,6 +1,8 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+import '../../../../trace/export/otlp/certificate_utils.dart';
+
 /// Configuration for the OpenTelemetry metric exporter that exports metrics using OTLP over HTTP/protobuf
 class OtlpHttpMetricExporterConfig {
   /// The endpoint to export metrics to (e.g., 'http://localhost:4318/v1/metrics')
@@ -17,6 +19,15 @@ class OtlpHttpMetricExporterConfig {
   /// Whether to use gzip compression for the HTTP body
   /// Default: false
   final bool compression;
+
+  /// Path to the TLS certificate file for secure connections.
+  final String? certificate;
+
+  /// Path to the client key file for secure connections with client authentication.
+  final String? clientKey;
+
+  /// Path to the client certificate file for secure connections with client authentication.
+  final String? clientCertificate;
 
   /// Maximum number of retries for failed export requests
   /// Default: 3
@@ -42,6 +53,9 @@ class OtlpHttpMetricExporterConfig {
     int maxRetries = 3,
     Duration baseDelay = const Duration(milliseconds: 100),
     Duration maxDelay = const Duration(seconds: 1),
+    this.certificate,
+    this.clientKey,
+    this.clientCertificate,
   })  : endpoint = _validateEndpoint(endpoint),
         headers = _validateHeaders(headers ?? {}),
         timeout = _validateTimeout(timeout),
@@ -51,6 +65,7 @@ class OtlpHttpMetricExporterConfig {
     if (baseDelay.compareTo(maxDelay) > 0) {
       throw ArgumentError('maxDelay cannot be less than baseDelay');
     }
+    _validateCertificates(certificate, clientKey, clientCertificate);
   }
 
   /// Validates the headers map to ensure no empty keys or values
@@ -134,5 +149,14 @@ class OtlpHttpMetricExporterConfig {
       throw ArgumentError('$name must be between 1ms and 5 minutes');
     }
     return delay;
+  }
+
+  static void _validateCertificates(
+      String? cert, String? key, String? clientCert) {
+    CertificateUtils.validateCertificates(
+      certificate: cert,
+      clientKey: key,
+      clientCertificate: clientCert,
+    );
   }
 }

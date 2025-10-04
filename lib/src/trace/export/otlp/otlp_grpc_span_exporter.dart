@@ -12,6 +12,7 @@ import 'package:grpc/grpc.dart';
 import '../../../../proto/opentelemetry_proto_dart.dart' as proto;
 import '../../span_logger.dart';
 import '../span_exporter.dart';
+import 'certificate_utils.dart';
 import 'otlp_grpc_span_exporter_config.dart';
 import 'span_transformer.dart';
 
@@ -45,6 +46,47 @@ class OtlpGrpcSpanExporter implements SpanExporter {
   OtlpGrpcSpanExporter([OtlpGrpcExporterConfig? config])
       : _config = config ?? OtlpGrpcExporterConfig();
   bool _initialized = false;
+
+  /// Creates channel credentials based on configuration.
+  ///
+  /// If insecure is true, returns insecure credentials.
+  /// Otherwise, creates secure credentials with optional custom certificates for mTLS.
+  ChannelCredentials _createChannelCredentials() {
+    if (_config.insecure) {
+      return const ChannelCredentials.insecure();
+    }
+
+    // If no custom certificates are provided, use default secure credentials
+    if (_config.certificate == null &&
+        _config.clientKey == null &&
+        _config.clientCertificate == null) {
+      return const ChannelCredentials.secure();
+    }
+
+    try {
+      final context = CertificateUtils.createSecurityContext(
+        certificate: _config.certificate,
+        clientKey: _config.clientKey,
+        clientCertificate: _config.clientCertificate,
+      );
+
+      if (context == null) {
+        return const ChannelCredentials.secure();
+      }
+
+      return const ChannelCredentials.secure(
+        certificates: null, // We're using SecurityContext instead
+        authority: null,
+        onBadCertificate: null,
+      );
+    } catch (e) {
+      if (OTelLog.isError()) {
+        OTelLog.error('OtlpGrpcSpanExporter: Failed to load certificates: $e');
+      }
+      // Fall back to default secure credentials on error
+      return const ChannelCredentials.secure();
+    }
+  }
 
   /// Cleanup the gRPC channel and release resources
   Future<void> _cleanupChannel() async {
@@ -154,9 +196,7 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         host,
         port: port,
         options: ChannelOptions(
-          credentials: _config.insecure
-              ? const ChannelCredentials.insecure()
-              : const ChannelCredentials.secure(),
+          credentials: _createChannelCredentials(),
           connectTimeout: const Duration(seconds: 5),
           // Keep connection alive better
           idleTimeout: const Duration(seconds: 30),

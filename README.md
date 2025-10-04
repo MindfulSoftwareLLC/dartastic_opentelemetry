@@ -302,15 +302,15 @@ final observableCounter = meter.createObservableCounter(
 
 ## Understanding Metric Types and When to Use Them
 
-| Instrument Type | Use Case | Example |
-|----------------|----------|---------|
-| Counter | Count things that only increase | Request count, completed tasks |
-| UpDownCounter | Count things that can increase or decrease | Active requests, queue size |
-| Histogram | Measure distributions | Request durations, payload sizes |
-| Gauge | Record current value | CPU usage, memory usage |
-| ObservableCounter | Count things that only increase, collected on demand | Total CPU time |
-| ObservableUpDownCounter | Count things that can increase or decrease, collected on demand | Memory usage |
-| ObservableGauge | Record current value, collected on demand | Current temperature |
+| Instrument Type         | Use Case                                                        | Example                          |
+|-------------------------|-----------------------------------------------------------------|----------------------------------|
+| Counter                 | Count things that only increase                                 | Request count, completed tasks   |
+| UpDownCounter           | Count things that can increase or decrease                      | Active requests, queue size      |
+| Histogram               | Measure distributions                                           | Request durations, payload sizes |
+| Gauge                   | Record current value                                            | CPU usage, memory usage          |
+| ObservableCounter       | Count things that only increase, collected on demand            | Total CPU time                   |
+| ObservableUpDownCounter | Count things that can increase or decrease, collected on demand | Memory usage                     |
+| ObservableGauge         | Record current value, collected on demand                       | Current temperature              |
 
 ## Integration with Dartastic/Flutterrific
 

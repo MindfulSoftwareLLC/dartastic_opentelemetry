@@ -1,7 +1,7 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'dart:io';
+import 'certificate_utils.dart';
 
 /// Configuration for the OtlpGrpcSpanExporter.
 ///
@@ -198,24 +198,10 @@ class OtlpGrpcExporterConfig {
 
   static void _validateCertificates(
       String? cert, String? key, String? clientCert) {
-    bool isValidPath(String? path) {
-      if (path == null) return true;
-      if (path.startsWith('test://')) return true;
-      if (path == 'cert' || path == 'key') return true;
-      if (path == 'invalid-cert-path') {
-        throw ArgumentError('Certificate file not found: $path');
-      }
-      return File(path).existsSync();
-    }
-
-    if (!isValidPath(cert)) {
-      throw ArgumentError('Certificate file not found: $cert');
-    }
-    if (!isValidPath(key)) {
-      throw ArgumentError('Client key file not found: $key');
-    }
-    if (!isValidPath(clientCert)) {
-      throw ArgumentError('Client certificate file not found: $clientCert');
-    }
+    CertificateUtils.validateCertificates(
+      certificate: cert,
+      clientKey: key,
+      clientCertificate: clientCert,
+    );
   }
 }

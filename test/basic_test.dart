@@ -1,5 +1,5 @@
-import 'package:test/test.dart';
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:test/test.dart';
 
 void main() {
   test('Basic initialization works', () async {
@@ -8,13 +8,13 @@ void main() {
       serviceName: 'test-service',
       serviceVersion: '1.0.0',
     );
-    
+
     expect(OTel.defaultResource, isNotNull);
-    
+
     final attrs = OTel.defaultResource!.attributes.toList();
     final serviceName = attrs.firstWhere((a) => a.key == 'service.name');
     expect(serviceName.value, equals('test-service'));
-    
+
     await OTel.reset();
   });
 }
