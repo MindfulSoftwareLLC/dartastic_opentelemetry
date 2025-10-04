@@ -6,7 +6,6 @@ import 'dart:typed_data';
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:meta/meta.dart';
-import 'environment/otel_env.dart';
 
 /// Main entry point for the OpenTelemetry SDK.
 ///
@@ -114,16 +113,23 @@ class OTel {
         otelSDKFactoryFactoryFunction,
   }) async {
     // Apply environment variables only if parameters are not provided
-    final envServiceName = serviceName == null ? OTelEnv.getServiceConfig()['serviceName'] as String? : null;
-    final envServiceVersion = serviceVersion == null ? OTelEnv.getServiceConfig()['serviceVersion'] as String? : null;
-    
+    final envServiceName = serviceName == null
+        ? OTelEnv.getServiceConfig()['serviceName'] as String?
+        : null;
+    final envServiceVersion = serviceVersion == null
+        ? OTelEnv.getServiceConfig()['serviceVersion'] as String?
+        : null;
+
     serviceName ??= envServiceName;
     serviceVersion ??= envServiceVersion;
-    
-    final otlpConfig = (endpoint == null || secure == null) ? OTelEnv.getOtlpConfig(signal: 'traces') : <String, dynamic>{};
-    final envEndpoint = endpoint == null ? otlpConfig['endpoint'] as String? : null;
+
+    final otlpConfig = (endpoint == null || secure == null)
+        ? OTelEnv.getOtlpConfig(signal: 'traces')
+        : <String, dynamic>{};
+    final envEndpoint =
+        endpoint == null ? otlpConfig['endpoint'] as String? : null;
     final envInsecure = secure == null ? otlpConfig['insecure'] as bool? : null;
-    
+
     endpoint ??= envEndpoint;
     if (secure == null) {
       if (envInsecure != null) {
@@ -132,24 +138,33 @@ class OTel {
         secure = true;
       }
     }
-    
+
     // Apply defaults if still null
     serviceName ??= defaultServiceName;
     serviceVersion ??= '1.0.0';
     endpoint ??= defaultEndpoint;
     // secure is guaranteed non-null from above
-    
+
     // Log environment variable usage
     if (OTelLog.isDebug()) {
-      if (envServiceName != null) OTelLog.debug('Using service name from environment: $serviceName');
-      if (envServiceVersion != null) OTelLog.debug('Using service version from environment: $serviceVersion');
-      if (envEndpoint != null) OTelLog.debug('Using endpoint from environment: $endpoint');
-      if (envInsecure != null) OTelLog.debug('Using insecure setting from environment: $envInsecure');
+      if (envServiceName != null) {
+        OTelLog.debug('Using service name from environment: $serviceName');
+      }
+      if (envServiceVersion != null) {
+        OTelLog.debug(
+            'Using service version from environment: $serviceVersion');
+      }
+      if (envEndpoint != null) {
+        OTelLog.debug('Using endpoint from environment: $endpoint');
+      }
+      if (envInsecure != null) {
+        OTelLog.debug('Using insecure setting from environment: $envInsecure');
+      }
     }
-    
+
     // Get otlpConfig for exporter creation later
     final otlpConfigForExporter = OTelEnv.getOtlpConfig(signal: 'traces');
-    
+
     // Get resource attributes from environment and merge with provided ones
     final envResourceAttrs = OTelEnv.getResourceAttributes();
     if (envResourceAttrs.isNotEmpty) {
@@ -168,7 +183,7 @@ class OTel {
       throw StateError(
           'OTelAPI can only be initialized once. If you need multiple endpoints or service names or versions create a named TracerProvider');
     }
-    
+
     if (endpoint.isEmpty) {
       throw ArgumentError(
           'endpoint must not be the empty string.'); //TODO validate url
@@ -177,8 +192,7 @@ class OTel {
       throw ArgumentError('serviceName must not be the empty string.');
     }
     if (serviceVersion.isEmpty) {
-      throw ArgumentError(
-          'serviceVersion must not be the empty string.');
+      throw ArgumentError('serviceVersion must not be the empty string.');
     }
     final factoryFactory =
         oTelFactoryCreationFunction ?? otelSDKFactoryFactoryFunction;
@@ -283,11 +297,12 @@ class OTel {
     if (spanProcessor == null) {
       // Determine which exporter to create based on environment or defaults
       final exporterType = OTelEnv.getExporter(signal: 'traces') ?? 'otlp';
-      
+
       if (exporterType != 'none') {
         // Determine protocol - default to http/protobuf if not set
-        final protocol = otlpConfigForExporter['protocol'] as String? ?? 'http/protobuf';
-        
+        final protocol =
+            otlpConfigForExporter['protocol'] as String? ?? 'http/protobuf';
+
         SpanExporter exporter;
         if (exporterType == 'console') {
           exporter = ConsoleExporter();
@@ -298,9 +313,16 @@ class OTel {
               OtlpGrpcExporterConfig(
                 endpoint: endpoint,
                 insecure: !secure,
-                headers: otlpConfigForExporter['headers'] as Map<String, String>? ?? {},
-                timeout: otlpConfigForExporter['timeout'] as Duration? ?? const Duration(seconds: 10),
+                headers:
+                    otlpConfigForExporter['headers'] as Map<String, String>? ??
+                        {},
+                timeout: otlpConfigForExporter['timeout'] as Duration? ??
+                    const Duration(seconds: 10),
                 compression: otlpConfigForExporter['compression'] == 'gzip',
+                certificate: otlpConfigForExporter['certificate'] as String?,
+                clientKey: otlpConfigForExporter['clientKey'] as String?,
+                clientCertificate:
+                    otlpConfigForExporter['clientCertificate'] as String?,
               ),
             );
           } else {
@@ -313,9 +335,16 @@ class OTel {
             exporter = OtlpHttpSpanExporter(
               OtlpHttpExporterConfig(
                 endpoint: httpEndpoint,
-                headers: otlpConfigForExporter['headers'] as Map<String, String>? ?? {},
-                timeout: otlpConfigForExporter['timeout'] as Duration? ?? const Duration(seconds: 10),
+                headers:
+                    otlpConfigForExporter['headers'] as Map<String, String>? ??
+                        {},
+                timeout: otlpConfigForExporter['timeout'] as Duration? ??
+                    const Duration(seconds: 10),
                 compression: otlpConfigForExporter['compression'] == 'gzip',
+                certificate: otlpConfigForExporter['certificate'] as String?,
+                clientKey: otlpConfigForExporter['clientKey'] as String?,
+                clientCertificate:
+                    otlpConfigForExporter['clientCertificate'] as String?,
               ),
             );
           }
@@ -331,7 +360,9 @@ class OTel {
 
         // Only add ConsoleExporter in debug mode or if explicitly requested
         final exporters = <SpanExporter>[exporter];
-        if (OTelLog.isDebug() || const bool.fromEnvironment('OTEL_CONSOLE_EXPORTER', defaultValue: false)) {
+        if (OTelLog.isDebug() ||
+            const bool.fromEnvironment('OTEL_CONSOLE_EXPORTER',
+                defaultValue: false)) {
           exporters.add(ConsoleExporter());
         }
 
@@ -1037,7 +1068,7 @@ class OTel {
     // Reset OTelFactory
     OTelFactory.otelFactory = null;
     if (OTelLog.isDebug()) OTelLog.debug('OTel: Reset OTelFactory');
-    
+
     // Clear test environment to prevent test pollution
     EnvironmentService.instance.clearTestEnvironment();
     if (OTelLog.isDebug()) OTelLog.debug('OTel: Cleared test environment');

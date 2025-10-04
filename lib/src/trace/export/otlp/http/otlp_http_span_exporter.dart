@@ -2,6 +2,7 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -9,10 +10,12 @@ import 'package:dartastic_opentelemetry/src/trace/span.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
     show OTelLog;
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 
 import '../../../../util/zip/gzip.dart';
 import '../../../span_logger.dart';
 import '../../span_exporter.dart';
+import '../certificate_utils.dart';
 import '../span_transformer.dart';
 import 'otlp_http_span_exporter_config.dart';
 
@@ -27,13 +30,54 @@ class OtlpHttpSpanExporter implements SpanExporter {
   bool _isShutdown = false;
   final Random _random = Random();
   final List<Future<void>> _pendingExports = [];
+  late final http.Client _client;
 
   /// Creates a new OTLP HTTP span exporter with the specified configuration.
   /// If no configuration is provided, default settings will be used.
   ///
   /// @param config Optional configuration for the exporter
   OtlpHttpSpanExporter([OtlpHttpExporterConfig? config])
-      : _config = config ?? OtlpHttpExporterConfig();
+      : _config = config ?? OtlpHttpExporterConfig() {
+    _client = _createHttpClient();
+  }
+
+  /// Creates an HTTP client with custom certificates if configured.
+  ///
+  /// This method creates an HttpClient with a SecurityContext configured
+  /// with any custom certificates specified in the exporter configuration.
+  http.Client _createHttpClient() {
+    // If no certificates are configured, use the default client
+    if (_config.certificate == null &&
+        _config.clientKey == null &&
+        _config.clientCertificate == null) {
+      return http.Client();
+    }
+
+    try {
+      final context = CertificateUtils.createSecurityContext(
+        certificate: _config.certificate,
+        clientKey: _config.clientKey,
+        clientCertificate: _config.clientCertificate,
+      );
+
+      if (context == null) {
+        return http.Client();
+      }
+
+      // Create an HttpClient with the custom SecurityContext
+      final httpClient = HttpClient(context: context);
+
+      // Wrap in IOClient for use with the http package
+      return IOClient(httpClient);
+    } catch (e) {
+      if (OTelLog.isError()) {
+        OTelLog.error(
+            'OtlpHttpSpanExporter: Failed to create HTTP client with certificates: $e');
+      }
+      // Fall back to default client on error
+      return http.Client();
+    }
+  }
 
   Duration _calculateJitteredDelay(int retries) {
     final baseMs = _config.baseDelay.inMilliseconds;
@@ -108,7 +152,7 @@ class OtlpHttpSpanExporter implements SpanExporter {
     }
 
     try {
-      final http.Response response = await http
+      final http.Response response = await _client
           .post(
             Uri.parse(endpointUrl),
             headers: headers,
@@ -368,6 +412,9 @@ class OtlpHttpSpanExporter implements SpanExporter {
         }
       }
     }
+
+    // Close the HTTP client to release resources
+    _client.close();
 
     if (OTelLog.isDebug()) {
       OTelLog.debug('OtlpHttpSpanExporter: Shutdown complete');

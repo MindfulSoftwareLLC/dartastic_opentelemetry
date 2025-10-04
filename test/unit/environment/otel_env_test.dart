@@ -61,7 +61,8 @@ void main() {
 
       test('should parse numeric resource attributes', () {
         EnvironmentService.instance.setupTestEnvironment({
-          'OTEL_RESOURCE_ATTRIBUTES': 'port=8080,timeout=30.5,enabled=true,disabled=false',
+          'OTEL_RESOURCE_ATTRIBUTES':
+              'port=8080,timeout=30.5,enabled=true,disabled=false',
         });
 
         final attrs = OTelEnv.getResourceAttributes();
@@ -101,7 +102,8 @@ void main() {
         final config = OTelEnv.getOtlpConfig();
         expect(config['endpoint'], equals('https://collector:4317'));
         expect(config['protocol'], equals('grpc'));
-        expect(config['headers'], equals({'api-key': 'secret', 'tenant': 'test'}));
+        expect(
+            config['headers'], equals({'api-key': 'secret', 'tenant': 'test'}));
         expect(config['insecure'], equals(true));
         expect(config['timeout'], equals(const Duration(milliseconds: 5000)));
         expect(config['compression'], equals('gzip'));
@@ -149,11 +151,13 @@ void main() {
         });
 
         final config = OTelEnv.getOtlpConfig();
-        expect(config['headers'], equals({
-          'key1': 'value1',
-          'key2': 'value2',
-          'key3': 'value3',
-        }));
+        expect(
+            config['headers'],
+            equals({
+              'key1': 'value1',
+              'key2': 'value2',
+              'key3': 'value3',
+            }));
       });
 
       test('should parse boolean insecure values correctly', () {
@@ -195,6 +199,47 @@ void main() {
 
         final config = OTelEnv.getOtlpConfig();
         expect(config.containsKey('timeout'), isFalse);
+      });
+
+      test('should read certificate configuration', () {
+        EnvironmentService.instance.setupTestEnvironment({
+          'OTEL_EXPORTER_OTLP_CERTIFICATE': '/path/to/cert.pem',
+          'OTEL_EXPORTER_OTLP_CLIENT_KEY': '/path/to/client.key',
+          'OTEL_EXPORTER_OTLP_CLIENT_CERTIFICATE': '/path/to/client.pem',
+        });
+
+        final config = OTelEnv.getOtlpConfig();
+        expect(config['certificate'], equals('/path/to/cert.pem'));
+        expect(config['clientKey'], equals('/path/to/client.key'));
+        expect(config['clientCertificate'], equals('/path/to/client.pem'));
+      });
+
+      test('should prioritize signal-specific certificate config over general',
+          () {
+        EnvironmentService.instance.setupTestEnvironment({
+          'OTEL_EXPORTER_OTLP_CERTIFICATE': '/path/to/general-cert.pem',
+          'OTEL_EXPORTER_OTLP_TRACES_CERTIFICATE': '/path/to/traces-cert.pem',
+          'OTEL_EXPORTER_OTLP_CLIENT_KEY': '/path/to/general-client.key',
+          'OTEL_EXPORTER_OTLP_TRACES_CLIENT_KEY': '/path/to/traces-client.key',
+          'OTEL_EXPORTER_OTLP_CLIENT_CERTIFICATE':
+              '/path/to/general-client.pem',
+          'OTEL_EXPORTER_OTLP_TRACES_CLIENT_CERTIFICATE':
+              '/path/to/traces-client.pem',
+        });
+
+        final tracesConfig = OTelEnv.getOtlpConfig(signal: 'traces');
+        expect(tracesConfig['certificate'], equals('/path/to/traces-cert.pem'));
+        expect(tracesConfig['clientKey'], equals('/path/to/traces-client.key'));
+        expect(tracesConfig['clientCertificate'],
+            equals('/path/to/traces-client.pem'));
+
+        final metricsConfig = OTelEnv.getOtlpConfig(signal: 'metrics');
+        expect(
+            metricsConfig['certificate'], equals('/path/to/general-cert.pem'));
+        expect(
+            metricsConfig['clientKey'], equals('/path/to/general-client.key'));
+        expect(metricsConfig['clientCertificate'],
+            equals('/path/to/general-client.pem'));
       });
     });
 
@@ -343,7 +388,8 @@ void main() {
       await OTel.reset();
     });
 
-    test('should use environment variables for service configuration', () async {
+    test('should use environment variables for service configuration',
+        () async {
       EnvironmentService.instance.setupTestEnvironment({
         'OTEL_SERVICE_NAME': 'env-service',
         'OTEL_SERVICE_VERSION': '2.0.0',
@@ -354,12 +400,14 @@ void main() {
       expect(OTel.defaultResource, isNotNull);
       final attrs = OTel.defaultResource!.attributes.toList();
       final serviceName = attrs.firstWhere((a) => a.key == 'service.name');
-      final serviceVersion = attrs.firstWhere((a) => a.key == 'service.version');
+      final serviceVersion =
+          attrs.firstWhere((a) => a.key == 'service.version');
       expect(serviceName.value, equals('env-service'));
       expect(serviceVersion.value, equals('2.0.0'));
     });
 
-    test('should use environment variables for endpoint configuration', () async {
+    test('should use environment variables for endpoint configuration',
+        () async {
       EnvironmentService.instance.setupTestEnvironment({
         'OTEL_SERVICE_NAME': 'test-service',
         'OTEL_SERVICE_VERSION': '1.0.0',
@@ -373,7 +421,8 @@ void main() {
       expect(OTel.defaultResource, isNotNull);
     });
 
-    test('should merge environment resource attributes with provided ones', () async {
+    test('should merge environment resource attributes with provided ones',
+        () async {
       EnvironmentService.instance.setupTestEnvironment({
         'OTEL_SERVICE_NAME': 'test-service',
         'OTEL_SERVICE_VERSION': '1.0.0',
@@ -389,15 +438,15 @@ void main() {
 
       expect(OTel.defaultResource, isNotNull);
       final attrs = OTel.defaultResource!.attributes.toList();
-      
+
       // Check that provided attributes override environment attributes
       final envKey1 = attrs.firstWhere((a) => a.key == 'env.key1');
       expect(envKey1.value, equals('override.value'));
-      
+
       // Check that non-conflicting env attributes are preserved
       final envKey2 = attrs.firstWhere((a) => a.key == 'env.key2');
       expect(envKey2.value, equals('env.value2'));
-      
+
       // Check that provided attributes are included
       final providedKey = attrs.firstWhere((a) => a.key == 'provided.key');
       expect(providedKey.value, equals('provided.value'));
@@ -443,6 +492,56 @@ void main() {
       await OTel.initialize();
 
       // The SDK should create a console exporter
+      final tracerProvider = OTel.tracerProvider();
+      expect(tracerProvider, isNotNull);
+    });
+
+    test('should parse OTLP headers from environment', () async {
+      EnvironmentService.instance.setupTestEnvironment({
+        'OTEL_SERVICE_NAME': 'test-service',
+        'OTEL_SERVICE_VERSION': '1.0.0',
+        'OTEL_EXPORTER_OTLP_ENDPOINT': 'https://collector:4317',
+        'OTEL_EXPORTER_OTLP_HEADERS': 'api-key=secret123,tenant=production',
+        'OTEL_EXPORTER_OTLP_PROTOCOL': 'grpc',
+      });
+
+      // Verify headers are parsed correctly before initialization
+      final config = OTelEnv.getOtlpConfig(signal: 'traces');
+      final headers = config['headers'] as Map<String, String>?;
+
+      expect(headers, isNotNull);
+      expect(headers!['api-key'], equals('secret123'));
+      expect(headers['tenant'], equals('production'));
+
+      await OTel.initialize();
+
+      // Verify the SDK initialized successfully with the configuration
+      final tracerProvider = OTel.tracerProvider();
+      expect(tracerProvider, isNotNull);
+    });
+
+    test('should read certificate configuration from environment', () async {
+      EnvironmentService.instance.setupTestEnvironment({
+        'OTEL_SERVICE_NAME': 'test-service',
+        'OTEL_SERVICE_VERSION': '1.0.0',
+        'OTEL_EXPORTER_OTLP_ENDPOINT': 'https://collector:4317',
+        'OTEL_EXPORTER_OTLP_CERTIFICATE': 'test://cert.pem',
+        'OTEL_EXPORTER_OTLP_CLIENT_KEY': 'test://client.key',
+        'OTEL_EXPORTER_OTLP_CLIENT_CERTIFICATE': 'test://client.pem',
+        'OTEL_EXPORTER_OTLP_PROTOCOL': 'grpc',
+        'OTEL_TRACES_EXPORTER': 'otlp',
+      });
+
+      // Verify certificate paths are read correctly before initialization
+      final config = OTelEnv.getOtlpConfig(signal: 'traces');
+
+      expect(config['certificate'], equals('test://cert.pem'));
+      expect(config['clientKey'], equals('test://client.key'));
+      expect(config['clientCertificate'], equals('test://client.pem'));
+
+      await OTel.initialize();
+
+      // Verify the SDK initialized successfully with the certificate configuration
       final tracerProvider = OTel.tracerProvider();
       expect(tracerProvider, isNotNull);
     });

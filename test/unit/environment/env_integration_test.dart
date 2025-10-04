@@ -9,7 +9,8 @@ void main() {
       EnvironmentService.instance.clearTestEnvironment();
     });
 
-    test('initialize with explicit parameters ignores environment variables', () async {
+    test('initialize with explicit parameters ignores environment variables',
+        () async {
       // Set environment variables
       EnvironmentService.instance.setupTestEnvironment({
         'OTEL_SERVICE_NAME': 'env-service',
@@ -27,13 +28,16 @@ void main() {
       // Should use explicit values, not environment values
       final attrs = OTel.defaultResource!.attributes.toList();
       final serviceName = attrs.firstWhere((a) => a.key == 'service.name');
-      final serviceVersion = attrs.firstWhere((a) => a.key == 'service.version');
-      
+      final serviceVersion =
+          attrs.firstWhere((a) => a.key == 'service.version');
+
       expect(serviceName.value, equals('explicit-service'));
       expect(serviceVersion.value, equals('1.2.3'));
     });
 
-    test('initialize with default values as explicit parameters ignores environment variables', () async {
+    test(
+        'initialize with default values as explicit parameters ignores environment variables',
+        () async {
       // Set environment variables
       EnvironmentService.instance.setupTestEnvironment({
         'OTEL_SERVICE_NAME': 'env-service',
@@ -49,8 +53,9 @@ void main() {
       // Should use explicit values (even though they match defaults), not environment values
       final attrs = OTel.defaultResource!.attributes.toList();
       final serviceName = attrs.firstWhere((a) => a.key == 'service.name');
-      final serviceVersion = attrs.firstWhere((a) => a.key == 'service.version');
-      
+      final serviceVersion =
+          attrs.firstWhere((a) => a.key == 'service.version');
+
       expect(serviceName.value, equals('@dart/dartastic_opentelemetry'));
       expect(serviceVersion.value, equals('1.0.0'));
     });
@@ -68,8 +73,9 @@ void main() {
       // Should use environment values
       final attrs = OTel.defaultResource!.attributes.toList();
       final serviceName = attrs.firstWhere((a) => a.key == 'service.name');
-      final serviceVersion = attrs.firstWhere((a) => a.key == 'service.version');
-      
+      final serviceVersion =
+          attrs.firstWhere((a) => a.key == 'service.version');
+
       expect(serviceName.value, equals('env-service'));
       expect(serviceVersion.value, equals('9.9.9'));
     });
@@ -83,18 +89,19 @@ void main() {
       // Should use default values
       final attrs = OTel.defaultResource!.attributes.toList();
       final serviceName = attrs.firstWhere((a) => a.key == 'service.name');
-      final serviceVersion = attrs.firstWhere((a) => a.key == 'service.version');
-      
+      final serviceVersion =
+          attrs.firstWhere((a) => a.key == 'service.version');
+
       expect(serviceName.value, equals('@dart/dartastic_opentelemetry'));
       expect(serviceVersion.value, equals('1.0.0'));
     });
 
     test('basic factory test still works', () async {
       await OTel.initialize(serviceName: 'test-service');
-      
+
       final tracer = OTel.tracer();
       expect(tracer, isNotNull);
-      
+
       final span = tracer.startSpan('test');
       expect(span, isNotNull);
       span.end();

@@ -8,3 +8,5 @@
 /test/testing_utils/*.json.fallback
 /coverage/
 /test.txt
+/.run/
+/dartastic_opentelemetry.iml
