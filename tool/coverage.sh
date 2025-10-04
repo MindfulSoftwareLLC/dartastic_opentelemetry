@@ -3,6 +3,15 @@
 
 set -e  # Exit on any error
 
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Source the otelcol download script
+source "$SCRIPT_DIR/download_otelcol.sh"
+
+# Download otelcol if needed
+download_otelcol
+
 echo "Starting test coverage collection..."
 # Set environment variables to enable logging during tests
 export OTEL_LOG_LEVEL=debug

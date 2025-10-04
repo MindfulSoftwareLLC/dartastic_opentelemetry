@@ -35,7 +35,9 @@ jobs:
       - name: Install dependencies
         run: dart pub get
       - name: Run tests
-        run: ./tool/test.sh
+        run: |
+          chmod +x tool/test.sh
+          ./tool/test.sh
       
   coverage:
     runs-on: ubuntu-latest
@@ -49,7 +51,9 @@ jobs:
       - name: Activate coverage
         run: dart pub global activate coverage
       - name: Run tests with coverage
-        run: dart pub global run coverage:test_with_coverage
+        run: |
+          chmod +x tool/coverage.sh
+          ./tool/coverage.sh
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4
         with:
