@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+- Added support for `OTEL_EXPORTER_OTLP_HEADERS` for http and grpc exporters for trace and metrics
+- Added support for all other exporter env vars
+- Documented OTEL_* env var usage, added grafana examples
+- Certificates env vars may not work yet tests skipped.  
+
 ## [0.8.7] - 2025-09-29
 - Upgraded to api 0.8.7. Upgraded all dependencies including grpc to 4.1
 - Respected all OTel env vars when no explicit values are specified, uses OTEL_CONSOLE_EXPORTER 
