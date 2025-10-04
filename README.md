@@ -6,7 +6,7 @@
 Dartastic is an [OpenTelemetry](https://opentelemetry.io/) SDK to add standard observability to Dart applications.
 Dartastic can be used with any OTel backend, it's standards-compliant.
 
-Flutter developers should use the [Flutterific OTel SDK](https://pub.dev/packages/flutterrific_otel_sdk) which builds on top of Dartastic OTel.
+Flutter developers should use the [Flutterific OpenTelemetry SDK](https://pub.dev/packages/flutterrific_opentelemetry/) which builds on top of Dartastic OTel.
 
 The Dartastic and Flutterrific OTel SDK has been proposed for [Donation to the CNCF](https://github.com/open-telemetry/community/issues/2718).
 We need YOU to grow the Dartastic community and make this SDK the standard for Flutter and Dart OTel.
