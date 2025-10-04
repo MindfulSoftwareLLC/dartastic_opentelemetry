@@ -282,7 +282,21 @@ class OTelEnv {
         break;
     }
     if (headers != null) {
-      config['headers'] = _parseHeaders(headers);
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('OTelEnv: Parsing $signal headers from env: $headers');
+      }
+      final parsedHeaders = _parseHeaders(headers);
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('OTelEnv: Parsed ${parsedHeaders.length} header(s)');
+        parsedHeaders.forEach((key, value) {
+          if (key.toLowerCase() == 'authorization') {
+            OTelLog.debug('  $key: [REDACTED - length: ${value.length}]');
+          } else {
+            OTelLog.debug('  $key: $value');
+          }
+        });
+      }
+      config['headers'] = parsedHeaders;
     }
 
     // Get insecure setting (signal-specific takes precedence)
@@ -484,14 +498,18 @@ class OTelEnv {
   /// Parse headers from the environment variable format.
   ///
   /// Headers are expected in the format: key1=value1,key2=value2
+  /// Note: Header values can contain '=' characters (e.g., base64), so we only
+  /// split on the first '=' for each pair.
   static Map<String, String> _parseHeaders(String headerStr) {
     final headers = <String, String>{};
 
     final pairs = headerStr.split(',');
     for (final pair in pairs) {
-      final parts = pair.split('=');
-      if (parts.length == 2) {
-        headers[parts[0].trim()] = parts[1].trim();
+      final equalIndex = pair.indexOf('=');
+      if (equalIndex > 0 && equalIndex < pair.length - 1) {
+        final key = pair.substring(0, equalIndex).trim();
+        final value = pair.substring(equalIndex + 1).trim();
+        headers[key] = value;
       }
     }
 

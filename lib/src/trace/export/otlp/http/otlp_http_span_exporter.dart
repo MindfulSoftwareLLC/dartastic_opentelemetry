@@ -38,6 +38,17 @@ class OtlpHttpSpanExporter implements SpanExporter {
   /// @param config Optional configuration for the exporter
   OtlpHttpSpanExporter([OtlpHttpExporterConfig? config])
       : _config = config ?? OtlpHttpExporterConfig() {
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('OtlpHttpSpanExporter: Created with endpoint: ${_config.endpoint}');
+      OTelLog.debug('OtlpHttpSpanExporter: Configured headers count: ${_config.headers.length}');
+      _config.headers.forEach((key, value) {
+        if (key.toLowerCase() == 'authorization') {
+          OTelLog.debug('  $key: [REDACTED - length: ${value.length}]');
+        } else {
+          OTelLog.debug('  $key: $value');
+        }
+      });
+    }
     _client = _createHttpClient();
   }
 
@@ -149,6 +160,15 @@ class OtlpHttpSpanExporter implements SpanExporter {
     if (OTelLog.isDebug()) {
       OTelLog.debug(
           'OtlpHttpSpanExporter: Sending export request to $endpointUrl');
+      OTelLog.debug('OtlpHttpSpanExporter: Request headers:');
+      headers.forEach((key, value) {
+        // Mask authorization header value for security, but show it exists
+        if (key.toLowerCase() == 'authorization') {
+          OTelLog.debug('  $key: [REDACTED - length: ${value.length}]');
+        } else {
+          OTelLog.debug('  $key: $value');
+        }
+      });
     }
 
     try {

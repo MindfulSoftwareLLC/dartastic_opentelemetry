@@ -22,6 +22,7 @@ class CertificateUtils {
     String? clientCertificate,
 
     /// Whether to include system-trusted root certificates. Defaults to true.
+    /// Set to false when using self-signed certs
     bool withTrustedRoots = true,
   }) {
     // If no certificates are configured, return null to use default client
@@ -40,10 +41,10 @@ class CertificateUtils {
               'CertificateUtils: Using test certificate: $certificate');
         }
       } else {
-        final certFile = File(certificate);
+          final certFile = File(certificate);
         context.setTrustedCertificatesBytes(certFile.readAsBytesSync());
-        if (OTelLog.isDebug()) {
-          OTelLog.debug(
+          if (OTelLog.isDebug()) {
+            OTelLog.debug(
               'CertificateUtils: Loaded CA certificate from $certificate');
         }
       }
@@ -59,13 +60,13 @@ class CertificateUtils {
               'CertificateUtils: Using test client certificate and key');
         }
       } else {
-        final certFile = File(clientCertificate);
-        final keyFile = File(clientKey);
-        context.useCertificateChainBytes(certFile.readAsBytesSync());
-        context.usePrivateKeyBytes(keyFile.readAsBytesSync());
-        if (OTelLog.isDebug()) {
-          OTelLog.debug(
-              'CertificateUtils: Loaded client certificate from $clientCertificate and key from $clientKey');
+          final certFile = File(clientCertificate);
+          final keyFile = File(clientKey);
+          context.useCertificateChainBytes(certFile.readAsBytesSync());
+          context.usePrivateKeyBytes(keyFile.readAsBytesSync());
+          if (OTelLog.isDebug()) {
+            OTelLog.debug(
+                'CertificateUtils: Loaded client certificate from $clientCertificate and key from $clientKey');
         }
       }
     }
