@@ -73,7 +73,7 @@ the Flutter experts with support from [SEMplicity, Inc.](https://semplicityinc.c
 Include this in your pubspec.yaml:
 ```
 dependencies:
-  dartastic_opentelemetry: ^0.9.0
+  dartastic_opentelemetry: ^0.9.2
 ```
 
 The entrypoint to the SDK is the `OTel` class.  `OTel` has static "factory" methods for all
