@@ -1,7 +1,7 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'dart:io' as io;
+import 'environment_service.dart' show EnvironmentServiceInterface;
 
 /// Service for accessing environment variables in a consistent manner.
 ///
@@ -11,7 +11,7 @@ import 'dart:io' as io;
 ///
 /// The service follows the singleton pattern with a global instance
 /// that can be accessed via [EnvironmentService.instance].
-class EnvironmentService {
+class EnvironmentService implements EnvironmentServiceInterface {
   static final EnvironmentService _instance = EnvironmentService._();
 
   /// The singleton instance of the EnvironmentService.
@@ -29,11 +29,12 @@ class EnvironmentService {
   ///
   /// @param key The name of the environment variable to retrieve
   /// @return The value of the environment variable, or null if not found
+  @override
   String? getValue(String key) {
     if (_useTestEnvironment) {
       return _testEnvironment[key];
     }
-    return io.Platform.environment[key];
+    return String.fromEnvironment(key);
   }
 
   /// Sets up a test environment for unit testing.
@@ -42,6 +43,7 @@ class EnvironmentService {
   /// purposes without modifying the actual system environment.
   ///
   /// @param testEnv A map of environment variable names to their mock values
+  @override
   void setupTestEnvironment(Map<String, String> testEnv) {
     _testEnvironment = Map.from(testEnv);
     _useTestEnvironment = true;
@@ -51,6 +53,7 @@ class EnvironmentService {
   ///
   /// This should be called after tests that use setupTestEnvironment to
   /// ensure the test environment doesn't affect other tests.
+  @override
   void clearTestEnvironment() {
     _testEnvironment.clear();
     _useTestEnvironment = false;

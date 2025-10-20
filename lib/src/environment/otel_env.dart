@@ -2,7 +2,7 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
-import 'environment_service.dart';
+import 'environment_service/environment_service.dart';
 
 /// Utility class for handling OpenTelemetry environment variables.
 ///
