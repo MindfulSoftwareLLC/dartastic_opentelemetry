@@ -34,7 +34,13 @@ class EnvironmentService implements EnvironmentServiceInterface {
     if (_useTestEnvironment) {
       return _testEnvironment[key];
     }
-    return String.fromEnvironment(key);
+    // MEMO(@YumNumm): String.fromEnvironment requires the key to be a compile-time constant.
+    // Since the key is a runtime value here, String.fromEnvironment cannot be used.
+    // In web environments, there's no runtime environment variable support,
+    // so we return null for non-test scenarios.
+
+    // return String.fromEnvironment(key);
+    return null;
   }
 
   /// Sets up a test environment for unit testing.
