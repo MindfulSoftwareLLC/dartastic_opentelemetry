@@ -3,7 +3,7 @@
 
 import 'dart:io' as io;
 
-import 'package:dartastic_opentelemetry/src/environment/environment_service.dart';
+import 'package:dartastic_opentelemetry/src/environment/environment_service/environment_service.dart';
 import 'package:dartastic_opentelemetry/src/otel.dart';
 import 'package:dartastic_opentelemetry/src/resource/resource.dart';
 import 'package:dartastic_opentelemetry/src/resource/resource_detector.dart';
