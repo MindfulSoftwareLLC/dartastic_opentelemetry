@@ -5,7 +5,7 @@ import 'dart:io' as io;
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
-import '../environment/environment_service.dart';
+import '../environment/environment_service/environment_service.dart';
 import 'resource.dart';
 import 'web_detector.dart';
 
