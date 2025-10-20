@@ -2,7 +2,7 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 export 'environment_service_io.dart'
-    if (dart.library.js_interop) 'environment_service_web.dart' ;
+    if (dart.library.js_interop) 'environment_service_web.dart';
 
 /// Interface for accessing environment variables in a consistent manner.
 ///
