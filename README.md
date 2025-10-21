@@ -11,7 +11,7 @@ Flutter developers should use the [Flutterific OpenTelemetry SDK](https://pub.de
 The Dartastic and Flutterrific OTel SDK has been proposed for [Donation to the CNCF](https://github.com/open-telemetry/community/issues/2718).
 We need YOU to grow the Dartastic community and make this SDK the standard for Flutter and Dart OTel.
 Please use it, submit issues, support us with stars and contribute PRs. We are looking for contributors and maintainers.
-Also, please support the development by subscribing at [Dartastic.io][https://dartastic.io] and gain early access to the
+Also, please support the development by subscribing at [Dartastic.io](https://dartastic.io) and gain early access to the
 Flutter SDK and the Wondrous Demo.
 
 [Dartastic.io](https://dartastic.io) provides an OpenTelemetry support, training, consulting
