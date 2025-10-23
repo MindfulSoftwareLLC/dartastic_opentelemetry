@@ -3,7 +3,6 @@
 
 import 'dart:io' as io;
 
-import 'package:dartastic_opentelemetry/src/environment/environment_service.dart';
 import 'package:dartastic_opentelemetry/src/otel.dart';
 import 'package:dartastic_opentelemetry/src/resource/resource.dart';
 import 'package:dartastic_opentelemetry/src/resource/resource_detector.dart';
@@ -47,40 +46,8 @@ void main() {
       expect(attrs['os.version']?.value, isNotEmpty);
     });
 
-    test('EnvVarResourceDetector handles OTEL_RESOURCE_ATTRIBUTES', () async {
-      final envService = EnvironmentService.instance;
-      envService.setupTestEnvironment({
-        'OTEL_RESOURCE_ATTRIBUTES':
-            'key1=value1,key2=value2,key3=value%20with%20spaces'
-      });
-
-      final detector = EnvVarResourceDetector(envService);
-      final resource = await detector.detect();
-      final attrs = resource.attributes.toMap();
-
-      expect(attrs['key1']?.value, equals('value1'));
-      expect(attrs['key2']?.value, equals('value2'));
-      expect(attrs['key3']?.value, equals('value with spaces'));
-
-      // Cleanup
-      envService.clearTestEnvironment();
-    });
-
-    test('EnvVarResourceDetector handles escaped commas', () async {
-      final envService = EnvironmentService.instance;
-      envService.setupTestEnvironment(
-          {'OTEL_RESOURCE_ATTRIBUTES': 'key1=value1\\,part2,key2=value2'});
-
-      final detector = EnvVarResourceDetector(envService);
-      final resource = await detector.detect();
-      final attrs = resource.attributes.toMap();
-
-      expect(attrs['key1']?.value, equals('value1,part2'));
-      expect(attrs['key2']?.value, equals('value2'));
-
-      // Cleanup
-      envService.clearTestEnvironment();
-    });
+    // OTEL_RESOURCE_ATTRIBUTES tests moved to test/integration/resource_attributes_test.dart
+    // These tests now use real environment variables instead of setupTestEnvironment()
 
     test('CompositeResourceDetector combines multiple detectors', () async {
       // Skip if not on macOS

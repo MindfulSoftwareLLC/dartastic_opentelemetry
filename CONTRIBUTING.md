@@ -88,7 +88,7 @@ All new code should be covered by tests. We use the `test` package for writing a
 
 - All tests should be in the `test` directory
 - Test files should end with `_test.dart`
-- Run tests with `dart test`
+- Run tests with `./tool/test.sh` and `./tool/test_env_vars.sh`
 
 ### Documentation
 

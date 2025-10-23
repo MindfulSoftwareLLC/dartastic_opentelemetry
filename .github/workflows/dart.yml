@@ -38,6 +38,20 @@ jobs:
         run: |
           chmod +x tool/test.sh
           ./tool/test.sh
+
+  test-env-vars:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 'stable'
+      - name: Install dependencies
+        run: dart pub get
+      - name: Run environment variables test
+        run: |
+          chmod +x tool/test_all_env_vars.sh
+          ./tool/test_all_env_vars.sh
 # TODO - some tests fail in coverage
 #  coverage:
 #    runs-on: ubuntu-latest
