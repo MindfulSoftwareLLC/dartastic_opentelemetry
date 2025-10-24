@@ -47,6 +47,8 @@ There are many ways to contribute to this project:
    ```bash
    ./tool/test.sh
    ```
+   Why not just `dart test`? The unit tests uses a real otel collector for robustness.  
+   The test.sh script downloads the otel collector for the currecnt platform if it hasn't been downloaded before
 4. Run the analyzer:
    ```bash
    dart analyze
