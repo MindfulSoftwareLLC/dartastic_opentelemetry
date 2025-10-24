@@ -15,14 +15,14 @@ void main(List<String> args) {
 
   final format = args[0];
   final envService = EnvironmentService.instance;
-  
+
   // Read ALL supported env vars
   final results = <String, String?>{};
-  
+
   for (final envVar in supportedEnvVars) {
     results[envVar] = envService.getValue(envVar);
   }
-  
+
   if (format == 'json') {
     print(jsonEncode(results));
   } else {

@@ -12,7 +12,8 @@ void main(List<String> args) {
     print('Operations:');
     print('  service          - Get service config');
     print('  resource         - Get resource attributes');
-    print('  otlp [signal]    - Get OTLP config for signal (traces, metrics, logs, or general)');
+    print(
+        '  otlp [signal]    - Get OTLP config for signal (traces, metrics, logs, or general)');
     print('  headers [signal] - Get parsed headers for signal');
     return;
   }
@@ -54,16 +55,16 @@ void _printResourceAttributes() {
 }
 
 void _printOtlpConfig(String? signal) {
-  final config = signal != null 
+  final config = signal != null
       ? OTelEnv.getOtlpConfig(signal: signal)
       : OTelEnv.getOtlpConfig();
-  
+
   // Convert headers map to JSON-serializable format
   if (config['headers'] != null) {
     final headers = config['headers'] as Map<String, String>;
     config['headers'] = headers;
   }
-  
+
   print(jsonEncode(config));
 }
 
@@ -71,7 +72,7 @@ void _printHeaders(String? signal) {
   final config = signal != null
       ? OTelEnv.getOtlpConfig(signal: signal)
       : OTelEnv.getOtlpConfig();
-  
+
   final headers = config['headers'] as Map<String, String>?;
   if (headers != null) {
     print(jsonEncode(headers));
