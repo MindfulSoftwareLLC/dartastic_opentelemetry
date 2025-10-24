@@ -68,14 +68,14 @@ void main() {
 
     test('resource attributes available in OTel.initialize()', () async {
       final serviceName = EnvironmentService.instance.getValue(otelServiceName);
-      
+
       await OTel.initialize();
 
       final resource = OTel.defaultResource;
       expect(resource, isNotNull);
 
       final attrs = resource!.attributes.toMap();
-      
+
       // Service name should be set
       final serviceNameAttr = attrs['service.name'];
       expect(serviceNameAttr, isNotNull);

@@ -17,8 +17,7 @@ void main() {
     });
 
     test('reads OTEL_SERVICE_NAME from environment or --dart-define', () {
-      final serviceName =
-          EnvironmentService.instance.getValue(otelServiceName);
+      final serviceName = EnvironmentService.instance.getValue(otelServiceName);
 
       // When run via test_env_vars.sh, this will have a specific expected value
       // When run standalone, it may be null
@@ -42,17 +41,15 @@ void main() {
     test('--dart-define takes precedence over environment variables', () {
       // This test is meaningful when both are set
       // The shell script sets both and verifies --dart-define wins
-      final serviceName =
-          EnvironmentService.instance.getValue(otelServiceName);
-      
+      final serviceName = EnvironmentService.instance.getValue(otelServiceName);
+
       // Just verify we can read it
       expect(serviceName, anyOf(isNull, isA<String>()));
     });
 
     test('OTel.initialize uses environment variables when no params provided',
         () async {
-      final serviceName =
-          EnvironmentService.instance.getValue(otelServiceName);
+      final serviceName = EnvironmentService.instance.getValue(otelServiceName);
 
       await OTel.initialize();
 
