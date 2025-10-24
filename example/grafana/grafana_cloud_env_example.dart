@@ -23,7 +23,7 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 /// 3. Set the environment variables before running your application:
 ///    ```bash
 ///    export OTEL_SERVICE_NAME="my-dart-app"
-///    export OTEL_SERVICE_VERSION="1.0.0"
+///    export OTEL_RESOURCE_ATTRIBUTES="service.version=1.2.3"
 ///    export OTEL_EXPORTER_OTLP_ENDPOINT="https://otlp-gateway-prod-us-central-0.grafana.net/otlp"
 ///    export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic <your-base64-encoded-credentials>"
 ///    export OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"

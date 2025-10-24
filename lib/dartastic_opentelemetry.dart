@@ -70,6 +70,7 @@ export 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
         VersionResource;
 
 export 'src/context/propagation/w3c_baggage_propagator.dart';
+export 'src/environment/env_constants.dart';
 export 'src/environment/environment_service.dart';
 export 'src/environment/otel_env.dart';
 export 'src/factory/otel_sdk_factory.dart';

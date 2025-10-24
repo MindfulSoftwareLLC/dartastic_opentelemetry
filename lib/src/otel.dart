@@ -1069,8 +1069,6 @@ class OTel {
     OTelFactory.otelFactory = null;
     if (OTelLog.isDebug()) OTelLog.debug('OTel: Reset OTelFactory');
 
-    // Clear test environment to prevent test pollution
-    EnvironmentService.instance.clearTestEnvironment();
     if (OTelLog.isDebug()) OTelLog.debug('OTel: Cleared test environment');
 
     // Add a short delay to ensure resources are released
