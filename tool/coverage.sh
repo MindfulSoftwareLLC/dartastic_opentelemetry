@@ -14,7 +14,8 @@ download_otelcol
 
 echo "Starting test coverage collection..."
 # Set environment variables to enable logging during tests
-export OTEL_LOG_LEVEL=debug
+# Need trace logging for coverage of debug and trace logs
+export OTEL_LOG_LEVEL=trace
 export OTEL_LOG_METRICS=true
 export OTEL_LOG_SPANS=true
 export OTEL_LOG_EXPORT=true
@@ -29,7 +30,16 @@ mkdir -p coverage
 
 # Run tests with coverage
 echo "Running tests with coverage..."
-dart test --chain-stack-traces --coverage=coverage --concurrency=10 --exclude-tags="fail"
-./tool/coverage_format.sh
+dart test --chain-stack-traces --coverage=coverage --concurrency=10 --exclude-tags="fail" ./test/unit ./test/integration ./test/performance
+
+# Generate LCOV coverage report, excluding certain directories
+dart run coverage:format_coverage  --in=./coverage --package=./lib --report-on=lib/ --lcov --out=coverage/lcov.info --check-ignore
+
+# Filter out proto files from coverage report
+lcov --remove coverage/lcov.info '**/proto/**' '**/test/**' --ignore-errors unused -o coverage/lcov.info
+
+# Generate HTML report
+genhtml coverage/lcov.info -o coverage/html
+
 echo "Coverage process completed successfully"
 exit 0

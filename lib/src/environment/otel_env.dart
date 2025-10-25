@@ -53,17 +53,17 @@ class OTelEnv {
     }
 
     // Enable metrics logging based on environment variable
-    if (_getEnvBool(otelLogMetrics)) {
+    if (_getEnvBool(otelLogMetrics) && OTelLog.metricLogFunction == null) {
       OTelLog.metricLogFunction = print;
     }
 
     // Enable spans logging based on environment variable
-    if (_getEnvBool(otelLogSpans)) {
+    if (_getEnvBool(otelLogSpans) && OTelLog.spanLogFunction == null) {
       OTelLog.spanLogFunction = print;
     }
 
     // Enable export logging based on environment variable
-    if (_getEnvBool(otelLogExport)) {
+    if (_getEnvBool(otelLogExport) && OTelLog.exportLogFunction == null) {
       OTelLog.exportLogFunction = print;
     }
   }

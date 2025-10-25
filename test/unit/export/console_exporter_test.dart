@@ -457,6 +457,11 @@ void main() {
         sampler: const AlwaysOnSampler(),
       );
 
+      // Re-capture after initialization since environment variables
+      // may have overridden the log function during OTel.initialize()
+      console.clear();
+      console.startCapture();
+
       final tracer = OTel.tracer();
       final span = tracer.startSpan('debug-test-span');
       span.end();

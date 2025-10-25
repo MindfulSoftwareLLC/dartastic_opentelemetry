@@ -92,6 +92,10 @@ All new code should be covered by tests. We use the `test` package for writing a
 - Test files should end with `_test.dart`
 - Run tests with `./tool/test.sh` and `./tool/test_env_vars.sh`
 
+### Coverage
+Run `./tool/coverage.sh` to ensure new/changed code has test coverage.
+Coverage required `lcov`. Which can be installed with `brew install lcov` (Mac) or `sudo apt-get install -y lcov` (Linux)
+
 ### Documentation
 
 - All public APIs must have dartdoc comments
