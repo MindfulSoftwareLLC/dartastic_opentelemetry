@@ -1,6 +1,8 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+import 'dart:io';
+
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/src/trace/span_logger.dart'
     show logSpan, logSpans;
@@ -20,8 +22,8 @@ void main() {
       originalLogLevel = OTelLog.currentLevel;
 
       // Reset for testing
-      OTelLog.logFunction = null;
-      OTelLog.currentLevel = LogLevel.error; // Default
+      OTelLog.logFunction = print; // Default
+      OTelLog.currentLevel = LogLevel.info; // Default
 
       // Initialize OTel for tests that need it
       await OTel.reset();
@@ -100,13 +102,15 @@ void main() {
     });
 
     test('OTelLog functions respect isXxx() convenience methods', () {
-      // Initially no logging
-      expect(OTelLog.isTrace(), isFalse);
-      expect(OTelLog.isDebug(), isFalse);
-      expect(OTelLog.isInfo(), isFalse);
-      expect(OTelLog.isWarn(), isFalse);
-      expect(OTelLog.isError(), isFalse);
-      expect(OTelLog.isFatal(), isFalse);
+      // Initially logging according to env var so the test script can be run in any mode
+      final String? envLogLevel = Platform.environment['OTEL_LOG_LEVEL'];
+      print('env var OTEL_LOG_LEVEL = $envLogLevel');
+      expect(OTelLog.isTrace(), envLogLevel == 'trace');
+      expect(OTelLog.isDebug(), envLogLevel == 'trace' || envLogLevel == 'debug');
+      expect(OTelLog.isInfo(), envLogLevel == null || envLogLevel == 'trace' || envLogLevel == 'debug' || envLogLevel == 'info');
+      expect(OTelLog.isWarn(), envLogLevel == null || envLogLevel == 'trace' || envLogLevel == 'debug' || envLogLevel == 'info' || envLogLevel == 'warn');
+      expect(OTelLog.isError(), envLogLevel == null || envLogLevel == 'trace' || envLogLevel == 'debug' || envLogLevel == 'info' || envLogLevel == 'warn' || envLogLevel == 'error');
+      expect(OTelLog.isFatal(), envLogLevel == null || envLogLevel == 'trace' || envLogLevel == 'debug' || envLogLevel == 'info' || envLogLevel == 'warn' || envLogLevel == 'error' || envLogLevel == 'fatal');
 
       // Set log function but keep high level
       OTelLog.logFunction = (_) {};
