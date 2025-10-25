@@ -106,11 +106,38 @@ void main() {
       final String? envLogLevel = Platform.environment['OTEL_LOG_LEVEL'];
       print('env var OTEL_LOG_LEVEL = $envLogLevel');
       expect(OTelLog.isTrace(), envLogLevel == 'trace');
-      expect(OTelLog.isDebug(), envLogLevel == 'trace' || envLogLevel == 'debug');
-      expect(OTelLog.isInfo(), envLogLevel == null || envLogLevel == 'trace' || envLogLevel == 'debug' || envLogLevel == 'info');
-      expect(OTelLog.isWarn(), envLogLevel == null || envLogLevel == 'trace' || envLogLevel == 'debug' || envLogLevel == 'info' || envLogLevel == 'warn');
-      expect(OTelLog.isError(), envLogLevel == null || envLogLevel == 'trace' || envLogLevel == 'debug' || envLogLevel == 'info' || envLogLevel == 'warn' || envLogLevel == 'error');
-      expect(OTelLog.isFatal(), envLogLevel == null || envLogLevel == 'trace' || envLogLevel == 'debug' || envLogLevel == 'info' || envLogLevel == 'warn' || envLogLevel == 'error' || envLogLevel == 'fatal');
+      expect(
+          OTelLog.isDebug(), envLogLevel == 'trace' || envLogLevel == 'debug');
+      expect(
+          OTelLog.isInfo(),
+          envLogLevel == null ||
+              envLogLevel == 'trace' ||
+              envLogLevel == 'debug' ||
+              envLogLevel == 'info');
+      expect(
+          OTelLog.isWarn(),
+          envLogLevel == null ||
+              envLogLevel == 'trace' ||
+              envLogLevel == 'debug' ||
+              envLogLevel == 'info' ||
+              envLogLevel == 'warn');
+      expect(
+          OTelLog.isError(),
+          envLogLevel == null ||
+              envLogLevel == 'trace' ||
+              envLogLevel == 'debug' ||
+              envLogLevel == 'info' ||
+              envLogLevel == 'warn' ||
+              envLogLevel == 'error');
+      expect(
+          OTelLog.isFatal(),
+          envLogLevel == null ||
+              envLogLevel == 'trace' ||
+              envLogLevel == 'debug' ||
+              envLogLevel == 'info' ||
+              envLogLevel == 'warn' ||
+              envLogLevel == 'error' ||
+              envLogLevel == 'fatal');
 
       // Set log function but keep high level
       OTelLog.logFunction = (_) {};

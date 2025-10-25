@@ -2,14 +2,15 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 /// Example demonstrating W3C Trace Context Propagator usage
-/// 
-/// This example shows how to use the W3CTraceContextPropagator and 
+///
+/// This example shows how to use the W3CTraceContextPropagator and
 /// W3CBaggagePropagator to propagate trace context across service boundaries.
-/// 
+///
 /// Run this example:
 /// ```
 /// dart run example/propagator_example.dart
 /// ```
+library;
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
@@ -31,7 +32,7 @@ void main() async {
   print('1. Creating a span with trace context...');
   final span = OTel.tracer().startSpan('parent-operation');
   final context = Context.current;
-  
+
   // Add some baggage
   final baggage = OTel.baggage({'user.id': OTel.baggageEntry('user123')});
   final contextWithBaggage = context.withBaggage(baggage);
@@ -44,9 +45,9 @@ void main() async {
   print('2. Injecting trace context into HTTP headers (simulated)...');
   final carrier = <String, String>{};
   final setter = MapTextMapSetter(carrier);
-  
+
   propagator.inject(contextWithBaggage, carrier, setter);
-  
+
   print('   Injected headers:');
   carrier.forEach((key, value) {
     print('     $key: $value');
@@ -73,29 +74,32 @@ void main() async {
 
   // === Verify Round-Trip ===
   print('4. Verifying round-trip...');
-  final sameTraceId = context.spanContext?.traceId.hexString == 
+  final sameTraceId = context.spanContext?.traceId.hexString ==
       extractedSpanContext?.traceId.hexString;
-  final sameSpanId = context.spanContext?.spanId.hexString == 
+  final sameSpanId = context.spanContext?.spanId.hexString ==
       extractedSpanContext?.spanId.hexString;
-  final sameBaggage = baggage.getValue('user.id') == 
-      extractedBaggage?.getValue('user.id');
+  final sameBaggage =
+      baggage.getValue('user.id') == extractedBaggage?.getValue('user.id');
 
   print('   ✓ TraceId preserved: $sameTraceId');
   print('   ✓ SpanId preserved: $sameSpanId');
   print('   ✓ Baggage preserved: $sameBaggage');
-  print('   ✓ IsRemote set correctly: ${extractedSpanContext?.isRemote == true}\n');
+  print(
+      '   ✓ IsRemote set correctly: ${extractedSpanContext?.isRemote == true}\n');
 
   // === Create Child Span in Extracted Context ===
   print('5. Creating child span in extracted context...');
   await extractedContext.run(() async {
     final childSpan = OTel.tracer().startSpan('child-operation');
     final childContext = Context.current;
-    
+
     print('   Child TraceId: ${childContext.spanContext?.traceId.hexString}');
     print('   Child SpanId: ${childContext.spanContext?.spanId.hexString}');
-    print('   Child Baggage: user.id=${childContext.baggage?.getValue('user.id')}');
-    print('   → Same TraceId as parent: ${childContext.spanContext?.traceId.hexString == extractedSpanContext?.traceId.hexString}\n');
-    
+    print(
+        '   Child Baggage: user.id=${childContext.baggage?.getValue('user.id')}');
+    print(
+        '   → Same TraceId as parent: ${childContext.spanContext?.traceId.hexString == extractedSpanContext?.traceId.hexString}\n');
+
     childSpan.end();
   });
 
@@ -109,7 +113,7 @@ void main() async {
 
   print('\n=== Example Complete ===');
   print('This demonstrates how trace context flows between services!');
-  
+
   await OTel.shutdown();
 }
 
