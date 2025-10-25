@@ -108,6 +108,7 @@ export 'src/otel.dart';
 export 'src/resource/resource.dart';
 export 'src/resource/resource_detector.dart';
 export 'src/resource/web_detector.dart';
+export 'src/trace/export/baggage_span_processor.dart';
 export 'src/trace/export/batch_span_processor.dart';
 export 'src/trace/export/composite_exporter.dart';
 export 'src/trace/export/console_exporter.dart';
