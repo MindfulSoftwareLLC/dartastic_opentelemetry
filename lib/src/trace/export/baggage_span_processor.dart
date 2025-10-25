@@ -7,17 +7,21 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 /// Automatically copies baggage entries to span attributes on span start.
 ///
-/// This is the Dart equivalent of Python's BaggageSpanProcessor from the
-/// opentelemetry-processor-baggage package. It extracts all baggage entries
-/// from the current context and adds them as span attributes when spans are
-/// created.
+/// https://opentelemetry.io/docs/specs/otel/baggage/api/#baggage-propagation
+/// "Because a common use case for Baggage is to add data to Span Attributes
+/// across a whole trace, several languages have Baggage Span Processors that
+/// add data from baggage as attributes on span creation."
 ///
-/// This enables baggage values (like client_session_id) to be:
+/// This BaggageSpanProcessor extracts all baggage entries from the parent or
+/// current context and adds them as span attributes when spans are created.
+///
+/// This enables baggage values to be:
 /// - Visible in tracing backends (HyperDX, Jaeger, etc.)
 /// - Searchable and filterable for trace queries
 /// - Automatically propagated to all spans without manual attribute setting
 ///
 /// Example usage:
+///
 /// ```dart
 /// final tracerProvider = OTel.tracerProvider();
 /// tracerProvider.addSpanProcessor(BaggageSpanProcessor());
@@ -29,11 +33,15 @@ class BaggageSpanProcessor implements SpanProcessor {
   @override
   Future<void> onStart(Span span, Context? parentContext) async {
     // Extract baggage from the current context
-    final baggage = Context.current.baggage;
-    if (baggage == null) return;
+    final baggage = (parentContext ?? Context.current).baggage;
+    if (baggage == null) {
+      return;
+    }
 
     final entries = baggage.getAllEntries();
-    if (entries.isEmpty) return;
+    if (entries.isEmpty) {
+      return;
+    }
 
     // Convert baggage entries to a map for span attributes
     // Note: Baggage metadata is intentionally not included as it's not part of the value
