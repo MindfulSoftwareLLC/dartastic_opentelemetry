@@ -2,10 +2,20 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'package:dartastic_opentelemetry/src/otel.dart';
+import 'package:dartastic_opentelemetry/src/trace/export/baggage_span_processor.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 Future<void> main() async {
-  // Create a baggage with a single key-value pair
+  await OTel.initialize(
+    serviceName: 'my-service',
+    serviceVersion: '1.0.0',
+  );
+
+  // Optionally initialize tracer provider with a BaggageSpanProcessor
+  final tracerProvider = OTel.tracerProvider();
+  // Make baggage automatically appear in span attributes
+  tracerProvider.addSpanProcessor(const BaggageSpanProcessor());
+
   final baggage = OTel.baggage(
       {'customer.id': OTel.baggageEntry('123', 'source=mobile app')});
 
@@ -14,7 +24,8 @@ Future<void> main() async {
   // Best practice: Use dot notation for key namespacing to avoid conflicts
   final enrichedBaggage = baggage
       .copyWith('deployment.environment', 'staging')
-      .copyWith('user.region', 'us-west', 'source=user profile');
+      .copyWith('user.region', 'us-west', 'source=user profile')
+      .copyWith('client.session.id', 'session-123');
 
   // Baggage is always associated with a Context
   // This allows it to automatically propagate through your application
