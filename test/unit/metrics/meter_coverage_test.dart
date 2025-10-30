@@ -3,7 +3,7 @@
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
-    show LogFunction, OTelAPI;
+    show LogFunction, OTelAPI, LogLevel;
 import 'package:test/test.dart';
 import '../../testing_utils/memory_metric_exporter.dart';
 
@@ -372,6 +372,7 @@ void main() {
     test('Meter creation logs when metrics logging is enabled', () async {
       // Set up metrics log capture
       final List<String> metricLogs = [];
+      OTelLog.currentLevel = LogLevel.debug;
       OTelLog.metricLogFunction = metricLogs.add;
 
       // Initialize OTel

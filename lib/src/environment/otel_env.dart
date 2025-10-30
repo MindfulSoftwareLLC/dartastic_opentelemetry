@@ -2,6 +2,7 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+import 'env_constants.dart';
 import 'environment_service.dart';
 
 /// Utility class for handling OpenTelemetry environment variables.
@@ -12,173 +13,13 @@ import 'environment_service.dart';
 /// OpenTelemetry standard environment variables:
 /// https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/
 class OTelEnv {
-  /// Environment variable names
-  /// Log level for the OTelLog class (TRACE, DEBUG, INFO, WARN, ERROR, FATAL)
-  static const String logLevelEnv = 'OTEL_LOG_LEVEL';
-
-  /// Enable logging of metrics (1, true, yes, on)
-  static const String enableMetricsLogEnv = 'OTEL_LOG_METRICS';
-
-  /// Enable logging of spans (1, true, yes, on)
-  static const String enableSpansLogEnv = 'OTEL_LOG_SPANS';
-
-  /// Enable logging of exports (1, true, yes, on)
-  static const String enableExportLogEnv = 'OTEL_LOG_EXPORT';
-
-  /// OTLP exporter environment variables
-  /// The OTLP endpoint URL for all signals
-  static const String otlpEndpointEnv = 'OTEL_EXPORTER_OTLP_ENDPOINT';
-
-  /// The OTLP protocol to use (grpc, http/protobuf, http/json)
-  static const String otlpProtocolEnv = 'OTEL_EXPORTER_OTLP_PROTOCOL';
-
-  /// Additional headers for OTLP requests as comma-separated key=value pairs
-  static const String otlpHeadersEnv = 'OTEL_EXPORTER_OTLP_HEADERS';
-
-  /// Whether to use insecure connection for OTLP (true, false)
-  static const String otlpInsecureEnv = 'OTEL_EXPORTER_OTLP_INSECURE';
-
-  /// Timeout for OTLP requests in milliseconds
-  static const String otlpTimeoutEnv = 'OTEL_EXPORTER_OTLP_TIMEOUT';
-
-  /// Compression method for OTLP requests (gzip, none)
-  static const String otlpCompressionEnv = 'OTEL_EXPORTER_OTLP_COMPRESSION';
-
-  /// Certificate file path for secure connections
-  static const String otlpCertificateEnv = 'OTEL_EXPORTER_OTLP_CERTIFICATE';
-
-  /// Client key file path for mTLS
-  static const String otlpClientKeyEnv = 'OTEL_EXPORTER_OTLP_CLIENT_KEY';
-
-  /// Client certificate file path for mTLS
-  static const String otlpClientCertificateEnv =
-      'OTEL_EXPORTER_OTLP_CLIENT_CERTIFICATE';
-
-  /// Service information environment variables
-  /// The service name to use for telemetry
-  static const String serviceNameEnv = 'OTEL_SERVICE_NAME';
-
-  /// The service version to use for telemetry
-  static const String serviceVersionEnv = 'OTEL_SERVICE_VERSION';
-
-  /// Resource attributes environment variable
-  /// Additional resource attributes as comma-separated key=value pairs
-  static const String resourceAttributesEnv = 'OTEL_RESOURCE_ATTRIBUTES';
-
-  /// Traces specific OTLP environment variables
-  /// The exporter to use for traces (otlp, console, none)
-  static const String tracesExporterEnv = 'OTEL_TRACES_EXPORTER';
-
-  /// Traces-specific endpoint URL
-  static const String tracesEndpointEnv = 'OTEL_EXPORTER_OTLP_TRACES_ENDPOINT';
-
-  /// Traces-specific protocol
-  static const String tracesProtocolEnv = 'OTEL_EXPORTER_OTLP_TRACES_PROTOCOL';
-
-  /// Traces-specific headers
-  static const String tracesHeadersEnv = 'OTEL_EXPORTER_OTLP_TRACES_HEADERS';
-
-  /// Traces-specific insecure setting
-  static const String tracesInsecureEnv = 'OTEL_EXPORTER_OTLP_TRACES_INSECURE';
-
-  /// Traces-specific timeout
-  static const String tracesTimeoutEnv = 'OTEL_EXPORTER_OTLP_TRACES_TIMEOUT';
-
-  /// Traces-specific compression
-  static const String tracesCompressionEnv =
-      'OTEL_EXPORTER_OTLP_TRACES_COMPRESSION';
-
-  /// Traces-specific certificate
-  static const String tracesCertificateEnv =
-      'OTEL_EXPORTER_OTLP_TRACES_CERTIFICATE';
-
-  /// Traces-specific client key
-  static const String tracesClientKeyEnv =
-      'OTEL_EXPORTER_OTLP_TRACES_CLIENT_KEY';
-
-  /// Traces-specific client certificate
-  static const String tracesClientCertificateEnv =
-      'OTEL_EXPORTER_OTLP_TRACES_CLIENT_CERTIFICATE';
-
-  /// Metrics specific OTLP environment variables
-  /// The exporter to use for metrics (otlp, console, none, prometheus)
-  static const String metricsExporterEnv = 'OTEL_METRICS_EXPORTER';
-
-  /// Metrics-specific endpoint URL
-  static const String metricsEndpointEnv =
-      'OTEL_EXPORTER_OTLP_METRICS_ENDPOINT';
-
-  /// Metrics-specific protocol
-  static const String metricsProtocolEnv =
-      'OTEL_EXPORTER_OTLP_METRICS_PROTOCOL';
-
-  /// Metrics-specific headers
-  static const String metricsHeadersEnv = 'OTEL_EXPORTER_OTLP_METRICS_HEADERS';
-
-  /// Metrics-specific insecure setting
-  static const String metricsInsecureEnv =
-      'OTEL_EXPORTER_OTLP_METRICS_INSECURE';
-
-  /// Metrics-specific timeout
-  static const String metricsTimeoutEnv = 'OTEL_EXPORTER_OTLP_METRICS_TIMEOUT';
-
-  /// Metrics-specific compression
-  static const String metricsCompressionEnv =
-      'OTEL_EXPORTER_OTLP_METRICS_COMPRESSION';
-
-  /// Metrics-specific certificate
-  static const String metricsCertificateEnv =
-      'OTEL_EXPORTER_OTLP_METRICS_CERTIFICATE';
-
-  /// Metrics-specific client key
-  static const String metricsClientKeyEnv =
-      'OTEL_EXPORTER_OTLP_METRICS_CLIENT_KEY';
-
-  /// Metrics-specific client certificate
-  static const String metricsClientCertificateEnv =
-      'OTEL_EXPORTER_OTLP_METRICS_CLIENT_CERTIFICATE';
-
-  /// Logs specific OTLP environment variables
-  /// The exporter to use for logs (otlp, console, none)
-  static const String logsExporterEnv = 'OTEL_LOGS_EXPORTER';
-
-  /// Logs-specific endpoint URL
-  static const String logsEndpointEnv = 'OTEL_EXPORTER_OTLP_LOGS_ENDPOINT';
-
-  /// Logs-specific protocol
-  static const String logsProtocolEnv = 'OTEL_EXPORTER_OTLP_LOGS_PROTOCOL';
-
-  /// Logs-specific headers
-  static const String logsHeadersEnv = 'OTEL_EXPORTER_OTLP_LOGS_HEADERS';
-
-  /// Logs-specific insecure setting
-  static const String logsInsecureEnv = 'OTEL_EXPORTER_OTLP_LOGS_INSECURE';
-
-  /// Logs-specific timeout
-  static const String logsTimeoutEnv = 'OTEL_EXPORTER_OTLP_LOGS_TIMEOUT';
-
-  /// Logs-specific compression
-  static const String logsCompressionEnv =
-      'OTEL_EXPORTER_OTLP_LOGS_COMPRESSION';
-
-  /// Logs-specific certificate
-  static const String logsCertificateEnv =
-      'OTEL_EXPORTER_OTLP_LOGS_CERTIFICATE';
-
-  /// Logs-specific client key
-  static const String logsClientKeyEnv = 'OTEL_EXPORTER_OTLP_LOGS_CLIENT_KEY';
-
-  /// Logs-specific client certificate
-  static const String logsClientCertificateEnv =
-      'OTEL_EXPORTER_OTLP_LOGS_CLIENT_CERTIFICATE';
-
   /// Initialize logging based on environment variables.
   ///
   /// This method reads the logging-related environment variables
   /// and configures the OTelLog accordingly.
   static void initializeLogging() {
     // Set log level based on environment variable
-    final logLevel = _getEnv(logLevelEnv)?.toLowerCase();
+    final logLevel = _getEnv(otelLogLevel)?.toLowerCase();
     if (logLevel != null) {
       switch (logLevel) {
         case 'trace':
@@ -212,17 +53,17 @@ class OTelEnv {
     }
 
     // Enable metrics logging based on environment variable
-    if (_getEnvBool(enableMetricsLogEnv)) {
+    if (_getEnvBool(otelLogMetrics) && OTelLog.metricLogFunction == null) {
       OTelLog.metricLogFunction = print;
     }
 
     // Enable spans logging based on environment variable
-    if (_getEnvBool(enableSpansLogEnv)) {
+    if (_getEnvBool(otelLogSpans) && OTelLog.spanLogFunction == null) {
       OTelLog.spanLogFunction = print;
     }
 
     // Enable export logging based on environment variable
-    if (_getEnvBool(enableExportLogEnv)) {
+    if (_getEnvBool(otelLogExport) && OTelLog.exportLogFunction == null) {
       OTelLog.exportLogFunction = print;
     }
   }
@@ -238,13 +79,16 @@ class OTelEnv {
     String? endpoint;
     switch (signal) {
       case 'traces':
-        endpoint = _getEnv(tracesEndpointEnv) ?? _getEnv(otlpEndpointEnv);
+        endpoint = _getEnv(otelExporterOtlpTracesEndpoint) ??
+            _getEnv(otelExporterOtlpEndpoint);
         break;
       case 'metrics':
-        endpoint = _getEnv(metricsEndpointEnv) ?? _getEnv(otlpEndpointEnv);
+        endpoint = _getEnv(otelExporterOtlpMetricsEndpoint) ??
+            _getEnv(otelExporterOtlpEndpoint);
         break;
       case 'logs':
-        endpoint = _getEnv(logsEndpointEnv) ?? _getEnv(otlpEndpointEnv);
+        endpoint = _getEnv(otelExporterOtlpLogsEndpoint) ??
+            _getEnv(otelExporterOtlpEndpoint);
         break;
     }
     if (endpoint != null) {
@@ -255,13 +99,16 @@ class OTelEnv {
     String? protocol;
     switch (signal) {
       case 'traces':
-        protocol = _getEnv(tracesProtocolEnv) ?? _getEnv(otlpProtocolEnv);
+        protocol = _getEnv(otelExporterOtlpTracesProtocol) ??
+            _getEnv(otelExporterOtlpProtocol);
         break;
       case 'metrics':
-        protocol = _getEnv(metricsProtocolEnv) ?? _getEnv(otlpProtocolEnv);
+        protocol = _getEnv(otelExporterOtlpMetricsProtocol) ??
+            _getEnv(otelExporterOtlpProtocol);
         break;
       case 'logs':
-        protocol = _getEnv(logsProtocolEnv) ?? _getEnv(otlpProtocolEnv);
+        protocol = _getEnv(otelExporterOtlpLogsProtocol) ??
+            _getEnv(otelExporterOtlpProtocol);
         break;
     }
     if (protocol != null) {
@@ -272,13 +119,16 @@ class OTelEnv {
     String? headers;
     switch (signal) {
       case 'traces':
-        headers = _getEnv(tracesHeadersEnv) ?? _getEnv(otlpHeadersEnv);
+        headers = _getEnv(otelExporterOtlpTracesHeaders) ??
+            _getEnv(otelExporterOtlpHeaders);
         break;
       case 'metrics':
-        headers = _getEnv(metricsHeadersEnv) ?? _getEnv(otlpHeadersEnv);
+        headers = _getEnv(otelExporterOtlpMetricsHeaders) ??
+            _getEnv(otelExporterOtlpHeaders);
         break;
       case 'logs':
-        headers = _getEnv(logsHeadersEnv) ?? _getEnv(otlpHeadersEnv);
+        headers = _getEnv(otelExporterOtlpLogsHeaders) ??
+            _getEnv(otelExporterOtlpHeaders);
         break;
     }
     if (headers != null) {
@@ -303,16 +153,16 @@ class OTelEnv {
     bool? insecure;
     switch (signal) {
       case 'traces':
-        insecure = _getEnvBoolNullable(tracesInsecureEnv) ??
-            _getEnvBoolNullable(otlpInsecureEnv);
+        insecure = _getEnvBoolNullable(otelExporterOtlpTracesInsecure) ??
+            _getEnvBoolNullable(otelExporterOtlpInsecure);
         break;
       case 'metrics':
-        insecure = _getEnvBoolNullable(metricsInsecureEnv) ??
-            _getEnvBoolNullable(otlpInsecureEnv);
+        insecure = _getEnvBoolNullable(otelExporterOtlpMetricsInsecure) ??
+            _getEnvBoolNullable(otelExporterOtlpInsecure);
         break;
       case 'logs':
-        insecure = _getEnvBoolNullable(logsInsecureEnv) ??
-            _getEnvBoolNullable(otlpInsecureEnv);
+        insecure = _getEnvBoolNullable(otelExporterOtlpLogsInsecure) ??
+            _getEnvBoolNullable(otelExporterOtlpInsecure);
         break;
     }
     if (insecure != null) {
@@ -323,13 +173,16 @@ class OTelEnv {
     String? timeout;
     switch (signal) {
       case 'traces':
-        timeout = _getEnv(tracesTimeoutEnv) ?? _getEnv(otlpTimeoutEnv);
+        timeout = _getEnv(otelExporterOtlpTracesTimeout) ??
+            _getEnv(otelExporterOtlpTimeout);
         break;
       case 'metrics':
-        timeout = _getEnv(metricsTimeoutEnv) ?? _getEnv(otlpTimeoutEnv);
+        timeout = _getEnv(otelExporterOtlpMetricsTimeout) ??
+            _getEnv(otelExporterOtlpTimeout);
         break;
       case 'logs':
-        timeout = _getEnv(logsTimeoutEnv) ?? _getEnv(otlpTimeoutEnv);
+        timeout = _getEnv(otelExporterOtlpLogsTimeout) ??
+            _getEnv(otelExporterOtlpTimeout);
         break;
     }
     if (timeout != null) {
@@ -343,16 +196,16 @@ class OTelEnv {
     String? compression;
     switch (signal) {
       case 'traces':
-        compression =
-            _getEnv(tracesCompressionEnv) ?? _getEnv(otlpCompressionEnv);
+        compression = _getEnv(otelExporterOtlpTracesCompression) ??
+            _getEnv(otelExporterOtlpCompression);
         break;
       case 'metrics':
-        compression =
-            _getEnv(metricsCompressionEnv) ?? _getEnv(otlpCompressionEnv);
+        compression = _getEnv(otelExporterOtlpMetricsCompression) ??
+            _getEnv(otelExporterOtlpCompression);
         break;
       case 'logs':
-        compression =
-            _getEnv(logsCompressionEnv) ?? _getEnv(otlpCompressionEnv);
+        compression = _getEnv(otelExporterOtlpLogsCompression) ??
+            _getEnv(otelExporterOtlpCompression);
         break;
     }
     if (compression != null) {
@@ -363,16 +216,16 @@ class OTelEnv {
     String? certificate;
     switch (signal) {
       case 'traces':
-        certificate =
-            _getEnv(tracesCertificateEnv) ?? _getEnv(otlpCertificateEnv);
+        certificate = _getEnv(otelExporterOtlpTracesCertificate) ??
+            _getEnv(otelExporterOtlpCertificate);
         break;
       case 'metrics':
-        certificate =
-            _getEnv(metricsCertificateEnv) ?? _getEnv(otlpCertificateEnv);
+        certificate = _getEnv(otelExporterOtlpMetricsCertificate) ??
+            _getEnv(otelExporterOtlpCertificate);
         break;
       case 'logs':
-        certificate =
-            _getEnv(logsCertificateEnv) ?? _getEnv(otlpCertificateEnv);
+        certificate = _getEnv(otelExporterOtlpLogsCertificate) ??
+            _getEnv(otelExporterOtlpCertificate);
         break;
     }
     if (certificate != null) {
@@ -383,13 +236,16 @@ class OTelEnv {
     String? clientKey;
     switch (signal) {
       case 'traces':
-        clientKey = _getEnv(tracesClientKeyEnv) ?? _getEnv(otlpClientKeyEnv);
+        clientKey = _getEnv(otelExporterOtlpTracesClientKey) ??
+            _getEnv(otelExporterOtlpClientKey);
         break;
       case 'metrics':
-        clientKey = _getEnv(metricsClientKeyEnv) ?? _getEnv(otlpClientKeyEnv);
+        clientKey = _getEnv(otelExporterOtlpMetricsClientKey) ??
+            _getEnv(otelExporterOtlpClientKey);
         break;
       case 'logs':
-        clientKey = _getEnv(logsClientKeyEnv) ?? _getEnv(otlpClientKeyEnv);
+        clientKey = _getEnv(otelExporterOtlpLogsClientKey) ??
+            _getEnv(otelExporterOtlpClientKey);
         break;
     }
     if (clientKey != null) {
@@ -400,16 +256,16 @@ class OTelEnv {
     String? clientCertificate;
     switch (signal) {
       case 'traces':
-        clientCertificate = _getEnv(tracesClientCertificateEnv) ??
-            _getEnv(otlpClientCertificateEnv);
+        clientCertificate = _getEnv(otelExporterOtlpTracesClientCertificate) ??
+            _getEnv(otelExporterOtlpClientCertificate);
         break;
       case 'metrics':
-        clientCertificate = _getEnv(metricsClientCertificateEnv) ??
-            _getEnv(otlpClientCertificateEnv);
+        clientCertificate = _getEnv(otelExporterOtlpMetricsClientCertificate) ??
+            _getEnv(otelExporterOtlpClientCertificate);
         break;
       case 'logs':
-        clientCertificate = _getEnv(logsClientCertificateEnv) ??
-            _getEnv(otlpClientCertificateEnv);
+        clientCertificate = _getEnv(otelExporterOtlpLogsClientCertificate) ??
+            _getEnv(otelExporterOtlpClientCertificate);
         break;
     }
     if (clientCertificate != null) {
@@ -422,17 +278,37 @@ class OTelEnv {
   /// Get service configuration from environment variables.
   ///
   /// Returns a map containing the service configuration read from environment variables.
+  ///
+  /// Handles the spec precedence rules:
+  /// - If `service.name` is in OTEL_RESOURCE_ATTRIBUTES, it's used as the base value
+  /// - OTEL_SERVICE_NAME takes precedence over `service.name` in OTEL_RESOURCE_ATTRIBUTES
+  /// - `service.version` comes from OTEL_RESOURCE_ATTRIBUTES only
   static Map<String, dynamic> getServiceConfig() {
     final config = <String, dynamic>{};
 
-    final serviceName = _getEnv(serviceNameEnv);
-    if (serviceName != null) {
-      config['serviceName'] = serviceName;
+    // First, parse service.name and service.version from OTEL_RESOURCE_ATTRIBUTES
+    final resourceStr = _getEnv(otelResourceAttributes);
+    if (resourceStr != null) {
+      final pairs = resourceStr.split(',');
+      for (final pair in pairs) {
+        final equalIndex = pair.indexOf('=');
+        if (equalIndex > 0 && equalIndex < pair.length - 1) {
+          final key = pair.substring(0, equalIndex).trim();
+          final value = pair.substring(equalIndex + 1).trim();
+
+          if (key == 'service.name') {
+            config['serviceName'] = value;
+          } else if (key == 'service.version') {
+            config['serviceVersion'] = value;
+          }
+        }
+      }
     }
 
-    final serviceVersion = _getEnv(serviceVersionEnv);
-    if (serviceVersion != null) {
-      config['serviceVersion'] = serviceVersion;
+    // OTEL_SERVICE_NAME takes precedence over service.name from resource attributes
+    final serviceName = _getEnv(otelServiceName);
+    if (serviceName != null) {
+      config['serviceName'] = serviceName;
     }
 
     return config;
@@ -445,7 +321,7 @@ class OTelEnv {
   static Map<String, Object> getResourceAttributes() {
     final resourceAttrs = <String, Object>{};
 
-    final resourceStr = _getEnv(resourceAttributesEnv);
+    final resourceStr = _getEnv(otelResourceAttributes);
     if (resourceStr != null) {
       final pairs = resourceStr.split(',');
       for (final pair in pairs) {
@@ -485,11 +361,11 @@ class OTelEnv {
   static String? getExporter({String signal = 'traces'}) {
     switch (signal) {
       case 'traces':
-        return _getEnv(tracesExporterEnv);
+        return _getEnv(otelTracesExporter);
       case 'metrics':
-        return _getEnv(metricsExporterEnv);
+        return _getEnv(otelMetricsExporter);
       case 'logs':
-        return _getEnv(logsExporterEnv);
+        return _getEnv(otelLogsExporter);
       default:
         return null;
     }

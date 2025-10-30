@@ -75,7 +75,7 @@ Mindful Software offers paid support, consulting and developing on Flutter, Open
 Include this in your pubspec.yaml:
 ```
 dependencies:
-  dartastic_opentelemetry: ^0.9.0
+  dartastic_opentelemetry: ^0.9.3
 ```
 
 The entrypoint to the SDK is the `OTel` class.  `OTel` has static "factory" methods for all
@@ -83,165 +83,233 @@ OTel API and SDK objects.  `OTel` needs to be initialized first to point to an O
 backend.  Initialization does a lot of work under the hood including gathering a rich set of
 standard resources for any OS that Dart runs in.  It prepares for the creation of the global
 default `TracerProvider` with the serviceName and a default `Tracer`, both created on first use.
+All configuration, include Trace and Metric exporters, can be made in code via `OTel.initialize()`.  
+Codeless configuration can be done with standard OpenTelemetry environmental variables either 
+through POSIX variable or `-D` or `--define` for Dart or with `--dart-define` for Flutter apps.
 
 ## Environment Variables
 
-Dartastic OpenTelemetry supports standard OpenTelemetry environment variables as defined in the [OpenTelemetry Specification](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/).
+Dartastic OpenTelemetry ~~supports~~ is working on support for all standard OpenTelemetry environment variables as defined in the [OpenTelemetry Specification](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/).
 
-These environment variables can be set to configure the SDK behavior without changing code. Signal-specific variables take precedence over general ones.
+Environment variables provide a convenient way to configure OpenTelemetry without hardcoding values. 
+All environment variable names are available as strongly-typed constants in the SDK for compile-time 
+safety and IDE autocomplete. See `lib/src/environment/env_constants.dart` for a complete list.
 
-### Service Configuration
+### How It Works
 
-| Variable                   | Description                                                       | Example                                 |
-|----------------------------|-------------------------------------------------------------------|-----------------------------------------|
-| `OTEL_SERVICE_NAME`        | Sets the service name                                             | `my-dart-app`                           |
-| `OTEL_SERVICE_VERSION`     | Sets the service version                                          | `1.0.0`                                 |
-| `OTEL_RESOURCE_ATTRIBUTES` | Additional resource attributes as comma-separated key=value pairs | `environment=production,region=us-west` |
+Dart environment variables can be set in two ways:
 
-### OTLP Exporter Configuration
+1. **System Environment Variables** (Non-web only): Traditional POSIX environment variables
+   ```bash
+   export OTEL_SERVICE_NAME=my-service
+   dart run
+   ```
 
-| Variable                         | Description                                           | Default                                                            | Example                              |
-|----------------------------------|-------------------------------------------------------|--------------------------------------------------------------------|--------------------------------------|
-| `OTEL_EXPORTER_OTLP_ENDPOINT`    | The OTLP endpoint URL                                 | `http://localhost:4317` for gRPC, `http://localhost:4318` for HTTP | `https://otel-collector:4317`        |
-| `OTEL_EXPORTER_OTLP_PROTOCOL`    | The protocol to use                                   | `http/protobuf`                                                    | `grpc`, `http/protobuf`, `http/json` |
-| `OTEL_EXPORTER_OTLP_HEADERS`     | Additional headers as comma-separated key=value pairs | None                                                               | `api-key=secret,tenant=acme`         |
-| `OTEL_EXPORTER_OTLP_INSECURE`    | Whether to use insecure connection                    | `false`                                                            | `true`                               |
-| `OTEL_EXPORTER_OTLP_TIMEOUT`     | Export timeout in milliseconds                        | `10000`                                                            | `5000`                               |
-| `OTEL_EXPORTER_OTLP_COMPRESSION` | Compression to use                                    | None                                                               | `gzip`                               |
+2. **Compile-time Constants** (All platforms including Flutter web): Passed during compilation/execution
 
-### Signal-Specific Configuration
+   **For Dart commands** (`dart run`, `dart compile`, `dart test`):
+   ```bash
+   # Using --define (or -D shorthand)
+   dart run --define=OTEL_SERVICE_NAME=my-service
+   dart compile exe -D=OTEL_SERVICE_NAME=my-service -o myapp
+   dart test -DOTEL_SERVICE_NAME=my-service
+   ```
 
-#### Traces
+   **For Flutter commands**:
+   ```bash
+   # Flutter uses --dart-define (note the different flag name)
+   flutter run --dart-define=OTEL_SERVICE_NAME=my-service
+   flutter build apk --dart-define=OTEL_SERVICE_NAME=my-service
+   ```
 
-| Variable                                | Description                      | Default                  | Example                      |
-|-----------------------------------------|----------------------------------|--------------------------|------------------------------|
-| `OTEL_TRACES_EXPORTER`                  | Trace exporter to use            | `otlp`                   | `console`, `none`            |
-| `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`    | Traces-specific endpoint         | Uses general endpoint    | `https://traces.example.com` |
-| `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`    | Traces-specific protocol         | Uses general protocol    | `grpc`                       |
-| `OTEL_EXPORTER_OTLP_TRACES_HEADERS`     | Traces-specific headers          | Uses general headers     | `trace-key=value`            |
-| `OTEL_EXPORTER_OTLP_TRACES_INSECURE`    | Traces-specific insecure setting | Uses general setting     | `true`                       |
-| `OTEL_EXPORTER_OTLP_TRACES_TIMEOUT`     | Traces-specific timeout          | Uses general timeout     | `30000`                      |
-| `OTEL_EXPORTER_OTLP_TRACES_COMPRESSION` | Traces-specific compression      | Uses general compression | `gzip`                       |
+**Priority**: Compile-time constants (`--define` or `--dart-define`) take precedence over system environment variables. 
+Explicit parameters to `OTel.initialize()` override both.  Thus, POSIX env vars cannot override `--dart-define`s and
+neither POSIX env vars nor `--dart-define`s can override code.  This is sensible and reduces security vectors.
 
-#### Metrics
+**Web Support**: Flutter web and Dart web only support compile-time constants (`--define` or `--dart-define`), as browser environments don't have access to system environment variables.
 
-| Variable                                 | Description                       | Default                  | Example                       |
-|------------------------------------------|-----------------------------------|--------------------------|-------------------------------|
-| `OTEL_METRICS_EXPORTER`                  | Metrics exporter to use           | `otlp`                   | `console`, `none`             |
-| `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`    | Metrics-specific endpoint         | Uses general endpoint    | `https://metrics.example.com` |
-| `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL`    | Metrics-specific protocol         | Uses general protocol    | `http/protobuf`               |
-| `OTEL_EXPORTER_OTLP_METRICS_HEADERS`     | Metrics-specific headers          | Uses general headers     | `metric-key=value`            |
-| `OTEL_EXPORTER_OTLP_METRICS_INSECURE`    | Metrics-specific insecure setting | Uses general setting     | `false`                       |
-| `OTEL_EXPORTER_OTLP_METRICS_TIMEOUT`     | Metrics-specific timeout          | Uses general timeout     | `60000`                       |
-| `OTEL_EXPORTER_OTLP_METRICS_COMPRESSION` | Metrics-specific compression      | Uses general compression | `gzip`                        |
+### Using Environment Variable Constants
 
-### Logging Configuration
+All OpenTelemetry environment variable names are available as typed constants:
 
-| Variable                | Description                        | Example                                            |
-|-------------------------|------------------------------------|----------------------------------------------------|
-| `OTEL_LOG_LEVEL`        | SDK internal log level             | `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, `FATAL` |
-| `OTEL_LOG_METRICS`      | Enable metrics logging             | `true`, `1`, `yes`, `on`                           |
-| `OTEL_LOG_SPANS`        | Enable spans logging               | `true`, `1`, `yes`, `on`                           |
-| `OTEL_LOG_EXPORT`       | Enable export logging              | `true`, `1`, `yes`, `on`                           |
-| `OTEL_CONSOLE_EXPORTER` | Add console exporter for debugging | `true`, `1`, `yes`, `on`                           |
+```dart
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
-### Usage Example with Flutter
+void main() {
+  // Reference constants instead of strings
+  final serviceName = EnvironmentService.instance.getValue(otelServiceName);
+  final endpoint = EnvironmentService.instance.getValue(otelExporterOtlpEndpoint);
+  
+  print('Service: $serviceName');
+  print('Endpoint: $endpoint');
+}
+```
 
-When running a Flutter app:
+Constants are defined for all 74 OpenTelemetry environment variables. See `lib/src/environment/env_constants.dart` for the complete list.
+
+### Supported Environmental Variables
+
+#### Service Configuration
+
+| Constant                   | Environment Variable        | Description                       | Example                                 |
+|----------------------------|-----------------------------|-----------------------------------|-----------------------------------------|
+| `otelServiceName`          | `OTEL_SERVICE_NAME`         | Sets the service name             | `my-dart-app`                           |
+| `otelResourceAttributes`   | `OTEL_RESOURCE_ATTRIBUTES`  | Additional resource attributes    | `environment=prod,region=us-west`       |
+| `otelLogLevel`             | `OTEL_LOG_LEVEL`            | SDK internal log level            | `INFO`, `DEBUG`, `WARN`, `ERROR`        |
+
+#### OTLP Exporter Configuration
+
+| Constant                      | Environment Variable           | Description              | Default                | Example                          |
+|-------------------------------|--------------------------------|--------------------------|------------------------|----------------------------------|
+| `otelExporterOtlpEndpoint`    | `OTEL_EXPORTER_OTLP_ENDPOINT`  | OTLP endpoint URL        | `http://localhost:4318` | `https://otel-collector:4317`    |
+| `otelExporterOtlpProtocol`    | `OTEL_EXPORTER_OTLP_PROTOCOL`  | Transport protocol       | `http/protobuf`        | `grpc`, `http/protobuf`, `http/json` |
+| `otelExporterOtlpHeaders`     | `OTEL_EXPORTER_OTLP_HEADERS`   | Headers (key=value,...)  | None                   | `api-key=secret,tenant=acme`     |
+| `otelExporterOtlpTimeout`     | `OTEL_EXPORTER_OTLP_TIMEOUT`   | Timeout in milliseconds  | `10000`                | `5000`                           |
+| `otelExporterOtlpCompression` | `OTEL_EXPORTER_OTLP_COMPRESSION` | Compression algorithm  | None                   | `gzip`                           |
+
+#### Signal-Specific Configuration
+
+##### Traces
+
+| Constant                              | Environment Variable                    | Description               |
+|---------------------------------------|-----------------------------------------|---------------------------|
+| `otelTracesExporter`                  | `OTEL_TRACES_EXPORTER`                  | Trace exporter type       |
+| `otelExporterOtlpTracesEndpoint`      | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`    | Traces-specific endpoint  |
+| `otelExporterOtlpTracesProtocol`      | `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`    | Traces-specific protocol  |
+| `otelExporterOtlpTracesHeaders`       | `OTEL_EXPORTER_OTLP_TRACES_HEADERS`     | Traces-specific headers   |
+
+##### Metrics
+
+| Constant                              | Environment Variable                    | Description               |
+|---------------------------------------|-----------------------------------------|---------------------------|
+| `otelMetricsExporter`                 | `OTEL_METRICS_EXPORTER`                 | Metrics exporter type     |
+| `otelExporterOtlpMetricsEndpoint`     | `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`   | Metrics-specific endpoint |
+| `otelExporterOtlpMetricsProtocol`     | `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL`   | Metrics-specific protocol |
+| `otelExporterOtlpMetricsHeaders`      | `OTEL_EXPORTER_OTLP_METRICS_HEADERS`    | Metrics-specific headers  |
+
+For the complete list of all 74 supported environment variables with full documentation, see [`lib/src/environment/env_constants.dart`](lib/src/environment/env_constants.dart).
+
+### Usage Examples
+
+#### Dart Application with Environment Variables
+
+Note the ',' in OTEL_RESOURCE_ATTRIBUTES for POSIX env vars but a ';' for --dart-define.  This is due to a Dart quirk.
+
+```bash
+# Set environment variables
+export OTEL_SERVICE_NAME=my-backend-service
+export OTEL_RESOURCE_ATTRIBUTES="service.version=1.2.3,deployment.environment=prod"
+export OTEL_EXPORTER_OTLP_ENDPOINT=https://otel-collector:4318
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+export OTEL_EXPORTER_OTLP_HEADERS=api-key=your-key
+export OTEL_LOG_LEVEL=DEBUG
+
+# Run your application
+dart run bin/my_app.dart
+```
+
+#### Flutter Application with --dart-define
 
 ```bash
 flutter run \
   --dart-define=OTEL_SERVICE_NAME=my-flutter-app \
-  --dart-define=OTEL_SERVICE_VERSION=1.0.0 \
+  --dart-define=OTEL_RESOURCE_ATTRIBUTES="service.version=1.2.3;deployment.environment=prod"
   --dart-define=OTEL_EXPORTER_OTLP_ENDPOINT=https://otel-collector:4317 \
   --dart-define=OTEL_EXPORTER_OTLP_PROTOCOL=grpc \
-  --dart-define=OTEL_EXPORTER_OTLP_HEADERS=api-key=your-api-key
+  --dart-define=OTEL_EXPORTER_OTLP_HEADERS=api-key=your-key
 ```
 
-Or when running a Dart application:
+#### Flutter Web (requires --dart-define)
 
 ```bash
-export OTEL_SERVICE_NAME=my-dart-service
-export OTEL_SERVICE_VERSION=2.0.0
-export OTEL_EXPORTER_OTLP_ENDPOINT=https://otel-collector:4318
-export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-export OTEL_LOG_LEVEL=DEBUG
-
-dart run bin/my_app.dart
+# Web MUST use --dart-define (environment variables don't work in browsers)
+flutter run -d chrome \
+  --dart-define=OTEL_SERVICE_NAME=my-web-app \
+  --dart-define=OTEL_EXPORTER_OTLP_ENDPOINT=https://collector:4318
 ```
 
-### Protocol Selection
+#### Combining Both (--dart-define wins)
 
-The default protocol is `http/protobuf` (as per OpenTelemetry specification). The supported protocols are:
+```bash
+# Environment variable
+export OTEL_SERVICE_NAME=from-environment
 
-- `grpc` - gRPC protocol (typically port 4317)
-- `http/protobuf` - HTTP with protobuf encoding (typically port 4318)
-- `http/json` - HTTP with JSON encoding (typically port 4318)
+# --dart-define takes precedence
+dart run --dart-define=OTEL_SERVICE_NAME=from-dart-define
+
+# Result: Uses "from-dart-define"
+```
+
+#### In Code
+
+```dart
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+
+void main() async {
+  // OTel.initialize() automatically reads environment variables
+  // when parameters are not explicitly provided
+  await OTel.initialize();
+  
+  // Environment variables are read automatically:
+  // - OTEL_SERVICE_NAME
+  // - OTEL_EXPORTER_OTLP_ENDPOINT
+  // - OTEL_EXPORTER_OTLP_PROTOCOL
+  // - And 90+ others...
+  
+  // Explicit parameters override environment variables
+  await OTel.initialize(
+    serviceName: 'explicit-service',  // Overrides OTEL_SERVICE_NAME
+    endpoint: 'https://override:4318', // Overrides OTEL_EXPORTER_OTLP_ENDPOINT
+  );
+  
+  // You can also read environment variables directly
+  final endpoint = EnvironmentService.instance.getValue(otelExporterOtlpEndpoint);
+  print('Using endpoint: $endpoint');
+}
+```
+
+### Testing with Environment Variables
+
+Integration tests can use real environment variables:
+
+```bash
+# Run tests with environment variables
+OTEL_SERVICE_NAME=test-service dart test
+
+# Run tests with --dart-define
+dart test --dart-define=OTEL_SERVICE_NAME=test-service
+
+# Run the provided integration test script
+./tool/test_env_vars.sh
+```
+
+The SDK includes an integration test suite (`test/integration/environment_variables_test.dart`) and a test script (`tool/test_env_vars.sh`) that demonstrates proper environment variable usage.
 
 ### Minimal Code Example
 
 ```dart
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
-void main() {
-  OTel.initialize(
-      serviceName: 'powerful-backend-service',
-      serviceVersion: '2.0',
-      tracerName: 'data-microservice',
-      tracerVersion: '1.1.11',
-      //OTel standard tenant_id, required for Dartastic.io
-      tenantId: 'valued-customer-id',
-      //required for the Dartastic.io backend
-      dartasticAPIKey: '123456',
-      resourceAttributes: {
-        // Always consult the OTel Semantic Conventions to find an existing
-        // convention name for an attribute:
-        // https://opentelemetry.io/docs/specs/semconv/
-        //--dart-define environment=dev
-        //See https://opentelemetry.io/docs/specs/semconv/resource/deployment-environment/
-        DeploymentNames.deploymentEnvironmentName.key: String.fromEnvironment('environment'),
-        //--dart-define pod-name=powerful-dart-pod
-        //See https://opentelemetry.io/docs/specs/semconv/resource/#kubernetes
-        DeploymentNames.k8sPodName.key: String.fromEnvironment('pod - name'),
-      }
-  );
+void main() async {
+  // Initialize - automatically reads environment variables
+  await OTel.initialize();
 
   // Get the default tracer
-  var tracer = OTel.tracer();
+  final tracer = OTel.tracer();
 
-  // Create a new root span
-  final rootSpan = tracer.startSpan(
-    'root-operation',
-    attributes: OTel.attributesFromMap({
-      //SourceCode attributes are atypical, this is showing off the extensive semantics
-      SourceCodeNames.codeFunctionName.key: 'main',
-      // The spec limits attribute values to String, bool, int, double and lists thereof.
-      'readme.magic.number': 42,
-      'can.I.use.a.boolean': true,
-      'a.list.of.ints': [42, 143],
-      'a.list.of.doubles': [42.1, 143.4],
-    }),
-  );
-
+  // Create a span
+  final span = tracer.startSpan('my-operation');
+  
   try {
-    importantFunction();
-    rootSpan.addEventNow('importantFunction completed', 
-            // attributedFromMap can throw with bad types, OTel has typesafe attribute methods
-            OTel.attributes([
-              OTel.attributeString('event-foo', 'bar'),
-              OTel.attributeBool('event-baz', true)
-            ]));
-  } catch (e, s) {
-    span.recordException(e, stackTrace: s);
-    span.setStatus(SpanStatusCode.Error, 'Error running importantFunction $e');
+    // Your code here
+    await doWork();
+  } catch (e, stackTrace) {
+    span.recordException(e, stackTrace: stackTrace);
+    span.setStatus(SpanStatusCode.error, 'Operation failed');
   } finally {
-    // Ending a span sets the span status to SpanStatusCode.Ok, unless 
-    // the span status has already been set, per the OpenTelemetry Specification
-    // See https://opentelemetry.io/docs/specs/otel/trace/api/#set-status
     span.end();
   }
 }
-
 ```
 
 Since dartastic_opentelemetry exports all the classes of `opentelemetry_api`, refer to
@@ -249,11 +317,11 @@ Since dartastic_opentelemetry exports all the classes of `opentelemetry_api`, re
 
 See the `/example` folder for more examples.
 
-# OpenTelemetry Metrics API
+## OpenTelemetry Metrics API
 
 The Metrics API in OpenTelemetry provides a way to record measurements about your application. These measurements can be exported later as metrics, allowing you to monitor and analyze the performance and behavior of your application.
 
-## Concepts
+### Concepts
 
 - **MeterProvider**: Entry point to the metrics API, responsible for creating Meters
 - **Meter**: Used to create instruments for recording measurements
@@ -261,7 +329,7 @@ The Metrics API in OpenTelemetry provides a way to record measurements about you
   - Synchronous instruments: record measurements at the moment of calling their APIs
   - Asynchronous instruments: collect measurements on demand via callbacks
 
-## Instrument Types
+### Instrument Types
 
 - **Counter**: Synchronous, monotonic increasing counter (can only go up)
 - **UpDownCounter**: Synchronous, non-monotonic counter (can go up or down)
@@ -271,7 +339,7 @@ The Metrics API in OpenTelemetry provides a way to record measurements about you
 - **ObservableUpDownCounter**: Asynchronous version of UpDownCounter
 - **ObservableGauge**: Asynchronous version of Gauge
 
-## Usage Pattern
+### Usage Pattern
 
 Similar to the Tracing API, the metrics API follows a multi-layered factory pattern:
 
@@ -302,7 +370,7 @@ final observableCounter = meter.createObservableCounter(
 );
 ```
 
-## Understanding Metric Types and When to Use Them
+### Understanding Metric Types and When to Use Them
 
 | Instrument Type         | Use Case                                                        | Example                          |
 |-------------------------|-----------------------------------------------------------------|----------------------------------|
