@@ -74,6 +74,8 @@ export 'src/environment/env_constants.dart';
 export 'src/environment/environment_service.dart';
 export 'src/environment/otel_env.dart';
 export 'src/factory/otel_sdk_factory.dart';
+export 'src/log/logger.dart';
+export 'src/log/logger_provider.dart';
 export 'src/metrics/data/exemplar.dart';
 export 'src/metrics/data/metric.dart';
 export 'src/metrics/data/metric_data.dart';

@@ -8,7 +8,10 @@ environment:
   sdk: ^3.0.0
 
 dependencies:
-  dartastic_opentelemetry_api: ^0.8.7
+  dartastic_opentelemetry_api:
+    git:
+      url: git@github.com:yuzurihaaa/dartastic_opentelemetry_api.git
+      ref: d4a122033ad5de81a1e46bd50fbe31c73b4dabe9
   fixnum: ^1.1.1
   grpc: ^4.1.0
   http: ^1.5.0
