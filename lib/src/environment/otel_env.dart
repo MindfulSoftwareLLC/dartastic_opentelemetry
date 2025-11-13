@@ -27,8 +27,8 @@ class OTelEnv {
     final existingLogFunction = OTelLog.logFunction;
 
     // A custom function is one that's not null and not the default print function
-    final hasCustomLogFunction = existingLogFunction != null &&
-                                  existingLogFunction != print;
+    final hasCustomLogFunction =
+        existingLogFunction != null && existingLogFunction != print;
 
     // Set log level based on environment variable
     final logLevel = _getEnv(otelLogLevel)?.toLowerCase();
