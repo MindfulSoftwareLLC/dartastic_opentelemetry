@@ -1,0 +1,68 @@
+name: Coverage
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 'stable'
+      
+      - name: Install dependencies
+        run: dart pub get
+      
+      - name: Install lcov
+        run: sudo apt-get update && sudo apt-get install -y lcov
+      
+      - name: Run tests with coverage
+        run: |
+          chmod +x tool/coverage.sh
+          ./tool/coverage.sh
+      
+      - name: Generate coverage badge
+        run: |
+          # Extract coverage percentage from lcov.info
+          COVERAGE=$(lcov --summary coverage/lcov.info 2>&1 | grep "lines" | awk '{print $2}' | sed 's/%//')
+          echo "Coverage: $COVERAGE%"
+          
+          # Create a simple coverage badge HTML
+          mkdir -p coverage/html
+          cat > coverage/html/badge.html << EOF
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta http-equiv="refresh" content="0; url=index.html">
+          </head>
+          <body>
+            <p>Coverage: ${COVERAGE}%</p>
+          </body>
+          </html>
+          EOF
+      
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'coverage/html'
+      
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
