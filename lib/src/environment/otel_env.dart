@@ -176,55 +176,72 @@ class OTelEnv {
   ///
   /// This method reads the logging-related environment variables
   /// and configures the OTelLog accordingly.
+  /// 
+  /// If a custom log function has already been set (e.g., by tests),
+  /// this method will preserve it and only update the log level.
+  /// This allows tests to capture logs while still respecting
+  /// environment variable configuration.
   static void initializeLogging() {
+    // Save the current log function to check if it's custom
+    final existingLogFunction = OTelLog.logFunction;
+    
+    // A custom function is one that's not null and not the default print function
+    final hasCustomLogFunction = existingLogFunction != null && 
+                                  existingLogFunction != print;
+    
     // Set log level based on environment variable
     final logLevel = _getEnv(logLevelEnv)?.toLowerCase();
     if (logLevel != null) {
       switch (logLevel) {
         case 'trace':
           OTelLog.enableTraceLogging();
-          OTelLog.logFunction = print;
           break;
         case 'debug':
           OTelLog.enableDebugLogging();
-          OTelLog.logFunction = print;
           break;
         case 'info':
           OTelLog.enableInfoLogging();
-          OTelLog.logFunction = print;
           break;
         case 'warn':
           OTelLog.enableWarnLogging();
-          OTelLog.logFunction = print;
           break;
         case 'error':
           OTelLog.enableErrorLogging();
-          OTelLog.logFunction = print;
           break;
         case 'fatal':
           OTelLog.enableFatalLogging();
-          OTelLog.logFunction = print;
           break;
         default:
           // No change to logging if level not recognized
           break;
       }
+      
+      // Only set to print if no custom function is already configured
+      if (!hasCustomLogFunction) {
+        OTelLog.logFunction = print;
+      }
     }
 
     // Enable metrics logging based on environment variable
     if (_getEnvBool(enableMetricsLogEnv)) {
+      if (OTelLog.metricLogFunction == null || OTelLog.metricLogFunction == print) {
       OTelLog.metricLogFunction = print;
+    }
     }
 
     // Enable spans logging based on environment variable
     if (_getEnvBool(enableSpansLogEnv)) {
+      if (OTelLog.spanLogFunction == null || OTelLog.spanLogFunction == print) {
       OTelLog.spanLogFunction = print;
+    }
     }
 
     // Enable export logging based on environment variable
     if (_getEnvBool(enableExportLogEnv)) {
+      if (OTelLog.exportLogFunction == null || OTelLog.exportLogFunction == print) {
       OTelLog.exportLogFunction = print;
     }
+  }
   }
 
   /// Get OTLP configuration from environment variables.

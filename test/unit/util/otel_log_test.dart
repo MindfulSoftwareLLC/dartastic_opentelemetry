@@ -19,16 +19,16 @@ void main() {
       originalLogFunction = OTelLog.logFunction;
       originalLogLevel = OTelLog.currentLevel;
 
-      // Reset for testing
-      OTelLog.logFunction = null;
-      OTelLog.currentLevel = LogLevel.error; // Default
-
-      // Initialize OTel for tests that need it
+      // Initialize OTel
       await OTel.reset();
       await OTel.initialize(
         serviceName: 'test-log-service',
         serviceVersion: '1.0.0',
       );
+      
+      // Now override for testing (this overrides any env var config)
+      OTelLog.logFunction = null;
+      OTelLog.currentLevel = LogLevel.error;
     });
 
     tearDown(() async {

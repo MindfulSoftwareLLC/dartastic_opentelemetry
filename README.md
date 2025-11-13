@@ -2,6 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![OpenTelemetry Specification](https://img.shields.io/badge/OpenTelemetry-Specification-blueviolet)](https://opentelemetry.io/docs/specs/otel/)
+[![Coverage Report](https://img.shields.io/badge/coverage-report-brightgreen.svg)](https://mindfulsoftwarellc.github.io/dartastic_opentelemetry/)
 
 Dartastic is an [OpenTelemetry](https://opentelemetry.io/) SDK to add standard observability to Dart applications.
 Dartastic can be used with any OTel backend, it's standards-compliant.

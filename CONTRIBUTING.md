@@ -49,6 +49,25 @@ There are many ways to contribute to this project:
    ```
    Why not just `dart test`? The unit tests uses a real otel collector for robustness.  
    The test.sh script downloads the otel collector for the currecnt platform if it hasn't been downloaded before
+
+    Optionally, set debug log level or change concurrency from the default of 10.
+   ```bash
+   ./tool/test.sh --concurrency 1 --log debug
+   ```
+4. Run coverage to ensure code has adequete (+80%) code coverage:
+   ```bash
+   ./tool/coverage.sh
+   ```
+   Optionally, set debug log level or change concurrency from the default of 10.
+   ```bash
+   ./tool/coverage.sh --concurrency 1 --log debug
+   ```
+   
+   View the coverage report.  Coverage should go up, not down.
+   ``` bash
+   open coverage/html/index.html
+   ```
+   
 4. Run the analyzer:
    ```bash
    dart analyze
