@@ -55,6 +55,12 @@ jobs:
           </html>
           EOF
       
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: coverage/lcov.info
+          fail_ci_if_error: false
+      
       - name: Setup Pages
         uses: actions/configure-pages@v4
       
