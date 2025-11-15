@@ -498,6 +498,37 @@ class OTel {
     return meterProvider;
   }
 
+  /// Gets a LoggerProvider for creating Tracers.
+  ///
+  /// If name is null, this returns the global default LoggerProvider, which shares
+  /// the endpoint, serviceName, serviceVersion, sampler and resource set in initialize().
+  /// If the name is not null, it returns a LoggerProvider for the name that was added
+  /// with addLoggerProvider.
+  ///
+  /// The endpoint, serviceName, serviceVersion, sampler and resource set flow down
+  /// to the [Logger]s created by the LoggerProvider
+  /// @param name Optional name of a specific LoggerProvider
+  /// @return The LoggerProvider instance
+  static LoggerProvider loggerProvider({String? name}) {
+    final loggerProvider = OTelAPI.loggerProvider(name) as LoggerProvider;
+    // Ensure the resource is properly set
+    if (loggerProvider.resource == null && defaultResource != null) {
+      loggerProvider.resource = defaultResource;
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('OTel.loggerProvider: Setting resource from default');
+        if (defaultResource != null) {
+          defaultResource!.attributes.toList().forEach((attr) {
+            if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+              OTelLog.debug('  ${attr.key}: ${attr.value}');
+            }
+          });
+        }
+      }
+    }
+
+    return loggerProvider;
+  }
+
   /// Adds or replaces a named TracerProvider.
   ///
   /// This allows for creating multiple TracerProviders with different configurations,
@@ -523,6 +554,24 @@ class OTel {
     sdkTracerProvider.resource = resource ?? defaultResource;
     sdkTracerProvider.sampler = sampler ?? _defaultSampler;
     return sdkTracerProvider;
+  }
+
+  /// Adds or replaces a named LoggerProvider.
+  static LoggerProvider addLoggerProvider(
+    String name, {
+    String? endpoint,
+    String? serviceName,
+    String? serviceVersion,
+    Resource? resource,
+  }) {
+    final sdkLoggerProvider = OTelAPI.addLoggerProvider(
+      name,
+      endpoint: endpoint,
+      serviceName: serviceName,
+      serviceVersion: serviceVersion,
+    ) as LoggerProvider;
+    sdkLoggerProvider.resource = resource ?? defaultResource;
+    return sdkLoggerProvider;
   }
 
   /// @return the [TracerProvider]s, the global default and named ones.

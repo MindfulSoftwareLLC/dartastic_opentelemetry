@@ -2,8 +2,9 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 import 'package:dartastic_opentelemetry/src/trace/tracer_provider.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
-import '../metrics/meter_provider.dart';
 
+import '../log/logger_provider.dart';
+import '../metrics/meter_provider.dart';
 import '../resource/resource.dart';
 
 /// Factory function that creates an OTelSDKFactory with the specified configuration.
@@ -120,5 +121,22 @@ class OTelSDKFactory extends OTelAPIFactory {
             serviceVersion: serviceVersion,
             serviceName: serviceName),
         resource: resource);
+  }
+
+  @override
+  APILoggerProvider loggerProvider({
+    required String endpoint,
+    String serviceName = "@dart/opentelemetry_api",
+    String? serviceVersion,
+    Resource? resource,
+  }) {
+    return SDKLoggerProviderCreate.create(
+      delegate: super.loggerProvider(
+        endpoint: endpoint,
+        serviceVersion: serviceVersion,
+        serviceName: serviceName,
+      ),
+      resource: resource,
+    );
   }
 }
