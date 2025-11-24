@@ -24,12 +24,12 @@ There are many ways to contribute to this project:
 1. Fork the repository
 2. Clone your fork:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/opentelemetry_api.git
-   cd opentelemetry_api
+   git clone https://github.com/YOUR_USERNAME/dartastic_opentelemetry.git
+   cd dartastic_opentelemetry
    ```
 3. Add the upstream repository:
    ```bash
-   git remote add upstream https://github.com/MindfulSoftwareLLC/opentelemetry_api.git
+   git remote add upstream https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry.git
    ```
 4. Install dependencies:
    ```bash
