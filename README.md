@@ -51,9 +51,9 @@ OpenTelemetry data.
 - ✅ **Supported Telemetry Signals and Features**:
   - Tracing with span processors and samplers
   - Metrics collection and aggregation
+  - Logs with log record processors and exporters
   - Context propagation
   - Baggage management
-  - Logging is not available yet
 
 [Dartastic OTel](https://pub.dev/packages/dartastic_opentelemetry) is suitable for Dart backends, CLIs or any
 Dart application.
@@ -188,7 +188,32 @@ Constants are defined for all 74 OpenTelemetry environment variables. See `lib/s
 | `otelExporterOtlpMetricsProtocol`     | `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL`   | Metrics-specific protocol |
 | `otelExporterOtlpMetricsHeaders`      | `OTEL_EXPORTER_OTLP_METRICS_HEADERS`    | Metrics-specific headers  |
 
-For the complete list of all 74 supported environment variables with full documentation, see [`lib/src/environment/env_constants.dart`](lib/src/environment/env_constants.dart).
+##### Logs
+
+| Constant                              | Environment Variable                    | Description               |
+|---------------------------------------|-----------------------------------------|---------------------------|
+| `otelLogsExporter`                    | `OTEL_LOGS_EXPORTER`                    | Logs exporter type (`otlp`, `console`, `none`) |
+| `otelExporterOtlpLogsEndpoint`        | `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`      | Logs-specific endpoint    |
+| `otelExporterOtlpLogsProtocol`        | `OTEL_EXPORTER_OTLP_LOGS_PROTOCOL`      | Logs-specific protocol    |
+| `otelExporterOtlpLogsHeaders`         | `OTEL_EXPORTER_OTLP_LOGS_HEADERS`       | Logs-specific headers     |
+
+##### Batch LogRecord Processor (BLRP)
+
+| Constant                         | Environment Variable              | Default  | Description                          |
+|----------------------------------|-----------------------------------|----------|--------------------------------------|
+| `otelBlrpScheduleDelay`          | `OTEL_BLRP_SCHEDULE_DELAY`        | `1000`   | Delay between exports (milliseconds) |
+| `otelBlrpExportTimeout`          | `OTEL_BLRP_EXPORT_TIMEOUT`        | `30000`  | Export timeout (milliseconds)        |
+| `otelBlrpMaxQueueSize`           | `OTEL_BLRP_MAX_QUEUE_SIZE`        | `2048`   | Maximum queue size                   |
+| `otelBlrpMaxExportBatchSize`     | `OTEL_BLRP_MAX_EXPORT_BATCH_SIZE` | `512`    | Maximum batch size per export        |
+
+##### LogRecord Limits
+
+| Constant                                  | Environment Variable                        | Default  | Description                        |
+|-------------------------------------------|---------------------------------------------|----------|------------------------------------|
+| `otelLogrecordAttributeValueLengthLimit`  | `OTEL_LOGRECORD_ATTRIBUTE_VALUE_LENGTH_LIMIT` | No limit | Maximum length of attribute values |
+| `otelLogrecordAttributeCountLimit`        | `OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT`       | `128`    | Maximum number of attributes       |
+
+For the complete list of all supported environment variables with full documentation, see [`lib/src/environment/env_constants.dart`](lib/src/environment/env_constants.dart).
 
 ### Usage Examples
 
@@ -383,10 +408,150 @@ final observableCounter = meter.createObservableCounter(
 | ObservableUpDownCounter | Count things that can increase or decrease, collected on demand | Memory usage                     |
 | ObservableGauge         | Record current value, collected on demand                       | Current temperature              |
 
+## OpenTelemetry Logs API
+
+The Logs API in OpenTelemetry provides a way to record log events from your application. These logs can be exported to an OpenTelemetry backend for analysis alongside traces and metrics.
+
+### Concepts
+
+- **LoggerProvider**: Entry point to the logs API, responsible for creating Loggers
+- **Logger**: Used to emit log records
+- **LogRecord**: Represents a single log event with body, severity, attributes, timestamps, and trace context
+- **LogRecordProcessor**: Processes log records before export
+- **LogRecordExporter**: Exports log records to backends
+
+### Quick Start
+
+```dart
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+
+void main() async {
+  // Initialize with logs enabled (default)
+  await OTel.initialize(
+    serviceName: 'my-service',
+    enableLogs: true,  // Default is true
+  );
+
+  // Get a logger
+  final logger = OTel.logger('my-component');
+
+  // Emit log records
+  logger.emit(
+    body: 'Application started',
+    severityNumber: Severity.INFO,
+  );
+
+  // Log with attributes
+  logger.emit(
+    body: 'User logged in',
+    severityNumber: Severity.INFO,
+    attributes: OTel.attributesFromMap({
+      'user.id': 'user123',
+      'user.role': 'admin',
+    }),
+  );
+
+  // Log an error with exception
+  try {
+    throw Exception('Something went wrong');
+  } catch (e, stackTrace) {
+    logger.emit(
+      body: 'Operation failed: $e',
+      severityNumber: Severity.ERROR,
+      attributes: OTel.attributesFromMap({
+        'exception.type': e.runtimeType.toString(),
+        'exception.stacktrace': stackTrace.toString(),
+      }),
+    );
+  }
+}
+```
+
+### Intercepting print() Calls
+
+Dartastic OpenTelemetry can automatically capture `print()` calls and convert them to OpenTelemetry logs:
+
+```dart
+await OTel.initialize(
+  serviceName: 'my-service',
+  logPrint: true,  // Enable print interception
+  logPrintLoggerName: 'dart.print',  // Optional custom logger name
+);
+
+// Use runWithPrintInterception to capture prints
+OTel.runWithPrintInterception(() {
+  print('This will be captured as an OTel log');
+  print('So will this');
+});
+
+// For async code
+await OTel.runWithPrintInterceptionAsync(() async {
+  print('Async print captured');
+  await someAsyncOperation();
+});
+```
+
+### Log Severity Levels
+
+| Severity | Use Case |
+|----------|----------|
+| `Severity.TRACE` / `Severity.TRACE2-4` | Fine-grained debugging |
+| `Severity.DEBUG` / `Severity.DEBUG2-4` | Debug information |
+| `Severity.INFO` / `Severity.INFO2-4` | General information |
+| `Severity.WARN` / `Severity.WARN2-4` | Warning conditions |
+| `Severity.ERROR` / `Severity.ERROR2-4` | Error conditions |
+| `Severity.FATAL` / `Severity.FATAL2-4` | Critical failures |
+
+### Custom Log Exporters
+
+```dart
+// Use a custom exporter
+final customExporter = OtlpHttpLogRecordExporter(
+  OtlpHttpLogRecordExporterConfig(
+    endpoint: 'https://my-collector:4318',
+    headers: {'Authorization': 'Bearer token'},
+  ),
+);
+
+await OTel.initialize(
+  serviceName: 'my-service',
+  logRecordExporter: customExporter,
+);
+```
+
+### Console Logging (Development)
+
+```dart
+// Use console exporter for development
+await OTel.initialize(
+  serviceName: 'my-service',
+  logRecordProcessor: SimpleLogRecordProcessor(ConsoleLogRecordExporter()),
+);
+```
+
+### Configuration via Environment Variables
+
+Logs can be configured via environment variables:
+
+```bash
+# Set logs exporter (otlp, console, or none)
+export OTEL_LOGS_EXPORTER=otlp
+
+# Set logs-specific endpoint
+export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs-collector:4318
+
+# Configure batch processor
+export OTEL_BLRP_SCHEDULE_DELAY=5000
+export OTEL_BLRP_MAX_QUEUE_SIZE=4096
+
+# Set log record limits
+export OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT=128
+```
+
 ## Integration with Dartastic/Flutterrific
 
 This API implementation follows the same pattern as the tracing API, where the creation of objects is managed through
-factory methods. This allows for a clear separation between API and SDK, and ensures that the metrics functionality
+factory methods. This allows for a clear separation between API and SDK, and ensures that the metrics and logs functionality
 can be used in a no-op mode when the SDK is not initialized.
 
 ## Commercial Support

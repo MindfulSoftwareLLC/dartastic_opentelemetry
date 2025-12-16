@@ -98,6 +98,10 @@ class OTel {
   /// @param metricExporter Custom metric exporter for metrics
   /// @param metricReader Custom metric reader for metrics
   /// @param enableMetrics Whether to enable metrics collection (default: true)
+  /// @param enableLogs Whether to enable logs collection and auto-configure exporter (default: true).
+  ///   When enabled, the logs exporter is configured based on OTEL_LOGS_EXPORTER env var.
+  /// @param logRecordExporter Custom log record exporter (overrides OTEL_LOGS_EXPORTER)
+  /// @param logRecordProcessor Custom log record processor (overrides auto-configuration)
   /// @param dartasticApiKey API key for Dartastic.io backend
   /// @param tenantId Tenant ID for multi-tenant backends (required for Dartastic.io)
   /// @param detectPlatformResources Whether to detect platform resources (default: true)
@@ -123,6 +127,9 @@ class OTel {
     MetricExporter? metricExporter,
     MetricReader? metricReader,
     bool enableMetrics = true,
+    bool enableLogs = true,
+    LogRecordExporter? logRecordExporter,
+    LogRecordProcessor? logRecordProcessor,
     String? dartasticApiKey,
     String? tenantId,
     bool detectPlatformResources = true,
@@ -421,6 +428,22 @@ class OTel {
           resource: OTel.defaultResource,
         );
       }
+    }
+
+    // Configure logs if enabled
+    if (enableLogs) {
+      // For HTTP, adjust endpoint if it's the gRPC default
+      String logsEndpoint = endpoint;
+      if (endpoint == defaultEndpoint) {
+        logsEndpoint = 'http://localhost:4318';
+      }
+      LogsConfiguration.configureLoggerProvider(
+        endpoint: logsEndpoint,
+        secure: secure,
+        logRecordExporter: logRecordExporter,
+        logRecordProcessor: logRecordProcessor,
+        resource: OTel.defaultResource,
+      );
     }
 
     // Store print interception configuration (lazily initialized when needed)
