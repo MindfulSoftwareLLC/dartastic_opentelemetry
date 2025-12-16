@@ -382,6 +382,86 @@ class OTelEnv {
     }
   }
 
+  /// Get Batch LogRecord Processor (BLRP) configuration from environment variables.
+  ///
+  /// Returns a map containing the BLRP configuration read from environment variables.
+  /// Keys returned:
+  /// - 'scheduleDelay': Duration for the schedule delay
+  /// - 'exportTimeout': Duration for the export timeout
+  /// - 'maxQueueSize': int for maximum queue size
+  /// - 'maxExportBatchSize': int for maximum export batch size
+  static Map<String, dynamic> getBlrpConfig() {
+    final config = <String, dynamic>{};
+
+    // Get schedule delay
+    final scheduleDelay = _getEnv(otelBlrpScheduleDelay);
+    if (scheduleDelay != null) {
+      final delayMs = int.tryParse(scheduleDelay);
+      if (delayMs != null) {
+        config['scheduleDelay'] = Duration(milliseconds: delayMs);
+      }
+    }
+
+    // Get export timeout
+    final exportTimeout = _getEnv(otelBlrpExportTimeout);
+    if (exportTimeout != null) {
+      final timeoutMs = int.tryParse(exportTimeout);
+      if (timeoutMs != null) {
+        config['exportTimeout'] = Duration(milliseconds: timeoutMs);
+      }
+    }
+
+    // Get max queue size
+    final maxQueueSize = _getEnv(otelBlrpMaxQueueSize);
+    if (maxQueueSize != null) {
+      final size = int.tryParse(maxQueueSize);
+      if (size != null) {
+        config['maxQueueSize'] = size;
+      }
+    }
+
+    // Get max export batch size
+    final maxExportBatchSize = _getEnv(otelBlrpMaxExportBatchSize);
+    if (maxExportBatchSize != null) {
+      final size = int.tryParse(maxExportBatchSize);
+      if (size != null) {
+        config['maxExportBatchSize'] = size;
+      }
+    }
+
+    return config;
+  }
+
+  /// Get LogRecord attribute limits from environment variables.
+  ///
+  /// Returns a map containing the log record attribute limits.
+  /// Keys returned:
+  /// - 'attributeValueLengthLimit': int for max attribute value length
+  /// - 'attributeCountLimit': int for max number of attributes
+  static Map<String, dynamic> getLogRecordLimits() {
+    final config = <String, dynamic>{};
+
+    // Get attribute value length limit
+    final valueLengthLimit = _getEnv(otelLogrecordAttributeValueLengthLimit);
+    if (valueLengthLimit != null) {
+      final limit = int.tryParse(valueLengthLimit);
+      if (limit != null) {
+        config['attributeValueLengthLimit'] = limit;
+      }
+    }
+
+    // Get attribute count limit
+    final countLimit = _getEnv(otelLogrecordAttributeCountLimit);
+    if (countLimit != null) {
+      final limit = int.tryParse(countLimit);
+      if (limit != null) {
+        config['attributeCountLimit'] = limit;
+      }
+    }
+
+    return config;
+  }
+
   /// Parse headers from the environment variable format.
   ///
   /// Headers are expected in the format: key1=value1,key2=value2

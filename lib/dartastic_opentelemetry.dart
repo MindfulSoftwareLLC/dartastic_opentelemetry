@@ -82,6 +82,7 @@ export 'src/logs/bridge/dart_log_bridge.dart';
 export 'src/logs/export/batch_log_record_processor.dart';
 export 'src/logs/export/console_log_record_exporter.dart';
 export 'src/logs/export/log_record_exporter.dart';
+export 'src/logs/export/logs_config.dart';
 export 'src/logs/export/otlp/http/otlp_http_log_record_exporter.dart';
 export 'src/logs/export/otlp/http/otlp_http_log_record_exporter_config.dart';
 export 'src/logs/export/otlp/log_record_transformer.dart';
