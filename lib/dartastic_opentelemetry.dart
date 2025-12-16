@@ -38,6 +38,7 @@ export 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
         InteractionSemantics,
         KubernetesResource,
         LifecycleState,
+        LogRecord,
         Measurement,
         MessagingResource,
         NavigationSemantics,
@@ -53,6 +54,8 @@ export 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
         RPCResource,
         ServiceResource,
         SessionViewSemantics,
+        Severity,
+        SeverityLevel,
         SourceCodeResource,
         SpanContext,
         SpanEvent,
@@ -73,7 +76,22 @@ export 'src/context/propagation/w3c_baggage_propagator.dart';
 export 'src/environment/env_constants.dart';
 export 'src/environment/environment_service.dart';
 export 'src/environment/otel_env.dart';
+export 'src/export/export_result.dart';
 export 'src/factory/otel_sdk_factory.dart';
+export 'src/logs/bridge/dart_log_bridge.dart';
+export 'src/logs/export/batch_log_record_processor.dart';
+export 'src/logs/export/console_log_record_exporter.dart';
+export 'src/logs/export/log_record_exporter.dart';
+export 'src/logs/export/otlp/http/otlp_http_log_record_exporter.dart';
+export 'src/logs/export/otlp/http/otlp_http_log_record_exporter_config.dart';
+export 'src/logs/export/otlp/log_record_transformer.dart';
+export 'src/logs/export/otlp/otlp_grpc_log_record_exporter.dart';
+export 'src/logs/export/otlp/otlp_grpc_log_record_exporter_config.dart';
+export 'src/logs/export/simple_log_record_processor.dart';
+export 'src/logs/log_record_processor.dart';
+export 'src/logs/logger.dart';
+export 'src/logs/logger_provider.dart';
+export 'src/logs/readable_log_record.dart';
 export 'src/metrics/data/exemplar.dart';
 export 'src/metrics/data/metric.dart';
 export 'src/metrics/data/metric_data.dart';
