@@ -4,6 +4,8 @@
 /// OpenTelemetry Protocol Buffer definitions for Dart
 library;
 
+export './collector/logs/v1/logs_service.pb.dart';
+export './collector/logs/v1/logs_service.pbgrpc.dart';
 export './collector/trace/v1/trace_service.pb.dart';
 export './collector/trace/v1/trace_service.pbenum.dart';
 export './collector/trace/v1/trace_service.pbgrpc.dart';
