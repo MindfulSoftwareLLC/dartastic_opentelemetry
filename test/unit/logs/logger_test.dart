@@ -20,6 +20,8 @@ void main() {
       await OTel.initialize(
         serviceName: 'logger-test-service',
         detectPlatformResources: false,
+        enableLogs:
+            false, // Disable auto-configuration so we control processors manually
       );
 
       OTel.loggerProvider().addLogRecordProcessor(processor);
@@ -162,6 +164,8 @@ void main() {
       await OTel.initialize(
         serviceName: 'no-processor-test',
         detectPlatformResources: false,
+        enableLogs:
+            false, // Disable auto-configuration to test no-processor behavior
       );
 
       final logger = OTel.logger('test-logger');
@@ -181,6 +185,8 @@ void main() {
       await OTel.initialize(
         serviceName: 'disabled-test',
         detectPlatformResources: false,
+        enableLogs:
+            false, // Disable auto-configuration to test disabled behavior
       );
 
       // No processor added, logger should be disabled

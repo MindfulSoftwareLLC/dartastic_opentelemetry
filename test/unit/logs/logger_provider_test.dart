@@ -18,10 +18,12 @@ void main() {
       memoryExporter = MemoryLogRecordExporter();
       processor = SimpleLogRecordProcessor(memoryExporter);
 
-      // Initialize OTel
+      // Initialize OTel without auto-configuration of logs
+      // (so we can test processor management manually)
       await OTel.initialize(
         serviceName: 'logger-provider-test-service',
         detectPlatformResources: false,
+        enableLogs: false,
       );
 
       // Add the processor to the logger provider
