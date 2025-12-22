@@ -76,7 +76,7 @@ Mindful Software offers paid support, consulting and developing on Flutter, Open
 Include this in your pubspec.yaml:
 ```
 dependencies:
-  dartastic_opentelemetry: ^0.9.3
+  dartastic_opentelemetry: ^1.0.0-alpha
 ```
 
 The entrypoint to the SDK is the `OTel` class.  `OTel` has static "factory" methods for all
