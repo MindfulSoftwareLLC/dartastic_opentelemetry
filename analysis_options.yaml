@@ -13,6 +13,8 @@
 
 include: package:lints/recommended.yaml
 analyzer:
+  exclude:
+    - lib/proto/**
   errors:
     unnecessary_library_name: ignore
     use_string_in_part_of_directives: ignore

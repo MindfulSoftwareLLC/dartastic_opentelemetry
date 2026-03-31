@@ -5,10 +5,10 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
 void main() async {
   // Initialize OTel first with the endpoint
-  // String endpoint = 'https://otel-dev.dartastic.io:443';
+  // String endpoint = 'https://otel.dartastic.io:443';
   // var secure = true;
   final endpoint =
-      'http://ec2-3-139-70-11.us-east-2.compute.amazonaws.com:4317';
+      'http://my-otel-collector:4317';
   final secure = false;
   await OTel.initialize(
       secure: secure,

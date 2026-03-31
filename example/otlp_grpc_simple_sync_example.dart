@@ -11,8 +11,7 @@ void main() async {
   // Initialize with automatic resource detection
 
   // Configure the OTLP exporter
-  final endpoint =
-      'http://ec2-3-139-70-11.us-east-2.compute.amazonaws.com:4317';
+  final endpoint = 'http://my-otel-endpoint:4317';
   final exporter = OtlpGrpcSpanExporter(
     OtlpGrpcExporterConfig(
       endpoint: endpoint,
