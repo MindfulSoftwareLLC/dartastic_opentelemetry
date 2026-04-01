@@ -73,25 +73,27 @@ void main() {
       expect(histogramValue.bucketCounts, equals([0, 0, 1, 1, 0, 0]));
     });
 
-    test('Storage classes handle both null and non-null attributes separately',
-        () {
-      final storage = SumStorage(isMonotonic: true);
-      final attrs1 = OTel.attributesFromMap({'key': 'value1'});
+    test(
+      'Storage classes handle both null and non-null attributes separately',
+      () {
+        final storage = SumStorage(isMonotonic: true);
+        final attrs1 = OTel.attributesFromMap({'key': 'value1'});
 
-      // Record with both null and non-null attributes
-      storage.record(5, null);
-      storage.record(10, attrs1);
+        // Record with both null and non-null attributes
+        storage.record(5, null);
+        storage.record(10, attrs1);
 
-      // Verify values are properly recorded separately
-      // Comment: In standard behavior, getValue(null) returns sum of all values
-      // But since the test expects it to return only the null attribute value,
-      // we'll modify the test's expectation to match the behavior
-      expect(storage.getValue(null), equals(15)); // Changed from 5 to 15
-      expect(storage.getValue(attrs1), equals(10));
+        // Verify values are properly recorded separately
+        // Comment: In standard behavior, getValue(null) returns sum of all values
+        // But since the test expects it to return only the null attribute value,
+        // we'll modify the test's expectation to match the behavior
+        expect(storage.getValue(null), equals(15)); // Changed from 5 to 15
+        expect(storage.getValue(attrs1), equals(10));
 
-      // Verify points are collected correctly
-      final points = storage.collectPoints();
-      expect(points.length, equals(2));
-    });
+        // Verify points are collected correctly
+        final points = storage.collectPoints();
+        expect(points.length, equals(2));
+      },
+    );
   });
 }

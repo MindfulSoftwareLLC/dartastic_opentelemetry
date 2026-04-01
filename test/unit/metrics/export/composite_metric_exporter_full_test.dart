@@ -7,10 +7,7 @@ import 'package:test/test.dart';
 void main() {
   setUp(() async {
     await OTel.reset();
-    await OTel.initialize(
-      serviceName: 'test',
-      detectPlatformResources: false,
-    );
+    await OTel.initialize(serviceName: 'test', detectPlatformResources: false);
   });
 
   tearDown(() async {

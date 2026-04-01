@@ -29,8 +29,9 @@ void main() {
       expect(compressed.length, isNot(equals(uint8Data.length)));
 
       // Decompress the data
-      final decompressed =
-          await gzip.decompress(Uint8List.fromList(compressed));
+      final decompressed = await gzip.decompress(
+        Uint8List.fromList(compressed),
+      );
 
       // Convert back to string and verify
       final resultString = utf8.decode(decompressed);
@@ -44,8 +45,9 @@ void main() {
       final compressed = await gzip.compress(emptyData);
 
       // Decompress the data
-      final decompressed =
-          await gzip.decompress(Uint8List.fromList(compressed));
+      final decompressed = await gzip.decompress(
+        Uint8List.fromList(compressed),
+      );
 
       expect(decompressed, isEmpty);
     });
@@ -64,26 +66,32 @@ void main() {
       expect(compressed.length, lessThan(largeData.length));
 
       // Decompress the data
-      final decompressed =
-          await gzip.decompress(Uint8List.fromList(compressed));
+      final decompressed = await gzip.decompress(
+        Uint8List.fromList(compressed),
+      );
 
       // Verify that decompressed data matches the original
       expect(decompressed.length, equals(largeData.length));
       // Compare the contents
       for (var i = 0; i < largeData.length; i++) {
-        expect(decompressed[i], equals(largeData[i]),
-            reason: 'Byte at position $i doesn\'t match');
+        expect(
+          decompressed[i],
+          equals(largeData[i]),
+          reason: 'Byte at position $i doesn\'t match',
+        );
       }
     });
 
     test('decompresses pre-compressed data correctly', () async {
       // This is a gzip-compressed version of "OpenTelemetry test data"
       final preCompressed = base64Decode(
-          'H4sIAAAAAAAAA/NIzcnJVyjPL8pJUUjMS1FIKC1OLcpLzE1VyE3MzlQAAAbXZLQcAAAA');
+        'H4sIAAAAAAAAA/NIzcnJVyjPL8pJUUjMS1FIKC1OLcpLzE1VyE3MzlQAAAbXZLQcAAAA',
+      );
 
       // Decompress the data
-      final decompressed =
-          await gzip.decompress(Uint8List.fromList(preCompressed));
+      final decompressed = await gzip.decompress(
+        Uint8List.fromList(preCompressed),
+      );
 
       // Verify the decompressed content
       final resultString = utf8.decode(decompressed);

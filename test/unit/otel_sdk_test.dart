@@ -153,9 +153,12 @@ void main() {
             key.startsWith('os.') ||
             key.startsWith('telemetry.'),
       );
-      expect(hasPlatformAttrs, isTrue,
-          reason:
-              'Platform resource detection should add platform-related attributes');
+      expect(
+        hasPlatformAttrs,
+        isTrue,
+        reason:
+            'Platform resource detection should add platform-related attributes',
+      );
     });
 
     test('initialize with tenantId and resourceAttributes', () async {
@@ -297,10 +300,14 @@ void main() {
       expect(event.name, equals('test'));
       expect(event.attributes, isNotNull);
       // The timestamp should be between before and after
-      expect(event.timestamp.millisecondsSinceEpoch,
-          greaterThanOrEqualTo(before.millisecondsSinceEpoch));
-      expect(event.timestamp.millisecondsSinceEpoch,
-          lessThanOrEqualTo(after.millisecondsSinceEpoch));
+      expect(
+        event.timestamp.millisecondsSinceEpoch,
+        greaterThanOrEqualTo(before.millisecondsSinceEpoch),
+      );
+      expect(
+        event.timestamp.millisecondsSinceEpoch,
+        lessThanOrEqualTo(after.millisecondsSinceEpoch),
+      );
     });
 
     test('spanEvent creates event', () {
@@ -348,7 +355,9 @@ void main() {
       final attrList = attrs.toList();
       expect(attrList.length, equals(2));
       expect(
-          attrList.any((a) => a.key == 'key1' && a.value == 'value1'), isTrue);
+        attrList.any((a) => a.key == 'key1' && a.value == 'value1'),
+        isTrue,
+      );
       expect(attrList.any((a) => a.key == 'key2' && a.value == 42), isTrue);
     });
 
@@ -378,8 +387,11 @@ void main() {
     });
 
     test('addTracerProvider creates named provider', () {
-      final provider = OTel.addTracerProvider('custom',
-          serviceName: 'custom-service', serviceVersion: '2.0.0');
+      final provider = OTel.addTracerProvider(
+        'custom',
+        serviceName: 'custom-service',
+        serviceVersion: '2.0.0',
+      );
 
       expect(provider, isNotNull);
       expect(provider, isA<TracerProvider>());
@@ -479,75 +491,81 @@ void main() {
       OTelLog.logFunction = null;
     });
 
-    test('initialize with detectPlatformResources true detects platform',
-        () async {
-      // This covers the detectPlatformResources=true branch
-      await OTel.initialize(
-        serviceName: 'platform-test',
-        serviceVersion: '1.0.0',
-        detectPlatformResources: true,
-        enableMetrics: false,
-      );
+    test(
+      'initialize with detectPlatformResources true detects platform',
+      () async {
+        // This covers the detectPlatformResources=true branch
+        await OTel.initialize(
+          serviceName: 'platform-test',
+          serviceVersion: '1.0.0',
+          detectPlatformResources: true,
+          enableMetrics: false,
+        );
 
-      expect(OTel.defaultResource, isNotNull);
-      final attrs = OTel.defaultResource!.attributes.toList();
-      final attrKeys = attrs.map((a) => a.key).toList();
+        expect(OTel.defaultResource, isNotNull);
+        final attrs = OTel.defaultResource!.attributes.toList();
+        final attrKeys = attrs.map((a) => a.key).toList();
 
-      // Platform detection should add at least some platform-related attributes
-      final hasPlatformAttrs = attrKeys.any(
-        (key) =>
-            key.startsWith('host.') ||
-            key.startsWith('process.') ||
-            key.startsWith('os.') ||
-            key.startsWith('telemetry.'),
-      );
-      expect(hasPlatformAttrs, isTrue);
-    });
+        // Platform detection should add at least some platform-related attributes
+        final hasPlatformAttrs = attrKeys.any(
+          (key) =>
+              key.startsWith('host.') ||
+              key.startsWith('process.') ||
+              key.startsWith('os.') ||
+              key.startsWith('telemetry.'),
+        );
+        expect(hasPlatformAttrs, isTrue);
+      },
+    );
 
-    test('initialize with custom spanProcessor skips env exporter creation',
-        () async {
-      // Providing a spanProcessor directly bypasses lines 297-378 (exporter
-      // creation from env vars). This verifies the provided-processor path
-      // works and no env-based exporter is created.
-      final exporter = InMemorySpanExporter();
-      final processor = SimpleSpanProcessor(exporter);
+    test(
+      'initialize with custom spanProcessor skips env exporter creation',
+      () async {
+        // Providing a spanProcessor directly bypasses lines 297-378 (exporter
+        // creation from env vars). This verifies the provided-processor path
+        // works and no env-based exporter is created.
+        final exporter = InMemorySpanExporter();
+        final processor = SimpleSpanProcessor(exporter);
 
-      await OTel.initialize(
-        serviceName: 'custom-processor',
-        serviceVersion: '1.0.0',
-        spanProcessor: processor,
-        detectPlatformResources: false,
-        enableMetrics: false,
-      );
+        await OTel.initialize(
+          serviceName: 'custom-processor',
+          serviceVersion: '1.0.0',
+          spanProcessor: processor,
+          detectPlatformResources: false,
+          enableMetrics: false,
+        );
 
-      // Create and end a span to verify processor is wired up
-      final tracer = OTel.tracer();
-      final span = tracer.startSpan('test-span');
-      span.end();
+        // Create and end a span to verify processor is wired up
+        final tracer = OTel.tracer();
+        final span = tracer.startSpan('test-span');
+        span.end();
 
-      // Give the processor time to export
-      await Future<void>.delayed(const Duration(milliseconds: 100));
-      expect(exporter.hasSpanWithName('test-span'), isTrue);
-    });
+        // Give the processor time to export
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+        expect(exporter.hasSpanWithName('test-span'), isTrue);
+      },
+    );
 
-    test('initialize with console exporter via env (spanProcessor=none path)',
-        () async {
-      // When we provide a spanProcessor, it bypasses the exporter creation.
-      // Test that initialization completes with the 'none' exporter type
-      // when we provide our own processor.
-      final exporter = InMemorySpanExporter();
-      final processor = SimpleSpanProcessor(exporter);
+    test(
+      'initialize with console exporter via env (spanProcessor=none path)',
+      () async {
+        // When we provide a spanProcessor, it bypasses the exporter creation.
+        // Test that initialization completes with the 'none' exporter type
+        // when we provide our own processor.
+        final exporter = InMemorySpanExporter();
+        final processor = SimpleSpanProcessor(exporter);
 
-      await OTel.initialize(
-        serviceName: 'console-export-test',
-        serviceVersion: '1.0.0',
-        spanProcessor: processor,
-        detectPlatformResources: false,
-        enableMetrics: false,
-      );
+        await OTel.initialize(
+          serviceName: 'console-export-test',
+          serviceVersion: '1.0.0',
+          spanProcessor: processor,
+          detectPlatformResources: false,
+          enableMetrics: false,
+        );
 
-      expect(OTel.tracerProvider(), isNotNull);
-    });
+        expect(OTel.tracerProvider(), isNotNull);
+      },
+    );
   });
 
   group('OTel factory methods coverage', () {
@@ -587,10 +605,7 @@ void main() {
 
     test('traceIdOf throws for wrong length', () {
       // Covers lines 885-886
-      expect(
-        () => OTel.traceIdOf(Uint8List(5)),
-        throwsArgumentError,
-      );
+      expect(() => OTel.traceIdOf(Uint8List(5)), throwsArgumentError);
     });
 
     test('traceIdOf works with correct length', () {
@@ -605,10 +620,7 @@ void main() {
 
     test('spanIdOf throws for wrong length', () {
       // Covers lines 921-922
-      expect(
-        () => OTel.spanIdOf(Uint8List(3)),
-        throwsArgumentError,
-      );
+      expect(() => OTel.spanIdOf(Uint8List(3)), throwsArgumentError);
     });
 
     test('spanIdOf works with correct length', () {
@@ -641,10 +653,7 @@ void main() {
 
     test('_getAndCacheOtelFactory throws when not initialized', () {
       // Covers line 964: StateError('initialize() must be called first.')
-      expect(
-        () => OTel.contextKey<String>('test-key'),
-        throwsStateError,
-      );
+      expect(() => OTel.contextKey<String>('test-key'), throwsStateError);
     });
   });
 
@@ -752,8 +761,11 @@ void main() {
       final hasWarning = logMessages.any(
         (msg) => msg.contains('has no end time'),
       );
-      expect(hasWarning, isTrue,
-          reason: 'Should warn about span with no end time');
+      expect(
+        hasWarning,
+        isTrue,
+        reason: 'Should warn about span with no end time',
+      );
     });
 
     test('onEnd with throwing exporter catches export error', () async {
@@ -783,8 +795,11 @@ void main() {
       final hasError = logMessages.any(
         (msg) => msg.contains('Export error') || msg.contains('export fail'),
       );
-      expect(hasError, isTrue,
-          reason: 'Should log export error from throwing exporter');
+      expect(
+        hasError,
+        isTrue,
+        reason: 'Should log export error from throwing exporter',
+      );
     });
 
     test('onEnd with non-standard throw hits outer catch', () async {
@@ -815,8 +830,11 @@ void main() {
             msg.contains('Failed to start export') ||
             msg.contains('non-standard error'),
       );
-      expect(hasOuterError, isTrue,
-          reason: 'Should log outer catch error for non-standard throw');
+      expect(
+        hasOuterError,
+        isTrue,
+        reason: 'Should log outer catch error for non-standard throw',
+      );
     });
 
     test('shutdown with failing exporter shutdown logs error', () async {
@@ -844,8 +862,11 @@ void main() {
             msg.contains('Error shutting down exporter') ||
             msg.contains('shutdown fail'),
       );
-      expect(hasShutdownError, isTrue,
-          reason: 'Should log exporter shutdown error');
+      expect(
+        hasShutdownError,
+        isTrue,
+        reason: 'Should log exporter shutdown error',
+      );
     });
 
     test('forceFlush with failing exporter logs error', () async {
@@ -876,38 +897,43 @@ void main() {
       expect(hasFlushError, isTrue, reason: 'Should log forceFlush error');
     });
 
-    test('shutdown after processing span with already-shutdown state',
-        () async {
-      // Covers lines 36-42: skipping export when processor is shutdown
-      final logMessages = <String>[];
-      OTelLog.enableTraceLogging();
-      OTelLog.logFunction = logMessages.add;
+    test(
+      'shutdown after processing span with already-shutdown state',
+      () async {
+        // Covers lines 36-42: skipping export when processor is shutdown
+        final logMessages = <String>[];
+        OTelLog.enableTraceLogging();
+        OTelLog.logFunction = logMessages.add;
 
-      final exporter = InMemorySpanExporter();
-      final processor = SimpleSpanProcessor(exporter);
+        final exporter = InMemorySpanExporter();
+        final processor = SimpleSpanProcessor(exporter);
 
-      await OTel.initialize(
-        serviceName: 'shutdown-skip-test',
-        serviceVersion: '1.0.0',
-        spanProcessor: processor,
-        detectPlatformResources: false,
-        enableMetrics: false,
-      );
+        await OTel.initialize(
+          serviceName: 'shutdown-skip-test',
+          serviceVersion: '1.0.0',
+          spanProcessor: processor,
+          detectPlatformResources: false,
+          enableMetrics: false,
+        );
 
-      // Shutdown first
-      await processor.shutdown();
+        // Shutdown first
+        await processor.shutdown();
 
-      // Then try to end a span - should be skipped
-      final tracer = OTel.tracer();
-      final span = tracer.startSpan('after-shutdown');
-      await processor.onEnd(span);
+        // Then try to end a span - should be skipped
+        final tracer = OTel.tracer();
+        final span = tracer.startSpan('after-shutdown');
+        await processor.onEnd(span);
 
-      final hasSkipLog = logMessages.any(
-        (msg) => msg.contains('Skipping export'),
-      );
-      expect(hasSkipLog, isTrue,
-          reason: 'Should log that export was skipped after shutdown');
-    });
+        final hasSkipLog = logMessages.any(
+          (msg) => msg.contains('Skipping export'),
+        );
+        expect(
+          hasSkipLog,
+          isTrue,
+          reason: 'Should log that export was skipped after shutdown',
+        );
+      },
+    );
 
     test('double shutdown is a no-op', () async {
       // Covers lines 118-122: already shutdown branch
@@ -932,8 +958,11 @@ void main() {
       final hasAlreadyShutdown = logMessages.any(
         (msg) => msg.contains('Already shut down'),
       );
-      expect(hasAlreadyShutdown, isTrue,
-          reason: 'Should log that processor is already shutdown');
+      expect(
+        hasAlreadyShutdown,
+        isTrue,
+        reason: 'Should log that processor is already shutdown',
+      );
     });
 
     test('forceFlush after shutdown is a no-op', () async {
@@ -959,8 +988,11 @@ void main() {
       final hasCannotFlush = logMessages.any(
         (msg) => msg.contains('Cannot force flush'),
       );
-      expect(hasCannotFlush, isTrue,
-          reason: 'Should log that flush cannot happen after shutdown');
+      expect(
+        hasCannotFlush,
+        isTrue,
+        reason: 'Should log that flush cannot happen after shutdown',
+      );
     });
   });
 }

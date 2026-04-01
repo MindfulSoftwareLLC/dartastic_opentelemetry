@@ -122,13 +122,17 @@ void main() {
       await metricExporter.shutdown();
 
       expect(
-        () => metricExporter.export(MetricData(metrics: [
-          Metric.sum(
-            name: 'test',
-            points: [],
-            temporality: AggregationTemporality.cumulative,
+        () => metricExporter.export(
+          MetricData(
+            metrics: [
+              Metric.sum(
+                name: 'test',
+                points: [],
+                temporality: AggregationTemporality.cumulative,
+              ),
+            ],
           ),
-        ])),
+        ),
         throwsStateError,
       );
     });
@@ -136,9 +140,7 @@ void main() {
     test('export with empty metrics returns true', () async {
       await initForMetrics();
       final metricExporter = OtlpHttpMetricExporter(
-        OtlpHttpMetricExporterConfig(
-          endpoint: 'http://localhost:4318',
-        ),
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:4318'),
       );
 
       // Empty metrics should return true and log debug
@@ -153,41 +155,45 @@ void main() {
       await metricExporter.shutdown();
     });
 
-    test('export to unreachable endpoint returns false (tryExport catches)',
-        () async {
-      await initForMetrics();
-      final metricExporter = OtlpHttpMetricExporter(
-        OtlpHttpMetricExporterConfig(
-          endpoint: 'http://127.0.0.1:1', // unreachable port
-          maxRetries: 0,
-          timeout: const Duration(milliseconds: 500),
-        ),
-      );
-
-      final metric = Metric.sum(
-        name: 'test.counter',
-        description: 'test metric',
-        unit: 'count',
-        points: [
-          MetricPoint<int>(
-            value: 42,
-            startTime: DateTime.now().subtract(const Duration(seconds: 1)),
-            endTime: DateTime.now(),
-            attributes: OTel.attributesFromMap({'env': 'test'}),
+    test(
+      'export to unreachable endpoint returns false (tryExport catches)',
+      () async {
+        await initForMetrics();
+        final metricExporter = OtlpHttpMetricExporter(
+          OtlpHttpMetricExporterConfig(
+            endpoint: 'http://127.0.0.1:1', // unreachable port
+            maxRetries: 0,
+            timeout: const Duration(milliseconds: 500),
           ),
-        ],
-        temporality: AggregationTemporality.cumulative,
-        isMonotonic: true,
-      );
+        );
 
-      // Connection refused: _tryExport's generic catch returns false,
-      // or ClientException is rethrown and _export handles it.
-      // Either way, result is false.
-      final result = await metricExporter.export(MetricData(metrics: [metric]));
-      expect(result, isFalse);
+        final metric = Metric.sum(
+          name: 'test.counter',
+          description: 'test metric',
+          unit: 'count',
+          points: [
+            MetricPoint<int>(
+              value: 42,
+              startTime: DateTime.now().subtract(const Duration(seconds: 1)),
+              endTime: DateTime.now(),
+              attributes: OTel.attributesFromMap({'env': 'test'}),
+            ),
+          ],
+          temporality: AggregationTemporality.cumulative,
+          isMonotonic: true,
+        );
 
-      await metricExporter.shutdown();
-    });
+        // Connection refused: _tryExport's generic catch returns false,
+        // or ClientException is rethrown and _export handles it.
+        // Either way, result is false.
+        final result = await metricExporter.export(
+          MetricData(metrics: [metric]),
+        );
+        expect(result, isFalse);
+
+        await metricExporter.shutdown();
+      },
+    );
 
     test('createHttpClient with certificate error falls back to default',
         () async {
@@ -215,27 +221,20 @@ void main() {
     test('forceFlush on already-shutdown exporter returns true', () async {
       await initForMetrics();
       final metricExporter = OtlpHttpMetricExporter(
-        OtlpHttpMetricExporterConfig(
-          endpoint: 'http://localhost:4318',
-        ),
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:4318'),
       );
 
       await metricExporter.shutdown();
       // Line: _isShutdown path in forceFlush
       final result = await metricExporter.forceFlush();
       expect(result, isTrue);
-      expect(
-        logOutput.any((m) => m.contains('already shut down')),
-        isTrue,
-      );
+      expect(logOutput.any((m) => m.contains('already shut down')), isTrue);
     });
 
     test('forceFlush with no pending exports returns true', () async {
       await initForMetrics();
       final metricExporter = OtlpHttpMetricExporter(
-        OtlpHttpMetricExporterConfig(
-          endpoint: 'http://localhost:4318',
-        ),
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:4318'),
       );
 
       final result = await metricExporter.forceFlush();
@@ -251,9 +250,7 @@ void main() {
     test('shutdown on already-shutdown exporter returns true', () async {
       await initForMetrics();
       final metricExporter = OtlpHttpMetricExporter(
-        OtlpHttpMetricExporterConfig(
-          endpoint: 'http://localhost:4318',
-        ),
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:4318'),
       );
 
       // First shutdown
@@ -303,9 +300,7 @@ void main() {
       await initForMetrics();
       // Test with trailing slash
       final metricExporter1 = OtlpHttpMetricExporter(
-        OtlpHttpMetricExporterConfig(
-          endpoint: 'http://localhost:4318/',
-        ),
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:4318/'),
       );
 
       // Test with endpoint already having path
@@ -598,10 +593,7 @@ void main() {
       final span = tracer.startSpan('test-span');
       span.end();
 
-      expect(
-        () => spanExporter.export([span]),
-        throwsStateError,
-      );
+      expect(() => spanExporter.export([span]), throwsStateError);
     });
 
     test('export with empty spans returns immediately', () async {
@@ -618,34 +610,30 @@ void main() {
       // Empty spans should return immediately
       await spanExporter.export([]);
 
-      expect(
-        logOutput.any((m) => m.contains('No spans to export')),
-        isTrue,
-      );
+      expect(logOutput.any((m) => m.contains('No spans to export')), isTrue);
 
       await spanExporter.shutdown();
     });
 
-    test('forceFlush on already-shutdown exporter returns immediately',
-        () async {
-      await OTel.initialize(
-        serviceName: 'span-exporter-flush-test',
-        detectPlatformResources: false,
-        enableMetrics: false,
-      );
+    test(
+      'forceFlush on already-shutdown exporter returns immediately',
+      () async {
+        await OTel.initialize(
+          serviceName: 'span-exporter-flush-test',
+          detectPlatformResources: false,
+          enableMetrics: false,
+        );
 
-      final spanExporter = OtlpHttpSpanExporter(
-        OtlpHttpExporterConfig(endpoint: 'http://localhost:4318'),
-      );
+        final spanExporter = OtlpHttpSpanExporter(
+          OtlpHttpExporterConfig(endpoint: 'http://localhost:4318'),
+        );
 
-      await spanExporter.shutdown();
-      await spanExporter.forceFlush();
+        await spanExporter.shutdown();
+        await spanExporter.forceFlush();
 
-      expect(
-        logOutput.any((m) => m.contains('already shut down')),
-        isTrue,
-      );
-    });
+        expect(logOutput.any((m) => m.contains('already shut down')), isTrue);
+      },
+    );
 
     test('forceFlush with no pending exports completes', () async {
       await OTel.initialize(
@@ -703,7 +691,7 @@ void main() {
         10.0,
         20.0,
         5.0,
-        5.0
+        5.0,
       ]; // increase, increase, reset, zero-delta
 
       final counter = meter.createObservableCounter<double>(
@@ -835,10 +823,7 @@ void main() {
     });
 
     test('negative maxRetries throws ArgumentError', () {
-      expect(
-        () => OtlpGrpcExporterConfig(maxRetries: -1),
-        throwsArgumentError,
-      );
+      expect(() => OtlpGrpcExporterConfig(maxRetries: -1), throwsArgumentError);
     });
 
     test('empty header key throws ArgumentError', () {
@@ -850,9 +835,7 @@ void main() {
 
     test('timeout too large throws ArgumentError', () {
       expect(
-        () => OtlpGrpcExporterConfig(
-          timeout: const Duration(minutes: 11),
-        ),
+        () => OtlpGrpcExporterConfig(timeout: const Duration(minutes: 11)),
         throwsArgumentError,
       );
     });
@@ -900,16 +883,21 @@ void main() {
 
       logOutput.clear();
       propagator.extract(
-          OTel.context(), badHexCarrier, _MapGetter(badHexCarrier));
+        OTel.context(),
+        badHexCarrier,
+        _MapGetter(badHexCarrier),
+      );
 
       // The 'Z' chars are valid hex? No, Z is not valid hex.
       // Actually TraceId.fromString may accept it or throw.
       // If it throws, we cover lines 217-218 (Error parsing traceparent).
       expect(
-        logOutput.any((m) =>
-            m.contains('Error parsing traceparent') ||
-            m.contains('Invalid trace ID') ||
-            m.contains('Extracting traceparent')),
+        logOutput.any(
+          (m) =>
+              m.contains('Error parsing traceparent') ||
+              m.contains('Invalid trace ID') ||
+              m.contains('Extracting traceparent'),
+        ),
         isTrue,
       );
     });
@@ -922,8 +910,11 @@ void main() {
       };
 
       logOutput.clear();
-      final ctx =
-          propagator.extract(OTel.context(), carrier, _MapGetter(carrier));
+      final ctx = propagator.extract(
+        OTel.context(),
+        carrier,
+        _MapGetter(carrier),
+      );
 
       // Empty tracestate should not add traceState to the context
       expect(ctx.spanContext, isNotNull);
@@ -949,13 +940,17 @@ void main() {
       final promExporter = PrometheusExporter();
       await promExporter.shutdown();
 
-      final result = await promExporter.export(MetricData(metrics: [
-        Metric.sum(
-          name: 'test',
-          points: [],
-          temporality: AggregationTemporality.cumulative,
+      final result = await promExporter.export(
+        MetricData(
+          metrics: [
+            Metric.sum(
+              name: 'test',
+              points: [],
+              temporality: AggregationTemporality.cumulative,
+            ),
+          ],
         ),
-      ]));
+      );
 
       // After shutdown, export returns false (lines 58-62)
       expect(result, isFalse);
@@ -1096,9 +1091,11 @@ void main() {
 
       // Debug logs should mention test certificates
       expect(
-        logOutput.any((m) =>
-            m.contains('test certificate') ||
-            m.contains('test client certificate')),
+        logOutput.any(
+          (m) =>
+              m.contains('test certificate') ||
+              m.contains('test client certificate'),
+        ),
         isTrue,
       );
     });
@@ -1112,8 +1109,10 @@ void main() {
       );
     });
 
-    test('validateCertificates accepts null paths',
-        CertificateUtils.validateCertificates);
+    test(
+      'validateCertificates accepts null paths',
+      CertificateUtils.validateCertificates,
+    );
 
     test('validateCertificates throws for invalid-cert-path', () {
       expect(
@@ -1148,9 +1147,11 @@ void main() {
       await processor.shutdown();
 
       expect(
-        logOutput.any((m) =>
-            m.contains('Error shutting down exporter') ||
-            m.contains('shutdown fail')),
+        logOutput.any(
+          (m) =>
+              m.contains('Error shutting down exporter') ||
+              m.contains('shutdown fail'),
+        ),
         isTrue,
         reason: 'Expected error log from exporter shutdown failure',
       );
@@ -1180,11 +1181,13 @@ void main() {
       await processor.shutdown();
 
       expect(
-        logOutput.any((m) =>
-            m.contains('Export error') ||
-            m.contains('pending export fail') ||
-            m.contains('Error waiting for pending exports') ||
-            m.contains('Shutdown complete')),
+        logOutput.any(
+          (m) =>
+              m.contains('Export error') ||
+              m.contains('pending export fail') ||
+              m.contains('Error waiting for pending exports') ||
+              m.contains('Shutdown complete'),
+        ),
         isTrue,
       );
     });
@@ -1204,10 +1207,7 @@ void main() {
       // forceFlush after shutdown should return early (lines 178-184)
       await processor.forceFlush();
 
-      expect(
-        logOutput.any((m) => m.contains('Cannot force flush')),
-        isTrue,
-      );
+      expect(logOutput.any((m) => m.contains('Cannot force flush')), isTrue);
     });
 
     test('onEnd after shutdown skips export', () async {
@@ -1248,10 +1248,7 @@ void main() {
 
       await processor.onNameUpdate(span, 'new-name');
 
-      expect(
-        logOutput.any((m) => m.contains('Name updated')),
-        isTrue,
-      );
+      expect(logOutput.any((m) => m.contains('Name updated')), isTrue);
 
       span.end();
       await processor.shutdown();
@@ -1271,10 +1268,7 @@ void main() {
       // Second shutdown hits early return (lines 118-123)
       await processor.shutdown();
 
-      expect(
-        logOutput.any((m) => m.contains('Already shut down')),
-        isTrue,
-      );
+      expect(logOutput.any((m) => m.contains('Already shut down')), isTrue);
     });
   });
 
@@ -1361,9 +1355,7 @@ void main() {
   // =========================================================================
   group('OtlpHttpExporterConfig endpoint handling', () {
     test('endpoint with trailing slash is handled', () {
-      final config = OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:4318/',
-      );
+      final config = OtlpHttpExporterConfig(endpoint: 'http://localhost:4318/');
       expect(config.endpoint, equals('http://localhost:4318/'));
     });
 

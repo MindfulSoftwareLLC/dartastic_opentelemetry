@@ -77,9 +77,10 @@ class ObservableCounter<T extends num>
 
     if (attributes == null) {
       // For no attributes, sum all points
-      value = _storage
-          .collectPoints()
-          .fold<num>(0, (sum, point) => sum + point.value);
+      value = _storage.collectPoints().fold<num>(
+            0,
+            (sum, point) => sum + point.value,
+          );
     } else {
       // For specific attributes, get that value
       value = _storage.getValue(attributes);
@@ -189,7 +190,8 @@ class ObservableCounter<T extends num>
         }
       } catch (e) {
         print(
-            'Error collecting measurements from ObservableCounter callback: $e');
+          'Error collecting measurements from ObservableCounter callback: $e',
+        );
       }
     }
 
@@ -220,7 +222,7 @@ class ObservableCounter<T extends num>
         temporality: AggregationTemporality.cumulative,
         points: points,
         isMonotonic: true, // Counters are monotonic
-      )
+      ),
     ];
   }
 

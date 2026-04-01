@@ -84,8 +84,11 @@ void main() {
 
       // If things are working properly, verify specifics
       if (totalValue > 0) {
-        expect(totalValue, equals(30),
-            reason: 'Total sum should be 30'); // Total sum
+        expect(
+          totalValue,
+          equals(30),
+          reason: 'Total sum should be 30',
+        ); // Total sum
 
         final value1 = counter.getValue(attributes1);
         final value2 = counter.getValue(attributes2);
@@ -94,20 +97,23 @@ void main() {
         expect(value2, greaterThanOrEqualTo(0));
 
         if (value1 > 0 && value2 > 0) {
-          expect(value1, equals(20),
-              reason: 'Sum for attributes1 should be 20');
-          expect(value2, equals(10),
-              reason: 'Sum for attributes2 should be 10');
+          expect(
+            value1,
+            equals(20),
+            reason: 'Sum for attributes1 should be 20',
+          );
+          expect(
+            value2,
+            equals(10),
+            reason: 'Sum for attributes2 should be 10',
+          );
         }
       }
     });
 
     test('throws when adding negative value', () {
       // Assert
-      expect(
-        () => counter.add(-1),
-        throwsArgumentError,
-      );
+      expect(() => counter.add(-1), throwsArgumentError);
     });
 
     test('collects metrics', () {

@@ -101,10 +101,7 @@ void main() {
       final parentContext = OTel.context().withSpan(parent);
 
       // Create child span - should inherit sampling decision
-      final child = tracer.startSpan(
-        'child',
-        context: parentContext,
-      );
+      final child = tracer.startSpan('child', context: parentContext);
       expect(child.spanContext.traceFlags.isSampled, isTrue);
 
       // End spans to release resources

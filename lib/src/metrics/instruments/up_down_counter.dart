@@ -25,10 +25,8 @@ class UpDownCounter<T extends num>
   final SumStorage<T> _storage = SumStorage<T>(isMonotonic: false);
 
   /// Creates a new UpDownCounter instance.
-  UpDownCounter({
-    required APIUpDownCounter<T> apiCounter,
-    required Meter meter,
-  })  : _apiCounter = apiCounter,
+  UpDownCounter({required APIUpDownCounter<T> apiCounter, required Meter meter})
+      : _apiCounter = apiCounter,
         _meter = meter {
     // Register this instrument with the meter provider
     _meter.provider.registerInstrument(_meter.name, this);

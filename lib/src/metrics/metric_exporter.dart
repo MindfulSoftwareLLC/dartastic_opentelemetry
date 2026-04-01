@@ -11,7 +11,7 @@ enum ExportResult {
   success,
 
   /// The export failed.
-  failure
+  failure,
 }
 
 /// MetricExporter is responsible for sending metrics to a backend.
@@ -48,7 +48,8 @@ class ConsoleMetricExporter implements MetricExporter {
     print('ConsoleMetricExporter: Exporting ${data.metrics.length} metrics:');
     for (final metric in data.metrics) {
       print(
-          '  - ${metric.name} (${metric.unit ?? "no unit"}): ${metric.description ?? ""}');
+        '  - ${metric.name} (${metric.unit ?? "no unit"}): ${metric.description ?? ""}',
+      );
       for (final point in metric.points) {
         final String value = point.valueAsString;
         print('    - Value: $value, Attributes: ${point.attributes}');

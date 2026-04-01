@@ -25,10 +25,9 @@ void main() {
 
     group('transformResource', () {
       test('converts resource attributes to proto', () {
-        final resource = OTel.resource(Attributes.of({
-          'service.name': 'my-service',
-          'version': '2.0',
-        }));
+        final resource = OTel.resource(
+          Attributes.of({'service.name': 'my-service', 'version': '2.0'}),
+        );
 
         final proto = MetricTransformer.transformResource(resource);
         expect(proto.attributes, isNotEmpty);
@@ -41,12 +40,14 @@ void main() {
       });
 
       test('converts resource with list attributes', () {
-        final resource = ResourceCreate.create(OTel.attributesFromList([
-          OTel.attributeStringList('string_list', ['a', 'b']),
-          OTel.attributeBoolList('bool_list', [true, false]),
-          OTel.attributeIntList('int_list', [1, 2, 3]),
-          OTel.attributeDoubleList('double_list', [1.0, 2.0]),
-        ]));
+        final resource = ResourceCreate.create(
+          OTel.attributesFromList([
+            OTel.attributeStringList('string_list', ['a', 'b']),
+            OTel.attributeBoolList('bool_list', [true, false]),
+            OTel.attributeIntList('int_list', [1, 2, 3]),
+            OTel.attributeDoubleList('double_list', [1.0, 2.0]),
+          ]),
+        );
 
         final resourceProto = MetricTransformer.transformResource(resource);
         expect(resourceProto.attributes.length, equals(4));
@@ -92,10 +93,7 @@ void main() {
           time: now,
           value: 100,
         );
-        final metric = Metric.sum(
-          name: 'test.sum',
-          points: [point],
-        );
+        final metric = Metric.sum(name: 'test.sum', points: [point]);
 
         final metricProto = MetricTransformer.transformMetric(metric);
         expect(metricProto.name, equals('test.sum'));
@@ -104,7 +102,8 @@ void main() {
         expect(
           metricProto.sum.aggregationTemporality,
           equals(
-              proto.AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE),
+            proto.AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE,
+          ),
         );
       });
 
@@ -117,10 +116,7 @@ void main() {
           time: now,
           value: 42.5,
         );
-        final metric = Metric.gauge(
-          name: 'test.gauge',
-          points: [point],
-        );
+        final metric = Metric.gauge(name: 'test.gauge', points: [point]);
 
         final metricProto = MetricTransformer.transformMetric(metric);
         expect(metricProto.name, equals('test.gauge'));
@@ -273,10 +269,7 @@ void main() {
           exemplars: [exemplar],
         );
 
-        final metric = Metric.sum(
-          name: 'test.sum.exemplars',
-          points: [point],
-        );
+        final metric = Metric.sum(name: 'test.sum.exemplars', points: [point]);
 
         final metricProto = MetricTransformer.transformMetric(metric);
         final dp = metricProto.sum.dataPoints.first;
@@ -421,54 +414,53 @@ void main() {
 
     group('_createKeyValue scalar types', () {
       test('handles String value via resource', () {
-        final resource = ResourceCreate.create(
-          Attributes.of({'key': 'value'}),
-        );
+        final resource = ResourceCreate.create(Attributes.of({'key': 'value'}));
         final resourceProto = MetricTransformer.transformResource(resource);
-        final attr =
-            resourceProto.attributes.firstWhere((kv) => kv.key == 'key');
+        final attr = resourceProto.attributes.firstWhere(
+          (kv) => kv.key == 'key',
+        );
         expect(attr.value.stringValue, equals('value'));
       });
 
       test('handles bool value via resource', () {
-        final resource = ResourceCreate.create(
-          Attributes.of({'flag': true}),
-        );
+        final resource = ResourceCreate.create(Attributes.of({'flag': true}));
         final resourceProto = MetricTransformer.transformResource(resource);
-        final attr =
-            resourceProto.attributes.firstWhere((kv) => kv.key == 'flag');
+        final attr = resourceProto.attributes.firstWhere(
+          (kv) => kv.key == 'flag',
+        );
         expect(attr.value.boolValue, isTrue);
       });
 
       test('handles int value via resource', () {
-        final resource = ResourceCreate.create(
-          Attributes.of({'count': 42}),
-        );
+        final resource = ResourceCreate.create(Attributes.of({'count': 42}));
         final resourceProto = MetricTransformer.transformResource(resource);
-        final attr =
-            resourceProto.attributes.firstWhere((kv) => kv.key == 'count');
+        final attr = resourceProto.attributes.firstWhere(
+          (kv) => kv.key == 'count',
+        );
         expect(attr.value.intValue, equals(Int64(42)));
       });
 
       test('handles double value via resource', () {
-        final resource = ResourceCreate.create(
-          Attributes.of({'ratio': 3.14}),
-        );
+        final resource = ResourceCreate.create(Attributes.of({'ratio': 3.14}));
         final resourceProto = MetricTransformer.transformResource(resource);
-        final attr =
-            resourceProto.attributes.firstWhere((kv) => kv.key == 'ratio');
+        final attr = resourceProto.attributes.firstWhere(
+          (kv) => kv.key == 'ratio',
+        );
         expect(attr.value.doubleValue, equals(3.14));
       });
     });
 
     group('_createKeyValue array types', () {
       test('handles List<String> value', () {
-        final resource = ResourceCreate.create(OTel.attributesFromList([
-          OTel.attributeStringList('tags', ['web', 'prod']),
-        ]));
+        final resource = ResourceCreate.create(
+          OTel.attributesFromList([
+            OTel.attributeStringList('tags', ['web', 'prod']),
+          ]),
+        );
         final resourceProto = MetricTransformer.transformResource(resource);
-        final attr =
-            resourceProto.attributes.firstWhere((kv) => kv.key == 'tags');
+        final attr = resourceProto.attributes.firstWhere(
+          (kv) => kv.key == 'tags',
+        );
         final arr = attr.value.arrayValue;
         expect(arr.values.length, equals(2));
         expect(arr.values[0].stringValue, equals('web'));
@@ -476,12 +468,15 @@ void main() {
       });
 
       test('handles List<bool> value', () {
-        final resource = ResourceCreate.create(OTel.attributesFromList([
-          OTel.attributeBoolList('flags', [true, false, true]),
-        ]));
+        final resource = ResourceCreate.create(
+          OTel.attributesFromList([
+            OTel.attributeBoolList('flags', [true, false, true]),
+          ]),
+        );
         final resourceProto = MetricTransformer.transformResource(resource);
-        final attr =
-            resourceProto.attributes.firstWhere((kv) => kv.key == 'flags');
+        final attr = resourceProto.attributes.firstWhere(
+          (kv) => kv.key == 'flags',
+        );
         final arr = attr.value.arrayValue;
         expect(arr.values.length, equals(3));
         expect(arr.values[0].boolValue, isTrue);
@@ -490,12 +485,15 @@ void main() {
       });
 
       test('handles List<int> value', () {
-        final resource = ResourceCreate.create(OTel.attributesFromList([
-          OTel.attributeIntList('ids', [10, 20, 30]),
-        ]));
+        final resource = ResourceCreate.create(
+          OTel.attributesFromList([
+            OTel.attributeIntList('ids', [10, 20, 30]),
+          ]),
+        );
         final resourceProto = MetricTransformer.transformResource(resource);
-        final attr =
-            resourceProto.attributes.firstWhere((kv) => kv.key == 'ids');
+        final attr = resourceProto.attributes.firstWhere(
+          (kv) => kv.key == 'ids',
+        );
         final arr = attr.value.arrayValue;
         expect(arr.values.length, equals(3));
         expect(arr.values[0].intValue, equals(Int64(10)));
@@ -504,12 +502,15 @@ void main() {
       });
 
       test('handles List<double> value', () {
-        final resource = ResourceCreate.create(OTel.attributesFromList([
-          OTel.attributeDoubleList('scores', [1.1, 2.2, 3.3]),
-        ]));
+        final resource = ResourceCreate.create(
+          OTel.attributesFromList([
+            OTel.attributeDoubleList('scores', [1.1, 2.2, 3.3]),
+          ]),
+        );
         final resourceProto = MetricTransformer.transformResource(resource);
-        final attr =
-            resourceProto.attributes.firstWhere((kv) => kv.key == 'scores');
+        final attr = resourceProto.attributes.firstWhere(
+          (kv) => kv.key == 'scores',
+        );
         final arr = attr.value.arrayValue;
         expect(arr.values.length, equals(3));
         expect(arr.values[0].doubleValue, equals(1.1));
@@ -531,18 +532,12 @@ void main() {
           time: now,
           value: 10,
         );
-        final metric = Metric.gauge(
-          name: 'logged.metric',
-          points: [point],
-        );
+        final metric = Metric.gauge(name: 'logged.metric', points: [point]);
 
         MetricTransformer.transformMetric(metric);
 
         expect(logs, isNotEmpty);
-        expect(
-          logs.any((l) => l.contains('logged.metric')),
-          isTrue,
-        );
+        expect(logs.any((l) => l.contains('logged.metric')), isTrue);
 
         OTelLog.metricLogFunction = null;
       });

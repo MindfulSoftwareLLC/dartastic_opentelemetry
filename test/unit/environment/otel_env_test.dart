@@ -103,8 +103,9 @@ void main() {
         // remain null since hasCustomLogFunction is false but logFunction is
         // null (not a custom function), so it gets set to print.
         // If not set, logFunction stays null.
-        final envLogLevel =
-            EnvironmentService.instance.getValue('OTEL_LOG_LEVEL');
+        final envLogLevel = EnvironmentService.instance.getValue(
+          'OTEL_LOG_LEVEL',
+        );
         if (envLogLevel == null) {
           expect(OTelLog.logFunction, isNull);
         } else {
@@ -114,21 +115,23 @@ void main() {
       });
 
       test(
-          'sets logFunction to print when OTEL_LOG_LEVEL is set and no custom function',
-          () {
-        // Start with the default print function
-        OTelLog.logFunction = print;
+        'sets logFunction to print when OTEL_LOG_LEVEL is set and no custom function',
+        () {
+          // Start with the default print function
+          OTelLog.logFunction = print;
 
-        OTelEnv.initializeLogging();
+          OTelEnv.initializeLogging();
 
-        // If OTEL_LOG_LEVEL is set, logFunction stays print (not custom)
-        // If not set, logFunction stays as-is
-        final envLogLevel =
-            EnvironmentService.instance.getValue('OTEL_LOG_LEVEL');
-        if (envLogLevel != null) {
-          expect(OTelLog.logFunction, equals(print));
-        }
-      });
+          // If OTEL_LOG_LEVEL is set, logFunction stays print (not custom)
+          // If not set, logFunction stays as-is
+          final envLogLevel = EnvironmentService.instance.getValue(
+            'OTEL_LOG_LEVEL',
+          );
+          if (envLogLevel != null) {
+            expect(OTelLog.logFunction, equals(print));
+          }
+        },
+      );
 
       test('does not overwrite existing metric log function', () {
         final metricLogs = <String>[];
@@ -162,8 +165,9 @@ void main() {
 
       test('handles log level set during coverage run', () {
         // During coverage run, OTEL_LOG_LEVEL=trace is set
-        final envLogLevel =
-            EnvironmentService.instance.getValue('OTEL_LOG_LEVEL');
+        final envLogLevel = EnvironmentService.instance.getValue(
+          'OTEL_LOG_LEVEL',
+        );
 
         // Reset to known state
         OTelLog.logFunction = null;
@@ -212,11 +216,13 @@ void main() {
 
         OTelEnv.initializeLogging();
 
-        final logMetrics =
-            EnvironmentService.instance.getValue('OTEL_LOG_METRICS');
+        final logMetrics = EnvironmentService.instance.getValue(
+          'OTEL_LOG_METRICS',
+        );
         final logSpans = EnvironmentService.instance.getValue('OTEL_LOG_SPANS');
-        final logExport =
-            EnvironmentService.instance.getValue('OTEL_LOG_EXPORT');
+        final logExport = EnvironmentService.instance.getValue(
+          'OTEL_LOG_EXPORT',
+        );
 
         if (logMetrics?.toLowerCase() == 'true') {
           expect(OTelLog.metricLogFunction, equals(print));
@@ -275,22 +281,25 @@ void main() {
       });
 
       test(
-          'returns empty map when no OTEL_RESOURCE_ATTRIBUTES or OTEL_SERVICE_NAME set',
-          () {
-        final resourceAttrs =
-            EnvironmentService.instance.getValue('OTEL_RESOURCE_ATTRIBUTES');
-        final serviceName =
-            EnvironmentService.instance.getValue('OTEL_SERVICE_NAME');
+        'returns empty map when no OTEL_RESOURCE_ATTRIBUTES or OTEL_SERVICE_NAME set',
+        () {
+          final resourceAttrs = EnvironmentService.instance.getValue(
+            'OTEL_RESOURCE_ATTRIBUTES',
+          );
+          final serviceName = EnvironmentService.instance.getValue(
+            'OTEL_SERVICE_NAME',
+          );
 
-        final config = OTelEnv.getServiceConfig();
+          final config = OTelEnv.getServiceConfig();
 
-        if (resourceAttrs == null && serviceName == null) {
-          expect(config, isEmpty);
-        } else {
-          // If env vars are set, config should have entries
-          expect(config, isA<Map<String, dynamic>>());
-        }
-      });
+          if (resourceAttrs == null && serviceName == null) {
+            expect(config, isEmpty);
+          } else {
+            // If env vars are set, config should have entries
+            expect(config, isA<Map<String, dynamic>>());
+          }
+        },
+      );
     });
 
     // =========================================================================
@@ -303,8 +312,9 @@ void main() {
       });
 
       test('returns empty map when OTEL_RESOURCE_ATTRIBUTES not set', () {
-        final resourceStr =
-            EnvironmentService.instance.getValue('OTEL_RESOURCE_ATTRIBUTES');
+        final resourceStr = EnvironmentService.instance.getValue(
+          'OTEL_RESOURCE_ATTRIBUTES',
+        );
 
         final attrs = OTelEnv.getResourceAttributes();
 
@@ -321,8 +331,9 @@ void main() {
     // =========================================================================
     group('getExporter', () {
       test('returns null for traces when OTEL_TRACES_EXPORTER not set', () {
-        final envValue =
-            EnvironmentService.instance.getValue('OTEL_TRACES_EXPORTER');
+        final envValue = EnvironmentService.instance.getValue(
+          'OTEL_TRACES_EXPORTER',
+        );
         final result = OTelEnv.getExporter(signal: 'traces');
         if (envValue == null) {
           expect(result, isNull);
@@ -332,8 +343,9 @@ void main() {
       });
 
       test('returns null for metrics when OTEL_METRICS_EXPORTER not set', () {
-        final envValue =
-            EnvironmentService.instance.getValue('OTEL_METRICS_EXPORTER');
+        final envValue = EnvironmentService.instance.getValue(
+          'OTEL_METRICS_EXPORTER',
+        );
         final result = OTelEnv.getExporter(signal: 'metrics');
         if (envValue == null) {
           expect(result, isNull);
@@ -343,8 +355,9 @@ void main() {
       });
 
       test('returns null for logs when OTEL_LOGS_EXPORTER not set', () {
-        final envValue =
-            EnvironmentService.instance.getValue('OTEL_LOGS_EXPORTER');
+        final envValue = EnvironmentService.instance.getValue(
+          'OTEL_LOGS_EXPORTER',
+        );
         final result = OTelEnv.getExporter(signal: 'logs');
         if (envValue == null) {
           expect(result, isNull);
@@ -379,7 +392,7 @@ void main() {
         'info',
         'warn',
         'error',
-        'fatal'
+        'fatal',
       ]) {
         test('sets log level to $level from OTEL_LOG_LEVEL', () async {
           final output = await runWithEnv(
@@ -566,20 +579,22 @@ void main() {
         expect(headers['tenant'], equals('acme'));
       });
 
-      test('parses headers with base64 values containing equals signs',
-          () async {
-        final output = await runWithEnv(
-          'test/unit/environment/helpers/check_otlp_config.dart',
-          {
-            'OTEL_EXPORTER_OTLP_HEADERS':
-                'authorization=Bearer dG9rZW4=,x-custom=val',
-          },
-        );
-        final result = jsonDecode(output.trim()) as Map<String, dynamic>;
-        final headers = result['headers'] as Map<String, dynamic>;
-        expect(headers['authorization'], equals('Bearer dG9rZW4='));
-        expect(headers['x-custom'], equals('val'));
-      });
+      test(
+        'parses headers with base64 values containing equals signs',
+        () async {
+          final output = await runWithEnv(
+            'test/unit/environment/helpers/check_otlp_config.dart',
+            {
+              'OTEL_EXPORTER_OTLP_HEADERS':
+                  'authorization=Bearer dG9rZW4=,x-custom=val',
+            },
+          );
+          final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+          final headers = result['headers'] as Map<String, dynamic>;
+          expect(headers['authorization'], equals('Bearer dG9rZW4='));
+          expect(headers['x-custom'], equals('val'));
+        },
+      );
 
       test('reads signal-specific headers for metrics', () async {
         final output = await runWithEnv(
@@ -812,18 +827,20 @@ void main() {
         expect(result['serviceVersion'], equals('1.2.3'));
       });
 
-      test('OTEL_SERVICE_NAME overrides service.name from resource attributes',
-          () async {
-        final output = await runWithEnv(
-          'test/unit/environment/helpers/check_service_config.dart',
-          {
-            'OTEL_RESOURCE_ATTRIBUTES': 'service.name=from-attrs',
-            'OTEL_SERVICE_NAME': 'from-env-var',
-          },
-        );
-        final result = jsonDecode(output.trim()) as Map<String, dynamic>;
-        expect(result['serviceName'], equals('from-env-var'));
-      });
+      test(
+        'OTEL_SERVICE_NAME overrides service.name from resource attributes',
+        () async {
+          final output = await runWithEnv(
+            'test/unit/environment/helpers/check_service_config.dart',
+            {
+              'OTEL_RESOURCE_ATTRIBUTES': 'service.name=from-attrs',
+              'OTEL_SERVICE_NAME': 'from-env-var',
+            },
+          );
+          final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+          expect(result['serviceName'], equals('from-env-var'));
+        },
+      );
 
       test('OTEL_SERVICE_NAME alone without resource attributes', () async {
         final output = await runWithEnv(
@@ -904,9 +921,7 @@ void main() {
       test('parses mixed types', () async {
         final output = await runWithEnv(
           'test/unit/environment/helpers/check_resource_attrs.dart',
-          {
-            'OTEL_RESOURCE_ATTRIBUTES': 'name=test,count=5,ratio=1.5,flag=true',
-          },
+          {'OTEL_RESOURCE_ATTRIBUTES': 'name=test,count=5,ratio=1.5,flag=true'},
         );
         final result = jsonDecode(output.trim()) as Map<String, dynamic>;
         expect(result['name'], equals('test'));
@@ -1012,15 +1027,17 @@ void main() {
         });
       }
 
-      test('OTEL_EXPORTER_OTLP_INSECURE with unrecognized value is absent',
-          () async {
-        final output = await runWithEnv(
-          'test/unit/environment/helpers/check_otlp_config.dart',
-          {'OTEL_EXPORTER_OTLP_INSECURE': 'maybe'},
-        );
-        final result = jsonDecode(output.trim()) as Map<String, dynamic>;
-        expect(result.containsKey('insecure'), isFalse);
-      });
+      test(
+        'OTEL_EXPORTER_OTLP_INSECURE with unrecognized value is absent',
+        () async {
+          final output = await runWithEnv(
+            'test/unit/environment/helpers/check_otlp_config.dart',
+            {'OTEL_EXPORTER_OTLP_INSECURE': 'maybe'},
+          );
+          final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+          expect(result.containsKey('insecure'), isFalse);
+        },
+      );
     });
   });
 }

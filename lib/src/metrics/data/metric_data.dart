@@ -13,10 +13,7 @@ class MetricData {
   final List<Metric> metrics;
 
   /// Creates a new MetricData instance.
-  MetricData({
-    this.resource,
-    required this.metrics,
-  });
+  MetricData({this.resource, required this.metrics});
 
   /// Creates an empty MetricData instance.
   factory MetricData.empty() {

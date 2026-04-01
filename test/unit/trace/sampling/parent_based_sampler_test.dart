@@ -12,17 +12,17 @@ void main() {
 
     setUp(() async {
       await OTel.reset();
-      await OTel.initialize(
-        serviceName: 'test-service',
-      );
+      await OTel.initialize(serviceName: 'test-service');
       // Use TraceIdRatioSampler(0.5) as the root sampler for testing
       rootSampler = TraceIdRatioSampler(0.5);
       sampler = ParentBasedSampler(rootSampler);
     });
 
     test('description returns expected value', () {
-      expect(sampler.description,
-          equals('ParentBased{root=${rootSampler.description}}'));
+      expect(
+        sampler.description,
+        equals('ParentBased{root=${rootSampler.description}}'),
+      );
     });
 
     test('uses root sampler when parent is absent', () {
@@ -171,73 +171,79 @@ void main() {
       // Test the custom behaviors
 
       // 1. Remote + Sampled parent -> Should sample
-      final remoteParentSampledContext =
-          OTelAPI.context().withSpanContext(OTel.spanContext(
-        traceId: OTel.traceIdFrom('00000000000000000000000000000001'),
-        spanId: OTel.spanIdFrom('0000000000000001'),
-        traceFlags: TraceFlags.sampled,
-        traceState: OTel.traceState({}),
-        isRemote: true,
-      ));
+      final remoteParentSampledContext = OTelAPI.context().withSpanContext(
+        OTel.spanContext(
+          traceId: OTel.traceIdFrom('00000000000000000000000000000001'),
+          spanId: OTel.spanIdFrom('0000000000000001'),
+          traceFlags: TraceFlags.sampled,
+          traceState: OTel.traceState({}),
+          isRemote: true,
+        ),
+      );
 
       expect(
-          customSampler
-              .shouldSample(
-                parentContext: remoteParentSampledContext,
-                traceId: '00000000000000000000000000000001',
-                name: 'test-span',
-                spanKind: SpanKind.internal,
-                attributes: null,
-                links: null,
-              )
-              .decision,
-          equals(SamplingDecision.recordAndSample));
+        customSampler
+            .shouldSample(
+              parentContext: remoteParentSampledContext,
+              traceId: '00000000000000000000000000000001',
+              name: 'test-span',
+              spanKind: SpanKind.internal,
+              attributes: null,
+              links: null,
+            )
+            .decision,
+        equals(SamplingDecision.recordAndSample),
+      );
 
       // 2. Remote + Not Sampled parent -> Should sample (custom behavior)
-      final remoteParentNotSampledContext =
-          OTelAPI.context().withSpanContext(OTel.spanContext(
-        traceId: OTel.traceIdFrom('00000000000000000000000000000001'),
-        spanId: OTel.spanIdFrom('0000000000000001'),
-        traceFlags: OTel.traceFlags(0),
-        traceState: OTel.traceState({}),
-        isRemote: true,
-      ));
+      final remoteParentNotSampledContext = OTelAPI.context().withSpanContext(
+        OTel.spanContext(
+          traceId: OTel.traceIdFrom('00000000000000000000000000000001'),
+          spanId: OTel.spanIdFrom('0000000000000001'),
+          traceFlags: OTel.traceFlags(0),
+          traceState: OTel.traceState({}),
+          isRemote: true,
+        ),
+      );
 
       expect(
-          customSampler
-              .shouldSample(
-                parentContext: remoteParentNotSampledContext,
-                traceId: '00000000000000000000000000000001',
-                name: 'test-span',
-                spanKind: SpanKind.internal,
-                attributes: null,
-                links: null,
-              )
-              .decision,
-          equals(SamplingDecision.recordAndSample));
+        customSampler
+            .shouldSample(
+              parentContext: remoteParentNotSampledContext,
+              traceId: '00000000000000000000000000000001',
+              name: 'test-span',
+              spanKind: SpanKind.internal,
+              attributes: null,
+              links: null,
+            )
+            .decision,
+        equals(SamplingDecision.recordAndSample),
+      );
 
       // 3. Local + Sampled parent -> Should NOT sample (custom behavior)
-      final localParentSampledContext =
-          OTelAPI.context().withSpanContext(OTel.spanContext(
-        traceId: OTel.traceIdFrom('00000000000000000000000000000001'),
-        spanId: OTel.spanIdFrom('0000000000000001'),
-        traceFlags: TraceFlags.sampled,
-        traceState: OTel.traceState({}),
-        isRemote: false,
-      ));
+      final localParentSampledContext = OTelAPI.context().withSpanContext(
+        OTel.spanContext(
+          traceId: OTel.traceIdFrom('00000000000000000000000000000001'),
+          spanId: OTel.spanIdFrom('0000000000000001'),
+          traceFlags: TraceFlags.sampled,
+          traceState: OTel.traceState({}),
+          isRemote: false,
+        ),
+      );
 
       expect(
-          customSampler
-              .shouldSample(
-                parentContext: localParentSampledContext,
-                traceId: '00000000000000000000000000000001',
-                name: 'test-span',
-                spanKind: SpanKind.internal,
-                attributes: null,
-                links: null,
-              )
-              .decision,
-          equals(SamplingDecision.drop));
+        customSampler
+            .shouldSample(
+              parentContext: localParentSampledContext,
+              traceId: '00000000000000000000000000000001',
+              name: 'test-span',
+              spanKind: SpanKind.internal,
+              attributes: null,
+              links: null,
+            )
+            .decision,
+        equals(SamplingDecision.drop),
+      );
     });
   });
 }

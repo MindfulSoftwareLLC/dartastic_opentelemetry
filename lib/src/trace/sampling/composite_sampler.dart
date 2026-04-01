@@ -81,7 +81,4 @@ class CompositeSampler implements Sampler {
   }
 }
 
-enum _Operation {
-  and,
-  or,
-}
+enum _Operation { and, or }

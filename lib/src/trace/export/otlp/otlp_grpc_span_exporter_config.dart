@@ -134,7 +134,8 @@ class OtlpGrpcExporterConfig {
           final portStr = endpoint.split(':').last;
           if (int.tryParse(portStr) == null) {
             throw ArgumentError(
-                'Invalid port format in endpoint URL: $endpoint');
+              'Invalid port format in endpoint URL: $endpoint',
+            );
           }
         }
         return endpoint;
@@ -163,13 +164,15 @@ class OtlpGrpcExporterConfig {
       }
 
       throw ArgumentError(
-          'Invalid endpoint format: $endpoint. Expected format: "host:port" or a valid URI');
+        'Invalid endpoint format: $endpoint. Expected format: "host:port" or a valid URI',
+      );
     } catch (e) {
       if (e is ArgumentError) rethrow; // Re-throw our own errors
 
       // Any other parsing error
       throw ArgumentError(
-          'Invalid endpoint format: $endpoint. Expected format: "host:port" or a valid URI');
+        'Invalid endpoint format: $endpoint. Expected format: "host:port" or a valid URI',
+      );
     }
   }
 
@@ -197,7 +200,10 @@ class OtlpGrpcExporterConfig {
   }
 
   static void _validateCertificates(
-      String? cert, String? key, String? clientCert) {
+    String? cert,
+    String? key,
+    String? clientCert,
+  ) {
     CertificateUtils.validateCertificates(
       certificate: cert,
       clientKey: key,

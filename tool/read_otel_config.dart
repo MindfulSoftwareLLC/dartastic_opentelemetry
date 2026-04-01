@@ -13,7 +13,8 @@ void main(List<String> args) {
     print('  service          - Get service config');
     print('  resource         - Get resource attributes');
     print(
-        '  otlp [signal]    - Get OTLP config for signal (traces, metrics, logs, or general)');
+      '  otlp [signal]    - Get OTLP config for signal (traces, metrics, logs, or general)',
+    );
     print('  headers [signal] - Get parsed headers for signal');
     return;
   }

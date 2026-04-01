@@ -66,9 +66,9 @@ void main() {
       final measurements1 = counter.collect();
       expect(measurements1.length, equals(1));
       expect(
-          measurements1[0].value,
-          equals(
-              100)); // First observation (collectPoints() is called first internally)
+        measurements1[0].value,
+        equals(100),
+      ); // First observation (collectPoints() is called first internally)
 
       // Collect again - should get the second value (increased)
       final measurements2 = counter.collect();
@@ -99,10 +99,7 @@ void main() {
       final attributes2 = {'region': 'west'}.toAttributes();
 
       // Create value maps to simulate values that can go up or down
-      final Map<String, int> regionValues = {
-        'east': 50,
-        'west': 75,
-      };
+      final Map<String, int> regionValues = {'east': 50, 'west': 75};
 
       // Create an ObservableUpDownCounter
       final counter = meter.createObservableUpDownCounter<int>(
@@ -125,11 +122,13 @@ void main() {
 
       // Values should match our initial values
       expect(
-          measurements1.where((m) => m.attributes == attributes1).first.value,
-          equals(50));
+        measurements1.where((m) => m.attributes == attributes1).first.value,
+        equals(50),
+      );
       expect(
-          measurements1.where((m) => m.attributes == attributes2).first.value,
-          equals(75));
+        measurements1.where((m) => m.attributes == attributes2).first.value,
+        equals(75),
+      );
 
       // Second collection
       final measurements2 = counter.collect();
@@ -137,11 +136,13 @@ void main() {
 
       // Values should reflect the changes
       expect(
-          measurements2.where((m) => m.attributes == attributes1).first.value,
-          equals(55));
+        measurements2.where((m) => m.attributes == attributes1).first.value,
+        equals(55),
+      );
       expect(
-          measurements2.where((m) => m.attributes == attributes2).first.value,
-          equals(67));
+        measurements2.where((m) => m.attributes == attributes2).first.value,
+        equals(67),
+      );
 
       // Get metric points
       final metrics = counter.collectMetrics();
@@ -169,8 +170,9 @@ void main() {
       // First callback
       int serverProcesses = 42;
       final attributes1 = {'server': 'app'}.toAttributes();
-      final registration1 =
-          counter.addCallback((APIObservableResult<int> result) {
+      final registration1 = counter.addCallback((
+        APIObservableResult<int> result,
+      ) {
         result.observe(serverProcesses, attributes1);
         // Increment by 1 for each observation
         serverProcesses++;
@@ -179,8 +181,9 @@ void main() {
       // Second callback
       int dbProcesses = 15;
       final attributes2 = {'server': 'db'}.toAttributes();
-      final registration2 =
-          counter.addCallback((APIObservableResult<int> result) {
+      final registration2 = counter.addCallback((
+        APIObservableResult<int> result,
+      ) {
         result.observe(dbProcesses, attributes2);
         // Sometimes goes up, sometimes down
         dbProcesses = (dbProcesses == 15) ? 17 : 15;
@@ -193,21 +196,25 @@ void main() {
       final measurements1 = counter.collect();
       expect(measurements1.length, equals(2));
       expect(
-          measurements1.where((m) => m.attributes == attributes1).first.value,
-          equals(42));
+        measurements1.where((m) => m.attributes == attributes1).first.value,
+        equals(42),
+      );
       expect(
-          measurements1.where((m) => m.attributes == attributes2).first.value,
-          equals(15));
+        measurements1.where((m) => m.attributes == attributes2).first.value,
+        equals(15),
+      );
 
       // Second collection should have updated values
       final measurements2 = counter.collect();
       expect(measurements2.length, equals(2));
       expect(
-          measurements2.where((m) => m.attributes == attributes1).first.value,
-          equals(43));
+        measurements2.where((m) => m.attributes == attributes1).first.value,
+        equals(43),
+      );
       expect(
-          measurements2.where((m) => m.attributes == attributes2).first.value,
-          equals(17));
+        measurements2.where((m) => m.attributes == attributes2).first.value,
+        equals(17),
+      );
 
       // Unregister first callback
       registration1.unregister();
@@ -401,8 +408,10 @@ void main() {
       newCounter.collect();
       final metrics3 = newCounter.collectMetrics();
       expect(metrics3[0].points.length, equals(1));
-      expect(metrics3[0].points[0].value,
-          equals(200)); // New value after shutdown/reset
+      expect(
+        metrics3[0].points[0].value,
+        equals(200),
+      ); // New value after shutdown/reset
     });
 
     test('ObservableUpDownCounter with exceptions in callbacks', () {
@@ -423,7 +432,9 @@ void main() {
       // The SDK should handle exceptions gracefully and not crash
       final measurements1 = counter.collect();
       expect(
-          measurements1.length, equals(0)); // No measurements due to exception
+        measurements1.length,
+        equals(0),
+      ); // No measurements due to exception
 
       // Fix the callback and collect again
       callbackThrows = false;

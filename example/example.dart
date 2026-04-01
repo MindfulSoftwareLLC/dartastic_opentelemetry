@@ -104,10 +104,12 @@ Future<void> callExternalService(Tracer tracer, Span parentSpan) async {
     await Future<void>.delayed(const Duration(milliseconds: 100));
 
     // Add response attributes
-    span.addAttributes(OTel.attributesFromMap({
-      'http.status_code': 200,
-      'http.response_content_length': 1024,
-    }));
+    span.addAttributes(
+      OTel.attributesFromMap({
+        'http.status_code': 200,
+        'http.response_content_length': 1024,
+      }),
+    );
 
     span.setStatus(SpanStatusCode.Ok);
   } finally {

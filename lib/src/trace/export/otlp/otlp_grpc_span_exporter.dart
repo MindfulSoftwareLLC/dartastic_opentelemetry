@@ -100,15 +100,18 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         try {
           if (OTelLog.isDebug()) {
             OTelLog.debug(
-                'OtlpGrpcSpanExporter: Attempting graceful channel shutdown');
+              'OtlpGrpcSpanExporter: Attempting graceful channel shutdown',
+            );
           }
           await _channel!.shutdown();
-          await Future<void>.delayed(const Duration(
-              milliseconds: 100)); // Brief delay for shutdown to complete
+          await Future<void>.delayed(
+            const Duration(milliseconds: 100),
+          ); // Brief delay for shutdown to complete
         } catch (e) {
           if (OTelLog.isDebug()) {
             OTelLog.debug(
-                'OtlpGrpcSpanExporter: Error during graceful shutdown: $e');
+              'OtlpGrpcSpanExporter: Error during graceful shutdown: $e',
+            );
           }
         }
 
@@ -118,18 +121,21 @@ class OtlpGrpcSpanExporter implements SpanExporter {
             OTelLog.debug('OtlpGrpcSpanExporter: Terminating channel');
           }
           _channel!.terminate();
-          await Future<void>.delayed(const Duration(
-              milliseconds: 100)); // Brief delay for termination to complete
+          await Future<void>.delayed(
+            const Duration(milliseconds: 100),
+          ); // Brief delay for termination to complete
         } catch (e) {
           if (OTelLog.isDebug()) {
             OTelLog.debug(
-                'OtlpGrpcSpanExporter: Error terminating channel: $e');
+              'OtlpGrpcSpanExporter: Error terminating channel: $e',
+            );
           }
         }
       } catch (e) {
         if (OTelLog.isError()) {
           OTelLog.error(
-              'OtlpGrpcSpanExporter: Error shutting down existing channel: $e');
+            'OtlpGrpcSpanExporter: Error shutting down existing channel: $e',
+          );
         }
       }
 
@@ -157,14 +163,16 @@ class OtlpGrpcSpanExporter implements SpanExporter {
     if (_isShutdown) {
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-            'OtlpGrpcSpanExporter: Not setting up channel - exporter is shut down');
+          'OtlpGrpcSpanExporter: Not setting up channel - exporter is shut down',
+        );
       }
       return;
     }
 
     if (OTelLog.isDebug()) {
       OTelLog.debug(
-          'OtlpGrpcSpanExporter: Setting up gRPC channel with endpoint ${_config.endpoint}');
+        'OtlpGrpcSpanExporter: Setting up gRPC channel with endpoint ${_config.endpoint}',
+      );
     }
 
     // First, clean up any existing channel
@@ -174,9 +182,10 @@ class OtlpGrpcSpanExporter implements SpanExporter {
     int port;
 
     try {
-      final endpoint = _config.endpoint
-          .trim()
-          .replaceAll(RegExp(r'^(http://|https://)'), '');
+      final endpoint = _config.endpoint.trim().replaceAll(
+            RegExp(r'^(http://|https://)'),
+            '',
+          );
       final parts = endpoint.split(':');
       host = parts[0].isEmpty ? '127.0.0.1' : parts[0];
       port = parts.length > 1 ? int.parse(parts[1]) : 4317;
@@ -188,7 +197,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
 
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-            'OtlpGrpcSpanExporter: Setting up gRPC channel to $host:$port');
+          'OtlpGrpcSpanExporter: Setting up gRPC channel to $host:$port',
+        );
       }
 
       // Create a channel
@@ -200,10 +210,9 @@ class OtlpGrpcSpanExporter implements SpanExporter {
           connectTimeout: const Duration(seconds: 5),
           // Keep connection alive better
           idleTimeout: const Duration(seconds: 30),
-          codecRegistry: CodecRegistry(codecs: const [
-            GzipCodec(),
-            IdentityCodec(),
-          ]),
+          codecRegistry: CodecRegistry(
+            codecs: const [GzipCodec(), IdentityCodec()],
+          ),
         ),
       );
 
@@ -211,23 +220,27 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         _traceService = proto.TraceServiceClient(_channel!);
         if (OTelLog.isDebug()) {
           OTelLog.debug(
-              'OtlpGrpcSpanExporter: Successfully created TraceServiceClient');
+            'OtlpGrpcSpanExporter: Successfully created TraceServiceClient',
+          );
         }
       } catch (e) {
         if (OTelLog.isError()) {
           OTelLog.error(
-              'OtlpGrpcSpanExporter: Failed to create TraceServiceClient: $e');
+            'OtlpGrpcSpanExporter: Failed to create TraceServiceClient: $e',
+          );
         }
         rethrow;
       }
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-            'OtlpGrpcSpanExporter: Successfully created gRPC channel and trace service');
+          'OtlpGrpcSpanExporter: Successfully created gRPC channel and trace service',
+        );
       }
     } catch (e, stackTrace) {
       if (OTelLog.isError()) {
         OTelLog.error(
-            ('OtlpGrpcSpanExporter: Failed to setup gRPC channel: $e'));
+          ('OtlpGrpcSpanExporter: Failed to setup gRPC channel: $e'),
+        );
       }
       if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
       rethrow;
@@ -238,7 +251,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
     if (_isShutdown) {
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-            'OtlpGrpcSpanExporter: Not ensuring channel - exporter is shut down');
+          'OtlpGrpcSpanExporter: Not ensuring channel - exporter is shut down',
+        );
       }
       throw StateError('Exporter is shutdown');
     }
@@ -271,10 +285,12 @@ class OtlpGrpcSpanExporter implements SpanExporter {
 
     if (OTelLog.isDebug()) {
       OTelLog.debug(
-          'OtlpGrpcSpanExporter: Preparing to export ${spans.length} spans');
+        'OtlpGrpcSpanExporter: Preparing to export ${spans.length} spans',
+      );
       for (var span in spans) {
         OTelLog.debug(
-            '  Span: ${span.name}, spanId: ${span.spanContext.spanId}, traceId: ${span.spanContext.traceId}');
+          '  Span: ${span.name}, spanId: ${span.spanContext.spanId}, traceId: ${span.spanContext.traceId}',
+        );
       }
     }
 
@@ -319,18 +335,21 @@ class OtlpGrpcSpanExporter implements SpanExporter {
 
     if (OTelLog.isDebug()) {
       OTelLog.debug(
-          'OtlpGrpcSpanExporter: Sending export request to ${_config.endpoint}');
+        'OtlpGrpcSpanExporter: Sending export request to ${_config.endpoint}',
+      );
     }
     try {
       if (_traceService == null) {
         throw StateError(
-            'Trace service is null, channel may not be properly initialized');
+          'Trace service is null, channel may not be properly initialized',
+        );
       }
 
       final response = await _traceService!.export(request, options: options);
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-            'OtlpGrpcSpanExporter: Export request completed successfully');
+          'OtlpGrpcSpanExporter: Export request completed successfully',
+        );
       }
       if (OTelLog.isDebug()) {
         OTelLog.debug('OtlpGrpcSpanExporter: Response: $response');
@@ -348,7 +367,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
               e.code == StatusCode.internal)) {
         if (OTelLog.isDebug()) {
           OTelLog.debug(
-              'OtlpGrpcSpanExporter: Channel error detected, recreating channel');
+            'OtlpGrpcSpanExporter: Channel error detected, recreating channel',
+          );
         }
         // Force channel recreation
         await _cleanupChannel();
@@ -374,7 +394,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
 
     if (OTelLog.isDebug()) {
       OTelLog.debug(
-          'OtlpGrpcSpanExporter: Beginning export of ${spans.length} spans');
+        'OtlpGrpcSpanExporter: Beginning export of ${spans.length} spans',
+      );
     }
     final exportFuture = _export(spans);
 
@@ -392,7 +413,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         // Gracefully handle the case where shutdown interrupted the export
         if (OTelLog.isDebug()) {
           OTelLog.debug(
-              'OtlpGrpcSpanExporter: Export was interrupted by shutdown, suppressing error');
+            'OtlpGrpcSpanExporter: Export was interrupted by shutdown, suppressing error',
+          );
         }
       } else {
         // Re-throw other errors
@@ -410,7 +432,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
 
     if (OTelLog.isDebug()) {
       OTelLog.debug(
-          'OtlpGrpcSpanExporter: Attempting to export ${spans.length} spans to ${_config.endpoint}');
+        'OtlpGrpcSpanExporter: Attempting to export ${spans.length} spans to ${_config.endpoint}',
+      );
     }
 
     var attempts = 0;
@@ -425,7 +448,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         if (wasShutdownDuringRetry && attempts > 0) {
           if (OTelLog.isDebug()) {
             OTelLog.debug(
-                'OtlpGrpcSpanExporter: Export interrupted by shutdown');
+              'OtlpGrpcSpanExporter: Export interrupted by shutdown',
+            );
           }
           throw StateError('Exporter was shut down during export');
         }
@@ -438,7 +462,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
       } on GrpcError catch (e, stackTrace) {
         if (OTelLog.isError()) {
           OTelLog.error(
-              'OtlpGrpcSpanExporter: gRPC error during export: ${e.code} - ${e.message}');
+            'OtlpGrpcSpanExporter: gRPC error during export: ${e.code} - ${e.message}',
+          );
         }
         if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
 
@@ -446,7 +471,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         if (wasShutdownDuringRetry) {
           if (OTelLog.isError()) {
             OTelLog.error(
-                'OtlpGrpcSpanExporter: Export interrupted by shutdown');
+              'OtlpGrpcSpanExporter: Export interrupted by shutdown',
+            );
           }
           throw StateError('Exporter was shut down during export');
         }
@@ -454,7 +480,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         if (!_retryableStatusCodes.contains(e.code)) {
           if (OTelLog.isError()) {
             OTelLog.error(
-                'OtlpGrpcSpanExporter: Non-retryable gRPC error (${e.code}), stopping retry attempts');
+              'OtlpGrpcSpanExporter: Non-retryable gRPC error (${e.code}), stopping retry attempts',
+            );
           }
           rethrow;
         }
@@ -462,7 +489,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         if (attempts >= maxAttempts - 1) {
           if (OTelLog.isError()) {
             OTelLog.error(
-                'OtlpGrpcSpanExporter: Max attempts reached ($attempts out of $maxAttempts), giving up');
+              'OtlpGrpcSpanExporter: Max attempts reached ($attempts out of $maxAttempts), giving up',
+            );
           }
           rethrow;
         }
@@ -470,7 +498,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         final delay = _calculateJitteredDelay(attempts);
         if (OTelLog.isDebug()) {
           OTelLog.debug(
-              'OtlpGrpcSpanExporter: Retrying export after ${delay.inMilliseconds}ms...');
+            'OtlpGrpcSpanExporter: Retrying export after ${delay.inMilliseconds}ms...',
+          );
         }
         await Future<void>.delayed(delay);
         if (!_isShutdown) {
@@ -481,7 +510,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
       } catch (e, stackTrace) {
         if (OTelLog.isError()) {
           OTelLog.error(
-              'OtlpGrpcSpanExporter: Unexpected error during export: $e');
+            'OtlpGrpcSpanExporter: Unexpected error during export: $e',
+          );
         }
         if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
 
@@ -497,7 +527,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         final delay = _calculateJitteredDelay(attempts);
         if (OTelLog.isDebug()) {
           OTelLog.debug(
-              'OtlpGrpcSpanExporter: Retrying export after ${delay.inMilliseconds}ms...');
+            'OtlpGrpcSpanExporter: Retrying export after ${delay.inMilliseconds}ms...',
+          );
         }
         await Future<void>.delayed(delay);
         if (!_isShutdown) {
@@ -518,7 +549,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
     if (_isShutdown) {
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-            'OtlpGrpcSpanExporter: Exporter is already shut down, nothing to flush');
+          'OtlpGrpcSpanExporter: Exporter is already shut down, nothing to flush',
+        );
       }
       return;
     }
@@ -527,7 +559,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
     if (_pendingExports.isNotEmpty) {
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-            'OtlpGrpcSpanExporter: Waiting for ${_pendingExports.length} pending exports to complete');
+          'OtlpGrpcSpanExporter: Waiting for ${_pendingExports.length} pending exports to complete',
+        );
       }
       try {
         await Future.wait(_pendingExports);
@@ -556,7 +589,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
     }
     if (OTelLog.isDebug()) {
       OTelLog.debug(
-          'OtlpGrpcSpanExporter: Shutting down - waiting for ${_pendingExports.length} pending exports');
+        'OtlpGrpcSpanExporter: Shutting down - waiting for ${_pendingExports.length} pending exports',
+      );
     }
 
     // Set shutdown flag first
@@ -570,22 +604,27 @@ class OtlpGrpcSpanExporter implements SpanExporter {
     if (pendingExportsCopy.isNotEmpty) {
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-            'OtlpGrpcSpanExporter: Waiting for ${pendingExportsCopy.length} pending exports with timeout');
+          'OtlpGrpcSpanExporter: Waiting for ${pendingExportsCopy.length} pending exports with timeout',
+        );
       }
       try {
         // Use a generous timeout but don't wait forever
-        await Future.wait(pendingExportsCopy)
-            .timeout(const Duration(seconds: 10), onTimeout: () {
-          if (OTelLog.isDebug()) {
-            OTelLog.debug(
-                'OtlpGrpcSpanExporter: Timeout waiting for exports to complete');
-          }
-          return Future.value([]);
-        });
+        await Future.wait(pendingExportsCopy).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            if (OTelLog.isDebug()) {
+              OTelLog.debug(
+                'OtlpGrpcSpanExporter: Timeout waiting for exports to complete',
+              );
+            }
+            return Future.value([]);
+          },
+        );
       } catch (e) {
         if (OTelLog.isDebug()) {
           OTelLog.debug(
-              'OtlpGrpcSpanExporter: Error during shutdown while waiting for exports: $e');
+            'OtlpGrpcSpanExporter: Error during shutdown while waiting for exports: $e',
+          );
         }
       }
     }

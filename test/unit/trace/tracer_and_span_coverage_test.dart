@@ -49,8 +49,9 @@ class _LateAttributeSampler implements Sampler {
     required List<SpanLink>? links,
   }) {
     // Create attributes lazily so OTel is initialized
-    final attrs =
-        OTel.attributes([OTel.attributeString(attributeKey, attributeValue)]);
+    final attrs = OTel.attributes([
+      OTel.attributeString(attributeKey, attributeValue),
+    ]);
     return SamplingResult(
       decision: decision,
       source: SamplingDecisionSource.tracerConfig,
@@ -205,10 +206,18 @@ class _InvalidSpanWrapper implements APISpan {
   @override
   void addSpanLink(SpanLink spanLink) => _delegate.addSpanLink(spanLink);
   @override
-  void recordException(Object exception,
-          {StackTrace? stackTrace, Attributes? attributes, bool? escaped}) =>
-      _delegate.recordException(exception,
-          stackTrace: stackTrace, attributes: attributes, escaped: escaped);
+  void recordException(
+    Object exception, {
+    StackTrace? stackTrace,
+    Attributes? attributes,
+    bool? escaped,
+  }) =>
+      _delegate.recordException(
+        exception,
+        stackTrace: stackTrace,
+        attributes: attributes,
+        escaped: escaped,
+      );
   @override
   void setBoolAttribute(String name, bool value) =>
       _delegate.setBoolAttribute(name, value);
@@ -345,8 +354,10 @@ void main() {
       final invalidSpan = _InvalidSpanWrapper(realSpan);
 
       // Exercises lines 159-162
-      final result =
-          await tracer.withSpanAsync(invalidSpan, () async => 'hello');
+      final result = await tracer.withSpanAsync(
+        invalidSpan,
+        () async => 'hello',
+      );
       expect(result, equals('hello'));
 
       expect(
@@ -363,26 +374,28 @@ void main() {
   // tracer.dart - startSpanWithContext updates Context.current
   // =========================================================================
   group('Tracer startSpanWithContext', () {
-    test('startSpanWithContext updates Context.current when context matches',
-        () {
-      final tracer = OTel.tracer();
+    test(
+      'startSpanWithContext updates Context.current when context matches',
+      () {
+        final tracer = OTel.tracer();
 
-      // Set the current context to a known context
-      final ctx = Context.current;
+        // Set the current context to a known context
+        final ctx = Context.current;
 
-      // Call startSpanWithContext with Context.current so that
-      // Context.current == context is true (line 188)
-      final span = tracer.startSpanWithContext(
-        name: 'context-update-span',
-        context: ctx,
-      );
+        // Call startSpanWithContext with Context.current so that
+        // Context.current == context is true (line 188)
+        final span = tracer.startSpanWithContext(
+          name: 'context-update-span',
+          context: ctx,
+        );
 
-      // Context.current should now have the span set
-      expect(span, isNotNull);
-      expect(span.name, equals('context-update-span'));
+        // Context.current should now have the span set
+        expect(span, isNotNull);
+        expect(span.name, equals('context-update-span'));
 
-      span.end();
-    });
+        span.end();
+      },
+    );
   });
 
   // =========================================================================
@@ -582,7 +595,9 @@ void main() {
       final span = tracer.startSpan('toString-events-span');
 
       span.addEventNow(
-          'test-event', OTel.attributesFromMap({'event.key': 'event.val'}));
+        'test-event',
+        OTel.attributesFromMap({'event.key': 'event.val'}),
+      );
 
       final str = span.toString();
       expect(str, contains('spanEvents:'));
@@ -600,7 +615,9 @@ void main() {
       final span = tracer.startSpan('toString-links-span');
 
       span.addLink(
-          linkContext, OTel.attributesFromMap({'link.key': 'link.val'}));
+        linkContext,
+        OTel.attributesFromMap({'link.key': 'link.val'}),
+      );
 
       final str = span.toString();
       expect(str, contains('spanLinks:'));
@@ -937,22 +954,25 @@ void main() {
     // Create a resource that has list values with mixed types
     // The _createKeyValue else branch (line 219) handles unknown types
     final resource = ResourceCreate.create(
-        OTel.attributesFromMap({'regular': 'string_val'}));
+      OTel.attributesFromMap({'regular': 'string_val'}),
+    );
     final proto = MetricTransformer.transformResource(resource);
     expect(proto.attributes, isNotEmpty);
   });
 
   // trace/tracer.dart line 188: Context.current update in startSpanWithContext
-  test('startSpanWithContext updates global context when matching (final_3)',
-      () {
-    final tracer = OTel.tracer();
-    final currentCtx = Context.current;
-    final span = tracer.startSpanWithContext(
-      name: 'ctx-span',
-      context: currentCtx,
-    );
-    span.end();
-  });
+  test(
+    'startSpanWithContext updates global context when matching (final_3)',
+    () {
+      final tracer = OTel.tracer();
+      final currentCtx = Context.current;
+      final span = tracer.startSpanWithContext(
+        name: 'ctx-span',
+        context: currentCtx,
+      );
+      span.end();
+    },
+  );
 
   // metrics/instruments/histogram.dart lines 75-76
   test('Histogram<double> getValue returns double', () {
@@ -1013,42 +1033,30 @@ void main() {
     test('traceparent with short traceId is rejected', () {
       // traceId is only 20 chars (should be 32)
       final map = {
-        'traceparent': '00-abcdef12345678901234-1234567890abcdef-01'
+        'traceparent': '00-abcdef12345678901234-1234567890abcdef-01',
       };
       final propagator = W3CTraceContextPropagator();
-      final context = propagator.extract(
-        Context.root,
-        map,
-        _MapGetter(map),
-      );
+      final context = propagator.extract(Context.root, map, _MapGetter(map));
       expect(context.spanContext, isNull);
     });
 
     test('traceparent with short spanId is rejected', () {
       // spanId only 14 chars (should be 16)
       final map = {
-        'traceparent': '00-abcdef1234567890abcdef12345678-1234567890abcd-01'
+        'traceparent': '00-abcdef1234567890abcdef12345678-1234567890abcd-01',
       };
       final propagator = W3CTraceContextPropagator();
-      final context = propagator.extract(
-        Context.root,
-        map,
-        _MapGetter(map),
-      );
+      final context = propagator.extract(Context.root, map, _MapGetter(map));
       expect(context.spanContext, isNull);
     });
 
     test('traceparent with short traceFlags is rejected', () {
       // traceFlags only 1 char (should be 2)
       final map = {
-        'traceparent': '00-abcdef1234567890abcdef12345678-1234567890abcdef-0'
+        'traceparent': '00-abcdef1234567890abcdef12345678-1234567890abcdef-0',
       };
       final propagator = W3CTraceContextPropagator();
-      final context = propagator.extract(
-        Context.root,
-        map,
-        _MapGetter(map),
-      );
+      final context = propagator.extract(Context.root, map, _MapGetter(map));
       expect(context.spanContext, isNull);
     });
   });

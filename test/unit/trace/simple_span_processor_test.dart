@@ -227,8 +227,10 @@ void main() {
 
       expect(trackingExporter.shutdownCalled, isTrue);
       expect(trackingExporter.exportedSpans, hasLength(1));
-      expect(trackingExporter.exportedSpans.first.name,
-          equals('shutdown-test-span'));
+      expect(
+        trackingExporter.exportedSpans.first.name,
+        equals('shutdown-test-span'),
+      );
     });
   });
 }

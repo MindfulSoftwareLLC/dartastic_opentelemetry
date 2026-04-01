@@ -71,10 +71,7 @@ class MemoryMetricReader implements MetricReader {
     // Collect metrics from all instruments in the meter provider
     final metrics = await _meterProvider!.collectAllMetrics();
 
-    return MetricData(
-      resource: _meterProvider!.resource,
-      metrics: metrics,
-    );
+    return MetricData(resource: _meterProvider!.resource, metrics: metrics);
   }
 
   @override

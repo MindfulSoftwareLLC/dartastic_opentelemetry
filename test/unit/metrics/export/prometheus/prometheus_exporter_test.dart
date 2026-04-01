@@ -40,8 +40,10 @@ void main() {
       final exportData = exporter.prometheusData;
       expect(exportData, contains('# HELP test_counter A test counter'));
       expect(exportData, contains('# TYPE test_counter counter'));
-      expect(exportData,
-          contains('test_counter{label1="value1",label2="value2"} 42.0'));
+      expect(
+        exportData,
+        contains('test_counter{label1="value1",label2="value2"} 42.0'),
+      );
     });
 
     test('exports a gauge metric correctly', () async {
@@ -67,7 +69,9 @@ void main() {
       expect(exportData, contains('# HELP test_gauge A test gauge'));
       expect(exportData, contains('# TYPE test_gauge gauge'));
       expect(
-          exportData, contains('test_gauge{environment="production"} 123.45'));
+        exportData,
+        contains('test_gauge{environment="production"} 123.45'),
+      );
     });
 
     test('exports a histogram metric correctly', () async {
@@ -101,27 +105,47 @@ void main() {
       expect(exportData, contains('# HELP test_histogram A test histogram'));
       expect(exportData, contains('# TYPE test_histogram histogram'));
       expect(
-          exportData, contains('test_histogram_sum{operation="fetch"} 2250.0'));
+        exportData,
+        contains('test_histogram_sum{operation="fetch"} 2250.0'),
+      );
       expect(
-          exportData, contains('test_histogram_count{operation="fetch"} 30'));
+        exportData,
+        contains('test_histogram_count{operation="fetch"} 30'),
+      );
 
       // Check each bucket
-      expect(exportData,
-          contains('test_histogram_bucket{operation="fetch",le="0"} 0'));
-      expect(exportData,
-          contains('test_histogram_bucket{operation="fetch",le="5"} 2'));
-      expect(exportData,
-          contains('test_histogram_bucket{operation="fetch",le="10"} 5'));
-      expect(exportData,
-          contains('test_histogram_bucket{operation="fetch",le="25"} 15'));
-      expect(exportData,
-          contains('test_histogram_bucket{operation="fetch",le="50"} 23'));
-      expect(exportData,
-          contains('test_histogram_bucket{operation="fetch",le="75"} 28'));
-      expect(exportData,
-          contains('test_histogram_bucket{operation="fetch",le="100"} 30'));
-      expect(exportData,
-          contains('test_histogram_bucket{operation="fetch",le="+Inf"} 30'));
+      expect(
+        exportData,
+        contains('test_histogram_bucket{operation="fetch",le="0"} 0'),
+      );
+      expect(
+        exportData,
+        contains('test_histogram_bucket{operation="fetch",le="5"} 2'),
+      );
+      expect(
+        exportData,
+        contains('test_histogram_bucket{operation="fetch",le="10"} 5'),
+      );
+      expect(
+        exportData,
+        contains('test_histogram_bucket{operation="fetch",le="25"} 15'),
+      );
+      expect(
+        exportData,
+        contains('test_histogram_bucket{operation="fetch",le="50"} 23'),
+      );
+      expect(
+        exportData,
+        contains('test_histogram_bucket{operation="fetch",le="75"} 28'),
+      );
+      expect(
+        exportData,
+        contains('test_histogram_bucket{operation="fetch",le="100"} 30'),
+      );
+      expect(
+        exportData,
+        contains('test_histogram_bucket{operation="fetch",le="+Inf"} 30'),
+      );
     });
 
     test('handles special characters in metric names and label values',
@@ -134,7 +158,8 @@ void main() {
         points: [
           MetricPoint(
             attributes: Attributes.of({
-              'label.with-special_chars': 'value with "quotes" and \\ backslash'
+              'label.with-special_chars':
+                  'value with "quotes" and \\ backslash',
             }),
             value: 10.0,
             startTime: DateTime.now(),
@@ -148,14 +173,18 @@ void main() {
 
       final exportData = exporter.prometheusData;
       expect(
-          exportData,
-          contains(
-              '# HELP test_metric_name Description with \\\\ backslash and \\n newline'));
+        exportData,
+        contains(
+          '# HELP test_metric_name Description with \\\\ backslash and \\n newline',
+        ),
+      );
       expect(exportData, contains('# TYPE test_metric_name counter'));
       expect(
-          exportData,
-          contains(
-              'test_metric_name{label_with_special_chars="value with \\"quotes\\" and \\\\ backslash"} 10.0'));
+        exportData,
+        contains(
+          'test_metric_name{label_with_special_chars="value with \\"quotes\\" and \\\\ backslash"} 10.0',
+        ),
+      );
     });
 
     test('handles multiple metrics in one export', () async {

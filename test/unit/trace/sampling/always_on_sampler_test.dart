@@ -11,9 +11,7 @@ void main() {
 
     setUp(() async {
       await OTel.reset();
-      await OTel.initialize(
-        serviceName: 'test-service',
-      );
+      await OTel.initialize(serviceName: 'test-service');
       sampler = const AlwaysOnSampler();
     });
 
@@ -46,22 +44,24 @@ void main() {
       expect(result.attributes, isNull);
     });
 
-    test('shouldSample returns recordAndSample decision with null parameters',
-        () {
-      // Call shouldSample with null for optional parameters
-      final result = sampler.shouldSample(
-        parentContext: OTelAPI.context(),
-        traceId: '00000000000000000000000000000001',
-        name: 'test-span',
-        spanKind: SpanKind.internal,
-        attributes: null,
-        links: null,
-      );
+    test(
+      'shouldSample returns recordAndSample decision with null parameters',
+      () {
+        // Call shouldSample with null for optional parameters
+        final result = sampler.shouldSample(
+          parentContext: OTelAPI.context(),
+          traceId: '00000000000000000000000000000001',
+          name: 'test-span',
+          spanKind: SpanKind.internal,
+          attributes: null,
+          links: null,
+        );
 
-      // Verify the result
-      expect(result.decision, equals(SamplingDecision.recordAndSample));
-      expect(result.source, equals(SamplingDecisionSource.tracerConfig));
-      expect(result.attributes, isNull);
-    });
+        // Verify the result
+        expect(result.decision, equals(SamplingDecision.recordAndSample));
+        expect(result.source, equals(SamplingDecisionSource.tracerConfig));
+        expect(result.attributes, isNull);
+      },
+    );
   });
 }

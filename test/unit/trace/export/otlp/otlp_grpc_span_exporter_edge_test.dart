@@ -21,7 +21,9 @@ class SlowTraceService extends TraceServiceBase {
 
   @override
   Future<ExportTraceServiceResponse> export(
-      ServiceCall call, ExportTraceServiceRequest request) async {
+    ServiceCall call,
+    ExportTraceServiceRequest request,
+  ) async {
     if (!exportStarted.isCompleted) {
       exportStarted.complete();
     }
@@ -37,7 +39,9 @@ class GenericThrowTraceService extends TraceServiceBase {
 
   @override
   Future<ExportTraceServiceResponse> export(
-      ServiceCall call, ExportTraceServiceRequest request) async {
+    ServiceCall call,
+    ExportTraceServiceRequest request,
+  ) async {
     callCount++;
     throw Exception('Generic non-gRPC error');
   }
@@ -58,7 +62,9 @@ class InternalErrorTraceService extends TraceServiceBase {
 
   @override
   Future<ExportTraceServiceResponse> export(
-      ServiceCall call, ExportTraceServiceRequest request) async {
+    ServiceCall call,
+    ExportTraceServiceRequest request,
+  ) async {
     callCount++;
     if (callCount <= failCount) {
       throw GrpcError.custom(failCode, 'Simulated channel error');
@@ -74,7 +80,9 @@ class AlwaysUnavailableTraceService extends TraceServiceBase {
 
   @override
   Future<ExportTraceServiceResponse> export(
-      ServiceCall call, ExportTraceServiceRequest request) async {
+    ServiceCall call,
+    ExportTraceServiceRequest request,
+  ) async {
     callCount++;
     throw const GrpcError.custom(StatusCode.unavailable, 'Always unavailable');
   }
@@ -211,8 +219,12 @@ class _TestSpan implements Span {
   void addEvent(SpanEvent spanEvent) {}
 
   @override
-  void recordException(Object exception,
-      {StackTrace? stackTrace, Attributes? attributes, bool? escaped}) {}
+  void recordException(
+    Object exception, {
+    StackTrace? stackTrace,
+    Attributes? attributes,
+    bool? escaped,
+  }) {}
 
   @override
   void setStringAttribute<T>(String name, String value) {}
@@ -235,10 +247,12 @@ Span _createTestSpan({
     spanId: OTel.spanIdFrom(spanId ?? '0011223344556677'),
   );
 
-  final resource = OTel.resource(OTel.attributesFromMap({
-    'service.name': 'test-service',
-    'service.version': '1.0.0',
-  }));
+  final resource = OTel.resource(
+    OTel.attributesFromMap({
+      'service.name': 'test-service',
+      'service.version': '1.0.0',
+    }),
+  );
 
   final instrumentationScope = OTel.instrumentationScope(
     name: 'test-tracer',
@@ -260,13 +274,15 @@ Span _createTestSpan({
 }
 
 OtlpGrpcSpanExporter _createExporter(int port, {int maxRetries = 2}) {
-  return OtlpGrpcSpanExporter(OtlpGrpcExporterConfig(
-    endpoint: 'http://localhost:$port',
-    insecure: true,
-    maxRetries: maxRetries,
-    baseDelay: const Duration(milliseconds: 1),
-    maxDelay: const Duration(milliseconds: 10),
-  ));
+  return OtlpGrpcSpanExporter(
+    OtlpGrpcExporterConfig(
+      endpoint: 'http://localhost:$port',
+      insecure: true,
+      maxRetries: maxRetries,
+      baseDelay: const Duration(milliseconds: 1),
+      maxDelay: const Duration(milliseconds: 10),
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -342,11 +358,13 @@ void main() {
 
       await expectLater(
         () => exporter.export([span]),
-        throwsA(isA<GrpcError>().having(
-          (e) => e.code,
-          'code',
-          equals(StatusCode.unknown),
-        )),
+        throwsA(
+          isA<GrpcError>().having(
+            (e) => e.code,
+            'code',
+            equals(StatusCode.unknown),
+          ),
+        ),
       );
 
       // UNKNOWN is non-retryable, so only 1 call to the service
@@ -363,38 +381,41 @@ void main() {
     //    Either way, the generic catch block (lines 481-507) handles it.
     //    Covers lines 482-507 (generic catch), 493-495 (max retries check)
     // -----------------------------------------------------------------------
-    test('broken protocol server exercises generic error handling', () async {
-      // Start a raw HTTP server that immediately closes connections
-      final rawServer = await HttpServer.bind('127.0.0.1', 0);
-      final port = rawServer.port;
-      rawServer.listen((request) {
-        // Send a non-gRPC response to break protocol
-        request.response.statusCode = 200;
-        request.response.headers.set('content-type', 'text/plain');
-        request.response.write('not a gRPC response');
-        request.response.close();
-      });
+    test(
+      'broken protocol server exercises generic error handling',
+      () async {
+        // Start a raw HTTP server that immediately closes connections
+        final rawServer = await HttpServer.bind('127.0.0.1', 0);
+        final port = rawServer.port;
+        rawServer.listen((request) {
+          // Send a non-gRPC response to break protocol
+          request.response.statusCode = 200;
+          request.response.headers.set('content-type', 'text/plain');
+          request.response.write('not a gRPC response');
+          request.response.close();
+        });
 
-      // Use short timeout and no retries to keep the test fast
-      final exporter = OtlpGrpcSpanExporter(OtlpGrpcExporterConfig(
-        endpoint: 'http://localhost:$port',
-        insecure: true,
-        maxRetries: 0,
-        timeout: const Duration(seconds: 3),
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-      ));
-      final span = _createTestSpan(name: 'broken-protocol-span');
+        // Use short timeout and no retries to keep the test fast
+        final exporter = OtlpGrpcSpanExporter(
+          OtlpGrpcExporterConfig(
+            endpoint: 'http://localhost:$port',
+            insecure: true,
+            maxRetries: 0,
+            timeout: const Duration(seconds: 3),
+            baseDelay: const Duration(milliseconds: 1),
+            maxDelay: const Duration(milliseconds: 10),
+          ),
+        );
+        final span = _createTestSpan(name: 'broken-protocol-span');
 
-      // Should throw some kind of error (GrpcError or other)
-      await expectLater(
-        () => exporter.export([span]),
-        throwsA(anything),
-      );
+        // Should throw some kind of error (GrpcError or other)
+        await expectLater(() => exporter.export([span]), throwsA(anything));
 
-      await exporter.shutdown();
-      await rawServer.close(force: true);
-    }, timeout: const Timeout(Duration(seconds: 15)));
+        await exporter.shutdown();
+        await rawServer.close(force: true);
+      },
+      timeout: const Timeout(Duration(seconds: 15)),
+    );
 
     // -----------------------------------------------------------------------
     // 4. _tryExport channel error triggers channel recreation
@@ -421,11 +442,13 @@ void main() {
 
       await expectLater(
         () => exporter.export([span]),
-        throwsA(isA<GrpcError>().having(
-          (e) => e.code,
-          'code',
-          equals(StatusCode.internal),
-        )),
+        throwsA(
+          isA<GrpcError>().having(
+            (e) => e.code,
+            'code',
+            equals(StatusCode.internal),
+          ),
+        ),
       );
 
       expect(service.callCount, equals(1));
@@ -437,28 +460,30 @@ void main() {
     // 4b. UNAVAILABLE triggers channel recreation AND is retryable
     //     Covers lines 344-356 (channel recreation) + successful retry
     // -----------------------------------------------------------------------
-    test('UNAVAILABLE error triggers channel recreation and retry succeeds',
-        () async {
-      // Fail once with UNAVAILABLE, then succeed on second attempt
-      final service = InternalErrorTraceService(
-        failCount: 1,
-        failCode: StatusCode.unavailable,
-      );
-      final server = Server.create(services: [service]);
-      await server.serve(port: 0);
-      final port = server.port!;
-      final exporter = _createExporter(port, maxRetries: 2);
-      final span = _createTestSpan(name: 'unavailable-retry-span');
+    test(
+      'UNAVAILABLE error triggers channel recreation and retry succeeds',
+      () async {
+        // Fail once with UNAVAILABLE, then succeed on second attempt
+        final service = InternalErrorTraceService(
+          failCount: 1,
+          failCode: StatusCode.unavailable,
+        );
+        final server = Server.create(services: [service]);
+        await server.serve(port: 0);
+        final port = server.port!;
+        final exporter = _createExporter(port, maxRetries: 2);
+        final span = _createTestSpan(name: 'unavailable-retry-span');
 
-      // Should succeed after retry
-      await exporter.export([span]);
+        // Should succeed after retry
+        await exporter.export([span]);
 
-      // First call fails, second succeeds
-      expect(service.callCount, equals(2));
+        // First call fails, second succeeds
+        expect(service.callCount, equals(2));
 
-      await exporter.shutdown();
-      await server.shutdown();
-    });
+        await exporter.shutdown();
+        await server.shutdown();
+      },
+    );
 
     // -----------------------------------------------------------------------
     // 4c. UNKNOWN error also triggers channel recreation
@@ -478,11 +503,13 @@ void main() {
 
       await expectLater(
         () => exporter.export([span]),
-        throwsA(isA<GrpcError>().having(
-          (e) => e.code,
-          'code',
-          equals(StatusCode.unknown),
-        )),
+        throwsA(
+          isA<GrpcError>().having(
+            (e) => e.code,
+            'code',
+            equals(StatusCode.unknown),
+          ),
+        ),
       );
 
       await exporter.shutdown();
@@ -618,13 +645,15 @@ void main() {
       await server.serve(port: 0);
       final port = server.port!;
 
-      final exporter = OtlpGrpcSpanExporter(OtlpGrpcExporterConfig(
-        endpoint: 'http://localhost:$port',
-        insecure: false, // Triggers secure credentials path
-        maxRetries: 0,
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-      ));
+      final exporter = OtlpGrpcSpanExporter(
+        OtlpGrpcExporterConfig(
+          endpoint: 'http://localhost:$port',
+          insecure: false, // Triggers secure credentials path
+          maxRetries: 0,
+          baseDelay: const Duration(milliseconds: 1),
+          maxDelay: const Duration(milliseconds: 10),
+        ),
+      );
 
       final span = _createTestSpan(name: 'secure-creds-span');
 
@@ -678,25 +707,24 @@ void main() {
     // 10. _ensureChannel throws StateError when shutdown
     //     Covers lines 238-243 (_ensureChannel with isShutdown)
     // -----------------------------------------------------------------------
-    test('_ensureChannel throws StateError when exporter is shutdown',
-        () async {
-      final service = InternalErrorTraceService(failCount: 0);
-      final server = Server.create(services: [service]);
-      await server.serve(port: 0);
-      final port = server.port!;
-      final exporter = _createExporter(port);
+    test(
+      '_ensureChannel throws StateError when exporter is shutdown',
+      () async {
+        final service = InternalErrorTraceService(failCount: 0);
+        final server = Server.create(services: [service]);
+        await server.serve(port: 0);
+        final port = server.port!;
+        final exporter = _createExporter(port);
 
-      await exporter.shutdown();
+        await exporter.shutdown();
 
-      final span = _createTestSpan(name: 'post-shutdown-span');
+        final span = _createTestSpan(name: 'post-shutdown-span');
 
-      expect(
-        () => exporter.export([span]),
-        throwsA(isA<StateError>()),
-      );
+        expect(() => exporter.export([span]), throwsA(isA<StateError>()));
 
-      await server.shutdown();
-    });
+        await server.shutdown();
+      },
+    );
 
     // -----------------------------------------------------------------------
     // 11. _setupChannel returns early when shutdown
@@ -718,10 +746,7 @@ void main() {
 
       // Trying to export again should throw
       final span2 = _createTestSpan(name: 'after-shutdown-span');
-      expect(
-        () => exporter.export([span2]),
-        throwsA(isA<StateError>()),
-      );
+      expect(() => exporter.export([span2]), throwsA(isA<StateError>()));
 
       await server.shutdown();
     });
@@ -748,10 +773,7 @@ void main() {
       await exporter.shutdown();
 
       final span2 = _createTestSpan(name: 'post-shutdown-tryexport');
-      expect(
-        () => exporter.export([span2]),
-        throwsA(isA<StateError>()),
-      );
+      expect(() => exporter.export([span2]), throwsA(isA<StateError>()));
 
       await server.shutdown();
     });
@@ -794,10 +816,7 @@ void main() {
 
       // export() checks _isShutdown first (line 364), before calling _export
       final span = _createTestSpan(name: 'export-shutdown-span');
-      expect(
-        () => exporter.export([span]),
-        throwsA(isA<StateError>()),
-      );
+      expect(() => exporter.export([span]), throwsA(isA<StateError>()));
 
       await server.shutdown();
     });
@@ -861,13 +880,15 @@ void main() {
         isTrue,
       );
       expect(
-        logMessages
-            .any((msg) => msg.contains('Successfully created gRPC channel')),
+        logMessages.any(
+          (msg) => msg.contains('Successfully created gRPC channel'),
+        ),
         isTrue,
       );
       expect(
         logMessages.any(
-            (msg) => msg.contains('Export request completed successfully')),
+          (msg) => msg.contains('Export request completed successfully'),
+        ),
         isTrue,
       );
 
@@ -895,14 +916,16 @@ void main() {
       final port = server.port!;
 
       // Create exporter with compression enabled to exercise lines 311-313
-      final exporter = OtlpGrpcSpanExporter(OtlpGrpcExporterConfig(
-        endpoint: 'http://localhost:$port',
-        insecure: true,
-        compression: true,
-        maxRetries: 0,
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-      ));
+      final exporter = OtlpGrpcSpanExporter(
+        OtlpGrpcExporterConfig(
+          endpoint: 'http://localhost:$port',
+          insecure: true,
+          compression: true,
+          maxRetries: 0,
+          baseDelay: const Duration(milliseconds: 1),
+          maxDelay: const Duration(milliseconds: 10),
+        ),
+      );
 
       final span = _createTestSpan(name: 'compression-span');
       await exporter.export([span]);
@@ -916,74 +939,80 @@ void main() {
     // -----------------------------------------------------------------------
     // 18. Multiple pending exports tracked and flushed
     // -----------------------------------------------------------------------
-    test('multiple concurrent exports are tracked in _pendingExports',
-        () async {
-      final service = SlowTraceService();
-      final server = Server.create(services: [service]);
-      await server.serve(port: 0);
-      final port = server.port!;
-      final exporter = _createExporter(port);
+    test(
+      'multiple concurrent exports are tracked in _pendingExports',
+      () async {
+        final service = SlowTraceService();
+        final server = Server.create(services: [service]);
+        await server.serve(port: 0);
+        final port = server.port!;
+        final exporter = _createExporter(port);
 
-      final span = _createTestSpan(name: 'concurrent-pending-span');
+        final span = _createTestSpan(name: 'concurrent-pending-span');
 
-      // Start an export that will block
-      // ignore: unawaited_futures
-      final exportFuture = exporter.export([span]);
+        // Start an export that will block
+        // ignore: unawaited_futures
+        final exportFuture = exporter.export([span]);
 
-      // Wait for it to start
-      await service.exportStarted.future;
+        // Wait for it to start
+        await service.exportStarted.future;
 
-      // Call forceFlush to exercise the pending exports path
-      Future<void>.delayed(const Duration(milliseconds: 50)).then((_) {
-        service.shouldComplete.complete();
-      });
+        // Call forceFlush to exercise the pending exports path
+        Future<void>.delayed(const Duration(milliseconds: 50)).then((_) {
+          service.shouldComplete.complete();
+        });
 
-      await exporter.forceFlush();
-      await exportFuture;
+        await exporter.forceFlush();
+        await exportFuture;
 
-      await exporter.shutdown();
-      await server.shutdown();
-    });
+        await exporter.shutdown();
+        await server.shutdown();
+      },
+    );
 
     // -----------------------------------------------------------------------
     // 19. Shutdown timeout path when export never completes
     //     Covers lines 577-584 (timeout handler in shutdown)
     // -----------------------------------------------------------------------
-    test('shutdown times out when export hangs', () async {
-      final service = SlowTraceService();
-      final server = Server.create(services: [service]);
-      await server.serve(port: 0);
-      final port = server.port!;
+    test(
+      'shutdown times out when export hangs',
+      () async {
+        final service = SlowTraceService();
+        final server = Server.create(services: [service]);
+        await server.serve(port: 0);
+        final port = server.port!;
 
-      final exporter = _createExporter(port);
-      final span = _createTestSpan(name: 'hanging-export-span');
+        final exporter = _createExporter(port);
+        final span = _createTestSpan(name: 'hanging-export-span');
 
-      // Start an export that will never complete (we won't call shouldComplete)
-      // ignore: unawaited_futures
-      final exportFuture = exporter.export([span]).catchError((Object e) {
-        // Errors expected during shutdown timeout
-      });
+        // Start an export that will never complete (we won't call shouldComplete)
+        // ignore: unawaited_futures
+        final exportFuture = exporter.export([span]).catchError((Object e) {
+          // Errors expected during shutdown timeout
+        });
 
-      // Wait for the export to start
-      await service.exportStarted.future;
+        // Wait for the export to start
+        await service.exportStarted.future;
 
-      // Shutdown should complete via its 10s timeout even though the export hangs.
-      // We use a test timeout to ensure this doesn't hang forever.
-      await exporter.shutdown().timeout(
-            const Duration(seconds: 15),
-            onTimeout: () =>
-                fail('shutdown should complete within its internal timeout'),
-          );
+        // Shutdown should complete via its 10s timeout even though the export hangs.
+        // We use a test timeout to ensure this doesn't hang forever.
+        await exporter.shutdown().timeout(
+              const Duration(seconds: 15),
+              onTimeout: () =>
+                  fail('shutdown should complete within its internal timeout'),
+            );
 
-      // Clean up: let the slow service complete so the test can tear down
-      service.shouldComplete.complete();
-      try {
-        await exportFuture;
-      } catch (_) {
-        // Expected
-      }
+        // Clean up: let the slow service complete so the test can tear down
+        service.shouldComplete.complete();
+        try {
+          await exportFuture;
+        } catch (_) {
+          // Expected
+        }
 
-      await server.shutdown();
-    }, timeout: const Timeout(Duration(seconds: 20)));
+        await server.shutdown();
+      },
+      timeout: const Timeout(Duration(seconds: 20)),
+    );
   });
 }

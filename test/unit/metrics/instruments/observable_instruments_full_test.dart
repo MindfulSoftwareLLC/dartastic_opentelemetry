@@ -50,8 +50,7 @@ void main() {
 
       test('callbacks list starts empty when no initial callback', () {
         final counter = meter.createObservableCounter<int>(
-          name: 'empty_callbacks_counter',
-        ) as ObservableCounter<int>;
+            name: 'empty_callbacks_counter') as ObservableCounter<int>;
         expect(counter.callbacks, isEmpty);
       });
 
@@ -100,8 +99,7 @@ void main() {
 
       test('collectMetrics returns empty when no data collected', () {
         final counter = meter.createObservableCounter<int>(
-          name: 'no_data_counter',
-        ) as ObservableCounter<int>;
+            name: 'no_data_counter') as ObservableCounter<int>;
 
         final metrics = counter.collectMetrics();
         expect(metrics, isEmpty);
@@ -111,8 +109,7 @@ void main() {
     group('ObservableCounter callback management', () {
       test('addCallback and unregister', () {
         final counter = meter.createObservableCounter<int>(
-          name: 'unreg_counter',
-        ) as ObservableCounter<int>;
+            name: 'unreg_counter') as ObservableCounter<int>;
 
         final registration = counter.addCallback((result) {
           result.observe(100);
@@ -127,8 +124,7 @@ void main() {
 
       test('multiple registrations and selective unregister', () {
         final counter = meter.createObservableCounter<int>(
-          name: 'multi_reg_counter',
-        ) as ObservableCounter<int>;
+            name: 'multi_reg_counter') as ObservableCounter<int>;
 
         final reg1 = counter.addCallback((result) {
           result.observe(10);
@@ -151,8 +147,7 @@ void main() {
 
       test('removeCallback removes callback directly', () {
         final counter = meter.createObservableCounter<int>(
-          name: 'remove_cb_counter',
-        ) as ObservableCounter<int>;
+            name: 'remove_cb_counter') as ObservableCounter<int>;
 
         void myCallback(APIObservableResult<int> result) {
           result.observe(42);
@@ -169,8 +164,7 @@ void main() {
     group('ObservableCounter error handling', () {
       test('error in callback does not prevent other callbacks', () {
         final counter = meter.createObservableCounter<int>(
-          name: 'error_cb_counter',
-        ) as ObservableCounter<int>;
+            name: 'error_cb_counter') as ObservableCounter<int>;
 
         counter.addCallback((result) {
           throw Exception('Callback error');
@@ -186,8 +180,7 @@ void main() {
 
       test('collect returns empty when no callbacks', () {
         final counter = meter.createObservableCounter<int>(
-          name: 'no_cb_counter',
-        ) as ObservableCounter<int>;
+            name: 'no_cb_counter') as ObservableCounter<int>;
 
         final measurements = counter.collect();
         expect(measurements, isEmpty);
@@ -382,8 +375,7 @@ void main() {
 
       test('collectMetrics returns empty when no data', () {
         final counter = meter.createObservableUpDownCounter<int>(
-          name: 'no_data_updown',
-        ) as ObservableUpDownCounter<int>;
+            name: 'no_data_updown') as ObservableUpDownCounter<int>;
 
         final metrics = counter.collectMetrics();
         expect(metrics, isEmpty);
@@ -393,8 +385,7 @@ void main() {
     group('ObservableUpDownCounter callback management', () {
       test('addCallback and unregister', () {
         final counter = meter.createObservableUpDownCounter<int>(
-          name: 'unreg_updown',
-        ) as ObservableUpDownCounter<int>;
+            name: 'unreg_updown') as ObservableUpDownCounter<int>;
 
         final registration = counter.addCallback((result) {
           result.observe(10);
@@ -409,8 +400,7 @@ void main() {
 
       test('removeCallback directly', () {
         final counter = meter.createObservableUpDownCounter<int>(
-          name: 'remove_cb_updown',
-        ) as ObservableUpDownCounter<int>;
+            name: 'remove_cb_updown') as ObservableUpDownCounter<int>;
 
         void myCallback(APIObservableResult<int> result) {
           result.observe(7);
@@ -427,8 +417,7 @@ void main() {
     group('ObservableUpDownCounter error handling', () {
       test('error in callback does not prevent other callbacks', () {
         final counter = meter.createObservableUpDownCounter<int>(
-          name: 'error_updown',
-        ) as ObservableUpDownCounter<int>;
+            name: 'error_updown') as ObservableUpDownCounter<int>;
 
         counter.addCallback((result) {
           throw Exception('Callback error');
@@ -444,8 +433,7 @@ void main() {
 
       test('collect returns empty when no callbacks', () {
         final counter = meter.createObservableUpDownCounter<int>(
-          name: 'no_cb_updown',
-        ) as ObservableUpDownCounter<int>;
+            name: 'no_cb_updown') as ObservableUpDownCounter<int>;
 
         final measurements = counter.collect();
         expect(measurements, isEmpty);
@@ -603,9 +591,8 @@ void main() {
       });
 
       test('collectMetrics returns empty when no data', () {
-        final gauge = meter.createObservableGauge<double>(
-          name: 'no_data_gauge',
-        ) as ObservableGauge<double>;
+        final gauge = meter.createObservableGauge<double>(name: 'no_data_gauge')
+            as ObservableGauge<double>;
 
         final metrics = gauge.collectMetrics();
         expect(metrics, isEmpty);
@@ -614,9 +601,8 @@ void main() {
 
     group('ObservableGauge callback management', () {
       test('addCallback and unregister', () {
-        final gauge = meter.createObservableGauge<double>(
-          name: 'unreg_gauge',
-        ) as ObservableGauge<double>;
+        final gauge = meter.createObservableGauge<double>(name: 'unreg_gauge')
+            as ObservableGauge<double>;
 
         final registration = gauge.addCallback((result) {
           result.observe(99.9);
@@ -631,8 +617,7 @@ void main() {
 
       test('removeCallback directly', () {
         final gauge = meter.createObservableGauge<double>(
-          name: 'remove_cb_gauge',
-        ) as ObservableGauge<double>;
+            name: 'remove_cb_gauge') as ObservableGauge<double>;
 
         void myCallback(APIObservableResult<double> result) {
           result.observe(55.5);
@@ -648,9 +633,8 @@ void main() {
 
     group('ObservableGauge error handling', () {
       test('error in callback does not prevent other callbacks', () {
-        final gauge = meter.createObservableGauge<double>(
-          name: 'error_gauge',
-        ) as ObservableGauge<double>;
+        final gauge = meter.createObservableGauge<double>(name: 'error_gauge')
+            as ObservableGauge<double>;
 
         gauge.addCallback((result) {
           throw Exception('Callback error');
@@ -665,9 +649,8 @@ void main() {
       });
 
       test('collect returns empty list when no callbacks', () {
-        final gauge = meter.createObservableGauge<double>(
-          name: 'no_cb_gauge',
-        ) as ObservableGauge<double>;
+        final gauge = meter.createObservableGauge<double>(name: 'no_cb_gauge')
+            as ObservableGauge<double>;
 
         final measurements = gauge.collect();
         expect(measurements, isEmpty);
@@ -690,9 +673,8 @@ void main() {
       });
 
       test('getValue with no points returns 0', () {
-        final gauge = meter.createObservableGauge<double>(
-          name: 'empty_gauge',
-        ) as ObservableGauge<double>;
+        final gauge = meter.createObservableGauge<double>(name: 'empty_gauge')
+            as ObservableGauge<double>;
 
         final value = gauge.getValue();
         expect(value, equals(0.0));

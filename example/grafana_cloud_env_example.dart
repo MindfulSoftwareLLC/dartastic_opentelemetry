@@ -38,7 +38,8 @@ Future<void> main() async {
 
   print('OpenTelemetry initialized with environment configuration');
   print(
-      'Service: ${OTel.defaultResource?.attributes.toList().firstWhere((a) => a.key == 'service.name').value}');
+    'Service: ${OTel.defaultResource?.attributes.toList().firstWhere((a) => a.key == 'service.name').value}',
+  );
 
   // Create a tracer
   final tracer = OTel.tracer();
@@ -76,13 +77,15 @@ Future<void> traceUserLogin(Tracer tracer, String userId) async {
     await Future<void>.delayed(const Duration(milliseconds: 100));
 
     // Add event for successful authentication
-    span.addEvent(OTel.spanEventNow(
-      'authentication.success',
-      OTel.attributesFromMap({
-        'session.id': 'sess_${DateTime.now().millisecondsSinceEpoch}',
-        'permissions': 'read,write',
-      }),
-    ));
+    span.addEvent(
+      OTel.spanEventNow(
+        'authentication.success',
+        OTel.attributesFromMap({
+          'session.id': 'sess_${DateTime.now().millisecondsSinceEpoch}',
+          'permissions': 'read,write',
+        }),
+      ),
+    );
 
     // Record success
     span.setStatus(SpanStatusCode.Ok);
@@ -114,16 +117,16 @@ Future<void> traceHttpRequest(Tracer tracer) async {
     await Future<void>.delayed(const Duration(milliseconds: 200));
 
     // Set response attributes
-    span.addAttributes(OTel.attributesFromMap({
-      'http.status_code': 200,
-      'http.response_content_length': 1234,
-    }));
+    span.addAttributes(
+      OTel.attributesFromMap({
+        'http.status_code': 200,
+        'http.response_content_length': 1234,
+      }),
+    );
 
     span.setStatus(SpanStatusCode.Ok);
   } catch (error) {
-    span.addAttributes(OTel.attributesFromMap({
-      'http.status_code': 500,
-    }));
+    span.addAttributes(OTel.attributesFromMap({'http.status_code': 500}));
     span.setStatus(SpanStatusCode.Error, 'HTTP request failed');
     span.recordException(error);
   } finally {
@@ -182,9 +185,7 @@ Future<void> initializeWithCode() async {
       OtlpHttpSpanExporter(
         OtlpHttpExporterConfig(
           endpoint: 'https://otlp-gateway-prod-us-central-0.grafana.net/otlp',
-          headers: {
-            'authorization': 'Basic $base64Credentials',
-          },
+          headers: {'authorization': 'Basic $base64Credentials'},
           compression: true,
         ),
       ),

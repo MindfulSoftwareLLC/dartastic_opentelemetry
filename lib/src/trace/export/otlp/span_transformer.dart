@@ -132,8 +132,9 @@ class OtlpSpanTransformer {
       ..startTimeUnixNano = Int64(span.startTime.microsecondsSinceEpoch * 1000);
 
     if (span.endTime != null) {
-      otlpSpan.endTimeUnixNano =
-          Int64(span.endTime!.microsecondsSinceEpoch * 1000);
+      otlpSpan.endTimeUnixNano = Int64(
+        span.endTime!.microsecondsSinceEpoch * 1000,
+      );
     }
 
     // First check if we have a parent span
@@ -177,7 +178,9 @@ class OtlpSpanTransformer {
 
   /// Convert span status to OTLP Status
   static proto.Status transformStatus(
-      SpanStatusCode status, String? description) {
+    SpanStatusCode status,
+    String? description,
+  ) {
     final otlpStatus = proto.Status();
 
     switch (status) {
@@ -277,23 +280,33 @@ class OtlpSpanTransformer {
       anyValue.doubleValue = attr.value as double;
     } else if (attr.value is List<String>) {
       final arrayValue = proto.ArrayValue();
-      arrayValue.values.addAll((attr.value as List<String>)
-          .map((v) => proto.AnyValue()..stringValue = v));
+      arrayValue.values.addAll(
+        (attr.value as List<String>).map(
+          (v) => proto.AnyValue()..stringValue = v,
+        ),
+      );
       anyValue.arrayValue = arrayValue;
     } else if (attr.value is List<bool>) {
       final arrayValue = proto.ArrayValue();
-      arrayValue.values.addAll((attr.value as List<bool>)
-          .map((v) => proto.AnyValue()..boolValue = v));
+      arrayValue.values.addAll(
+        (attr.value as List<bool>).map((v) => proto.AnyValue()..boolValue = v),
+      );
       anyValue.arrayValue = arrayValue;
     } else if (attr.value is List<int>) {
       final arrayValue = proto.ArrayValue();
-      arrayValue.values.addAll((attr.value as List<int>)
-          .map((v) => proto.AnyValue()..intValue = Int64(v)));
+      arrayValue.values.addAll(
+        (attr.value as List<int>).map(
+          (v) => proto.AnyValue()..intValue = Int64(v),
+        ),
+      );
       anyValue.arrayValue = arrayValue;
     } else if (attr.value is List<double>) {
       final arrayValue = proto.ArrayValue();
-      arrayValue.values.addAll((attr.value as List<double>)
-          .map((v) => proto.AnyValue()..doubleValue = v));
+      arrayValue.values.addAll(
+        (attr.value as List<double>).map(
+          (v) => proto.AnyValue()..doubleValue = v,
+        ),
+      );
       anyValue.arrayValue = arrayValue;
     } else {
       // For any other type, convert to string

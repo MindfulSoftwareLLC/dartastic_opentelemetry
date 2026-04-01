@@ -19,9 +19,11 @@ void main() {
 
   OTelEnv.initializeLogging();
 
-  print(jsonEncode({
-    'metricLogFunction': OTelLog.metricLogFunction != null,
-    'spanLogFunction': OTelLog.spanLogFunction != null,
-    'exportLogFunction': OTelLog.exportLogFunction != null,
-  }));
+  print(
+    jsonEncode({
+      'metricLogFunction': OTelLog.metricLogFunction != null,
+      'spanLogFunction': OTelLog.spanLogFunction != null,
+      'exportLogFunction': OTelLog.exportLogFunction != null,
+    }),
+  );
 }

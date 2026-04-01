@@ -59,10 +59,7 @@ void main() {
       File(outputPath).writeAsStringSync('');
 
       // Setup collector and proxy
-      collector = RealCollector(
-        configPath: configPath,
-        outputPath: outputPath,
-      );
+      collector = RealCollector(configPath: configPath, outputPath: outputPath);
       await collector.start();
 
       proxy = NetworkProxy(
@@ -110,9 +107,10 @@ void main() {
     });
 
     test('respects max retry limit', () async {
-      proxy.failNextRequests(5,
-          errorCode:
-              grpc.StatusCode.unavailable); // More failures than max retries
+      proxy.failNextRequests(
+        5,
+        errorCode: grpc.StatusCode.unavailable,
+      ); // More failures than max retries
 
       final spans = [
         createTestSpan(
@@ -124,11 +122,13 @@ void main() {
 
       await expectLater(
         () => exporter.export(spans),
-        throwsA(isA<grpc.GrpcError>().having(
-          (e) => e.code,
-          'code',
-          equals(grpc.StatusCode.unavailable),
-        )),
+        throwsA(
+          isA<grpc.GrpcError>().having(
+            (e) => e.code,
+            'code',
+            equals(grpc.StatusCode.unavailable),
+          ),
+        ),
       );
 
       final allSpans = await collector.getSpans();
@@ -149,11 +149,13 @@ void main() {
 
       await expectLater(
         () => exporter.export(spans),
-        throwsA(isA<grpc.GrpcError>().having(
-          (e) => e.code,
-          'code',
-          equals(grpc.StatusCode.invalidArgument),
-        )),
+        throwsA(
+          isA<grpc.GrpcError>().having(
+            (e) => e.code,
+            'code',
+            equals(grpc.StatusCode.invalidArgument),
+          ),
+        ),
       );
 
       final allSpans = await collector.getSpans();
@@ -224,8 +226,10 @@ void main() {
       // Don't wait for exportFuture - it might fail due to shutdown (which is acceptable)
       // Instead just verify we have at least one span exported
       try {
-        await exportFuture.timeout(const Duration(milliseconds: 500),
-            onTimeout: () => null);
+        await exportFuture.timeout(
+          const Duration(milliseconds: 500),
+          onTimeout: () => null,
+        );
       } catch (e) {
         // Ignore expected errors during shutdown
         print('Expected export error during shutdown: $e');
@@ -233,13 +237,18 @@ void main() {
 
       // Verify that at least the first span was exported
       final spans = await collector.getSpans();
-      expect(spans.isNotEmpty, isTrue,
-          reason: 'At least one span should be exported');
+      expect(
+        spans.isNotEmpty,
+        isTrue,
+        reason: 'At least one span should be exported',
+      );
     });
 
     test('handles large batch exports with retry', () async {
-      proxy.failNextRequests(1,
-          errorCode: grpc.StatusCode.unavailable); // First attempt fails
+      proxy.failNextRequests(
+        1,
+        errorCode: grpc.StatusCode.unavailable,
+      ); // First attempt fails
 
       final largeSpanBatch = List.generate(
         100,
@@ -264,8 +273,10 @@ void main() {
 
     test('handles multiple concurrent exports with retries', () async {
       // Each concurrent request will fail once
-      proxy.failNextRequests(3,
-          errorCode: grpc.StatusCode.unavailable); // One failure per export
+      proxy.failNextRequests(
+        3,
+        errorCode: grpc.StatusCode.unavailable,
+      ); // One failure per export
 
       final exports = List.generate(
         3,
@@ -373,9 +384,11 @@ void main() {
       }
 
       // At minimum, the first span (exported before connection loss) should be present
-      expect(spans.any((s) => s['name'] == 'connection-loss-span'), isTrue,
-          reason:
-              'First span should have been exported before connection loss');
+      expect(
+        spans.any((s) => s['name'] == 'connection-loss-span'),
+        isTrue,
+        reason: 'First span should have been exported before connection loss',
+      );
 
       // Clean up
       await recoveryExporter.shutdown();
@@ -383,8 +396,10 @@ void main() {
 
     test('handles multiple concurrent exports with retries', () async {
       // Each concurrent request will fail once
-      proxy.failNextRequests(3,
-          errorCode: grpc.StatusCode.unavailable); // One failure per export
+      proxy.failNextRequests(
+        3,
+        errorCode: grpc.StatusCode.unavailable,
+      ); // One failure per export
 
       final exports = List.generate(
         3,

@@ -60,12 +60,14 @@ void main() {
     }
 
     OtlpHttpMetricExporter createExporter({int maxRetries = 2}) {
-      return OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-        maxRetries: maxRetries,
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-      ));
+      return OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(
+          endpoint: 'http://localhost:$port',
+          maxRetries: maxRetries,
+          baseDelay: const Duration(milliseconds: 1),
+          maxDelay: const Duration(milliseconds: 10),
+        ),
+      );
     }
 
     test('export with debug logging exercises all log paths', () async {
@@ -122,29 +124,33 @@ void main() {
       await exporter.shutdown();
     });
 
-    test('constructor with certificate config exercises _createHttpClient',
-        () async {
-      // Using test:// scheme paths exercises the certificate code path
-      // in _createHttpClient without requiring real cert files
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-        certificate: 'test://ca-cert',
-        clientKey: 'test://client-key',
-        clientCertificate: 'test://client-cert',
-        maxRetries: 0,
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-      ));
-      expect(exporter, isNotNull);
+    test(
+      'constructor with certificate config exercises _createHttpClient',
+      () async {
+        // Using test:// scheme paths exercises the certificate code path
+        // in _createHttpClient without requiring real cert files
+        final exporter = OtlpHttpMetricExporter(
+          OtlpHttpMetricExporterConfig(
+            endpoint: 'http://localhost:$port',
+            certificate: 'test://ca-cert',
+            clientKey: 'test://client-key',
+            clientCertificate: 'test://client-cert',
+            maxRetries: 0,
+            baseDelay: const Duration(milliseconds: 1),
+            maxDelay: const Duration(milliseconds: 10),
+          ),
+        );
+        expect(exporter, isNotNull);
 
-      // It should still work with the test:// certificate client
-      statusCodes = [200];
-      final metricData = createTestMetricData();
-      final result = await exporter.export(metricData);
-      expect(result, isTrue);
-      expect(requestCount, equals(1));
-      await exporter.shutdown();
-    });
+        // It should still work with the test:// certificate client
+        statusCodes = [200];
+        final metricData = createTestMetricData();
+        final result = await exporter.export(metricData);
+        expect(result, isTrue);
+        expect(requestCount, equals(1));
+        await exporter.shutdown();
+      },
+    );
 
     test('retries on 503 and gives up after max retries', () async {
       // After the _tryExport fix, ClientException is rethrown,
@@ -302,12 +308,14 @@ void main() {
       final logMessages = <String>[];
       OTelLog.logFunction = logMessages.add;
 
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-        maxRetries: 0,
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-      ));
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(
+          endpoint: 'http://localhost:$port',
+          maxRetries: 0,
+          baseDelay: const Duration(milliseconds: 1),
+          maxDelay: const Duration(milliseconds: 10),
+        ),
+      );
       final metricData = createTestMetricData();
 
       final result = await exporter.export(metricData);
@@ -345,10 +353,7 @@ void main() {
       await exporter.shutdown();
 
       final metricData = createTestMetricData();
-      expect(
-        () => exporter.export(metricData),
-        throwsA(isA<StateError>()),
-      );
+      expect(() => exporter.export(metricData), throwsA(isA<StateError>()));
     });
 
     test('shutdown debug log shows pending export count', () async {
@@ -364,13 +369,15 @@ void main() {
 
     test('export with compression succeeds', () async {
       statusCodes = [200];
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-        compression: true,
-        maxRetries: 0,
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-      ));
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(
+          endpoint: 'http://localhost:$port',
+          compression: true,
+          maxRetries: 0,
+          baseDelay: const Duration(milliseconds: 1),
+          maxDelay: const Duration(milliseconds: 10),
+        ),
+      );
       final metricData = createTestMetricData();
 
       final result = await exporter.export(metricData);
@@ -448,12 +455,14 @@ void main() {
 
     test('endpoint url with trailing slash', () async {
       statusCodes = [200];
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port/',
-        maxRetries: 0,
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-      ));
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(
+          endpoint: 'http://localhost:$port/',
+          maxRetries: 0,
+          baseDelay: const Duration(milliseconds: 1),
+          maxDelay: const Duration(milliseconds: 10),
+        ),
+      );
       final metricData = createTestMetricData();
 
       final result = await exporter.export(metricData);
@@ -464,12 +473,14 @@ void main() {
 
     test('endpoint url already has /v1/metrics', () async {
       statusCodes = [200];
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port/v1/metrics',
-        maxRetries: 0,
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-      ));
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(
+          endpoint: 'http://localhost:$port/v1/metrics',
+          maxRetries: 0,
+          baseDelay: const Duration(milliseconds: 1),
+          maxDelay: const Duration(milliseconds: 10),
+        ),
+      );
       final metricData = createTestMetricData();
 
       final result = await exporter.export(metricData);

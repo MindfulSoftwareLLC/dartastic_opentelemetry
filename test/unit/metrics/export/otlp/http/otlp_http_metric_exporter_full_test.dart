@@ -20,8 +20,10 @@ void main() {
       server.listen((request) async {
         receivedRequests.add(request);
         // Drain the request body so the connection completes properly
-        await request
-            .fold<List<int>>([], (bytes, chunk) => bytes..addAll(chunk));
+        await request.fold<List<int>>(
+          [],
+          (bytes, chunk) => bytes..addAll(chunk),
+        );
         request.response.statusCode = 200;
         await request.response.close();
       });
@@ -51,9 +53,9 @@ void main() {
     }
 
     test('export sends metrics to endpoint', () async {
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-      ));
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:$port'),
+      );
 
       final metricData = createTestMetricData();
       final result = await exporter.export(metricData);
@@ -64,9 +66,9 @@ void main() {
     });
 
     test('export sends protobuf content type', () async {
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-      ));
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:$port'),
+      );
 
       final metricData = createTestMetricData();
       await exporter.export(metricData);
@@ -80,9 +82,9 @@ void main() {
     });
 
     test('export appends /v1/metrics to endpoint', () async {
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-      ));
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:$port'),
+      );
 
       final metricData = createTestMetricData();
       await exporter.export(metricData);
@@ -93,10 +95,12 @@ void main() {
     });
 
     test('export with compression sends gzip content encoding', () async {
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-        compression: true,
-      ));
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(
+          endpoint: 'http://localhost:$port',
+          compression: true,
+        ),
+      );
 
       final metricData = createTestMetricData();
       await exporter.export(metricData);
@@ -110,10 +114,12 @@ void main() {
     });
 
     test('export with custom headers includes them', () async {
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-        headers: {'x-custom': 'test-value'},
-      ));
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(
+          endpoint: 'http://localhost:$port',
+          headers: {'x-custom': 'test-value'},
+        ),
+      );
 
       final metricData = createTestMetricData();
       await exporter.export(metricData);
@@ -127,9 +133,9 @@ void main() {
     });
 
     test('export with empty metrics returns true', () async {
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-      ));
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:$port'),
+      );
 
       final result = await exporter.export(MetricData.empty());
 
@@ -140,17 +146,14 @@ void main() {
     });
 
     test('export after shutdown throws StateError', () async {
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-      ));
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:$port'),
+      );
 
       await exporter.shutdown();
 
       final metricData = createTestMetricData();
-      expect(
-        () => exporter.export(metricData),
-        throwsA(isA<StateError>()),
-      );
+      expect(() => exporter.export(metricData), throwsA(isA<StateError>()));
     });
 
     test('export retries on 503', () async {
@@ -162,8 +165,10 @@ void main() {
       port = server.port;
       server.listen((request) async {
         requestCount++;
-        await request
-            .fold<List<int>>([], (bytes, chunk) => bytes..addAll(chunk));
+        await request.fold<List<int>>(
+          [],
+          (bytes, chunk) => bytes..addAll(chunk),
+        );
         if (requestCount == 1) {
           request.response.statusCode = 503;
         } else {
@@ -172,12 +177,14 @@ void main() {
         await request.response.close();
       });
 
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-        maxRetries: 3,
-        baseDelay: const Duration(milliseconds: 10),
-        maxDelay: const Duration(milliseconds: 50),
-      ));
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(
+          endpoint: 'http://localhost:$port',
+          maxRetries: 3,
+          baseDelay: const Duration(milliseconds: 10),
+          maxDelay: const Duration(milliseconds: 50),
+        ),
+      );
 
       final metricData = createTestMetricData();
       final result = await exporter.export(metricData);
@@ -197,18 +204,22 @@ void main() {
       port = server.port;
       server.listen((request) async {
         requestCount++;
-        await request
-            .fold<List<int>>([], (bytes, chunk) => bytes..addAll(chunk));
+        await request.fold<List<int>>(
+          [],
+          (bytes, chunk) => bytes..addAll(chunk),
+        );
         request.response.statusCode = 400;
         await request.response.close();
       });
 
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-        maxRetries: 3,
-        baseDelay: const Duration(milliseconds: 10),
-        maxDelay: const Duration(milliseconds: 50),
-      ));
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(
+          endpoint: 'http://localhost:$port',
+          maxRetries: 3,
+          baseDelay: const Duration(milliseconds: 10),
+          maxDelay: const Duration(milliseconds: 50),
+        ),
+      );
 
       final metricData = createTestMetricData();
       final result = await exporter.export(metricData);
@@ -220,9 +231,9 @@ void main() {
     });
 
     test('forceFlush returns true', () async {
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-      ));
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:$port'),
+      );
 
       final result = await exporter.forceFlush();
       expect(result, isTrue);
@@ -230,23 +241,20 @@ void main() {
     });
 
     test('shutdown then export throws', () async {
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-      ));
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:$port'),
+      );
 
       await exporter.shutdown();
 
       final metricData = createTestMetricData();
-      expect(
-        () => exporter.export(metricData),
-        throwsA(isA<StateError>()),
-      );
+      expect(() => exporter.export(metricData), throwsA(isA<StateError>()));
     });
 
     test('_getEndpointUrl appends /v1/metrics', () async {
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-      ));
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:$port'),
+      );
 
       final metricData = createTestMetricData();
       await exporter.export(metricData);
@@ -257,9 +265,9 @@ void main() {
     });
 
     test('export with trailing slash endpoint appends /v1/metrics', () async {
-      final exporter = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port/',
-      ));
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:$port/'),
+      );
 
       final metricData = createTestMetricData();
       await exporter.export(metricData);

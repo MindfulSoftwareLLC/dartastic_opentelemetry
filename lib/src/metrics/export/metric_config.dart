@@ -60,9 +60,6 @@ class MetricsConfiguration {
     );
 
     // Use a composite exporter for both OTLP and Console output
-    return CompositeMetricExporter([
-      otlpExporter,
-      ConsoleMetricExporter(),
-    ]);
+    return CompositeMetricExporter([otlpExporter, ConsoleMetricExporter()]);
   }
 }

@@ -14,21 +14,23 @@ void main() {
       await OTel.reset();
     });
 
-    test('EnvVarResourceDetector reads OTEL_RESOURCE_ATTRIBUTES from env',
-        () async {
-      final envService = EnvironmentService.instance;
-      final resourceAttrs = envService.getValue(otelResourceAttributes);
+    test(
+      'EnvVarResourceDetector reads OTEL_RESOURCE_ATTRIBUTES from env',
+      () async {
+        final envService = EnvironmentService.instance;
+        final resourceAttrs = envService.getValue(otelResourceAttributes);
 
-      // Test only runs if OTEL_RESOURCE_ATTRIBUTES is set
-      if (resourceAttrs != null && resourceAttrs.isNotEmpty) {
-        final detector = EnvVarResourceDetector(envService);
-        final resource = await detector.detect();
-        final attrs = resource.attributes.toMap();
+        // Test only runs if OTEL_RESOURCE_ATTRIBUTES is set
+        if (resourceAttrs != null && resourceAttrs.isNotEmpty) {
+          final detector = EnvVarResourceDetector(envService);
+          final resource = await detector.detect();
+          final attrs = resource.attributes.toMap();
 
-        // Verify at least one attribute was parsed
-        expect(attrs.isNotEmpty, isTrue);
-      }
-    });
+          // Verify at least one attribute was parsed
+          expect(attrs.isNotEmpty, isTrue);
+        }
+      },
+    );
 
     test('handles URL-encoded spaces in resource attributes', () async {
       final envService = EnvironmentService.instance;
