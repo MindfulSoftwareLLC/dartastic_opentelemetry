@@ -167,6 +167,9 @@ void main() {
       expect(obsUpDown.callbacks.length, equals(1));
       expect(obsGauge.callbacks.length, equals(1));
 
+      // Reset before initializing the SDK (API was initialized above)
+      await OTel.reset();
+
       // Now initialize the SDK and verify the API switches to using it
       await OTel.initialize(
         serviceName: 'switched-test-service',
@@ -183,7 +186,7 @@ void main() {
       // Create a new instrument with the SDK-backed meter
       final sdkCounter = sdkMeter.createCounter<int>(name: 'sdk_counter');
       expect(sdkCounter.enabled, isTrue);
-    }, skip: true);
+    }, skip: 'APIMeterProvider cannot be cast to SDK MeterProvider after API-only init');
   });
 
   group('MeterProvider Advanced Coverage Tests', () {
@@ -340,11 +343,12 @@ void main() {
     });
 
     test('OTelLog.debug messages are captured when enabled', () {
+      capturedLogs.clear(); // Clear any logs from setUp
       OTelLog.debug('Test debug message');
       expect(capturedLogs.length, equals(1));
       expect(capturedLogs.first, contains('DEBUG'));
       expect(capturedLogs.first, contains('Test debug message'));
-    }, skip: true);
+    });
 
     test('OTelLog controls metrics logging', () {
       // Set up metrics log capture

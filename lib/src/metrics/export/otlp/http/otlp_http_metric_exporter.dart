@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
 import '../../../../../proto/collector/metrics/v1/metrics_service.pb.dart';
+import '../../../../../proto/common/v1/common.pb.dart' as common_pb;
 import '../../../../../proto/metrics/v1/metrics.pb.dart' as metrics_pb;
 import '../../../../trace/export/otlp/certificate_utils.dart';
 import '../../../../util/zip/gzip.dart';
@@ -283,9 +284,12 @@ class OtlpHttpMetricExporter implements MetricExporter {
     // Create scope metrics
     final scopeMetrics = metrics_pb.ScopeMetrics();
 
-    // Add instrumentation scope
-    scopeMetrics.scope.name = '@dart/dartastic_opentelemetry';
-    scopeMetrics.scope.version = '1.0.0';
+    // Add instrumentation scope - create a new InstrumentationScope
+    // rather than mutating the frozen default returned by scopeMetrics.scope
+    scopeMetrics.scope = common_pb.InstrumentationScope(
+      name: '@dart/dartastic_opentelemetry',
+      version: '1.0.0',
+    );
 
     // Add metrics to scope
     for (final metric in metrics.metrics) {
@@ -349,6 +353,9 @@ class OtlpHttpMetricExporter implements MetricExporter {
         if (OTelLog.isError()) OTelLog.error(errorMessage);
         throw http.ClientException(errorMessage);
       }
+    } on http.ClientException {
+      // Let ClientException propagate to _export for retry handling
+      rethrow;
     } catch (e, stackTrace) {
       if (OTelLog.isError()) {
         OTelLog.error('OtlpHttpMetricExporter: Export request failed: $e');
