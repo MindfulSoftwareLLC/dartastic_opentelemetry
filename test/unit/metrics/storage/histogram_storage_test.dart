@@ -23,8 +23,9 @@ void main() {
 
     test('HistogramStorage with double values', () {
       // Create a histogram with default boundaries
-      final storage =
-          HistogramStorage<double>(boundaries: [0.0, 10.0, 100.0, 1000.0]);
+      final storage = HistogramStorage<double>(
+        boundaries: [0.0, 10.0, 100.0, 1000.0],
+      );
 
       // Create attributes
       final attributes1 = {'service': 'api'}.toAttributes();

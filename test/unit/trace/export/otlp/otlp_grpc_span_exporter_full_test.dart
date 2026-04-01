@@ -20,7 +20,9 @@ class MockTraceService extends TraceServiceBase {
 
   @override
   Future<ExportTraceServiceResponse> export(
-      ServiceCall call, ExportTraceServiceRequest request) async {
+    ServiceCall call,
+    ExportTraceServiceRequest request,
+  ) async {
     exportCount++;
     requests.add(request);
     if (errorCode != null) {
@@ -43,7 +45,9 @@ class RetryMockTraceService extends TraceServiceBase {
 
   @override
   Future<ExportTraceServiceResponse> export(
-      ServiceCall call, ExportTraceServiceRequest request) async {
+    ServiceCall call,
+    ExportTraceServiceRequest request,
+  ) async {
     exportCount++;
     if (exportCount <= failCount) {
       throw GrpcError.custom(failCode, 'Mock error');
@@ -183,8 +187,12 @@ class _TestSpan implements Span {
   void addEvent(SpanEvent spanEvent) {}
 
   @override
-  void recordException(Object exception,
-      {StackTrace? stackTrace, Attributes? attributes, bool? escaped}) {}
+  void recordException(
+    Object exception, {
+    StackTrace? stackTrace,
+    Attributes? attributes,
+    bool? escaped,
+  }) {}
 
   @override
   void setStringAttribute<T>(String name, String value) {}
@@ -207,10 +215,12 @@ Span _createTestSpan({
     spanId: OTel.spanIdFrom(spanId ?? '0011223344556677'),
   );
 
-  final resource = OTel.resource(OTel.attributesFromMap({
-    'service.name': 'test-service',
-    'service.version': '1.0.0',
-  }));
+  final resource = OTel.resource(
+    OTel.attributesFromMap({
+      'service.name': 'test-service',
+      'service.version': '1.0.0',
+    }),
+  );
 
   final instrumentationScope = OTel.instrumentationScope(
     name: 'test-tracer',
@@ -236,13 +246,15 @@ Span _createTestSpan({
 // ---------------------------------------------------------------------------
 
 OtlpGrpcSpanExporter _createExporter(int port) {
-  return OtlpGrpcSpanExporter(OtlpGrpcExporterConfig(
-    endpoint: 'http://localhost:$port',
-    insecure: true,
-    maxRetries: 2,
-    baseDelay: const Duration(milliseconds: 1),
-    maxDelay: const Duration(milliseconds: 10),
-  ));
+  return OtlpGrpcSpanExporter(
+    OtlpGrpcExporterConfig(
+      endpoint: 'http://localhost:$port',
+      insecure: true,
+      maxRetries: 2,
+      baseDelay: const Duration(milliseconds: 1),
+      maxDelay: const Duration(milliseconds: 10),
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -330,10 +342,7 @@ void main() {
 
       final span = _createTestSpan(name: 'after-shutdown-span');
 
-      expect(
-        () => exporter.export([span]),
-        throwsA(isA<StateError>()),
-      );
+      expect(() => exporter.export([span]), throwsA(isA<StateError>()));
     });
 
     // 5
@@ -558,11 +567,13 @@ void main() {
 
       await expectLater(
         () => retryExporter.export([span]),
-        throwsA(isA<GrpcError>().having(
-          (e) => e.code,
-          'code',
-          equals(StatusCode.invalidArgument),
-        )),
+        throwsA(
+          isA<GrpcError>().having(
+            (e) => e.code,
+            'code',
+            equals(StatusCode.invalidArgument),
+          ),
+        ),
       );
 
       // Should have been called exactly once (no retries for non-retryable codes).
@@ -589,11 +600,13 @@ void main() {
 
       await expectLater(
         () => retryExporter.export([span]),
-        throwsA(isA<GrpcError>().having(
-          (e) => e.code,
-          'code',
-          equals(StatusCode.unavailable),
-        )),
+        throwsA(
+          isA<GrpcError>().having(
+            (e) => e.code,
+            'code',
+            equals(StatusCode.unavailable),
+          ),
+        ),
       );
 
       // maxRetries=2 means initial attempt + 2 retries = 3 total attempts.

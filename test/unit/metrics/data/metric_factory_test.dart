@@ -8,10 +8,7 @@ import 'package:test/test.dart';
 void main() {
   setUp(() async {
     await OTel.reset();
-    await OTel.initialize(
-      serviceName: 'test',
-      detectPlatformResources: false,
-    );
+    await OTel.initialize(serviceName: 'test', detectPlatformResources: false);
   });
 
   tearDown(() async {
@@ -56,33 +53,34 @@ void main() {
 
   group('Metric.sum factory', () {
     test(
-        'sets type to sum with default monotonic true and cumulative temporality',
-        () {
-      final now = DateTime.now();
-      final points = <MetricPoint<dynamic>>[
-        MetricPoint<int>(
-          attributes: Attributes.of({'key': 'value'}),
-          startTime: now.subtract(const Duration(seconds: 5)),
-          endTime: now,
-          value: 10,
-        ),
-      ];
+      'sets type to sum with default monotonic true and cumulative temporality',
+      () {
+        final now = DateTime.now();
+        final points = <MetricPoint<dynamic>>[
+          MetricPoint<int>(
+            attributes: Attributes.of({'key': 'value'}),
+            startTime: now.subtract(const Duration(seconds: 5)),
+            endTime: now,
+            value: 10,
+          ),
+        ];
 
-      final metric = Metric.sum(
-        name: 'sum_metric',
-        description: 'A sum metric',
-        unit: 'requests',
-        points: points,
-      );
+        final metric = Metric.sum(
+          name: 'sum_metric',
+          description: 'A sum metric',
+          unit: 'requests',
+          points: points,
+        );
 
-      expect(metric.name, equals('sum_metric'));
-      expect(metric.description, equals('A sum metric'));
-      expect(metric.unit, equals('requests'));
-      expect(metric.type, equals(MetricType.sum));
-      expect(metric.temporality, equals(AggregationTemporality.cumulative));
-      expect(metric.isMonotonic, isTrue);
-      expect(metric.points, equals(points));
-    });
+        expect(metric.name, equals('sum_metric'));
+        expect(metric.description, equals('A sum metric'));
+        expect(metric.unit, equals('requests'));
+        expect(metric.type, equals(MetricType.sum));
+        expect(metric.temporality, equals(AggregationTemporality.cumulative));
+        expect(metric.isMonotonic, isTrue);
+        expect(metric.points, equals(points));
+      },
+    );
 
     test('with delta temporality', () {
       final now = DateTime.now();
@@ -223,10 +221,14 @@ void main() {
   group('AggregationTemporality enum', () {
     test('has all expected values', () {
       expect(AggregationTemporality.values, hasLength(2));
-      expect(AggregationTemporality.values,
-          contains(AggregationTemporality.cumulative));
-      expect(AggregationTemporality.values,
-          contains(AggregationTemporality.delta));
+      expect(
+        AggregationTemporality.values,
+        contains(AggregationTemporality.cumulative),
+      );
+      expect(
+        AggregationTemporality.values,
+        contains(AggregationTemporality.delta),
+      );
     });
   });
 
@@ -236,8 +238,10 @@ void main() {
       expect(MetricPointKind.values, contains(MetricPointKind.sum));
       expect(MetricPointKind.values, contains(MetricPointKind.gauge));
       expect(MetricPointKind.values, contains(MetricPointKind.histogram));
-      expect(MetricPointKind.values,
-          contains(MetricPointKind.exponentialHistogram));
+      expect(
+        MetricPointKind.values,
+        contains(MetricPointKind.exponentialHistogram),
+      );
     });
   });
 }

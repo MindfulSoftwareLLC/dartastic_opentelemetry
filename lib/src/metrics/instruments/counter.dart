@@ -38,10 +38,8 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
   ///
   /// @param apiCounter The API Counter to delegate API calls to
   /// @param meter The Meter that created this Counter
-  Counter({
-    required APICounter<T> apiCounter,
-    required Meter meter,
-  })  : _apiCounter = apiCounter,
+  Counter({required APICounter<T> apiCounter, required Meter meter})
+      : _apiCounter = apiCounter,
         _meter = meter {
     _meter.provider.registerInstrument(_meter.name, this);
   }

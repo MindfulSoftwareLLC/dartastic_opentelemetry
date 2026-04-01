@@ -7,10 +7,7 @@ import 'package:test/test.dart';
 void main() {
   setUp(() async {
     await OTel.reset();
-    await OTel.initialize(
-      serviceName: 'test',
-      detectPlatformResources: false,
-    );
+    await OTel.initialize(serviceName: 'test', detectPlatformResources: false);
   });
 
   tearDown(() async {
@@ -109,20 +106,21 @@ void main() {
     });
 
     test(
-        'shouldSampleCondition returns true when status_description is non-empty',
-        () {
-      final attributes = OTel.attributes([
-        OTel.attributeString('otel.status_description', 'some error'),
-      ]);
+      'shouldSampleCondition returns true when status_description is non-empty',
+      () {
+        final attributes = OTel.attributes([
+          OTel.attributeString('otel.status_description', 'some error'),
+        ]);
 
-      final result = condition.shouldSampleCondition(
-        name: 'test',
-        spanKind: SpanKind.internal,
-        attributes: attributes,
-      );
+        final result = condition.shouldSampleCondition(
+          name: 'test',
+          spanKind: SpanKind.internal,
+          attributes: attributes,
+        );
 
-      expect(result, isTrue);
-    });
+        expect(result, isTrue);
+      },
+    );
 
     test('shouldSampleCondition returns false with null attributes', () {
       final result = condition.shouldSampleCondition(
@@ -189,7 +187,9 @@ void main() {
     test('description includes pattern', () {
       expect(condition.description, contains('error'));
       expect(
-          condition.description, equals('NamePatternSamplingCondition{error}'));
+        condition.description,
+        equals('NamePatternSamplingCondition{error}'),
+      );
     });
 
     test('shouldSampleCondition returns true when name contains pattern', () {
@@ -203,16 +203,17 @@ void main() {
     });
 
     test(
-        'shouldSampleCondition returns false when name does not contain pattern',
-        () {
-      final result = condition.shouldSampleCondition(
-        name: 'normal-request',
-        spanKind: SpanKind.internal,
-        attributes: null,
-      );
+      'shouldSampleCondition returns false when name does not contain pattern',
+      () {
+        final result = condition.shouldSampleCondition(
+          name: 'normal-request',
+          spanKind: SpanKind.internal,
+          attributes: null,
+        );
 
-      expect(result, isFalse);
-    });
+        expect(result, isFalse);
+      },
+    );
 
     test('shouldSample delegates correctly', () {
       final matchResult = condition.shouldSample(
@@ -245,14 +246,13 @@ void main() {
       );
       expect(condition.description, contains('my.key'));
       expect(
-          condition.description, equals('AttributeSamplingCondition{my.key}'));
+        condition.description,
+        equals('AttributeSamplingCondition{my.key}'),
+      );
     });
 
     test('throws when no value provided', () {
-      expect(
-        () => AttributeSamplingCondition('my.key'),
-        throwsArgumentError,
-      );
+      expect(() => AttributeSamplingCondition('my.key'), throwsArgumentError);
     });
 
     test('throws when multiple values provided', () {
@@ -346,10 +346,7 @@ void main() {
     });
 
     test('int value matching works', () {
-      final condition = AttributeSamplingCondition(
-        'priority',
-        intValue: 1,
-      );
+      final condition = AttributeSamplingCondition('priority', intValue: 1);
 
       final matchAttributes = OTel.attributes([
         OTel.attributeInt('priority', 1),

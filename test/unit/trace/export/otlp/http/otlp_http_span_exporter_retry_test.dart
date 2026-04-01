@@ -17,7 +17,6 @@ void main() {
 
     setUp(() async {
       await OTel.reset();
-      OTelLog.enableTraceLogging();
       OTelLog.spanLogFunction = (_) {};
       OTelLog.logFunction = (_) {};
       requestCount = 0;
@@ -34,7 +33,11 @@ void main() {
       await OTel.initialize(
         serviceName: 'test',
         detectPlatformResources: false,
+        enableLogs: false,
       );
+      // Set trace logging AFTER initialize, since initializeLogging() reads
+      // OTEL_LOG_LEVEL from env and would override a level set before it.
+      OTelLog.enableTraceLogging();
     });
 
     tearDown(() async {
@@ -58,12 +61,14 @@ void main() {
     }
 
     OtlpHttpSpanExporter createExporter({int maxRetries = 2}) {
-      return OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-        maxRetries: maxRetries,
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-      ));
+      return OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(
+          endpoint: 'http://localhost:$port',
+          maxRetries: maxRetries,
+          baseDelay: const Duration(milliseconds: 1),
+          maxDelay: const Duration(milliseconds: 10),
+        ),
+      );
     }
 
     test('retries on 503 and succeeds on second try', () async {
@@ -96,10 +101,7 @@ void main() {
       final spans = createTestSpans();
 
       // Should throw after exhausting all retries
-      expect(
-        () => exporter.export(spans),
-        throwsA(anything),
-      );
+      expect(() => exporter.export(spans), throwsA(anything));
 
       // Allow async operations to settle
       await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -113,10 +115,7 @@ void main() {
       final spans = createTestSpans();
 
       // 400 is not retryable - should throw after single attempt
-      expect(
-        () => exporter.export(spans),
-        throwsA(anything),
-      );
+      expect(() => exporter.export(spans), throwsA(anything));
 
       await Future<void>.delayed(const Duration(milliseconds: 100));
       expect(requestCount, equals(1));
@@ -128,10 +127,7 @@ void main() {
       final exporter = createExporter();
       final spans = createTestSpans();
 
-      expect(
-        () => exporter.export(spans),
-        throwsA(anything),
-      );
+      expect(() => exporter.export(spans), throwsA(anything));
 
       await Future<void>.delayed(const Duration(milliseconds: 100));
       expect(requestCount, equals(1));
@@ -165,53 +161,61 @@ void main() {
       await exporter.shutdown();
     });
 
-    test('export with authorization header redacts value in debug logs',
-        () async {
-      final logMessages = <String>[];
-      OTelLog.logFunction = logMessages.add;
+    test(
+      'export with authorization header redacts value in debug logs',
+      () async {
+        final logMessages = <String>[];
+        OTelLog.logFunction = logMessages.add;
 
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-        headers: {'Authorization': 'Bearer secret-token-12345'},
-        maxRetries: 0,
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-      ));
+        final exporter = OtlpHttpSpanExporter(
+          OtlpHttpExporterConfig(
+            endpoint: 'http://localhost:$port',
+            headers: {'Authorization': 'Bearer secret-token-12345'},
+            maxRetries: 0,
+            baseDelay: const Duration(milliseconds: 1),
+            maxDelay: const Duration(milliseconds: 10),
+          ),
+        );
 
-      statusCodes = [200];
-      final spans = createTestSpans();
-      await exporter.export(spans);
+        statusCodes = [200];
+        final spans = createTestSpans();
+        await exporter.export(spans);
 
-      final allLogs = logMessages.join('\n');
-      // The authorization value should be redacted
-      expect(allLogs, contains('REDACTED'));
-      expect(allLogs, isNot(contains('secret-token-12345')));
+        final allLogs = logMessages.join('\n');
+        // The authorization value should be redacted
+        expect(allLogs, contains('REDACTED'));
+        expect(allLogs, isNot(contains('secret-token-12345')));
 
-      await exporter.shutdown();
-    });
+        await exporter.shutdown();
+      },
+    );
 
-    test('constructor with certificate config exercises _createHttpClient',
-        () async {
-      // Using test:// scheme paths exercises the certificate code path
-      // in _createHttpClient without requiring real cert files
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-        certificate: 'test://ca-cert',
-        clientKey: 'test://client-key',
-        clientCertificate: 'test://client-cert',
-        maxRetries: 0,
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-      ));
-      expect(exporter, isNotNull);
+    test(
+      'constructor with certificate config exercises _createHttpClient',
+      () async {
+        // Using test:// scheme paths exercises the certificate code path
+        // in _createHttpClient without requiring real cert files
+        final exporter = OtlpHttpSpanExporter(
+          OtlpHttpExporterConfig(
+            endpoint: 'http://localhost:$port',
+            certificate: 'test://ca-cert',
+            clientKey: 'test://client-key',
+            clientCertificate: 'test://client-cert',
+            maxRetries: 0,
+            baseDelay: const Duration(milliseconds: 1),
+            maxDelay: const Duration(milliseconds: 10),
+          ),
+        );
+        expect(exporter, isNotNull);
 
-      // It should still work with the test:// certificate client
-      statusCodes = [200];
-      final spans = createTestSpans();
-      await exporter.export(spans);
-      expect(requestCount, equals(1));
-      await exporter.shutdown();
-    });
+        // It should still work with the test:// certificate client
+        statusCodes = [200];
+        final spans = createTestSpans();
+        await exporter.export(spans);
+        expect(requestCount, equals(1));
+        await exporter.shutdown();
+      },
+    );
 
     test('forceFlush with no pending exports', () async {
       final logMessages = <String>[];
@@ -323,12 +327,14 @@ void main() {
     test('shutdown during retry stops retrying', () async {
       // Server always returns 503 so retry keeps going
       statusCodes = [503, 503, 503, 503, 503];
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-        maxRetries: 10,
-        baseDelay: const Duration(milliseconds: 50),
-        maxDelay: const Duration(milliseconds: 100),
-      ));
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(
+          endpoint: 'http://localhost:$port',
+          maxRetries: 10,
+          baseDelay: const Duration(milliseconds: 50),
+          maxDelay: const Duration(milliseconds: 100),
+        ),
+      );
 
       final spans = createTestSpans();
 
@@ -375,12 +381,14 @@ void main() {
 
     test('retries with 503 then 429 then succeeds', () async {
       statusCodes = [503, 429, 200];
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-        maxRetries: 3,
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-      ));
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(
+          endpoint: 'http://localhost:$port',
+          maxRetries: 3,
+          baseDelay: const Duration(milliseconds: 1),
+          maxDelay: const Duration(milliseconds: 10),
+        ),
+      );
       final spans = createTestSpans();
 
       await exporter.export(spans);
@@ -468,10 +476,7 @@ void main() {
       await exporter.shutdown();
 
       final spans = createTestSpans();
-      expect(
-        () => exporter.export(spans),
-        throwsA(isA<StateError>()),
-      );
+      expect(() => exporter.export(spans), throwsA(isA<StateError>()));
     });
 
     test('connection refused exercises generic catch block', () async {
@@ -482,12 +487,14 @@ void main() {
       OTelLog.logFunction = logMessages.add;
 
       // Create exporter pointing to the closed port
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-        maxRetries: 1,
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-      ));
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(
+          endpoint: 'http://localhost:$port',
+          maxRetries: 1,
+          baseDelay: const Duration(milliseconds: 1),
+          maxDelay: const Duration(milliseconds: 10),
+        ),
+      );
       final spans = createTestSpans();
 
       try {
@@ -520,13 +527,15 @@ void main() {
 
     test('export with compression and retry', () async {
       statusCodes = [503, 200];
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-        compression: true,
-        maxRetries: 2,
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-      ));
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(
+          endpoint: 'http://localhost:$port',
+          compression: true,
+          maxRetries: 2,
+          baseDelay: const Duration(milliseconds: 1),
+          maxDelay: const Duration(milliseconds: 10),
+        ),
+      );
       final spans = createTestSpans();
 
       await exporter.export(spans);

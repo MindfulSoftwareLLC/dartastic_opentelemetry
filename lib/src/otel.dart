@@ -178,7 +178,8 @@ class OTel {
       }
       if (envServiceVersion != null) {
         OTelLog.debug(
-            'Using service version from environment: $serviceVersion');
+          'Using service version from environment: $serviceVersion',
+        );
       }
       if (envEndpoint != null) {
         OTelLog.debug('Using endpoint from environment: $endpoint');
@@ -207,12 +208,14 @@ class OTel {
     }
     if (OTelFactory.otelFactory != null) {
       throw StateError(
-          'OTelAPI can only be initialized once. If you need multiple endpoints or service names or versions create a named TracerProvider');
+        'OTelAPI can only be initialized once. If you need multiple endpoints or service names or versions create a named TracerProvider',
+      );
     }
 
     if (endpoint.isEmpty) {
       throw ArgumentError(
-          'endpoint must not be the empty string.'); //TODO validate url
+        'endpoint must not be the empty string.',
+      ); //TODO validate url
     }
     if (serviceName.isEmpty) {
       throw ArgumentError('serviceName must not be the empty string.');
@@ -231,13 +234,15 @@ class OTel {
     initializeLogging();
 
     OTelFactory.otelFactory = factoryFactory(
-        apiEndpoint: endpoint,
-        apiServiceName: serviceName,
-        apiServiceVersion: serviceVersion);
+      apiEndpoint: endpoint,
+      apiServiceName: serviceName,
+      apiServiceVersion: serviceVersion,
+    );
 
     if (OTelLog.isDebug()) {
       OTelLog.debug(
-          'OTel initialized with endpoint: $endpoint, service: $serviceName');
+        'OTel initialized with endpoint: $endpoint, service: $serviceName',
+      );
     }
 
     final serviceResourceAttributes = {
@@ -245,16 +250,19 @@ class OTel {
       'service.version': serviceVersion,
     };
     // Create initial resource with service attributes
-    var baseResource =
-        OTel.resource(OTel.attributesFromMap(serviceResourceAttributes));
+    var baseResource = OTel.resource(
+      OTel.attributesFromMap(serviceResourceAttributes),
+    );
 
     if (tenantId != null) {
       // Create a separate tenant_id resource to ensure it's preserved
-      final tenantResource =
-          OTel.resource(OTel.attributesFromMap({'tenant_id': tenantId}));
+      final tenantResource = OTel.resource(
+        OTel.attributesFromMap({'tenant_id': tenantId}),
+      );
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-            'OTel.initialize: Creating tenant_id resource with: $tenantId');
+          'OTel.initialize: Creating tenant_id resource with: $tenantId',
+        );
       }
       // Merge tenant into the base resource
       baseResource = baseResource.merge(tenantResource);
@@ -303,7 +311,8 @@ class OTel {
             hasTenantId = true;
             if (OTelLog.isDebug()) {
               OTelLog.debug(
-                  'Final resource check - tenant_id is present: ${attr.value}');
+                'Final resource check - tenant_id is present: ${attr.value}',
+              );
             }
           }
         });
@@ -313,8 +322,9 @@ class OTel {
           if (OTelLog.isDebug()) {
             OTelLog.debug('tenant_id was missing - adding it as fallback');
           }
-          final tenantResource =
-              OTel.resource(OTel.attributesFromMap({'tenant_id': tenantId}));
+          final tenantResource = OTel.resource(
+            OTel.attributesFromMap({'tenant_id': tenantId}),
+          );
           OTel.defaultResource = OTel.defaultResource!.merge(tenantResource);
         }
       }
@@ -377,18 +387,17 @@ class OTel {
         } else {
           // Fallback to gRPC for backward compatibility
           exporter = OtlpGrpcSpanExporter(
-            OtlpGrpcExporterConfig(
-              endpoint: endpoint,
-              insecure: !secure,
-            ),
+            OtlpGrpcExporterConfig(endpoint: endpoint, insecure: !secure),
           );
         }
 
         // Only add ConsoleExporter in debug mode or if explicitly requested
         final exporters = <SpanExporter>[exporter];
         if (OTelLog.isDebug() ||
-            const bool.fromEnvironment('OTEL_CONSOLE_EXPORTER',
-                defaultValue: false)) {
+            const bool.fromEnvironment(
+              'OTEL_CONSOLE_EXPORTER',
+              defaultValue: false,
+            )) {
           exporters.add(ConsoleExporter());
         }
 
@@ -485,8 +494,10 @@ class OTel {
   /// @return A new Resource instance
   static Resource resource(Attributes? attributes, [String? schemaUrl]) {
     _getAndCacheOtelFactory();
-    return (_otelFactory as OTelSDKFactory)
-        .resource(attributes ?? OTel.attributes(), schemaUrl);
+    return (_otelFactory as OTelSDKFactory).resource(
+      attributes ?? OTel.attributes(),
+      schemaUrl,
+    );
   }
 
   /// Creates a new ContextKey with the given name.
@@ -633,10 +644,12 @@ class OTel {
     Resource? resource,
   }) {
     _getAndCacheOtelFactory();
-    final mp = _otelFactory!.addMeterProvider(name,
-        endpoint: endpoint,
-        serviceName: serviceName,
-        serviceVersion: serviceVersion) as MeterProvider;
+    final mp = _otelFactory!.addMeterProvider(
+      name,
+      endpoint: endpoint,
+      serviceName: serviceName,
+      serviceVersion: serviceVersion,
+    ) as MeterProvider;
     mp.resource = resource ?? defaultResource;
     return mp;
   }
@@ -656,8 +669,9 @@ class OTel {
   /// @return The default Meter instance
   static Meter meter([String? name]) {
     return meterProvider().getMeter(
-        name: name ?? defaultTracerName,
-        version: defaultTracerVersion) as Meter;
+      name: name ?? defaultTracerName,
+      version: defaultTracerVersion,
+    ) as Meter;
   }
 
   /// Gets a LoggerProvider for creating Loggers.
@@ -787,13 +801,14 @@ class OTel {
   /// @param traceState Trace state
   /// @param isRemote Whether this context was received from a remote source
   /// @return A new SpanContext instance
-  static SpanContext spanContext(
-      {TraceId? traceId,
-      SpanId? spanId,
-      SpanId? parentSpanId,
-      TraceFlags? traceFlags,
-      TraceState? traceState,
-      bool? isRemote}) {
+  static SpanContext spanContext({
+    TraceId? traceId,
+    SpanId? spanId,
+    SpanId? parentSpanId,
+    TraceFlags? traceFlags,
+    TraceState? traceState,
+    bool? isRemote,
+  }) {
     return OTelAPI.spanContext(
       traceId: traceId ?? OTel.traceId(),
       spanId: spanId ?? OTel.spanId(),
@@ -848,8 +863,11 @@ class OTel {
   /// @param attributes Optional attributes to associate with the event
   /// @param timestamp Optional timestamp for the event (defaults to null)
   /// @return A new SpanEvent instance
-  static SpanEvent spanEvent(String name,
-      [Attributes? attributes, DateTime? timestamp]) {
+  static SpanEvent spanEvent(
+    String name, [
+    Attributes? attributes,
+    DateTime? timestamp,
+  ]) {
     _getAndCacheOtelFactory();
     return _otelFactory!.spanEvent(name, attributes, timestamp);
   }
@@ -939,7 +957,9 @@ class OTel {
   /// @param value The list of string values
   /// @return A new Attribute instance
   static Attribute<List<String>> attributeStringList(
-      String name, List<String> value) {
+    String name,
+    List<String> value,
+  ) {
     _getAndCacheOtelFactory();
     return _otelFactory!.attributeStringList(name, value);
   }
@@ -950,7 +970,9 @@ class OTel {
   /// @param value The list of boolean values
   /// @return A new Attribute instance
   static Attribute<List<bool>> attributeBoolList(
-      String name, List<bool> value) {
+    String name,
+    List<bool> value,
+  ) {
     _getAndCacheOtelFactory();
     return _otelFactory!.attributeBoolList(name, value);
   }
@@ -971,7 +993,9 @@ class OTel {
   /// @param value The list of double values
   /// @return A new Attribute instance
   static Attribute<List<double>> attributeDoubleList(
-      String name, List<double> value) {
+    String name,
+    List<double> value,
+  ) {
     _getAndCacheOtelFactory();
     return _otelFactory!.attributeDoubleList(name, value);
   }
@@ -1066,7 +1090,8 @@ class OTel {
     _getAndCacheOtelFactory();
     if (traceId.length != TraceId.traceIdLength) {
       throw ArgumentError(
-          'Trace ID must be exactly ${TraceId.traceIdLength} bytes, got ${traceId.length} bytes');
+        'Trace ID must be exactly ${TraceId.traceIdLength} bytes, got ${traceId.length} bytes',
+      );
     }
     return OTelFactory.otelFactory!.traceId(traceId);
   }
@@ -1102,7 +1127,8 @@ class OTel {
     _getAndCacheOtelFactory();
     if (spanId.length != 8) {
       throw ArgumentError(
-          'Span ID must be exactly 8 bytes, got ${spanId.length} bytes');
+        'Span ID must be exactly 8 bytes, got ${spanId.length} bytes',
+      );
     }
     return _otelFactory!.spanId(spanId);
   }
@@ -1274,15 +1300,17 @@ class OTel {
   /// [version] is optional and specifies the version of the instrumentation scope, defaults to '1.0.0'
   /// [schemaUrl] is optional and specifies the Schema URL
   /// [attributes] is optional and specifies instrumentation scope attributes
-  static InstrumentationScope instrumentationScope(
-      {required String name,
-      String version = '1.0.0',
-      String? schemaUrl,
-      Attributes? attributes}) {
+  static InstrumentationScope instrumentationScope({
+    required String name,
+    String version = '1.0.0',
+    String? schemaUrl,
+    Attributes? attributes,
+  }) {
     return OTelAPI.instrumentationScope(
-        name: name,
-        version: version,
-        schemaUrl: schemaUrl,
-        attributes: attributes);
+      name: name,
+      version: version,
+      schemaUrl: schemaUrl,
+      attributes: attributes,
+    );
   }
 }

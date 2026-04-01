@@ -203,41 +203,41 @@ void main() {
       // 9. instrumentType = APIUpDownCounter
       // -----------------------------------------------------------
       test(
-          'matches with instrumentType APIUpDownCounter only matches up-down counters',
-          () {
-        final view = View(
-          instrumentNamePattern: '*',
-          instrumentType: APIUpDownCounter,
-        );
-        expect(view.matches('my_updown', upDownCounter), isTrue);
-        expect(view.matches('my_counter', counter), isFalse);
-        expect(view.matches('my_histogram', histogram), isFalse);
-        expect(view.matches('my_gauge', gauge), isFalse);
-      });
+        'matches with instrumentType APIUpDownCounter only matches up-down counters',
+        () {
+          final view = View(
+            instrumentNamePattern: '*',
+            instrumentType: APIUpDownCounter,
+          );
+          expect(view.matches('my_updown', upDownCounter), isTrue);
+          expect(view.matches('my_counter', counter), isFalse);
+          expect(view.matches('my_histogram', histogram), isFalse);
+          expect(view.matches('my_gauge', gauge), isFalse);
+        },
+      );
 
       // -----------------------------------------------------------
       // 10. instrumentType = APIHistogram
       // -----------------------------------------------------------
-      test('matches with instrumentType APIHistogram only matches histograms',
-          () {
-        final view = View(
-          instrumentNamePattern: '*',
-          instrumentType: APIHistogram,
-        );
-        expect(view.matches('my_histogram', histogram), isTrue);
-        expect(view.matches('my_counter', counter), isFalse);
-        expect(view.matches('my_updown', upDownCounter), isFalse);
-        expect(view.matches('my_gauge', gauge), isFalse);
-      });
+      test(
+        'matches with instrumentType APIHistogram only matches histograms',
+        () {
+          final view = View(
+            instrumentNamePattern: '*',
+            instrumentType: APIHistogram,
+          );
+          expect(view.matches('my_histogram', histogram), isTrue);
+          expect(view.matches('my_counter', counter), isFalse);
+          expect(view.matches('my_updown', upDownCounter), isFalse);
+          expect(view.matches('my_gauge', gauge), isFalse);
+        },
+      );
 
       // -----------------------------------------------------------
       // 11. instrumentType = APIGauge
       // -----------------------------------------------------------
       test('matches with instrumentType APIGauge only matches gauges', () {
-        final view = View(
-          instrumentNamePattern: '*',
-          instrumentType: APIGauge,
-        );
+        final view = View(instrumentNamePattern: '*', instrumentType: APIGauge);
         expect(view.matches('my_gauge', gauge), isTrue);
         expect(view.matches('my_counter', counter), isFalse);
         expect(view.matches('my_updown', upDownCounter), isFalse);
@@ -248,58 +248,58 @@ void main() {
       // 12. instrumentType = APIObservableCounter
       // -----------------------------------------------------------
       test(
-          'matches with instrumentType APIObservableCounter only matches observable counters',
-          () {
-        final view = View(
-          instrumentNamePattern: '*',
-          instrumentType: APIObservableCounter,
-        );
-        expect(view.matches('my_obs_counter', obsCounter), isTrue);
-        expect(view.matches('my_counter', counter), isFalse);
-        expect(view.matches('my_obs_updown', obsUpDown), isFalse);
-        expect(view.matches('my_obs_gauge', obsGauge), isFalse);
-      });
+        'matches with instrumentType APIObservableCounter only matches observable counters',
+        () {
+          final view = View(
+            instrumentNamePattern: '*',
+            instrumentType: APIObservableCounter,
+          );
+          expect(view.matches('my_obs_counter', obsCounter), isTrue);
+          expect(view.matches('my_counter', counter), isFalse);
+          expect(view.matches('my_obs_updown', obsUpDown), isFalse);
+          expect(view.matches('my_obs_gauge', obsGauge), isFalse);
+        },
+      );
 
       // -----------------------------------------------------------
       // 13. instrumentType = APIObservableUpDownCounter
       // -----------------------------------------------------------
       test(
-          'matches with instrumentType APIObservableUpDownCounter matches observable up-down counters',
-          () {
-        final view = View(
-          instrumentNamePattern: '*',
-          instrumentType: APIObservableUpDownCounter,
-        );
-        expect(view.matches('my_obs_updown', obsUpDown), isTrue);
-        expect(view.matches('my_obs_counter', obsCounter), isFalse);
-        expect(view.matches('my_obs_gauge', obsGauge), isFalse);
-        expect(view.matches('my_counter', counter), isFalse);
-      });
+        'matches with instrumentType APIObservableUpDownCounter matches observable up-down counters',
+        () {
+          final view = View(
+            instrumentNamePattern: '*',
+            instrumentType: APIObservableUpDownCounter,
+          );
+          expect(view.matches('my_obs_updown', obsUpDown), isTrue);
+          expect(view.matches('my_obs_counter', obsCounter), isFalse);
+          expect(view.matches('my_obs_gauge', obsGauge), isFalse);
+          expect(view.matches('my_counter', counter), isFalse);
+        },
+      );
 
       // -----------------------------------------------------------
       // 14. instrumentType = APIObservableGauge
       // -----------------------------------------------------------
       test(
-          'matches with instrumentType APIObservableGauge matches observable gauges',
-          () {
-        final view = View(
-          instrumentNamePattern: '*',
-          instrumentType: APIObservableGauge,
-        );
-        expect(view.matches('my_obs_gauge', obsGauge), isTrue);
-        expect(view.matches('my_obs_counter', obsCounter), isFalse);
-        expect(view.matches('my_obs_updown', obsUpDown), isFalse);
-        expect(view.matches('my_gauge', gauge), isFalse);
-      });
+        'matches with instrumentType APIObservableGauge matches observable gauges',
+        () {
+          final view = View(
+            instrumentNamePattern: '*',
+            instrumentType: APIObservableGauge,
+          );
+          expect(view.matches('my_obs_gauge', obsGauge), isTrue);
+          expect(view.matches('my_obs_counter', obsCounter), isFalse);
+          expect(view.matches('my_obs_updown', obsUpDown), isFalse);
+          expect(view.matches('my_gauge', gauge), isFalse);
+        },
+      );
 
       // -----------------------------------------------------------
       // 15. meterName filters by meter
       // -----------------------------------------------------------
       test('matches with correct meterName returns true', () {
-        final view = View(
-          instrumentNamePattern: '*',
-          meterName: 'test-meter',
-        );
+        final view = View(instrumentNamePattern: '*', meterName: 'test-meter');
         expect(view.matches('my_counter', counter), isTrue);
         expect(view.matches('my_histogram', histogram), isTrue);
       });
@@ -308,10 +308,7 @@ void main() {
       // 16. Wrong meterName does not match
       // -----------------------------------------------------------
       test('matches with wrong meterName returns false', () {
-        final view = View(
-          instrumentNamePattern: '*',
-          meterName: 'other-meter',
-        );
+        final view = View(instrumentNamePattern: '*', meterName: 'other-meter');
         expect(view.matches('my_counter', counter), isFalse);
         expect(view.matches('my_histogram', histogram), isFalse);
       });
@@ -333,15 +330,17 @@ void main() {
         expect(view.matches('other_counter', counter), isFalse);
       });
 
-      test('matches with combined filter rejects when meterName does not match',
-          () {
-        final view = View(
-          instrumentNamePattern: '*',
-          instrumentType: APICounter,
-          meterName: 'wrong-meter',
-        );
-        expect(view.matches('my_counter', counter), isFalse);
-      });
+      test(
+        'matches with combined filter rejects when meterName does not match',
+        () {
+          final view = View(
+            instrumentNamePattern: '*',
+            instrumentType: APICounter,
+            meterName: 'wrong-meter',
+          );
+          expect(view.matches('my_counter', counter), isFalse);
+        },
+      );
     });
 
     // ---------------------------------------------------------------
@@ -350,14 +349,15 @@ void main() {
     group('AggregationType', () {
       test('has all expected values', () {
         expect(
-            AggregationType.values,
-            containsAll([
-              AggregationType.sum,
-              AggregationType.lastValue,
-              AggregationType.histogram,
-              AggregationType.drop,
-              AggregationType.defaultAggregation,
-            ]));
+          AggregationType.values,
+          containsAll([
+            AggregationType.sum,
+            AggregationType.lastValue,
+            AggregationType.histogram,
+            AggregationType.drop,
+            AggregationType.defaultAggregation,
+          ]),
+        );
         expect(AggregationType.values.length, equals(5));
       });
     });

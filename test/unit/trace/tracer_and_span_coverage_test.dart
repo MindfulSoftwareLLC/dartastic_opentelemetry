@@ -49,8 +49,9 @@ class _LateAttributeSampler implements Sampler {
     required List<SpanLink>? links,
   }) {
     // Create attributes lazily so OTel is initialized
-    final attrs =
-        OTel.attributes([OTel.attributeString(attributeKey, attributeValue)]);
+    final attrs = OTel.attributes([
+      OTel.attributeString(attributeKey, attributeValue),
+    ]);
     return SamplingResult(
       decision: decision,
       source: SamplingDecisionSource.tracerConfig,
@@ -205,10 +206,18 @@ class _InvalidSpanWrapper implements APISpan {
   @override
   void addSpanLink(SpanLink spanLink) => _delegate.addSpanLink(spanLink);
   @override
-  void recordException(Object exception,
-          {StackTrace? stackTrace, Attributes? attributes, bool? escaped}) =>
-      _delegate.recordException(exception,
-          stackTrace: stackTrace, attributes: attributes, escaped: escaped);
+  void recordException(
+    Object exception, {
+    StackTrace? stackTrace,
+    Attributes? attributes,
+    bool? escaped,
+  }) =>
+      _delegate.recordException(
+        exception,
+        stackTrace: stackTrace,
+        attributes: attributes,
+        escaped: escaped,
+      );
   @override
   void setBoolAttribute(String name, bool value) =>
       _delegate.setBoolAttribute(name, value);
@@ -271,7 +280,7 @@ void main() {
   group('Tracer getters', () {
     test('schemaUrl returns delegate schemaUrl', () {
       final tracer = OTel.tracer();
-      // schemaUrl may be null, but accessing it exercises the getter (line 58)
+      // schemaUrl may be null, but accessing it exercises the getter
       final schemaUrl = tracer.schemaUrl;
       // Just verify it does not throw and returns something (possibly null)
       expect(schemaUrl, anyOf(isNull, isA<String>()));
@@ -279,14 +288,14 @@ void main() {
 
     test('version returns delegate version', () {
       final tracer = OTel.tracer();
-      // Exercises line 61
+      // Exercises the version getter
       final version = tracer.version;
       expect(version, anyOf(isNull, isA<String>()));
     });
 
     test('attributes getter and setter', () {
       final tracer = OTel.tracer();
-      // Exercises getter (line 64) and setter (line 67)
+      // Exercises attributes getter and setter
       final originalAttrs = tracer.attributes;
       expect(originalAttrs, anyOf(isNull, isA<Attributes>()));
 
@@ -297,14 +306,14 @@ void main() {
 
     test('currentSpan returns delegate currentSpan', () {
       final tracer = OTel.tracer();
-      // Exercises line 73
+      // Exercises the currentSpan getter
       final current = tracer.currentSpan;
       expect(current, anyOf(isNull, isA<APISpan>()));
     });
 
     test('enabled setter works', () {
       final tracer = OTel.tracer();
-      // Exercises line 79
+      // Exercises the enabled setter
       expect(tracer.enabled, isTrue);
       tracer.enabled = false;
       expect(tracer.enabled, isFalse);
@@ -324,7 +333,7 @@ void main() {
       final realSpan = tracer.startSpan('will-be-invalid');
       final invalidSpan = _InvalidSpanWrapper(realSpan);
 
-      // withSpan should complete but log the invalid-span warning (lines 120-123)
+      // withSpan should complete but log the invalid-span warning
       final result = tracer.withSpan(invalidSpan, () => 42);
       expect(result, equals(42));
 
@@ -344,9 +353,11 @@ void main() {
       final realSpan = tracer.startSpan('will-be-invalid-async');
       final invalidSpan = _InvalidSpanWrapper(realSpan);
 
-      // Exercises lines 159-162
-      final result =
-          await tracer.withSpanAsync(invalidSpan, () async => 'hello');
+      // Exercises the invalid span warning path in withSpanAsync
+      final result = await tracer.withSpanAsync(
+        invalidSpan,
+        () async => 'hello',
+      );
       expect(result, equals('hello'));
 
       expect(
@@ -363,30 +374,32 @@ void main() {
   // tracer.dart - startSpanWithContext updates Context.current
   // =========================================================================
   group('Tracer startSpanWithContext', () {
-    test('startSpanWithContext updates Context.current when context matches',
-        () {
-      final tracer = OTel.tracer();
+    test(
+      'startSpanWithContext updates Context.current when context matches',
+      () {
+        final tracer = OTel.tracer();
 
-      // Set the current context to a known context
-      final ctx = Context.current;
+        // Set the current context to a known context
+        final ctx = Context.current;
 
-      // Call startSpanWithContext with Context.current so that
-      // Context.current == context is true (line 188)
-      final span = tracer.startSpanWithContext(
-        name: 'context-update-span',
-        context: ctx,
-      );
+        // Call startSpanWithContext with Context.current so that
+        // Context.current == context is true, so Context.current gets updated
+        final span = tracer.startSpanWithContext(
+          name: 'context-update-span',
+          context: ctx,
+        );
 
-      // Context.current should now have the span set
-      expect(span, isNotNull);
-      expect(span.name, equals('context-update-span'));
+        // Context.current should now have the span set
+        expect(span, isNotNull);
+        expect(span.name, equals('context-update-span'));
 
-      span.end();
-    });
+        span.end();
+      },
+    );
   });
 
   // =========================================================================
-  // tracer.dart - parentSpan without context spanContext (line 262)
+  // tracer.dart - parentSpan without context spanContext
   // =========================================================================
   group('Tracer startSpan with explicit parentSpan', () {
     test('startSpan uses parentSpan context when no context spanContext', () {
@@ -396,7 +409,7 @@ void main() {
       final parentSpan = tracer.startSpan('parent-span');
 
       // Now start a child span passing parentSpan explicitly, but on Context.root
-      // so there's no spanContext on the context. This exercises line 262.
+      // so there's no spanContext on the context. This exercises the parentSpan fallback.
       final childSpan = tracer.startSpan(
         'child-span',
         context: Context.root,
@@ -415,7 +428,7 @@ void main() {
   });
 
   // =========================================================================
-  // tracer.dart - sampling attributes merge paths (lines 342-347)
+  // tracer.dart - sampling attributes merge paths
   // =========================================================================
   group('Tracer sampling with attributes', () {
     test('sampler attributes set when span has no attributes', () async {
@@ -440,7 +453,7 @@ void main() {
 
       final tracer = OTel.tracer();
 
-      // Start span WITHOUT attributes - exercises line 344
+      // Start span WITHOUT attributes - exercises sampler-attributes-set path
       final span = tracer.startSpan('sampler-attrs-span');
       expect(span, isNotNull);
       span.end();
@@ -466,7 +479,7 @@ void main() {
 
       final tracer = OTel.tracer();
 
-      // Start span WITH attributes - exercises line 346-347
+      // Start span WITH attributes - exercises sampler-attributes-merge path
       final span = tracer.startSpan(
         'sampler-merge-span',
         attributes: OTel.attributes([OTel.attributeString('span.key', 'val')]),
@@ -484,7 +497,7 @@ void main() {
       final tracer = OTel.tracer();
       final span = tracer.startSpan('bool-list-span');
 
-      // Exercises line 158
+      // Exercises setBoolListAttribute delegation
       span.setBoolListAttribute('test.bools', [true, false, true]);
       span.end();
     });
@@ -493,7 +506,7 @@ void main() {
       final tracer = OTel.tracer();
       final span = tracer.startSpan('double-list-span');
 
-      // Exercises line 166
+      // Exercises setDoubleListAttribute delegation
       span.setDoubleListAttribute('test.doubles', [1.1, 2.2, 3.3]);
       span.end();
     });
@@ -502,7 +515,7 @@ void main() {
       final tracer = OTel.tracer();
       final span = tracer.startSpan('int-list-span');
 
-      // Exercises line 174
+      // Exercises setIntListAttribute delegation
       span.setIntListAttribute('test.ints', [1, 2, 3]);
       span.end();
     });
@@ -511,7 +524,7 @@ void main() {
       final tracer = OTel.tracer();
       final span = tracer.startSpan('string-list-span');
 
-      // Exercises line 191
+      // Exercises setStringListAttribute delegation
       span.setStringListAttribute<String>('test.strings', ['a', 'b', 'c']);
       span.end();
     });
@@ -520,7 +533,7 @@ void main() {
       final tracer = OTel.tracer();
       final span = tracer.startSpan('datetime-span');
 
-      // Exercises line 195
+      // Exercises setDateTimeAsStringAttribute delegation
       span.setDateTimeAsStringAttribute('test.time', DateTime.now());
       span.end();
     });
@@ -529,11 +542,11 @@ void main() {
       final tracer = OTel.tracer();
       final span = tracer.startSpan('attrs-setter-span');
 
-      // Exercises line 103 (set attributes)
+      // Exercises the attributes setter
       final newAttrs = OTel.attributesFromMap({'new.key': 'new.value'});
       span.attributes = newAttrs;
 
-      // Exercises line 107 (addAttributes)
+      // Exercises addAttributes
       span.addAttributes(OTel.attributesFromMap({'extra.key': 'extra.value'}));
 
       span.end();
@@ -541,7 +554,7 @@ void main() {
   });
 
   // =========================================================================
-  // span.dart - end() with throwing processor (error paths lines 88-97)
+  // span.dart - end() with throwing processor (error paths)
   // =========================================================================
   group('Span end() with throwing processor', () {
     test('end() catches processor onEnd exception and continues', () async {
@@ -560,7 +573,7 @@ void main() {
       final tracer = OTel.tracer();
       final span = tracer.startSpan('will-throw-on-end');
 
-      // end() should not propagate the processor error (lines 88-91 catch block)
+      // end() should not propagate the processor error (per-processor catch block)
       // The error is caught inside the per-processor try/catch
       span.end();
 
@@ -582,7 +595,9 @@ void main() {
       final span = tracer.startSpan('toString-events-span');
 
       span.addEventNow(
-          'test-event', OTel.attributesFromMap({'event.key': 'event.val'}));
+        'test-event',
+        OTel.attributesFromMap({'event.key': 'event.val'}),
+      );
 
       final str = span.toString();
       expect(str, contains('spanEvents:'));
@@ -600,7 +615,9 @@ void main() {
       final span = tracer.startSpan('toString-links-span');
 
       span.addLink(
-          linkContext, OTel.attributesFromMap({'link.key': 'link.val'}));
+        linkContext,
+        OTel.attributesFromMap({'link.key': 'link.val'}),
+      );
 
       final str = span.toString();
       expect(str, contains('spanLinks:'));
@@ -615,21 +632,21 @@ void main() {
   group('Meter getters', () {
     test('version getter returns delegate version', () {
       final meter = OTel.meter();
-      // Exercises line 57-58
+      // Exercises the version getter
       final version = meter.version;
       expect(version, anyOf(isNull, isA<String>()));
     });
 
     test('schemaUrl getter returns delegate schemaUrl', () {
       final meter = OTel.meter();
-      // Exercises line 63-64
+      // Exercises the schemaUrl getter
       final schemaUrl = meter.schemaUrl;
       expect(schemaUrl, anyOf(isNull, isA<String>()));
     });
 
     test('attributes getter returns delegate attributes', () {
       final meter = OTel.meter();
-      // Exercises line 69-70
+      // Exercises the attributes getter
       final attrs = meter.attributes;
       expect(attrs, anyOf(isNull, isA<Attributes>()));
     });
@@ -638,21 +655,21 @@ void main() {
   group('NoopMeter observable instrument collect', () {
     test('NoopObservableCounter collect returns empty list', () {
       final noop = NoopObservableCounter<int>(name: 'noop-counter');
-      // Exercises line 693 (NoopObservableCounter.collect)
+      // Exercises NoopObservableCounter.collect
       final measurements = noop.collect();
       expect(measurements, isEmpty);
     });
 
     test('NoopObservableUpDownCounter collect returns empty list', () {
       final noop = NoopObservableUpDownCounter<int>(name: 'noop-updown');
-      // Exercises line 766 (NoopObservableUpDownCounter.collect)
+      // Exercises NoopObservableUpDownCounter.collect
       final measurements = noop.collect();
       expect(measurements, isEmpty);
     });
 
     test('NoopObservableGauge collect returns empty list', () {
       final noop = NoopObservableGauge<double>(name: 'noop-gauge');
-      // Exercises line 838 (NoopObservableGauge.collect)
+      // Exercises NoopObservableGauge.collect
       final measurements = noop.collect();
       expect(measurements, isEmpty);
     });
@@ -696,7 +713,7 @@ void main() {
       // Give a little time for async operations
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      // Should have logged about dropping spans (lines 114-115)
+      // Should have logged about dropping spans due to full queue
       expect(
         logOutput.any((msg) => msg.contains('queue full')),
         isTrue,
@@ -713,7 +730,7 @@ void main() {
       final tracer = OTel.tracer();
       final span = tracer.startSpan('name-update-test');
 
-      // Exercises line 128 (onNameUpdate)
+      // Exercises onNameUpdate (no-op for batch processor)
       await processor.onNameUpdate(span, 'new-name');
       // No exception means success
 
@@ -727,7 +744,7 @@ void main() {
 
       await processor.shutdown();
 
-      // Exercises lines 172-174 (forceFlush after shutdown)
+      // Exercises forceFlush after shutdown (no-op path)
       await processor.forceFlush();
       // No exception means success
     });
@@ -750,7 +767,7 @@ void main() {
       span.end();
       await processor.onEnd(span);
 
-      // Wait for the timer to fire and hit the error path (line 101)
+      // Wait for the timer to fire and hit the export error path
       await Future<void>.delayed(const Duration(milliseconds: 150));
 
       // The error should be caught, not propagated
@@ -766,7 +783,7 @@ void main() {
       final tracer = OTel.tracer();
       final span = tracer.startSpan('post-shutdown-span');
 
-      // Exercises line 108-109 (onEnd after shutdown)
+      // Exercises onEnd after shutdown (no-op path)
       await processor.onEnd(span);
       // No exception means success
 
@@ -784,7 +801,7 @@ void main() {
         AlwaysOnSampler(),
       ]);
 
-      // Exercises lines 13-15 (description getter)
+      // Exercises the description getter
       final desc = sampler.description;
       expect(desc, contains('CompositeSampler'));
       expect(desc, contains('and'));
@@ -921,7 +938,7 @@ void main() {
   // =========================================================================
   // From final_3_lines_test.dart - Gauge, MetricTransformer, Histogram, Counter
   // =========================================================================
-  // gauge.dart line 88: double type path in getValue
+  // gauge.dart: double type path in getValue
   test('Gauge<double> getValue returns double', () {
     final meter = OTel.meterProvider().getMeter(name: 'test');
     final gauge = meter.createGauge<double>(name: 'dbl_gauge');
@@ -932,29 +949,32 @@ void main() {
     expect(value, isA<double>());
   });
 
-  // metric_transformer.dart line 219: unsupported type defaults to string
+  // metric_transformer.dart: unsupported type defaults to string
   test('transformResource with unsupported attribute type uses toString', () {
     // Create a resource that has list values with mixed types
-    // The _createKeyValue else branch (line 219) handles unknown types
+    // The _createKeyValue else branch handles unknown types via toString
     final resource = ResourceCreate.create(
-        OTel.attributesFromMap({'regular': 'string_val'}));
+      OTel.attributesFromMap({'regular': 'string_val'}),
+    );
     final proto = MetricTransformer.transformResource(resource);
     expect(proto.attributes, isNotEmpty);
   });
 
-  // trace/tracer.dart line 188: Context.current update in startSpanWithContext
-  test('startSpanWithContext updates global context when matching (final_3)',
-      () {
-    final tracer = OTel.tracer();
-    final currentCtx = Context.current;
-    final span = tracer.startSpanWithContext(
-      name: 'ctx-span',
-      context: currentCtx,
-    );
-    span.end();
-  });
+  // trace/tracer.dart: Context.current update in startSpanWithContext
+  test(
+    'startSpanWithContext updates global context when matching (final_3)',
+    () {
+      final tracer = OTel.tracer();
+      final currentCtx = Context.current;
+      final span = tracer.startSpanWithContext(
+        name: 'ctx-span',
+        context: currentCtx,
+      );
+      span.end();
+    },
+  );
 
-  // metrics/instruments/histogram.dart lines 75-76
+  // metrics/instruments/histogram.dart: double type path in getValue
   test('Histogram<double> getValue returns double', () {
     final meter = OTel.meterProvider().getMeter(name: 'test');
     final histogram = meter.createHistogram<double>(name: 'dbl_hist');
@@ -965,7 +985,7 @@ void main() {
     expect(value, isNotNull);
   });
 
-  // metrics/instruments/counter.dart lines 119, 123-124
+  // metrics/instruments/counter.dart: double type path in getValue
   test('Counter<double> getValue returns double', () {
     final meter = OTel.meterProvider().getMeter(name: 'test');
     final counter = meter.createCounter<double>(name: 'dbl_counter');
@@ -980,7 +1000,7 @@ void main() {
   // W3C propagator field length validation
   // =========================================================================
 
-  // ProbabilitySampler - lines 29-30 (description), 41 (validation)
+  // ProbabilitySampler - description and validation
   group('ProbabilitySampler coverage', () {
     test('description returns expected string', () {
       final sampler = ProbabilitySampler(0.5);
@@ -993,7 +1013,7 @@ void main() {
     });
   });
 
-  // RateLimitingSampler - lines 16-18 (description), 32 (validation)
+  // RateLimitingSampler - description and validation
   group('RateLimitingSampler coverage', () {
     test('description returns expected string', () {
       final sampler = RateLimitingSampler(100.0);
@@ -1007,48 +1027,35 @@ void main() {
     });
   });
 
-  // W3C propagator - lines 163-165, 172-174, 181-183
-  // Invalid length traceId, spanId, traceFlags in traceparent
+  // W3C propagator - Invalid length traceId, spanId, traceFlags in traceparent
   group('W3C propagator field length validation', () {
     test('traceparent with short traceId is rejected', () {
       // traceId is only 20 chars (should be 32)
       final map = {
-        'traceparent': '00-abcdef12345678901234-1234567890abcdef-01'
+        'traceparent': '00-abcdef12345678901234-1234567890abcdef-01',
       };
       final propagator = W3CTraceContextPropagator();
-      final context = propagator.extract(
-        Context.root,
-        map,
-        _MapGetter(map),
-      );
+      final context = propagator.extract(Context.root, map, _MapGetter(map));
       expect(context.spanContext, isNull);
     });
 
     test('traceparent with short spanId is rejected', () {
       // spanId only 14 chars (should be 16)
       final map = {
-        'traceparent': '00-abcdef1234567890abcdef12345678-1234567890abcd-01'
+        'traceparent': '00-abcdef1234567890abcdef12345678-1234567890abcd-01',
       };
       final propagator = W3CTraceContextPropagator();
-      final context = propagator.extract(
-        Context.root,
-        map,
-        _MapGetter(map),
-      );
+      final context = propagator.extract(Context.root, map, _MapGetter(map));
       expect(context.spanContext, isNull);
     });
 
     test('traceparent with short traceFlags is rejected', () {
       // traceFlags only 1 char (should be 2)
       final map = {
-        'traceparent': '00-abcdef1234567890abcdef12345678-1234567890abcdef-0'
+        'traceparent': '00-abcdef1234567890abcdef12345678-1234567890abcdef-0',
       };
       final propagator = W3CTraceContextPropagator();
-      final context = propagator.extract(
-        Context.root,
-        map,
-        _MapGetter(map),
-      );
+      final context = propagator.extract(Context.root, map, _MapGetter(map));
       expect(context.spanContext, isNull);
     });
   });

@@ -10,3 +10,4 @@
 /test.txt
 /.run/
 /dartastic_opentelemetry.iml
+/.claude/settings.local.json

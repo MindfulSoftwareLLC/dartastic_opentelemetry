@@ -18,9 +18,6 @@ class MeterCreate {
     required APIMeter delegate,
     required MeterProvider provider,
   }) {
-    return Meter._(
-      delegate: delegate,
-      provider: provider,
-    );
+    return Meter._(delegate: delegate, provider: provider);
   }
 }

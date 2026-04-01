@@ -54,12 +54,15 @@ void main() {
   setUp(() async {
     await OTel.reset();
     logOutput.clear();
-    OTelLog.enableTraceLogging();
     OTelLog.logFunction = logOutput.add;
     await OTel.initialize(
       serviceName: 'remaining-coverage-test',
       detectPlatformResources: false,
+      enableLogs: false,
     );
+    // Set trace logging AFTER initialize, since initializeLogging() reads
+    // OTEL_LOG_LEVEL from env and would override a level set before it.
+    OTelLog.enableTraceLogging();
   });
 
   tearDown(() async {
@@ -85,8 +88,11 @@ void main() {
             '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
       };
       logOutput.clear();
-      final extracted =
-          propagator.extract(OTel.context(), carrier, _MapGetter(carrier));
+      final extracted = propagator.extract(
+        OTel.context(),
+        carrier,
+        _MapGetter(carrier),
+      );
 
       expect(extracted.spanContext, isNotNull);
       expect(extracted.spanContext!.isValid, isTrue);
@@ -106,8 +112,11 @@ void main() {
     test('extract with null/missing traceparent logs debug', () {
       final carrier = <String, String>{};
       logOutput.clear();
-      final extracted =
-          propagator.extract(OTel.context(), carrier, _MapGetter(carrier));
+      final extracted = propagator.extract(
+        OTel.context(),
+        carrier,
+        _MapGetter(carrier),
+      );
 
       // Context returned unchanged.
       expect(extracted.spanContext, isNull);
@@ -124,8 +133,11 @@ void main() {
             '01-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
       };
       logOutput.clear();
-      final extracted =
-          propagator.extract(OTel.context(), carrier, _MapGetter(carrier));
+      final extracted = propagator.extract(
+        OTel.context(),
+        carrier,
+        _MapGetter(carrier),
+      );
 
       expect(extracted.spanContext, isNull);
       expect(
@@ -187,8 +199,11 @@ void main() {
         'tracestate': 'no-equals,also-bad',
       };
       logOutput.clear();
-      final extracted =
-          propagator.extract(OTel.context(), carrier, _MapGetter(carrier));
+      final extracted = propagator.extract(
+        OTel.context(),
+        carrier,
+        _MapGetter(carrier),
+      );
 
       expect(extracted.spanContext, isNotNull);
       expect(
@@ -206,8 +221,11 @@ void main() {
         'tracestate': 'key=',
       };
       logOutput.clear();
-      final extracted =
-          propagator.extract(OTel.context(), carrier, _MapGetter(carrier));
+      final extracted = propagator.extract(
+        OTel.context(),
+        carrier,
+        _MapGetter(carrier),
+      );
 
       expect(extracted.spanContext, isNotNull);
       expect(
@@ -259,8 +277,10 @@ void main() {
     test('inject with tracestate logs debug for tracestate', () {
       final traceId = OTel.traceIdFrom('4bf92f3577b34da6a3ce929d0e0e4736');
       final spanId = OTel.spanIdFrom('00f067aa0ba902b7');
-      final traceState =
-          OTel.traceState({'vendor1': 'val1', 'vendor2': 'val2'});
+      final traceState = OTel.traceState({
+        'vendor1': 'val1',
+        'vendor2': 'val2',
+      });
       final spanContext = OTel.spanContext(
         traceId: traceId,
         spanId: spanId,
@@ -297,8 +317,11 @@ void main() {
       final carrier = <String, String>{};
 
       propagator.inject(originalCtx, carrier, _MapSetter(carrier));
-      final extractedCtx =
-          propagator.extract(OTel.context(), carrier, _MapGetter(carrier));
+      final extractedCtx = propagator.extract(
+        OTel.context(),
+        carrier,
+        _MapGetter(carrier),
+      );
 
       final sc = extractedCtx.spanContext;
       expect(sc, isNotNull);
@@ -321,11 +344,13 @@ void main() {
       propagator.extract(OTel.context(), carrier, _MapGetter(carrier));
 
       expect(
-        logOutput.any((m) =>
-            m.contains('Invalid traceparent format') ||
-            m.contains('Invalid trace ID length') ||
-            m.contains('Invalid span ID length') ||
-            m.contains('Invalid trace flags length')),
+        logOutput.any(
+          (m) =>
+              m.contains('Invalid traceparent format') ||
+              m.contains('Invalid trace ID length') ||
+              m.contains('Invalid span ID length') ||
+              m.contains('Invalid trace flags length'),
+        ),
         isTrue,
         reason:
             'Expected some validation debug log for the malformed traceparent',
@@ -403,10 +428,7 @@ void main() {
         }),
       );
       final r2 = OTel.resource(
-        OTel.attributesFromMap({
-          'service.name': 'svc-b',
-          'other': 'value',
-        }),
+        OTel.attributesFromMap({'service.name': 'svc-b', 'other': 'value'}),
       );
 
       logOutput.clear();
@@ -445,8 +467,9 @@ void main() {
 
       final reader = PeriodicExportingMetricReader(
         exporter,
-        interval:
-            const Duration(hours: 1), // long interval so timer doesn't fire
+        interval: const Duration(
+          hours: 1,
+        ), // long interval so timer doesn't fire
       );
       // Do NOT register a MeterProvider.
 
@@ -658,22 +681,25 @@ void main() {
       );
     });
 
-    test('createSecurityContext with test:// client cert and key logs debug',
-        () {
-      logOutput.clear();
-      final ctx = CertificateUtils.createSecurityContext(
-        clientKey: 'test://client.key',
-        clientCertificate: 'test://client.pem',
-      );
+    test(
+      'createSecurityContext with test:// client cert and key logs debug',
+      () {
+        logOutput.clear();
+        final ctx = CertificateUtils.createSecurityContext(
+          clientKey: 'test://client.key',
+          clientCertificate: 'test://client.pem',
+        );
 
-      expect(ctx, isNotNull);
-      expect(
-        logOutput
-            .any((m) => m.contains('Using test client certificate and key')),
-        isTrue,
-        reason: 'Expected debug log about test client certificate and key',
-      );
-    });
+        expect(ctx, isNotNull);
+        expect(
+          logOutput.any(
+            (m) => m.contains('Using test client certificate and key'),
+          ),
+          isTrue,
+          reason: 'Expected debug log about test client certificate and key',
+        );
+      },
+    );
 
     test('createSecurityContext with all test:// certs logs all debug', () {
       logOutput.clear();
@@ -689,8 +715,9 @@ void main() {
         isTrue,
       );
       expect(
-        logOutput
-            .any((m) => m.contains('Using test client certificate and key')),
+        logOutput.any(
+          (m) => m.contains('Using test client certificate and key'),
+        ),
         isTrue,
       );
     });
@@ -704,10 +731,7 @@ void main() {
     });
 
     test('validateCertificates with all null succeeds', () {
-      expect(
-        CertificateUtils.validateCertificates,
-        returnsNormally,
-      );
+      expect(CertificateUtils.validateCertificates, returnsNormally);
     });
 
     test('validateCertificates with test:// paths succeeds', () {
@@ -731,15 +755,17 @@ void main() {
       );
     });
 
-    test('validateCertificates with invalid-cert-path throws ArgumentError',
-        () {
-      expect(
-        () => CertificateUtils.validateCertificates(
-          certificate: 'invalid-cert-path',
-        ),
-        throwsA(isA<ArgumentError>()),
-      );
-    });
+    test(
+      'validateCertificates with invalid-cert-path throws ArgumentError',
+      () {
+        expect(
+          () => CertificateUtils.validateCertificates(
+            certificate: 'invalid-cert-path',
+          ),
+          throwsA(isA<ArgumentError>()),
+        );
+      },
+    );
 
     test('validateCertificates with non-existent certificate throws', () {
       expect(
@@ -775,9 +801,8 @@ void main() {
 
       try {
         expect(
-          () => CertificateUtils.validateCertificates(
-            certificate: certFile.path,
-          ),
+          () =>
+              CertificateUtils.validateCertificates(certificate: certFile.path),
           returnsNormally,
         );
       } finally {

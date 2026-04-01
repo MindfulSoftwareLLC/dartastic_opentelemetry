@@ -28,14 +28,17 @@ class ObservableResult<T extends num> implements APIObservableResult<T> {
     if (OTelFactory.otelFactory == null) {
       if (OTelLog.isWarn()) {
         OTelLog.warn(
-            'Warning: OTelFactory.otelFactory is null in ObservableResult.observe');
+          'Warning: OTelFactory.otelFactory is null in ObservableResult.observe',
+        );
       }
       return;
     }
 
     // Add the measurement
-    final measurement =
-        OTelFactory.otelFactory!.createMeasurement<T>(value, attributes);
+    final measurement = OTelFactory.otelFactory!.createMeasurement<T>(
+      value,
+      attributes,
+    );
     _measurements.add(measurement);
   }
 

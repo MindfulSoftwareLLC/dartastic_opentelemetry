@@ -20,7 +20,9 @@ class MockMetricsService extends MetricsServiceBase {
 
   @override
   Future<ExportMetricsServiceResponse> export(
-      ServiceCall call, ExportMetricsServiceRequest request) async {
+    ServiceCall call,
+    ExportMetricsServiceRequest request,
+  ) async {
     exportCount++;
     requests.add(request);
     if (errorCode != null) {
@@ -52,21 +54,26 @@ MetricData _createTestMetricData({String metricName = 'test.counter'}) {
   );
 
   return MetricData(
-    resource: OTel.resource(OTel.attributesFromMap({
-      'service.name': 'test-service',
-    })),
+    resource: OTel.resource(
+      OTel.attributesFromMap({'service.name': 'test-service'}),
+    ),
     metrics: [metric],
   );
 }
 
-OtlpGrpcMetricExporter _createExporter(int port,
-    {Map<String, String>? headers, bool compression = false}) {
-  return OtlpGrpcMetricExporter(OtlpGrpcMetricExporterConfig(
-    endpoint: 'http://localhost:$port',
-    insecure: true,
-    headers: headers,
-    compression: compression,
-  ));
+OtlpGrpcMetricExporter _createExporter(
+  int port, {
+  Map<String, String>? headers,
+  bool compression = false,
+}) {
+  return OtlpGrpcMetricExporter(
+    OtlpGrpcMetricExporterConfig(
+      endpoint: 'http://localhost:$port',
+      insecure: true,
+      headers: headers,
+      compression: compression,
+    ),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -81,7 +88,6 @@ void main() {
 
     setUp(() async {
       await OTel.reset();
-      OTelLog.enableTraceLogging();
       OTelLog.logFunction = (_) {};
       OTelLog.exportLogFunction = (_) {};
 
@@ -93,7 +99,11 @@ void main() {
       await OTel.initialize(
         serviceName: 'test',
         detectPlatformResources: false,
+        enableLogs: false,
       );
+      // Set trace logging AFTER initialize, since initializeLogging() reads
+      // OTEL_LOG_LEVEL from env and would override a level set before it.
+      OTelLog.enableTraceLogging();
     });
 
     tearDown(() async {
@@ -123,17 +133,19 @@ void main() {
     });
 
     // 2
-    test('export with empty metrics returns true without calling server',
-        () async {
-      final exporter = _createExporter(port);
+    test(
+      'export with empty metrics returns true without calling server',
+      () async {
+        final exporter = _createExporter(port);
 
-      final result = await exporter.export(MetricData.empty());
+        final result = await exporter.export(MetricData.empty());
 
-      expect(result, isTrue);
-      expect(mockService.exportCount, equals(0));
+        expect(result, isTrue);
+        expect(mockService.exportCount, equals(0));
 
-      await exporter.shutdown();
-    });
+        await exporter.shutdown();
+      },
+    );
 
     // 3
     test('export after shutdown returns false', () async {
@@ -230,10 +242,7 @@ void main() {
         endTime: now,
         value: 10,
       );
-      final metric = Metric.sum(
-        name: 'test.no-resource',
-        points: [point],
-      );
+      final metric = Metric.sum(name: 'test.no-resource', points: [point]);
       // MetricData with null resource
       final data = MetricData(resource: null, metrics: [metric]);
 
@@ -246,42 +255,44 @@ void main() {
     });
 
     // 10
-    test('export logs each metric detail when export logging enabled',
-        () async {
-      final logMessages = <String>[];
-      OTelLog.exportLogFunction = logMessages.add;
-      OTelLog.enableTraceLogging();
+    test(
+      'export logs each metric detail when export logging enabled',
+      () async {
+        final logMessages = <String>[];
+        OTelLog.exportLogFunction = logMessages.add;
+        OTelLog.enableTraceLogging();
 
-      final exporter = _createExporter(port);
-      final now = DateTime.now();
-      final point = MetricPoint<int>(
-        attributes: OTel.attributes(),
-        startTime: now.subtract(const Duration(seconds: 5)),
-        endTime: now,
-        value: 99,
-      );
-      final metric = Metric.sum(
-        name: 'test.detailed',
-        description: 'detailed metric',
-        unit: 'ops',
-        points: [point],
-      );
-      final data = MetricData(
-        resource: OTel.resource(null),
-        metrics: [metric],
-      );
+        final exporter = _createExporter(port);
+        final now = DateTime.now();
+        final point = MetricPoint<int>(
+          attributes: OTel.attributes(),
+          startTime: now.subtract(const Duration(seconds: 5)),
+          endTime: now,
+          value: 99,
+        );
+        final metric = Metric.sum(
+          name: 'test.detailed',
+          description: 'detailed metric',
+          unit: 'ops',
+          points: [point],
+        );
+        final data = MetricData(
+          resource: OTel.resource(null),
+          metrics: [metric],
+        );
 
-      await exporter.export(data);
+        await exporter.export(data);
 
-      // Should log individual metric details
-      expect(
-        logMessages.any((msg) => msg.contains('test.detailed')),
-        isTrue,
-        reason: 'Expected metric name in log output',
-      );
+        // Should log individual metric details
+        expect(
+          logMessages.any((msg) => msg.contains('test.detailed')),
+          isTrue,
+          reason: 'Expected metric name in log output',
+        );
 
-      await exporter.shutdown();
-    });
+        await exporter.shutdown();
+      },
+    );
 
     // 11
     test('export failure returns false', () async {
@@ -323,10 +334,13 @@ void main() {
 
     // 13
     test('exporter with custom headers', () async {
-      final exporter = _createExporter(port, headers: {
-        'x-custom-header': 'custom-value',
-        'authorization': 'Bearer test-token',
-      });
+      final exporter = _createExporter(
+        port,
+        headers: {
+          'x-custom-header': 'custom-value',
+          'authorization': 'Bearer test-token',
+        },
+      );
       final data = _createTestMetricData();
 
       final result = await exporter.export(data);
@@ -388,10 +402,7 @@ void main() {
         Metric.sum(name: 'test.requests', points: [point1]),
         Metric.gauge(name: 'test.temperature', points: [point2]),
       ];
-      final data = MetricData(
-        resource: OTel.resource(null),
-        metrics: metrics,
-      );
+      final data = MetricData(resource: OTel.resource(null), metrics: metrics);
 
       final exporter = _createExporter(port);
       final result = await exporter.export(data);

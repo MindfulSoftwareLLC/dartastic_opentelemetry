@@ -47,18 +47,17 @@ void main() {
       final parentSpan = tracer.startSpan('parent-span');
 
       // Create a child span by using the parent span
-      final childSpan = tracer.startSpan(
-        'child-span',
-        parentSpan: parentSpan,
-      );
+      final childSpan = tracer.startSpan('child-span', parentSpan: parentSpan);
 
       // Verify the parent span context
       expect(childSpan.parentSpanContext, isNotNull);
       expect(childSpan.parentSpanContext, equals(parentSpan.spanContext));
 
       // Verify trace ID is inherited from parent
-      expect(childSpan.spanContext.traceId,
-          equals(parentSpan.spanContext.traceId));
+      expect(
+        childSpan.spanContext.traceId,
+        equals(parentSpan.spanContext.traceId),
+      );
 
       childSpan.end();
       parentSpan.end();
@@ -150,10 +149,14 @@ void main() {
       expect(events, isNotNull);
       expect(events!.length, equals(1));
       expect(events[0].name, equals('exception'));
-      expect(events[0].attributes!.getString('exception.type'),
-          contains('Exception'));
-      expect(events[0].attributes!.getString('exception.message'),
-          contains('Test exception'));
+      expect(
+        events[0].attributes!.getString('exception.type'),
+        contains('Exception'),
+      );
+      expect(
+        events[0].attributes!.getString('exception.message'),
+        contains('Test exception'),
+      );
 
       span.end();
     });

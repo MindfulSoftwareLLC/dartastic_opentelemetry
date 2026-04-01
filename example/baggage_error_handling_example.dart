@@ -50,10 +50,7 @@ class UserPreferenceService {
       print('Failed to get user preferences: $e');
 
       // Provide sensible defaults
-      return {
-        'language': 'en-US',
-        'theme': 'light',
-      };
+      return {'language': 'en-US', 'theme': 'light'};
     }
   }
 
@@ -94,10 +91,7 @@ class ConfigurationService {
       if (env != null && !_validEnvironments.contains(env)) {
         throw BaggageException(
           'Invalid environment value',
-          context: {
-            'value': env,
-            'validValues': _validEnvironments,
-          },
+          context: {'value': env, 'validValues': _validEnvironments},
         );
       }
 
@@ -106,10 +100,7 @@ class ConfigurationService {
       if (logLevel != null && !_validLogLevels.contains(logLevel)) {
         throw BaggageException(
           'Invalid log level',
-          context: {
-            'value': logLevel,
-            'validValues': _validLogLevels,
-          },
+          context: {'value': logLevel, 'validValues': _validLogLevels},
         );
       }
 
@@ -164,18 +155,12 @@ Baggage _safelyAddBaggageEntry(
 }) {
   // Validate key format
   if (!_isValidBaggageKey(key)) {
-    throw BaggageException(
-      'Invalid baggage key format',
-      context: {'key': key},
-    );
+    throw BaggageException('Invalid baggage key format', context: {'key': key});
   }
 
   // Validate value
   if (!validator(value)) {
-    throw BaggageException(
-      errorMessage,
-      context: {'key': key, 'value': value},
-    );
+    throw BaggageException(errorMessage, context: {'key': key, 'value': value});
   }
 
   // Add metadata about validation
@@ -195,10 +180,10 @@ bool _isValidBaggageKey(String key) {
 
 Future<void> main() async {
   // Example with missing required value
-  final invalidContext = OTel.context()
-      .withBaggage(OTel.baggage().copyWith('user.language', 'fr-FR')
-          // Note: missing required user.id
-          );
+  final invalidContext = OTel.context().withBaggage(
+    OTel.baggage().copyWith('user.language', 'fr-FR'),
+    // Note: missing required user.id
+  );
 
   await invalidContext.run(() async {
     final service = UserPreferenceService();
@@ -208,7 +193,8 @@ Future<void> main() async {
 
   // Example with invalid value
   final invalidValueContext = OTel.context().withBaggage(
-      OTel.baggage().copyWith('service.environment', 'invalid_env'));
+    OTel.baggage().copyWith('service.environment', 'invalid_env'),
+  );
 
   await invalidValueContext.run(() async {
     final service = ConfigurationService();

@@ -20,8 +20,10 @@ void main() {
       server.listen((request) async {
         receivedRequests.add(request);
         // Drain the request body so the connection completes properly
-        await request
-            .fold<List<int>>([], (bytes, chunk) => bytes..addAll(chunk));
+        await request.fold<List<int>>(
+          [],
+          (bytes, chunk) => bytes..addAll(chunk),
+        );
         request.response.statusCode = 200;
         await request.response.close();
       });
@@ -49,9 +51,9 @@ void main() {
     }
 
     test('export sends spans to endpoint', () async {
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-      ));
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(endpoint: 'http://localhost:$port'),
+      );
 
       final spans = createTestSpans();
       await exporter.export(spans);
@@ -61,9 +63,9 @@ void main() {
     });
 
     test('export sends protobuf content type', () async {
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-      ));
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(endpoint: 'http://localhost:$port'),
+      );
 
       final spans = createTestSpans();
       await exporter.export(spans);
@@ -77,9 +79,9 @@ void main() {
     });
 
     test('export appends /v1/traces to endpoint', () async {
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-      ));
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(endpoint: 'http://localhost:$port'),
+      );
 
       final spans = createTestSpans();
       await exporter.export(spans);
@@ -90,10 +92,12 @@ void main() {
     });
 
     test('export with compression sends gzip content encoding', () async {
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-        compression: true,
-      ));
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(
+          endpoint: 'http://localhost:$port',
+          compression: true,
+        ),
+      );
 
       final spans = createTestSpans();
       await exporter.export(spans);
@@ -107,10 +111,12 @@ void main() {
     });
 
     test('export with custom headers includes them', () async {
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-        headers: {'x-custom': 'test-value'},
-      ));
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(
+          endpoint: 'http://localhost:$port',
+          headers: {'x-custom': 'test-value'},
+        ),
+      );
 
       final spans = createTestSpans();
       await exporter.export(spans);
@@ -124,9 +130,9 @@ void main() {
     });
 
     test('export with empty spans does nothing', () async {
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-      ));
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(endpoint: 'http://localhost:$port'),
+      );
 
       await exporter.export([]);
 
@@ -136,17 +142,14 @@ void main() {
     });
 
     test('export after shutdown throws StateError', () async {
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-      ));
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(endpoint: 'http://localhost:$port'),
+      );
 
       await exporter.shutdown();
 
       final spans = createTestSpans();
-      expect(
-        () => exporter.export(spans),
-        throwsA(isA<StateError>()),
-      );
+      expect(() => exporter.export(spans), throwsA(isA<StateError>()));
     });
 
     test('export retries on 503', () async {
@@ -158,8 +161,10 @@ void main() {
       port = server.port;
       server.listen((request) async {
         requestCount++;
-        await request
-            .fold<List<int>>([], (bytes, chunk) => bytes..addAll(chunk));
+        await request.fold<List<int>>(
+          [],
+          (bytes, chunk) => bytes..addAll(chunk),
+        );
         if (requestCount == 1) {
           request.response.statusCode = 503;
         } else {
@@ -168,12 +173,14 @@ void main() {
         await request.response.close();
       });
 
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-        maxRetries: 3,
-        baseDelay: const Duration(milliseconds: 10),
-        maxDelay: const Duration(milliseconds: 50),
-      ));
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(
+          endpoint: 'http://localhost:$port',
+          maxRetries: 3,
+          baseDelay: const Duration(milliseconds: 10),
+          maxDelay: const Duration(milliseconds: 50),
+        ),
+      );
 
       final spans = createTestSpans();
       await exporter.export(spans);
@@ -191,8 +198,10 @@ void main() {
       port = server.port;
       server.listen((request) async {
         requestCount++;
-        await request
-            .fold<List<int>>([], (bytes, chunk) => bytes..addAll(chunk));
+        await request.fold<List<int>>(
+          [],
+          (bytes, chunk) => bytes..addAll(chunk),
+        );
         if (requestCount == 1) {
           request.response.statusCode = 429;
         } else {
@@ -201,12 +210,14 @@ void main() {
         await request.response.close();
       });
 
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-        maxRetries: 3,
-        baseDelay: const Duration(milliseconds: 10),
-        maxDelay: const Duration(milliseconds: 50),
-      ));
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(
+          endpoint: 'http://localhost:$port',
+          maxRetries: 3,
+          baseDelay: const Duration(milliseconds: 10),
+          maxDelay: const Duration(milliseconds: 50),
+        ),
+      );
 
       final spans = createTestSpans();
       await exporter.export(spans);
@@ -223,25 +234,26 @@ void main() {
       port = server.port;
       server.listen((request) async {
         requestCount++;
-        await request
-            .fold<List<int>>([], (bytes, chunk) => bytes..addAll(chunk));
+        await request.fold<List<int>>(
+          [],
+          (bytes, chunk) => bytes..addAll(chunk),
+        );
         request.response.statusCode = 400;
         await request.response.close();
       });
 
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-        maxRetries: 3,
-        baseDelay: const Duration(milliseconds: 10),
-        maxDelay: const Duration(milliseconds: 50),
-      ));
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(
+          endpoint: 'http://localhost:$port',
+          maxRetries: 3,
+          baseDelay: const Duration(milliseconds: 10),
+          maxDelay: const Duration(milliseconds: 50),
+        ),
+      );
 
       final spans = createTestSpans();
       // 400 is not retryable, so this should throw after a single attempt
-      expect(
-        () => exporter.export(spans),
-        throwsA(anything),
-      );
+      expect(() => exporter.export(spans), throwsA(anything));
 
       // Allow the async operations to settle
       await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -250,9 +262,9 @@ void main() {
     });
 
     test('forceFlush completes successfully', () async {
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-      ));
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(endpoint: 'http://localhost:$port'),
+      );
 
       // forceFlush should complete without error
       await exporter.forceFlush();
@@ -260,37 +272,36 @@ void main() {
     });
 
     test('shutdown then export throws', () async {
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-      ));
-
-      await exporter.shutdown();
-
-      final spans = createTestSpans();
-      expect(
-        () => exporter.export(spans),
-        throwsA(isA<StateError>()),
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(endpoint: 'http://localhost:$port'),
       );
-    });
 
-    test('_getEndpointUrl appends /v1/traces to endpoint without path',
-        () async {
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port',
-      ));
+      await exporter.shutdown();
 
       final spans = createTestSpans();
-      await exporter.export(spans);
-
-      expect(receivedRequests, hasLength(1));
-      expect(receivedRequests.first.uri.path, equals('/v1/traces'));
-      await exporter.shutdown();
+      expect(() => exporter.export(spans), throwsA(isA<StateError>()));
     });
+
+    test(
+      '_getEndpointUrl appends /v1/traces to endpoint without path',
+      () async {
+        final exporter = OtlpHttpSpanExporter(
+          OtlpHttpExporterConfig(endpoint: 'http://localhost:$port'),
+        );
+
+        final spans = createTestSpans();
+        await exporter.export(spans);
+
+        expect(receivedRequests, hasLength(1));
+        expect(receivedRequests.first.uri.path, equals('/v1/traces'));
+        await exporter.shutdown();
+      },
+    );
 
     test('_getEndpointUrl preserves existing /v1/traces', () async {
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port/v1/traces',
-      ));
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(endpoint: 'http://localhost:$port/v1/traces'),
+      );
 
       final spans = createTestSpans();
       await exporter.export(spans);
@@ -302,9 +313,9 @@ void main() {
     });
 
     test('export with trailing slash endpoint appends /v1/traces', () async {
-      final exporter = OtlpHttpSpanExporter(OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:$port/',
-      ));
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(endpoint: 'http://localhost:$port/'),
+      );
 
       final spans = createTestSpans();
       await exporter.export(spans);

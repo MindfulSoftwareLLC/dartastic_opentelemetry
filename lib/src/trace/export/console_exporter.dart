@@ -47,7 +47,8 @@ class ConsoleExporter extends SpanExporter {
       buffer.writeln('End Time: ${span.endTime!.toIso8601String()}');
       final duration = span.endTime!.difference(span.startTime);
       buffer.writeln(
-          'Duration: ${duration.inMicroseconds}μs (${duration.inMilliseconds}ms)');
+        'Duration: ${duration.inMicroseconds}μs (${duration.inMilliseconds}ms)',
+      );
     } else {
       buffer.writeln('End Time: (not ended)');
     }
@@ -82,7 +83,8 @@ class ConsoleExporter extends SpanExporter {
       buffer.writeln('Links:');
       for (final link in links) {
         buffer.writeln(
-            '  -> Trace: ${link.spanContext.traceId}, Span: ${link.spanContext.spanId}');
+          '  -> Trace: ${link.spanContext.traceId}, Span: ${link.spanContext.spanId}',
+        );
         for (final attr in link.attributes.toList()) {
           buffer.writeln('    ${attr.key}: ${attr.value}');
         }

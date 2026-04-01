@@ -15,10 +15,12 @@ class GZip {
     final compressionStream = CompressionStream('gzip');
     final reader = _blob(data)
         .stream()
-        .pipeThrough(ReadableWritablePair(
-          readable: compressionStream.readable,
-          writable: compressionStream.writable,
-        ))
+        .pipeThrough(
+          ReadableWritablePair(
+            readable: compressionStream.readable,
+            writable: compressionStream.writable,
+          ),
+        )
         .getReader() as ReadableStreamDefaultReader;
     return await _readUntilDone(reader);
   }
@@ -28,10 +30,12 @@ class GZip {
     final decompressionStream = DecompressionStream('gzip');
     final reader = _blob(data)
         .stream()
-        .pipeThrough(ReadableWritablePair(
-          readable: decompressionStream.readable,
-          writable: decompressionStream.writable,
-        ))
+        .pipeThrough(
+          ReadableWritablePair(
+            readable: decompressionStream.readable,
+            writable: decompressionStream.writable,
+          ),
+        )
         .getReader() as ReadableStreamDefaultReader;
     return await _readUntilDone(reader);
   }
@@ -53,8 +57,6 @@ class GZip {
     return values;
   }
 
-  Blob _blob(Uint8List data) => Blob(
-        [data.toJS].toJS,
-        BlobPropertyBag(type: 'application/octet-stream'),
-      );
+  Blob _blob(Uint8List data) =>
+      Blob([data.toJS].toJS, BlobPropertyBag(type: 'application/octet-stream'));
 }

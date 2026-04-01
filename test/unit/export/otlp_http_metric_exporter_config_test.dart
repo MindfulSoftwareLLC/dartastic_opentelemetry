@@ -50,16 +50,12 @@ void main() {
     });
 
     test('http://localhost without port gets :4318 appended', () {
-      final config = OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost',
-      );
+      final config = OtlpHttpMetricExporterConfig(endpoint: 'http://localhost');
       expect(config.endpoint, equals('http://localhost:4318'));
     });
 
     test('http://127.0.0.1 without port gets :4318 appended', () {
-      final config = OtlpHttpMetricExporterConfig(
-        endpoint: 'http://127.0.0.1',
-      );
+      final config = OtlpHttpMetricExporterConfig(endpoint: 'http://127.0.0.1');
       expect(config.endpoint, equals('http://127.0.0.1:4318'));
     });
 
@@ -87,18 +83,14 @@ void main() {
 
     test('empty header key throws ArgumentError', () {
       expect(
-        () => OtlpHttpMetricExporterConfig(
-          headers: {'': 'some-value'},
-        ),
+        () => OtlpHttpMetricExporterConfig(headers: {'': 'some-value'}),
         throwsA(isA<ArgumentError>()),
       );
     });
 
     test('empty header value throws ArgumentError', () {
       expect(
-        () => OtlpHttpMetricExporterConfig(
-          headers: {'valid-key': ''},
-        ),
+        () => OtlpHttpMetricExporterConfig(headers: {'valid-key': ''}),
         throwsA(isA<ArgumentError>()),
       );
     });
@@ -114,9 +106,8 @@ void main() {
 
     test('timeout above 10 minutes throws ArgumentError', () {
       expect(
-        () => OtlpHttpMetricExporterConfig(
-          timeout: const Duration(minutes: 11),
-        ),
+        () =>
+            OtlpHttpMetricExporterConfig(timeout: const Duration(minutes: 11)),
         throwsA(isA<ArgumentError>()),
       );
     });
@@ -151,9 +142,8 @@ void main() {
 
     test('maxDelay above 5 minutes throws ArgumentError', () {
       expect(
-        () => OtlpHttpMetricExporterConfig(
-          maxDelay: const Duration(minutes: 6),
-        ),
+        () =>
+            OtlpHttpMetricExporterConfig(maxDelay: const Duration(minutes: 6)),
         throwsA(isA<ArgumentError>()),
       );
     });
@@ -172,8 +162,9 @@ void main() {
       final compressedConfig = OtlpHttpMetricExporterConfig(compression: true);
       expect(compressedConfig.compression, isTrue);
 
-      final uncompressedConfig =
-          OtlpHttpMetricExporterConfig(compression: false);
+      final uncompressedConfig = OtlpHttpMetricExporterConfig(
+        compression: false,
+      );
       expect(uncompressedConfig.compression, isFalse);
     });
 

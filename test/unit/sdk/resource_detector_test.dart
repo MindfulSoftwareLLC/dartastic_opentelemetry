@@ -15,7 +15,8 @@ class _TestDetector implements ResourceDetector {
   @override
   Future<Resource> detect() async {
     return ResourceCreate.create(
-        OTelFactory.otelFactory!.attributesFromMap(attrs));
+      OTelFactory.otelFactory!.attributesFromMap(attrs),
+    );
   }
 }
 
@@ -33,7 +34,9 @@ void main() {
     setUp(() async {
       await OTel.reset();
       await OTel.initialize(
-          serviceName: 'test', detectPlatformResources: false);
+        serviceName: 'test',
+        detectPlatformResources: false,
+      );
     });
 
     tearDown(() async {
@@ -239,13 +242,15 @@ void main() {
     // CompositeResourceDetector
     // ---------------------------------------------------------------
     group('CompositeResourceDetector', () {
-      test('detect() with empty detector list returns empty resource',
-          () async {
-        final detector = CompositeResourceDetector([]);
-        final resource = await detector.detect();
+      test(
+        'detect() with empty detector list returns empty resource',
+        () async {
+          final detector = CompositeResourceDetector([]);
+          final resource = await detector.detect();
 
-        expect(resource.attributes.isEmpty, isTrue);
-      });
+          expect(resource.attributes.isEmpty, isTrue);
+        },
+      );
 
       test('detect() merges resources from multiple detectors', () async {
         final detector1 = _TestDetector({
@@ -275,8 +280,11 @@ void main() {
         final detector2 = _TestDetector({'b': 'bravo'});
         final detector3 = _TestDetector({'c': 'charlie'});
 
-        final composite =
-            CompositeResourceDetector([detector1, detector2, detector3]);
+        final composite = CompositeResourceDetector([
+          detector1,
+          detector2,
+          detector3,
+        ]);
         final resource = await composite.detect();
         final attrs = resource.attributes.toMap();
 
@@ -287,10 +295,7 @@ void main() {
 
       test('detect() continues even if one detector throws', () async {
         final failing = _FailingDetector();
-        final working = _TestDetector({
-          'survived': 'yes',
-          'answer': 42,
-        });
+        final working = _TestDetector({'survived': 'yes', 'answer': 42});
 
         final composite = CompositeResourceDetector([failing, working]);
         final resource = await composite.detect();
@@ -301,19 +306,21 @@ void main() {
         expect(attrs['answer']?.value, equals(42));
       });
 
-      test('detect() continues when failing detector is in the middle',
-          () async {
-        final first = _TestDetector({'first': 'one'});
-        final failing = _FailingDetector();
-        final last = _TestDetector({'last': 'three'});
+      test(
+        'detect() continues when failing detector is in the middle',
+        () async {
+          final first = _TestDetector({'first': 'one'});
+          final failing = _FailingDetector();
+          final last = _TestDetector({'last': 'three'});
 
-        final composite = CompositeResourceDetector([first, failing, last]);
-        final resource = await composite.detect();
-        final attrs = resource.attributes.toMap();
+          final composite = CompositeResourceDetector([first, failing, last]);
+          final resource = await composite.detect();
+          final attrs = resource.attributes.toMap();
 
-        expect(attrs['first']?.value, equals('one'));
-        expect(attrs['last']?.value, equals('three'));
-      });
+          expect(attrs['first']?.value, equals('one'));
+          expect(attrs['last']?.value, equals('three'));
+        },
+      );
 
       test('detect() returns empty resource when all detectors fail', () async {
         final composite = CompositeResourceDetector([
@@ -325,14 +332,16 @@ void main() {
         expect(resource.attributes.isEmpty, isTrue);
       });
 
-      test('detect() with single detector returns that detector result',
-          () async {
-        final single = _TestDetector({'solo': 'value'});
-        final composite = CompositeResourceDetector([single]);
-        final resource = await composite.detect();
+      test(
+        'detect() with single detector returns that detector result',
+        () async {
+          final single = _TestDetector({'solo': 'value'});
+          final composite = CompositeResourceDetector([single]);
+          final resource = await composite.detect();
 
-        expect(resource.attributes.toMap()['solo']?.value, equals('value'));
-      });
+          expect(resource.attributes.toMap()['solo']?.value, equals('value'));
+        },
+      );
 
       test('detect() combines real process and host detectors', () async {
         final composite = CompositeResourceDetector([
@@ -365,33 +374,39 @@ void main() {
         expect(composite.detect, throwsA(isA<String>()));
       });
 
-      test('ProcessResourceDetector detect() throws when OTel not initialized',
-          () async {
-        await OTel.shutdown();
-        await OTel.reset();
+      test(
+        'ProcessResourceDetector detect() throws when OTel not initialized',
+        () async {
+          await OTel.shutdown();
+          await OTel.reset();
 
-        final detector = ProcessResourceDetector();
-        expect(detector.detect, throwsA(isA<String>()));
-      });
+          final detector = ProcessResourceDetector();
+          expect(detector.detect, throwsA(isA<String>()));
+        },
+      );
 
-      test('HostResourceDetector detect() throws when OTel not initialized',
-          () async {
-        await OTel.shutdown();
-        await OTel.reset();
+      test(
+        'HostResourceDetector detect() throws when OTel not initialized',
+        () async {
+          await OTel.shutdown();
+          await OTel.reset();
 
-        final detector = HostResourceDetector();
-        expect(detector.detect, throwsA(isA<String>()));
-      });
+          final detector = HostResourceDetector();
+          expect(detector.detect, throwsA(isA<String>()));
+        },
+      );
 
-      test('EnvVarResourceDetector detect() throws when OTel not initialized',
-          () async {
-        await OTel.shutdown();
-        await OTel.reset();
+      test(
+        'EnvVarResourceDetector detect() throws when OTel not initialized',
+        () async {
+          await OTel.shutdown();
+          await OTel.reset();
 
-        final detector = EnvVarResourceDetector();
-        // Even though env var is not set, the factory null check happens first.
-        expect(detector.detect, throwsA(isA<String>()));
-      });
+          final detector = EnvVarResourceDetector();
+          // Even though env var is not set, the factory null check happens first.
+          expect(detector.detect, throwsA(isA<String>()));
+        },
+      );
     });
 
     // ---------------------------------------------------------------
@@ -439,8 +454,10 @@ void main() {
         final custom = _TestDetector({'custom.key': 'custom.value'});
         final resource = await custom.detect();
 
-        expect(resource.attributes.toMap()['custom.key']?.value,
-            equals('custom.value'));
+        expect(
+          resource.attributes.toMap()['custom.key']?.value,
+          equals('custom.value'),
+        );
       });
 
       test('custom detector with multiple attribute types', () async {

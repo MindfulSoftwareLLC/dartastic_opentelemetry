@@ -119,10 +119,12 @@ void main() {
       final metrics = memoryExporter.exportedMetrics;
 
       // Find our counters
-      final intMetric =
-          metrics.firstWhere((m) => m.name == 'int-up-down-counter');
-      final doubleMetric =
-          metrics.firstWhere((m) => m.name == 'double-up-down-counter');
+      final intMetric = metrics.firstWhere(
+        (m) => m.name == 'int-up-down-counter',
+      );
+      final doubleMetric = metrics.firstWhere(
+        (m) => m.name == 'double-up-down-counter',
+      );
 
       // Verify values
       expect(intMetric.points.first.value, equals(42));
@@ -145,8 +147,9 @@ void main() {
       await metricReader.forceFlush();
 
       // Get metric
-      final metric = memoryExporter.exportedMetrics
-          .firstWhere((m) => m.name == 'bidirectional-counter');
+      final metric = memoryExporter.exportedMetrics.firstWhere(
+        (m) => m.name == 'bidirectional-counter',
+      );
 
       // Verify final value (10 - 3 + 5 - 7 = 5)
       expect(metric.points.first.value, equals(5));
@@ -160,30 +163,27 @@ void main() {
           int>; // Cast to implementation class to access addWithMap
 
       // Record using addWithMap
-      counter.addWithMap(100, {
-        'direction': 'up',
-        'operation': 'test',
-      });
+      counter.addWithMap(100, {'direction': 'up', 'operation': 'test'});
 
-      counter.addWithMap(-25, {
-        'direction': 'down',
-        'operation': 'test',
-      });
+      counter.addWithMap(-25, {'direction': 'down', 'operation': 'test'});
 
       // Force collection
       await metricReader.forceFlush();
 
       // Get metric
-      final metric = memoryExporter.exportedMetrics
-          .firstWhere((m) => m.name == 'map-attributes-counter');
+      final metric = memoryExporter.exportedMetrics.firstWhere(
+        (m) => m.name == 'map-attributes-counter',
+      );
 
       // Verify we get two separate points with different values
       expect(metric.points.length, equals(2));
       // Find points for each direction
-      final upPoint = metric.points
-          .firstWhere((p) => p.attributes.getString('direction') == 'up');
-      final downPoint = metric.points
-          .firstWhere((p) => p.attributes.getString('direction') == 'down');
+      final upPoint = metric.points.firstWhere(
+        (p) => p.attributes.getString('direction') == 'up',
+      );
+      final downPoint = metric.points.firstWhere(
+        (p) => p.attributes.getString('direction') == 'down',
+      );
 
       // Verify values for each point
       expect(upPoint.value, equals(100));
@@ -195,10 +195,9 @@ void main() {
     });
 
     test('UpDownCounter.getValue returns correct value', () {
-      final counter = meter.createUpDownCounter<int>(
-        name: 'get-value-counter',
-      ) as UpDownCounter<
-          int>; // Cast to implementation class to access getValue
+      final counter = meter.createUpDownCounter<int>(name: 'get-value-counter')
+          as UpDownCounter<
+              int>; // Cast to implementation class to access getValue
 
       // Record values with different attributes
       final attrs1 = {'region': 'us-west'}.toAttributes();
@@ -216,8 +215,7 @@ void main() {
 
     test('UpDownCounter collectMetrics respects enabled state', () {
       final counter = meter.createUpDownCounter<int>(
-        name: 'collect-metrics-counter',
-      ) as UpDownCounter<int>;
+          name: 'collect-metrics-counter') as UpDownCounter<int>;
 
       // Record a value
       counter.add(42);

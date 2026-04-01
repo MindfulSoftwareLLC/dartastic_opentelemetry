@@ -65,7 +65,8 @@ void main() {
       final metric = metrics.firstWhere(
         (m) => m.name == 'test_gauge',
         orElse: () => throw StateError(
-            'Gauge metric not found: ${metrics.map((m) => m.name).join(', ')}'),
+          'Gauge metric not found: ${metrics.map((m) => m.name).join(', ')}',
+        ),
       );
 
       // Check properties
@@ -74,8 +75,11 @@ void main() {
 
       // We should have 3 data points (one for each attributes set)
       final points = metric.points;
-      expect(points.length, equals(3),
-          reason: "Expected 3 points, got ${points.length}");
+      expect(
+        points.length,
+        equals(3),
+        reason: "Expected 3 points, got ${points.length}",
+      );
 
       // Find each data point by attributes
       final apiPoints = points
@@ -90,12 +94,21 @@ void main() {
           points.where((p) => p.attributes.toList().isEmpty).toList();
 
       // Verify we found the points
-      expect(apiPoints.isNotEmpty, isTrue,
-          reason: "No points with 'api' service attribute found");
-      expect(dbPoints.isNotEmpty, isTrue,
-          reason: "No points with 'database' service attribute found");
-      expect(noAttrPoints.isNotEmpty, isTrue,
-          reason: "No points without attributes found");
+      expect(
+        apiPoints.isNotEmpty,
+        isTrue,
+        reason: "No points with 'api' service attribute found",
+      );
+      expect(
+        dbPoints.isNotEmpty,
+        isTrue,
+        reason: "No points with 'database' service attribute found",
+      );
+      expect(
+        noAttrPoints.isNotEmpty,
+        isTrue,
+        reason: "No points without attributes found",
+      );
 
       // Verify each point's value
       expect(apiPoints.first.value, equals(60.0)); // Updated from 50.0 to 60.0
@@ -121,13 +134,19 @@ void main() {
       final metrics = memoryExporter.exportedMetrics;
       expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
 
-      final metric = metrics.firstWhere((m) => m.name == 'int_gauge',
-          orElse: () => throw StateError(
-              'int_gauge metric not found: ${metrics.map((m) => m.name).join(', ')}'));
+      final metric = metrics.firstWhere(
+        (m) => m.name == 'int_gauge',
+        orElse: () => throw StateError(
+          'int_gauge metric not found: ${metrics.map((m) => m.name).join(', ')}',
+        ),
+      );
 
       // Verify we have 2 data points
-      expect(metric.points.length, equals(2),
-          reason: "Expected 2 points, got ${metric.points.length}");
+      expect(
+        metric.points.length,
+        equals(2),
+        reason: "Expected 2 points, got ${metric.points.length}",
+      );
 
       // Find each point
       final noAttrsPoints =
@@ -138,10 +157,16 @@ void main() {
           .toList();
 
       // Verify we found the points
-      expect(noAttrsPoints.isNotEmpty, isTrue,
-          reason: "No points without attributes found");
-      expect(withAttrsPoints.isNotEmpty, isTrue,
-          reason: "No points with 'request' type attribute found");
+      expect(
+        noAttrsPoints.isNotEmpty,
+        isTrue,
+        reason: "No points without attributes found",
+      );
+      expect(
+        withAttrsPoints.isNotEmpty,
+        isTrue,
+        reason: "No points with 'request' type attribute found",
+      );
 
       // Verify values
       expect(noAttrsPoints.first.value, equals(10));
@@ -162,8 +187,11 @@ void main() {
 
       // Verify initial value was recorded
       var metrics = memoryExporter.exportedMetrics;
-      expect(metrics.isNotEmpty, isTrue,
-          reason: "No metrics were exported in first collection");
+      expect(
+        metrics.isNotEmpty,
+        isTrue,
+        reason: "No metrics were exported in first collection",
+      );
 
       // Clear the exporter to make verification clearer
       memoryExporter.clear();
@@ -176,25 +204,37 @@ void main() {
 
       // Get the collected metrics from the second collection
       metrics = memoryExporter.exportedMetrics;
-      expect(metrics.isNotEmpty, isTrue,
-          reason: "No metrics were exported in second collection");
+      expect(
+        metrics.isNotEmpty,
+        isTrue,
+        reason: "No metrics were exported in second collection",
+      );
 
-      final metric = metrics.firstWhere((m) => m.name == 'overwrite_gauge',
-          orElse: () => throw StateError(
-              'overwrite_gauge metric not found: ${metrics.map((m) => m.name).join(', ')}'));
+      final metric = metrics.firstWhere(
+        (m) => m.name == 'overwrite_gauge',
+        orElse: () => throw StateError(
+          'overwrite_gauge metric not found: ${metrics.map((m) => m.name).join(', ')}',
+        ),
+      );
 
       // Verify we have at least one point
-      expect(metric.points.isNotEmpty, isTrue,
-          reason: "No points found in metric");
+      expect(
+        metric.points.isNotEmpty,
+        isTrue,
+        reason: "No points found in metric",
+      );
 
       // Find the point with our attributes
       final matchingPoints = metric.points
           .where((p) => p.attributes.getString('endpoint') == '/api/users')
           .toList();
 
-      expect(matchingPoints.isNotEmpty, isTrue,
-          reason:
-              "No points with '/api/users' endpoint attribute found. Available points: ${metric.points.map((p) => p.attributes.toString()).join(', ')}");
+      expect(
+        matchingPoints.isNotEmpty,
+        isTrue,
+        reason:
+            "No points with '/api/users' endpoint attribute found. Available points: ${metric.points.map((p) => p.attributes.toString()).join(', ')}",
+      );
 
       // Verify the value was overwritten
       expect(matchingPoints.first.value, equals(75.0));
@@ -216,20 +256,31 @@ void main() {
       final metrics = memoryExporter.exportedMetrics;
       expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
 
-      final intMetric = metrics.firstWhere((m) => m.name == 'int_gauge_type',
-          orElse: () => throw StateError(
-              'int_gauge_type metric not found: ${metrics.map((m) => m.name).join(', ')}'));
+      final intMetric = metrics.firstWhere(
+        (m) => m.name == 'int_gauge_type',
+        orElse: () => throw StateError(
+          'int_gauge_type metric not found: ${metrics.map((m) => m.name).join(', ')}',
+        ),
+      );
 
       final doubleMetric = metrics.firstWhere(
-          (m) => m.name == 'double_gauge_type',
-          orElse: () => throw StateError(
-              'double_gauge_type metric not found: ${metrics.map((m) => m.name).join(', ')}'));
+        (m) => m.name == 'double_gauge_type',
+        orElse: () => throw StateError(
+          'double_gauge_type metric not found: ${metrics.map((m) => m.name).join(', ')}',
+        ),
+      );
 
       // Verify we have at least one point for each metric
-      expect(intMetric.points.isNotEmpty, isTrue,
-          reason: "No points found in int_gauge_type metric");
-      expect(doubleMetric.points.isNotEmpty, isTrue,
-          reason: "No points found in double_gauge_type metric");
+      expect(
+        intMetric.points.isNotEmpty,
+        isTrue,
+        reason: "No points found in int_gauge_type metric",
+      );
+      expect(
+        doubleMetric.points.isNotEmpty,
+        isTrue,
+        reason: "No points found in double_gauge_type metric",
+      );
 
       // Verify values and types
       expect(intMetric.points.first.value, equals(42));

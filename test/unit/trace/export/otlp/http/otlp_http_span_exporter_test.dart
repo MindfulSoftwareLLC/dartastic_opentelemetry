@@ -54,10 +54,7 @@ void main() {
         final span = tracer.startSpan('test-span');
         span.end();
 
-        expect(
-          () => exporter.export([span]),
-          throwsA(isA<StateError>()),
-        );
+        expect(() => exporter.export([span]), throwsA(isA<StateError>()));
       });
 
       test('with empty span list returns without error', () async {
@@ -95,10 +92,7 @@ void main() {
         final span = tracer.startSpan('test-span');
         span.end();
 
-        expect(
-          () => exporter.export([span]),
-          throwsA(isA<StateError>()),
-        );
+        expect(() => exporter.export([span]), throwsA(isA<StateError>()));
       });
     });
 

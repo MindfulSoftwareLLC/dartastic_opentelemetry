@@ -26,17 +26,20 @@ void main() {
       }
     });
 
-    test('reads OTEL_EXPORTER_OTLP_ENDPOINT from environment or --dart-define',
-        () {
-      final endpoint =
-          EnvironmentService.instance.getValue(otelExporterOtlpEndpoint);
+    test(
+      'reads OTEL_EXPORTER_OTLP_ENDPOINT from environment or --dart-define',
+      () {
+        final endpoint = EnvironmentService.instance.getValue(
+          otelExporterOtlpEndpoint,
+        );
 
-      if (endpoint != null) {
-        expect(endpoint, isNotEmpty);
-        // Should be a valid URL format
-        expect(endpoint, contains('://'));
-      }
-    });
+        if (endpoint != null) {
+          expect(endpoint, isNotEmpty);
+          // Should be a valid URL format
+          expect(endpoint, contains('://'));
+        }
+      },
+    );
 
     test('--dart-define takes precedence over environment variables', () {
       // This test is meaningful when both are set
@@ -47,22 +50,28 @@ void main() {
       expect(serviceName, anyOf(isNull, isA<String>()));
     });
 
-    test('OTel.initialize uses environment variables when no params provided',
-        () async {
-      final serviceName = EnvironmentService.instance.getValue(otelServiceName);
+    test(
+      'OTel.initialize uses environment variables when no params provided',
+      () async {
+        final serviceName = EnvironmentService.instance.getValue(
+          otelServiceName,
+        );
 
-      await OTel.initialize();
+        await OTel.initialize();
 
-      final attrs = OTel.defaultResource!.attributes.toList();
-      final serviceNameAttr = attrs.firstWhere((a) => a.key == 'service.name');
+        final attrs = OTel.defaultResource!.attributes.toList();
+        final serviceNameAttr = attrs.firstWhere(
+          (a) => a.key == 'service.name',
+        );
 
-      if (serviceName != null && serviceName.isNotEmpty) {
-        expect(serviceNameAttr.value, equals(serviceName));
-      } else {
-        // Default service name should be set
-        expect(serviceNameAttr.value, isNotEmpty);
-      }
-    });
+        if (serviceName != null && serviceName.isNotEmpty) {
+          expect(serviceNameAttr.value, equals(serviceName));
+        } else {
+          // Default service name should be set
+          expect(serviceNameAttr.value, isNotEmpty);
+        }
+      },
+    );
 
     test('explicit parameters override environment variables', () async {
       // Even if OTEL_SERVICE_NAME is set, explicit parameter should win

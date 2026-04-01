@@ -44,6 +44,11 @@ class DartLogBridge {
   /// Whether the bridge is active.
   bool _isActive = false;
 
+  /// Re-entrancy guard to prevent infinite recursion when OTelLog.logFunction
+  /// is set to print (e.g. via OTEL_LOG_LEVEL env var) and print is
+  /// intercepted by the zone — OTelLog.debug → print → zone → log → OTelLog.debug → …
+  bool _isLogging = false;
+
   /// Singleton instance for the installed bridge.
   static DartLogBridge? _instance;
 
@@ -248,9 +253,17 @@ class DartLogBridge {
   ZoneSpecification createZoneSpecification() {
     return ZoneSpecification(
       print: (Zone self, ZoneDelegate parent, Zone zone, String line) {
-        // Capture print statements as INFO logs
-        if (_isActive) {
-          log(line, level: 800); // INFO level
+        // Capture print statements as INFO logs.
+        // Guard against re-entrancy: if OTelLog.logFunction == print, the
+        // log() call below can trigger OTelLog.debug → print → this handler
+        // again, causing a stack overflow.
+        if (_isActive && !_isLogging) {
+          _isLogging = true;
+          try {
+            log(line, level: 800); // INFO level
+          } finally {
+            _isLogging = false;
+          }
         }
         // Still call the original print
         parent.print(zone, line);

@@ -102,27 +102,29 @@ void main() {
       expect(result, equals('active-success'));
     });
 
-    test('startActiveSpanAsync executes with active span for async code',
-        () async {
-      // Execute async code with a new span that is automatically started and ended
-      final result = await tracer.startActiveSpanAsync(
-        name: 'active-async-span',
-        fn: (span) async {
-          // Simulate async work
-          await Future<void>.delayed(const Duration(milliseconds: 10));
+    test(
+      'startActiveSpanAsync executes with active span for async code',
+      () async {
+        // Execute async code with a new span that is automatically started and ended
+        final result = await tracer.startActiveSpanAsync(
+          name: 'active-async-span',
+          fn: (span) async {
+            // Simulate async work
+            await Future<void>.delayed(const Duration(milliseconds: 10));
 
-          // Verify currentSpan is the one we activated
-          expect(tracer.currentSpan, equals(span));
-          expect(span.name, equals('active-async-span'));
+            // Verify currentSpan is the one we activated
+            expect(tracer.currentSpan, equals(span));
+            expect(span.name, equals('active-async-span'));
 
-          // Return a value to test that return values work properly
-          return 'active-async-success';
-        },
-      );
+            // Return a value to test that return values work properly
+            return 'active-async-success';
+          },
+        );
 
-      // Verify return value
-      expect(result, equals('active-async-success'));
-    });
+        // Verify return value
+        expect(result, equals('active-async-success'));
+      },
+    );
 
     test('recordSpan automatically handles span creation and ending', () {
       // Use recordSpan to execute code with a new span
@@ -143,28 +145,30 @@ void main() {
       expect(result, equals('record-success'));
     });
 
-    test('recordSpanAsync automatically handles async span creation and ending',
-        () async {
-      // Use recordSpanAsync to execute async code with a new span
-      final result = await tracer.recordSpanAsync(
-        name: 'record-async-span',
-        fn: () async {
-          // Simulate async work
-          await Future<void>.delayed(const Duration(milliseconds: 10));
+    test(
+      'recordSpanAsync automatically handles async span creation and ending',
+      () async {
+        // Use recordSpanAsync to execute async code with a new span
+        final result = await tracer.recordSpanAsync(
+          name: 'record-async-span',
+          fn: () async {
+            // Simulate async work
+            await Future<void>.delayed(const Duration(milliseconds: 10));
 
-          // Code inside this function is executed with a span
-          final currentSpan = tracer.currentSpan;
-          expect(currentSpan, isNotNull);
-          expect(currentSpan!.name, equals('record-async-span'));
+            // Code inside this function is executed with a span
+            final currentSpan = tracer.currentSpan;
+            expect(currentSpan, isNotNull);
+            expect(currentSpan!.name, equals('record-async-span'));
 
-          // Return a value to test that return values work properly
-          return 'record-async-success';
-        },
-      );
+            // Return a value to test that return values work properly
+            return 'record-async-success';
+          },
+        );
 
-      // Verify return value
-      expect(result, equals('record-async-success'));
-    });
+        // Verify return value
+        expect(result, equals('record-async-success'));
+      },
+    );
 
     test('recordSpan sets error status on exception', () {
       // Try to use recordSpan with code that throws an exception

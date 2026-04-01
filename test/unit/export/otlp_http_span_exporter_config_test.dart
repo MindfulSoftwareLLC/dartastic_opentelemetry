@@ -50,23 +50,17 @@ void main() {
     });
 
     test('http://localhost without port gets :4318 appended', () {
-      final config = OtlpHttpExporterConfig(
-        endpoint: 'http://localhost',
-      );
+      final config = OtlpHttpExporterConfig(endpoint: 'http://localhost');
       expect(config.endpoint, equals('http://localhost:4318'));
     });
 
     test('http://127.0.0.1 without port gets :4318 appended', () {
-      final config = OtlpHttpExporterConfig(
-        endpoint: 'http://127.0.0.1',
-      );
+      final config = OtlpHttpExporterConfig(endpoint: 'http://127.0.0.1');
       expect(config.endpoint, equals('http://127.0.0.1:4318'));
     });
 
     test('https://localhost without port gets :4318 appended', () {
-      final config = OtlpHttpExporterConfig(
-        endpoint: 'https://localhost',
-      );
+      final config = OtlpHttpExporterConfig(endpoint: 'https://localhost');
       expect(config.endpoint, equals('https://localhost:4318'));
     });
 
@@ -87,36 +81,29 @@ void main() {
 
     test('empty header key throws ArgumentError', () {
       expect(
-        () => OtlpHttpExporterConfig(
-          headers: {'': 'some-value'},
-        ),
+        () => OtlpHttpExporterConfig(headers: {'': 'some-value'}),
         throwsA(isA<ArgumentError>()),
       );
     });
 
     test('empty header value throws ArgumentError', () {
       expect(
-        () => OtlpHttpExporterConfig(
-          headers: {'valid-key': ''},
-        ),
+        () => OtlpHttpExporterConfig(headers: {'valid-key': ''}),
         throwsA(isA<ArgumentError>()),
       );
     });
 
     test('timeout below 1ms throws ArgumentError', () {
       expect(
-        () => OtlpHttpExporterConfig(
-          timeout: const Duration(microseconds: 500),
-        ),
+        () =>
+            OtlpHttpExporterConfig(timeout: const Duration(microseconds: 500)),
         throwsA(isA<ArgumentError>()),
       );
     });
 
     test('timeout above 10 minutes throws ArgumentError', () {
       expect(
-        () => OtlpHttpExporterConfig(
-          timeout: const Duration(minutes: 11),
-        ),
+        () => OtlpHttpExporterConfig(timeout: const Duration(minutes: 11)),
         throwsA(isA<ArgumentError>()),
       );
     });
@@ -151,9 +138,7 @@ void main() {
 
     test('maxDelay above 5 minutes throws ArgumentError', () {
       expect(
-        () => OtlpHttpExporterConfig(
-          maxDelay: const Duration(minutes: 6),
-        ),
+        () => OtlpHttpExporterConfig(maxDelay: const Duration(minutes: 6)),
         throwsA(isA<ArgumentError>()),
       );
     });

@@ -20,11 +20,7 @@ class BaggageOperationsBenchmark extends DartasticBenchmark {
   void setup() {
     _testBaggage = OTel.baggage();
     for (var i = 0; i < numEntries; i++) {
-      _testBaggage = _testBaggage.copyWith(
-        'key.$i',
-        'value.$i',
-        'metadata.$i',
-      );
+      _testBaggage = _testBaggage.copyWith('key.$i', 'value.$i', 'metadata.$i');
     }
   }
 
@@ -57,11 +53,7 @@ class BaggageIsolateBenchmark extends DartasticBenchmark {
   void setup() {
     Baggage baggage = OTel.baggage();
     for (var i = 0; i < numEntries; i++) {
-      baggage = baggage.copyWith(
-        'key.$i',
-        'value.$i',
-        'metadata.$i',
-      );
+      baggage = baggage.copyWith('key.$i', 'value.$i', 'metadata.$i');
     }
   }
 
@@ -125,7 +117,8 @@ class BaggageMemoryBenchmark extends DartasticBenchmark {
     print('    RSS: ${snapshot.rss ~/ 1024} KB');
     print('    Heap: ${snapshot.heap ~/ 1024} KB');
     print(
-        '  Average memory per entry: ${(snapshot.heap / (numUniqueKeys * numValuesPerKey)).toStringAsFixed(2)} bytes');
+      '  Average memory per entry: ${(snapshot.heap / (numUniqueKeys * numValuesPerKey)).toStringAsFixed(2)} bytes',
+    );
   }
 }
 
@@ -141,10 +134,7 @@ void main() {
   BaggageIsolateBenchmark(numEntries: 50).runAndPrint();
 
   // Memory impact benchmarks
-  BaggageMemoryBenchmark(
-    numUniqueKeys: 10,
-    numValuesPerKey: 100,
-  ).runAndPrint();
+  BaggageMemoryBenchmark(numUniqueKeys: 10, numValuesPerKey: 100).runAndPrint();
   BaggageMemoryBenchmark(
     numUniqueKeys: 100,
     numValuesPerKey: 1000,

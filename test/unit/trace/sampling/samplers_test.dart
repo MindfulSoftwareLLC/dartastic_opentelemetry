@@ -82,32 +82,34 @@ void main() {
     test('samples every Nth request', () {
       final sampler = CountingSampler(3);
       final decisions = List.generate(
-          9,
-          (index) => sampler
-              .shouldSample(
-                parentContext: emptyContext,
-                traceId: 'trace$index',
-                name: 'test',
-                spanKind: SpanKind.internal,
-                attributes: null,
-                links: null,
-              )
-              .decision);
+        9,
+        (index) => sampler
+            .shouldSample(
+              parentContext: emptyContext,
+              traceId: 'trace$index',
+              name: 'test',
+              spanKind: SpanKind.internal,
+              attributes: null,
+              links: null,
+            )
+            .decision,
+      );
 
       // Should sample every 3rd request (indices 2, 5, 8)
       expect(
-          decisions,
-          equals([
-            SamplingDecision.drop,
-            SamplingDecision.drop,
-            SamplingDecision.recordAndSample,
-            SamplingDecision.drop,
-            SamplingDecision.drop,
-            SamplingDecision.recordAndSample,
-            SamplingDecision.drop,
-            SamplingDecision.drop,
-            SamplingDecision.recordAndSample,
-          ]));
+        decisions,
+        equals([
+          SamplingDecision.drop,
+          SamplingDecision.drop,
+          SamplingDecision.recordAndSample,
+          SamplingDecision.drop,
+          SamplingDecision.drop,
+          SamplingDecision.recordAndSample,
+          SamplingDecision.drop,
+          SamplingDecision.drop,
+          SamplingDecision.recordAndSample,
+        ]),
+      );
     });
 
     test('overrides count based on error condition', () {
@@ -155,7 +157,7 @@ void main() {
       final sampler = CountingSampler(
         3,
         overrideConditions: [
-          AttributeSamplingCondition('priority', stringValue: 'high')
+          AttributeSamplingCondition('priority', stringValue: 'high'),
         ],
       );
 
@@ -175,8 +177,10 @@ void main() {
 
   group('RateLimitingSampler', () {
     test('limits sampling rate', () async {
-      final sampler = RateLimitingSampler(10,
-          timeWindow: const Duration(milliseconds: 100)); // 10 per second
+      final sampler = RateLimitingSampler(
+        10,
+        timeWindow: const Duration(milliseconds: 100),
+      ); // 10 per second
       var sampledCount = 0;
 
       // Try to sample 100 times in rapid succession
@@ -196,15 +200,19 @@ void main() {
 
       // Should be limited to roughly 1 sample (10 per second * 0.1 seconds)
       expect(
-          sampledCount, lessThanOrEqualTo(2)); // Allow some margin for timing
+        sampledCount,
+        lessThanOrEqualTo(2),
+      ); // Allow some margin for timing
 
       // Clean up
       sampler.dispose();
     });
 
     test('replenishes tokens over time', () async {
-      final sampler = RateLimitingSampler(10,
-          timeWindow: const Duration(milliseconds: 100));
+      final sampler = RateLimitingSampler(
+        10,
+        timeWindow: const Duration(milliseconds: 100),
+      );
       var initialSampledCount = 0;
       var laterSampledCount = 0;
 
@@ -309,34 +317,38 @@ void main() {
       ]);
 
       final decisions = List.generate(
-          4,
-          (index) => sampler
-              .shouldSample(
-                parentContext: emptyContext,
-                traceId: 'trace$index',
-                name: 'test',
-                spanKind: SpanKind.internal,
-                attributes: null,
-                links: null,
-              )
-              .decision);
+        4,
+        (index) => sampler
+            .shouldSample(
+              parentContext: emptyContext,
+              traceId: 'trace$index',
+              name: 'test',
+              spanKind: SpanKind.internal,
+              attributes: null,
+              links: null,
+            )
+            .decision,
+      );
 
       // Should only sample every 2nd request due to CountingSampler
       expect(
-          decisions,
-          equals([
-            SamplingDecision.drop,
-            SamplingDecision.recordAndSample,
-            SamplingDecision.drop,
-            SamplingDecision.recordAndSample,
-          ]));
+        decisions,
+        equals([
+          SamplingDecision.drop,
+          SamplingDecision.recordAndSample,
+          SamplingDecision.drop,
+          SamplingDecision.recordAndSample,
+        ]),
+      );
     });
 
     test('OR composition accepts if any sampler accepts', () {
       final sampler = CompositeSampler.or([
         CountingSampler(3), // Samples every 3rd
-        AttributeSamplingCondition('priority',
-            stringValue: 'high'), // Samples high priority
+        AttributeSamplingCondition(
+          'priority',
+          stringValue: 'high',
+        ), // Samples high priority
       ]);
 
       final results = [
@@ -376,12 +388,13 @@ void main() {
       ];
 
       expect(
-          results,
-          equals([
-            SamplingDecision.drop,
-            SamplingDecision.recordAndSample,
-            SamplingDecision.recordAndSample,
-          ]));
+        results,
+        equals([
+          SamplingDecision.drop,
+          SamplingDecision.recordAndSample,
+          SamplingDecision.recordAndSample,
+        ]),
+      );
     });
   });
 }

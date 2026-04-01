@@ -19,9 +19,9 @@ class OTelEnv {
   /// and configures the OTelLog accordingly.
   ///
   /// If a custom log function has already been set (e.g., by tests),
-  /// this method will preserve it and only update the log level.
-  /// This allows tests to capture logs while still respecting
-  /// environment variable configuration.
+  /// this method will preserve it along with the current log level.
+  /// This allows tests to fully control logging configuration without
+  /// environment variables overriding their settings.
   static void initializeLogging() {
     // Save the current log function to check if it's custom
     final existingLogFunction = OTelLog.logFunction;
@@ -30,9 +30,10 @@ class OTelEnv {
     final hasCustomLogFunction =
         existingLogFunction != null && existingLogFunction != print;
 
-    // Set log level based on environment variable
+    // Set log level and function based on environment variable,
+    // but only if no custom log function is already configured.
     final logLevel = _getEnv(otelLogLevel)?.toLowerCase();
-    if (logLevel != null) {
+    if (logLevel != null && !hasCustomLogFunction) {
       switch (logLevel) {
         case 'trace':
           OTelLog.enableTraceLogging();
@@ -57,10 +58,7 @@ class OTelEnv {
           break;
       }
 
-      // Only set to print if no custom function is already configured
-      if (!hasCustomLogFunction) {
-        OTelLog.logFunction = print;
-      }
+      OTelLog.logFunction = print;
     }
 
     // Enable metrics logging based on environment variable

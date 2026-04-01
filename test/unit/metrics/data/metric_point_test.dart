@@ -233,10 +233,7 @@ void main() {
           value: 42,
         );
 
-        expect(
-          point.histogram,
-          throwsA(isA<StateError>()),
-        );
+        expect(point.histogram, throwsA(isA<StateError>()));
       });
     });
   });

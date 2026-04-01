@@ -22,8 +22,9 @@ void main() {
 
       // Act
       final compressed = await gzip.compress(originalBytes);
-      final decompressed =
-          await gzip.decompress(Uint8List.fromList(compressed));
+      final decompressed = await gzip.decompress(
+        Uint8List.fromList(compressed),
+      );
       final decompressedString = utf8.decode(decompressed);
 
       // Assert
@@ -40,8 +41,9 @@ void main() {
 
       // Act
       final compressed = await gzip.compress(emptyData);
-      final decompressed =
-          await gzip.decompress(Uint8List.fromList(compressed));
+      final decompressed = await gzip.decompress(
+        Uint8List.fromList(compressed),
+      );
 
       // Assert
       expect(decompressed, isEmpty);
@@ -53,8 +55,9 @@ void main() {
 
       // Act
       final compressed = await gzip.compress(smallData);
-      final decompressed =
-          await gzip.decompress(Uint8List.fromList(compressed));
+      final decompressed = await gzip.decompress(
+        Uint8List.fromList(compressed),
+      );
 
       // Assert
       expect(Uint8List.fromList(decompressed), equals(smallData));
@@ -62,13 +65,15 @@ void main() {
 
     test('should handle large data', () async {
       // Arrange
-      final largeData =
-          Uint8List.fromList(List.generate(100000, (i) => i % 256));
+      final largeData = Uint8List.fromList(
+        List.generate(100000, (i) => i % 256),
+      );
 
       // Act
       final compressed = await gzip.compress(largeData);
-      final decompressed =
-          await gzip.decompress(Uint8List.fromList(compressed));
+      final decompressed = await gzip.decompress(
+        Uint8List.fromList(compressed),
+      );
 
       // Assert
       expect(Uint8List.fromList(decompressed), equals(largeData));
@@ -78,13 +83,15 @@ void main() {
 
     test('should handle data with repetition efficiently', () async {
       // Arrange
-      final repeatedData =
-          Uint8List.fromList(List.filled(10000, 65)); // 'A' repeated
+      final repeatedData = Uint8List.fromList(
+        List.filled(10000, 65),
+      ); // 'A' repeated
 
       // Act
       final compressed = await gzip.compress(repeatedData);
-      final decompressed =
-          await gzip.decompress(Uint8List.fromList(compressed));
+      final decompressed = await gzip.decompress(
+        Uint8List.fromList(compressed),
+      );
 
       // Assert
       expect(Uint8List.fromList(decompressed), equals(repeatedData));
@@ -98,8 +105,9 @@ void main() {
 
       // Act
       final compressed = await gzip.compress(binaryData);
-      final decompressed =
-          await gzip.decompress(Uint8List.fromList(compressed));
+      final decompressed = await gzip.decompress(
+        Uint8List.fromList(compressed),
+      );
 
       // Assert
       expect(Uint8List.fromList(decompressed), equals(binaryData));
@@ -111,33 +119,34 @@ void main() {
         'resource': {
           'service.name': 'test-service',
           'service.version': '1.0.0',
-          'deployment.environment': 'test'
+          'deployment.environment': 'test',
         },
         'spans': List.generate(
-            100,
-            (i) => {
-                  'name': 'span-$i',
-                  'trace_id': '0123456789abcdef0123456789abcdef',
-                  'span_id': '0123456789abcdef',
-                  'parent_span_id': '',
-                  'start_time': '2025-01-01T00:00:00Z',
-                  'end_time': '2025-01-01T00:00:01Z',
-                  'attributes': {
-                    'http.method': 'GET',
-                    'http.url': 'https://example.com/api/items/$i',
-                    'http.status_code': 200
-                  },
-                  'events': [
-                    {
-                      'name': 'exception',
-                      'time': '2025-01-01T00:00:00.500Z',
-                      'attributes': {
-                        'exception.type': 'NotFoundException',
-                        'exception.message': 'Resource not found'
-                      }
-                    }
-                  ]
-                })
+          100,
+          (i) => {
+            'name': 'span-$i',
+            'trace_id': '0123456789abcdef0123456789abcdef',
+            'span_id': '0123456789abcdef',
+            'parent_span_id': '',
+            'start_time': '2025-01-01T00:00:00Z',
+            'end_time': '2025-01-01T00:00:01Z',
+            'attributes': {
+              'http.method': 'GET',
+              'http.url': 'https://example.com/api/items/$i',
+              'http.status_code': 200,
+            },
+            'events': [
+              {
+                'name': 'exception',
+                'time': '2025-01-01T00:00:00.500Z',
+                'attributes': {
+                  'exception.type': 'NotFoundException',
+                  'exception.message': 'Resource not found',
+                },
+              },
+            ],
+          },
+        ),
       };
 
       final jsonString = jsonEncode(jsonData);
@@ -145,8 +154,9 @@ void main() {
 
       // Act
       final compressed = await gzip.compress(jsonBytes);
-      final decompressed =
-          await gzip.decompress(Uint8List.fromList(compressed));
+      final decompressed = await gzip.decompress(
+        Uint8List.fromList(compressed),
+      );
       final decompressedJson = utf8.decode(decompressed);
 
       // Assert

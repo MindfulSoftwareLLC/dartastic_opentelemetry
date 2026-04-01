@@ -35,14 +35,16 @@ Future<void> main(List<String> arguments) async {
       // attributedFromMap can throw with bad types, OTel has typesafe attribute methods
       OTel.attributes([
         OTel.attributeString('event-foo', 'bar'),
-        OTel.attributeBool('event-baz', true)
+        OTel.attributeBool('event-baz', true),
       ]),
     );
   } catch (e, s) {
     print('\nHandling exception...');
     rootSpan.recordException(e, stackTrace: s);
     rootSpan.setStatus(
-        SpanStatusCode.Error, 'Error running importantFunction $e');
+      SpanStatusCode.Error,
+      'Error running importantFunction $e',
+    );
   } finally {
     print('\nEnding span (this should trigger ConsoleExporter export)...');
     // Ending a span sets the span status to SpanStatusCode.Ok, unless
