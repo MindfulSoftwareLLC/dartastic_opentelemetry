@@ -112,15 +112,9 @@ void main() {
         await collector.start();
       }
 
-      // Initialize OTel with proper configuration
-      await OTel.initialize(
-        endpoint: 'http://localhost:${collector.getPort}',
-        serviceName: 'test-service-context-$uniqueId',
-        serviceVersion: '1.0.0',
-      );
-
-      tracerProvider = OTel.tracerProvider();
-
+      // Create gRPC exporter and processor before initialization so we can
+      // pass the processor to initialize() and avoid a default HTTP exporter
+      // being created (the collector speaks gRPC, not HTTP).
       final exporter = OtlpGrpcSpanExporter(
         OtlpGrpcExporterConfig(
           endpoint: 'http://localhost:${collector.getPort}',
@@ -135,7 +129,16 @@ void main() {
       );
 
       final processor = SimpleSpanProcessor(exporter);
-      tracerProvider.addSpanProcessor(processor);
+
+      // Initialize OTel with the gRPC processor to prevent default HTTP exporter
+      await OTel.initialize(
+        endpoint: 'http://localhost:${collector.getPort}',
+        serviceName: 'test-service-context-$uniqueId',
+        serviceVersion: '1.0.0',
+        spanProcessor: processor,
+      );
+
+      tracerProvider = OTel.tracerProvider();
 
       tracer = tracerProvider.getTracer('test-tracer-$uniqueId');
 

@@ -5,8 +5,8 @@ This document outlines the steps to follow when publishing a new version of the 
 ## Pre-release Checklist
 
 ### Code Quality
-- [ ] All tests are passing (`dart test`)
-- [ ] Code coverage is at acceptable levels (>90%)
+- [ ] All tests are passing (`./tool/test.sh`)
+- [ ] Code coverage is >90% (`./tool/coverage.sh`)
 - [ ] No lint warnings (`dart analyze`)
 - [ ] Code is properly formatted (`dart format .`)
 - [ ] Package scores well on `pana` analysis
