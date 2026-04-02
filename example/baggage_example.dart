@@ -14,7 +14,7 @@ Future<void> main() async {
   // Chain operations to build up the baggage you need
   // Best practice: Use dot notation for key namespacing to avoid conflicts
   final enrichedBaggage = baggage
-      .copyWith('deployment.environment', 'staging')
+      .copyWith(EnvironmentResource.deploymentEnvironment.key, 'staging')
       .copyWith('user.region', 'us-west', 'source=user profile');
 
   // Baggage is always associated with a Context
@@ -88,7 +88,7 @@ Future<void> distributedTracingExample() async {
     final serviceBaggage = Context.currentWithBaggage()
         .baggage!
         .copyWith('service.instance', 'backend-01')
-        .copyWith('service.version', '2.1.0');
+        .copyWith(ServiceResource.serviceVersion.key, '2.1.0');
 
     // Best practice: Update context when baggage changes
     // This ensures proper propagation
@@ -113,7 +113,7 @@ Future<void> monitoringExample() async {
   // Examples: service names, regions, environments
   final baseContext = OTel.context().withBaggage(
     OTel.baggage()
-        .copyWith('service.name', 'payment-processor')
+        .copyWith(ServiceResource.serviceName.key, 'payment-processor')
         .copyWith('deployment.region', 'us-west-2'),
   );
 

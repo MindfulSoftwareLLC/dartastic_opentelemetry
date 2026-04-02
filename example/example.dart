@@ -71,9 +71,9 @@ Future<void> performDatabaseQuery(Tracer tracer, Span parentSpan) async {
     // Link to parent span via context
     context: OTel.context(spanContext: parentSpan.spanContext),
     attributes: OTel.attributesFromMap({
-      'db.system': 'postgresql',
-      'db.operation': 'SELECT',
-      'db.name': 'users',
+      DatabaseResource.dbSystem.key: 'postgresql',
+      DatabaseResource.dbOperation.key: 'SELECT',
+      DatabaseResource.dbName.key: 'users',
     }),
   );
 
@@ -93,9 +93,11 @@ Future<void> callExternalService(Tracer tracer, Span parentSpan) async {
     kind: SpanKind.client,
     context: OTel.context(spanContext: parentSpan.spanContext),
     attributes: OTel.attributesFromMap({
-      'http.method': 'GET',
-      'http.url': 'https://api.example.com/data',
-      'http.target': '/data',
+      HttpResource.requestMethod.key: 'GET',
+      // TODO: Replace with UrlResource.urlFull.key once added to the API
+      // semantics (OTel renamed http.url → url.full).
+      'url.full': 'https://api.example.com/data',
+      'url.path': '/data',
     }),
   );
 
@@ -106,7 +108,7 @@ Future<void> callExternalService(Tracer tracer, Span parentSpan) async {
     // Add response attributes
     span.addAttributes(
       OTel.attributesFromMap({
-        'http.status_code': 200,
+        HttpResource.responseStatusCode.key: 200,
         'http.response_content_length': 1024,
       }),
     );

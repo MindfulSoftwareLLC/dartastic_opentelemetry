@@ -104,9 +104,11 @@ Future<void> traceHttpRequest(Tracer tracer) async {
     'http.request',
     kind: SpanKind.client,
     attributes: OTel.attributesFromMap({
-      'http.method': 'GET',
-      'http.url': 'https://api.example.com/users/123',
-      'http.target': '/users/123',
+      HttpResource.requestMethod.key: 'GET',
+      // TODO: Replace with UrlResource.urlFull.key once added to the API
+      // semantics (OTel renamed http.url → url.full).
+      'url.full': 'https://api.example.com/users/123',
+      'url.path': '/users/123',
       'net.peer.name': 'api.example.com',
       'net.peer.port': 443,
     }),
@@ -119,14 +121,14 @@ Future<void> traceHttpRequest(Tracer tracer) async {
     // Set response attributes
     span.addAttributes(
       OTel.attributesFromMap({
-        'http.status_code': 200,
+        HttpResource.responseStatusCode.key: 200,
         'http.response_content_length': 1234,
       }),
     );
 
     span.setStatus(SpanStatusCode.Ok);
   } catch (error) {
-    span.addAttributes(OTel.attributesFromMap({'http.status_code': 500}));
+    span.addAttributes(OTel.attributesFromMap({HttpResource.responseStatusCode.key: 500}));
     span.setStatus(SpanStatusCode.Error, 'HTTP request failed');
     span.recordException(error);
   } finally {
@@ -140,11 +142,11 @@ Future<void> traceDatabaseOperation(Tracer tracer) async {
     'db.query',
     kind: SpanKind.client,
     attributes: OTel.attributesFromMap({
-      'db.system': 'postgresql',
-      'db.name': 'users_db',
-      'db.operation': 'SELECT',
-      'db.statement': 'SELECT * FROM users WHERE active = true LIMIT 100',
-      'db.user': 'app_user',
+      DatabaseResource.dbSystem.key: 'postgresql',
+      DatabaseResource.dbName.key: 'users_db',
+      DatabaseResource.dbOperation.key: 'SELECT',
+      DatabaseResource.dbStatement.key: 'SELECT * FROM users WHERE active = true LIMIT 100',
+      DatabaseResource.dbUser.key: 'app_user',
       'net.peer.name': 'postgres.example.com',
       'net.peer.port': 5432,
     }),
