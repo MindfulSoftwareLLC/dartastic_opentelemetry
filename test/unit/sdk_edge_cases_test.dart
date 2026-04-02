@@ -9,10 +9,7 @@ import 'dart:async';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/src/environment/env_from_define.dart';
-import 'package:dartastic_opentelemetry/src/logs/export/logs_config.dart';
-import 'package:dartastic_opentelemetry/src/resource/resource_detector.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
-import 'package:fixnum/fixnum.dart';
 import 'package:test/test.dart';
 
 // ---------------------------------------------------------------------------
