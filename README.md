@@ -80,7 +80,7 @@ billions of customers.  Don't forget:
 Include this in your pubspec.yaml:
 ```
 dependencies:
-  dartastic_opentelemetry: ^0.9.3
+  dartastic_opentelemetry: ^1.0.0-alpha
 ```
 
 The entrypoint to the SDK is the `OTel` class.  `OTel` has static "factory" methods for all
@@ -718,18 +718,13 @@ final observableCounter = meter.createObservableCounter(
 
 ## OpenTelemetry Logs API
 
-<<<<<<< HEAD
-The Logs API in OpenTelemetry provides a way to record log events from your application. These logs can be exported to an OpenTelemetry backend for analysis alongside traces and metrics.
-=======
 The Logs API provides structured logging that integrates with traces and metrics.  Unlike traditional logging
 frameworks, OpenTelemetry logs are first-class telemetry signals that carry context, severity, attributes,
 and can be correlated with the span that was active when the log was emitted.
->>>>>>> 4831683 (chore: Test coverage from 69% to 90%, bug fixes, version 1.0.0-alpha)
 
 ### Concepts
 
 - **LoggerProvider**: Entry point to the logs API, responsible for creating Loggers
-<<<<<<< HEAD
 - **Logger**: Used to emit log records
 - **LogRecord**: Represents a single log event with body, severity, attributes, timestamps, and trace context
 - **LogRecordProcessor**: Processes log records before export
@@ -817,62 +812,6 @@ await OTel.runWithPrintInterceptionAsync(() async {
 | `Severity.ERROR` / `Severity.ERROR2-4` | Error conditions |
 | `Severity.FATAL` / `Severity.FATAL2-4` | Critical failures |
 
-### Custom Log Exporters
-
-```dart
-// Use a custom exporter
-final customExporter = OtlpHttpLogRecordExporter(
-  OtlpHttpLogRecordExporterConfig(
-    endpoint: 'https://my-collector:4318',
-    headers: {'Authorization': 'Bearer token'},
-  ),
-);
-
-await OTel.initialize(
-  serviceName: 'my-service',
-  logRecordExporter: customExporter,
-);
-```
-
-### Console Logging (Development)
-
-```dart
-// Use console exporter for development
-await OTel.initialize(
-  serviceName: 'my-service',
-  logRecordProcessor: SimpleLogRecordProcessor(ConsoleLogRecordExporter()),
-);
-```
-
-### Configuration via Environment Variables
-
-Logs can be configured via environment variables:
-
-```bash
-# Set logs exporter (otlp, console, or none)
-export OTEL_LOGS_EXPORTER=otlp
-
-# Set logs-specific endpoint
-export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs-collector:4318
-
-# Configure batch processor
-export OTEL_BLRP_SCHEDULE_DELAY=5000
-export OTEL_BLRP_MAX_QUEUE_SIZE=4096
-
-# Set log record limits
-export OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT=128
-```
-
-## Integration with Dartastic/Flutterrific
-
-This API implementation follows the same pattern as the tracing API, where the creation of objects is managed through
-factory methods. This allows for a clear separation between API and SDK, and ensures that the metrics and logs functionality
-can be used in a no-op mode when the SDK is not initialized.
-=======
-- **Logger**: Emits LogRecords for a particular instrumentation scope
-- **LogRecord**: A single log entry with timestamp, severity, body, attributes, and trace context
-- **Severity**: A 24-level severity scale grouped into standard levels (TRACE, DEBUG, INFO, WARN, ERROR, FATAL)
-
 ### Basic Logging
 
 ```dart
@@ -927,7 +866,54 @@ try {
 } finally {
   span.end();
 }
+
 ```
+### Custom Log Exporters
+
+```dart
+// Use a custom exporter
+final customExporter = OtlpHttpLogRecordExporter(
+  OtlpHttpLogRecordExporterConfig(
+    endpoint: 'https://my-collector:4318',
+    headers: {'Authorization': 'Bearer token'},
+  ),
+);
+
+await OTel.initialize(
+  serviceName: 'my-service',
+  logRecordExporter: customExporter,
+);
+```
+
+### Console Logging (Development)
+
+```dart
+// Use console exporter for development
+await OTel.initialize(
+  serviceName: 'my-service',
+  logRecordProcessor: SimpleLogRecordProcessor(ConsoleLogRecordExporter()),
+);
+```
+
+### Configuration via Environment Variables
+
+Logs can be configured via environment variables:
+
+```bash
+# Set logs exporter (otlp, console, or none)
+export OTEL_LOGS_EXPORTER=otlp
+
+# Set logs-specific endpoint
+export OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=https://logs-collector:4318
+
+# Configure batch processor
+export OTEL_BLRP_SCHEDULE_DELAY=5000
+export OTEL_BLRP_MAX_QUEUE_SIZE=4096
+
+# Set log record limits
+export OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT=128
+```
+
 
 ### Severity Levels
 
@@ -984,10 +970,10 @@ logger.emit(
 );
 ```
 
+
 ## Integration with Dartastic/Flutterrific
 
 All three signal APIs (Traces, Metrics, Logs) follow the same multi-layered factory pattern:
->>>>>>> 4831683 (chore: Test coverage from 69% to 90%, bug fixes, version 1.0.0-alpha)
 
 1. **API Layer**: Defines interfaces and provides no-op implementations
 2. **SDK Layer**: Provides concrete implementations with export and processing
