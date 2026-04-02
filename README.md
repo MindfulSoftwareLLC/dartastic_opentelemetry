@@ -2,14 +2,15 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![OpenTelemetry Specification](https://img.shields.io/badge/OpenTelemetry-Specification-blueviolet)](https://opentelemetry.io/docs/specs/otel/)
-[![Coverage Report](https://img.shields.io/badge/coverage-report-brightgreen.svg)](https://mindfulsoftwarellc.github.io/dartastic_opentelemetry/)
+[![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen.svg)](https://mindfulsoftwarellc.github.io/dartastic_opentelemetry/)
 
 Dartastic is an [OpenTelemetry](https://opentelemetry.io/) SDK to add standard observability to Dart applications.
 Dartastic can be used with any OTel backend since it's standards-compliant.
 
 Flutter developers should use the [Flutterific OpenTelemetry SDK](https://pub.dev/packages/flutterrific_opentelemetry/) which builds on top of Dartastic OTel.
 
-The Dartastic OTel SDK has been proposed for [Donation to the CNCF](https://github.com/open-telemetry/community/issues/2718).
+The Dartastic OTel SDK is in the process of being [Donation to the CNCF](https://github.com/open-telemetry/community/issues/2718) 
+to become the offical standard for Dart and Flutter OpenTelemetry.
 
 [Dartastic.io](https://dartastic.io) provides an OpenTelemetry support, training, consulting
 and an Observability backend customized for Flutter apps, Dart backends, and any other service or process that produces
@@ -69,7 +70,7 @@ Dartastic and Flutterrific OTel are made with 💙 by Michael Bushe at [Mindful 
 
 Michael is eternally grateful for the individual developers and small companies for their contributions. 
 
-Michael explicitly expresses his disthanks for the massive commercial companies in telcom, healthcare, Point of Sale, and more 
+Michael explicitly expresses his disthanks for the massive commercial companies in telcom, healthcare, point of sale, and more 
 who took time and provided nothing but requests for free software to support their 
 billions of customers.  Don't forget:
 
