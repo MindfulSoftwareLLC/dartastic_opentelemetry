@@ -108,6 +108,7 @@ void main() {
         serviceName: 'logs-env-test',
         detectPlatformResources: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
       );
 
       final provider = OTel.loggerProvider();
