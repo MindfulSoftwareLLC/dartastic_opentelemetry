@@ -12,6 +12,8 @@ import 'package:dartastic_opentelemetry/src/environment/env_from_define.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:test/test.dart';
 
+import '../testing_utils/memory_log_record_exporter.dart';
+
 // ---------------------------------------------------------------------------
 // Test doubles
 // ---------------------------------------------------------------------------
@@ -219,6 +221,7 @@ void main() {
         serviceName: 'log-record-test',
         detectPlatformResources: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
       );
       OTelLog.enableTraceLogging();
       OTelLog.logFunction = logOutput.add;
@@ -235,6 +238,7 @@ void main() {
         serviceName: 'log-record-attr-test',
         detectPlatformResources: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
       );
       OTelLog.enableTraceLogging();
       OTelLog.logFunction = logOutput.add;
@@ -257,6 +261,7 @@ void main() {
         serviceName: 'logger-error-test',
         detectPlatformResources: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
       );
       OTelLog.enableTraceLogging();
       OTelLog.logFunction = logOutput.add;
@@ -276,6 +281,7 @@ void main() {
         serviceName: 'logger-ts-test',
         detectPlatformResources: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
       );
       OTelLog.enableTraceLogging();
       OTelLog.logFunction = logOutput.add;
@@ -298,6 +304,7 @@ void main() {
         serviceName: 'simple-proc-test',
         detectPlatformResources: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
       );
       OTelLog.enableTraceLogging();
       OTelLog.logFunction = logOutput.add;
@@ -340,6 +347,7 @@ void main() {
         serviceName: 'provider-log-test',
         detectPlatformResources: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
       );
 
       expect(
@@ -358,6 +366,7 @@ void main() {
         serviceName: 'print-intercept-test',
         detectPlatformResources: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
       );
       OTelLog.enableTraceLogging();
       OTelLog.logFunction = logOutput.add;
@@ -371,6 +380,7 @@ void main() {
         serviceName: 'print-intercept-async-test',
         detectPlatformResources: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
       );
       OTelLog.enableTraceLogging();
       OTelLog.logFunction = logOutput.add;

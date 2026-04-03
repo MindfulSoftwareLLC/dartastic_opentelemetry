@@ -128,7 +128,8 @@ Future<void> traceHttpRequest(Tracer tracer) async {
 
     span.setStatus(SpanStatusCode.Ok);
   } catch (error) {
-    span.addAttributes(OTel.attributesFromMap({HttpResource.responseStatusCode.key: 500}));
+    span.addAttributes(
+        OTel.attributesFromMap({HttpResource.responseStatusCode.key: 500}));
     span.setStatus(SpanStatusCode.Error, 'HTTP request failed');
     span.recordException(error);
   } finally {
@@ -145,7 +146,8 @@ Future<void> traceDatabaseOperation(Tracer tracer) async {
       DatabaseResource.dbSystem.key: 'postgresql',
       DatabaseResource.dbName.key: 'users_db',
       DatabaseResource.dbOperation.key: 'SELECT',
-      DatabaseResource.dbStatement.key: 'SELECT * FROM users WHERE active = true LIMIT 100',
+      DatabaseResource.dbStatement.key:
+          'SELECT * FROM users WHERE active = true LIMIT 100',
       DatabaseResource.dbUser.key: 'app_user',
       'net.peer.name': 'postgres.example.com',
       'net.peer.port': 5432,

@@ -20,6 +20,8 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:test/test.dart';
 
+import '../../testing_utils/memory_log_record_exporter.dart';
+
 /// Runs a Dart script in a subprocess with specific environment variables set.
 /// Returns the stdout output as a string.
 Future<String> runWithEnv(
@@ -826,6 +828,7 @@ void main() {
         detectPlatformResources: false,
         enableMetrics: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
         logPrint: true,
       );
       expect(OTel.isLogPrintEnabled, isTrue);
@@ -857,6 +860,7 @@ void main() {
         detectPlatformResources: false,
         enableMetrics: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
         logPrint: true,
       );
 
@@ -872,6 +876,7 @@ void main() {
         detectPlatformResources: false,
         enableMetrics: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
         logPrint: true,
       );
 
@@ -910,6 +915,7 @@ void main() {
         detectPlatformResources: false,
         enableMetrics: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
         logPrint: true,
       );
 
@@ -926,6 +932,7 @@ void main() {
         detectPlatformResources: false,
         enableMetrics: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
         logPrint: true,
       );
 
@@ -954,6 +961,7 @@ void main() {
         detectPlatformResources: false,
         enableMetrics: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
         logPrint: true,
       );
 
@@ -969,6 +977,7 @@ void main() {
         detectPlatformResources: false,
         enableMetrics: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
         logPrint: true,
         logPrintLoggerName: 'my.custom.logger',
       );
@@ -1219,6 +1228,7 @@ void main() {
         detectPlatformResources: false,
         enableMetrics: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
       );
 
       final lp = OTel.loggerProvider();
@@ -1244,6 +1254,7 @@ void main() {
         detectPlatformResources: false,
         enableMetrics: true,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
       );
 
       expect(OTel.loggerProvider(), isA<LoggerProvider>());
@@ -1256,6 +1267,7 @@ void main() {
         detectPlatformResources: false,
         enableMetrics: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
       );
 
       final logger = OTel.logger('test-logger');
@@ -1268,6 +1280,7 @@ void main() {
         detectPlatformResources: false,
         enableMetrics: false,
         enableLogs: true,
+        logRecordExporter: MemoryLogRecordExporter(),
       );
 
       final logger = OTel.logger();
