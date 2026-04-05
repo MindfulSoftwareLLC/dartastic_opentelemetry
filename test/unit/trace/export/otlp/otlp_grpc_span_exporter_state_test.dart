@@ -9,7 +9,9 @@ void main() {
     setUp(() async {
       await OTel.reset();
       await OTel.initialize(
-          serviceName: 'test', detectPlatformResources: false);
+        serviceName: 'test',
+        detectPlatformResources: false,
+      );
     });
 
     tearDown(() async {
@@ -107,9 +109,9 @@ void main() {
           traceId: OTel.traceIdFrom('00112233445566778899aabbccddeeff'),
           spanId: OTel.spanIdFrom('0011223344556677'),
         );
-        final resource = OTel.resource(OTel.attributesFromMap({
-          'service.name': 'test-service',
-        }));
+        final resource = OTel.resource(
+          OTel.attributesFromMap({'service.name': 'test-service'}),
+        );
         final instrumentationScope = OTel.instrumentationScope(
           name: 'test-tracer',
           version: '1.0.0',
@@ -124,10 +126,7 @@ void main() {
           startTime: DateTime.now(),
         );
 
-        expect(
-          () => exporter.export([span]),
-          throwsA(isA<StateError>()),
-        );
+        expect(() => exporter.export([span]), throwsA(isA<StateError>()));
       });
 
       test('export with empty span list handles gracefully', () async {
@@ -268,8 +267,12 @@ class _TestSpan implements Span {
   void addEvent(SpanEvent spanEvent) {}
 
   @override
-  void recordException(Object exception,
-      {StackTrace? stackTrace, Attributes? attributes, bool? escaped}) {}
+  void recordException(
+    Object exception, {
+    StackTrace? stackTrace,
+    Attributes? attributes,
+    bool? escaped,
+  }) {}
 
   @override
   void setStringAttribute<T>(String name, String value) {}

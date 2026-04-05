@@ -70,10 +70,8 @@ void main() {
 
     test('validates retry parameters', () {
       expect(
-        () => OtlpGrpcExporterConfig(
-          endpoint: 'localhost:4317',
-          maxRetries: -1,
-        ),
+        () =>
+            OtlpGrpcExporterConfig(endpoint: 'localhost:4317', maxRetries: -1),
         throwsA(isA<ArgumentError>()),
       );
 
@@ -131,20 +129,15 @@ void main() {
         headers: validHeaders,
       );
       expect(
-          config.headers,
-          equals({
-            'authorization': 'Bearer token',
-            'custom-header': 'value',
-          }));
+        config.headers,
+        equals({'authorization': 'Bearer token', 'custom-header': 'value'}),
+      );
     });
 
     test('supports header case insensitivity', () {
       final config = OtlpGrpcExporterConfig(
         endpoint: 'localhost:4317',
-        headers: {
-          'Authorization': 'Bearer token',
-          'custom-HEADER': 'value',
-        },
+        headers: {'Authorization': 'Bearer token', 'custom-HEADER': 'value'},
       );
 
       expect(config.headers['authorization'], equals('Bearer token'));

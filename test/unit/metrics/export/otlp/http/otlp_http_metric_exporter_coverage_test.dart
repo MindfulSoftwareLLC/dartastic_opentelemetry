@@ -25,15 +25,14 @@ void main() {
       endTime: now,
       value: 42,
     );
-    return MetricData(metrics: [
-      Metric.sum(name: 'c', points: [point])
-    ]);
+    return MetricData(
+      metrics: [
+        Metric.sum(name: 'c', points: [point]),
+      ],
+    );
   }
 
-  Future<void> startServer({
-    List<int>? codes,
-    Duration? delay,
-  }) async {
+  Future<void> startServer({List<int>? codes, Duration? delay}) async {
     responseCodes = codes ?? [200];
     requestCount = 0;
     server = await HttpServer.bind('localhost', 0);
@@ -55,22 +54,30 @@ void main() {
     String? clientKey,
     String? clientCertificate,
   }) =>
-      OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: endpoint ?? 'http://localhost:$port',
-        compression: compression,
-        maxRetries: 2,
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-        certificate: certificate,
-        clientKey: clientKey,
-        clientCertificate: clientCertificate,
-      ));
+      OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(
+          endpoint: endpoint ?? 'http://localhost:$port',
+          compression: compression,
+          maxRetries: 2,
+          baseDelay: const Duration(milliseconds: 1),
+          maxDelay: const Duration(milliseconds: 10),
+          certificate: certificate,
+          clientKey: clientKey,
+          clientCertificate: clientCertificate,
+        ),
+      );
 
   setUp(() async {
     await OTel.reset();
-    OTelLog.enableTraceLogging();
     OTelLog.logFunction = (_) {};
-    await OTel.initialize(serviceName: 'test', detectPlatformResources: false);
+    await OTel.initialize(
+      serviceName: 'test',
+      detectPlatformResources: false,
+      enableLogs: false,
+    );
+    // Set trace logging AFTER initialize, since initializeLogging() reads
+    // OTEL_LOG_LEVEL from env and would override a level set before it.
+    OTelLog.enableTraceLogging();
   });
 
   tearDown(() async {
@@ -83,11 +90,11 @@ void main() {
   });
 
   // ---------------------------------------------------------------
-  // _createHttpClient certificate paths (lines 55-77)
+  // _createHttpClient certificate paths
   // ---------------------------------------------------------------
   group('_createHttpClient certificate paths', () {
     test('null security context falls back to default client', () async {
-      // test:// certs cause createSecurityContext to return null -> line 62
+      // test:// certs cause createSecurityContext to return null
       await startServer();
       final exp = createExporter(certificate: 'test://ca.pem');
       final result = await exp.export(makeMetrics());
@@ -98,7 +105,7 @@ void main() {
 
     test('test:// client cert+key exercises certificate error path', () async {
       // test:// scheme passes config validation but createSecurityContext
-      // returns null for test:// -> line 62, or throws -> lines 71-76
+      // returns null for test://, or throws on invalid cert loading
       await startServer();
       final exp = createExporter(
         certificate: 'test://ca.pem',
@@ -112,7 +119,7 @@ void main() {
   });
 
   // ---------------------------------------------------------------
-  // _export retry on ClientException (lines 174-221)
+  // _export retry on ClientException
   // Now reachable after the _tryExport bug fix.
   // ---------------------------------------------------------------
   group('_export retry on ClientException', () {
@@ -136,7 +143,7 @@ void main() {
     });
 
     test('gives up after max retries on 503', () async {
-      // 3 attempts: initial + 2 retries, all 503 -> lines 208-213
+      // 3 attempts: initial + 2 retries, all 503 -> gives up after max retries
       await startServer(codes: [503, 503, 503]);
       final exp = createExporter();
       final result = await exp.export(makeMetrics());
@@ -146,7 +153,7 @@ void main() {
     });
 
     test('non-retryable 400 returns false immediately', () async {
-      // 400 -> ClientException caught -> not retryable -> lines 200-205
+      // 400 -> ClientException caught -> not retryable -> returns false immediately
       await startServer(codes: [400]);
       final exp = createExporter();
       final result = await exp.export(makeMetrics());
@@ -165,7 +172,7 @@ void main() {
     });
 
     test('_calculateJitteredDelay is exercised during retry', () async {
-      // Retry triggers _calculateJitteredDelay at line 216 -> lines 80-84
+      // Retry triggers _calculateJitteredDelay during the backoff wait
       await startServer(codes: [503, 200]);
       final exp = createExporter();
       final result = await exp.export(makeMetrics());
@@ -175,21 +182,23 @@ void main() {
   });
 
   // ---------------------------------------------------------------
-  // _export generic catch block (lines 222-245)
+  // _export generic catch block
   // Triggered by non-ClientException errors like SocketException
   // ---------------------------------------------------------------
   group('_export generic catch block', () {
     test('connection refused triggers generic catch and retries', () async {
       // Connect to a port with no server -> SocketException
-      // -> caught by generic catch block lines 223-245
+      // -> caught by the generic catch block
       await startServer(); // start then close to get a valid port
       await server.close(force: true);
-      final exp = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-        maxRetries: 1,
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-      ));
+      final exp = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(
+          endpoint: 'http://localhost:$port',
+          maxRetries: 1,
+          baseDelay: const Duration(milliseconds: 1),
+          maxDelay: const Duration(milliseconds: 10),
+        ),
+      );
       final result = await exp.export(makeMetrics());
       expect(result, isFalse);
       await exp.shutdown();
@@ -198,12 +207,14 @@ void main() {
     test('generic error gives up after max retries', () async {
       await startServer();
       await server.close(force: true);
-      final exp = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-        maxRetries: 2,
-        baseDelay: const Duration(milliseconds: 1),
-        maxDelay: const Duration(milliseconds: 10),
-      ));
+      final exp = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(
+          endpoint: 'http://localhost:$port',
+          maxRetries: 2,
+          baseDelay: const Duration(milliseconds: 1),
+          maxDelay: const Duration(milliseconds: 10),
+        ),
+      );
       final result = await exp.export(makeMetrics());
       expect(result, isFalse);
       await exp.shutdown();
@@ -211,7 +222,7 @@ void main() {
   });
 
   // ---------------------------------------------------------------
-  // Shutdown-during-export paths (lines 125-130, 143, 160-165)
+  // Shutdown-during-export paths
   // ---------------------------------------------------------------
   group('shutdown during export', () {
     test('export catches shutdown-interrupted StateError', () async {
@@ -232,7 +243,7 @@ void main() {
     });
 
     test('_export at start detects shutdown', () async {
-      // Shutdown before calling _export -> line 143
+      // Shutdown before calling _export -> detects shutdown at start
       await startServer();
       final exp = createExporter();
       await exp.shutdown();
@@ -240,14 +251,16 @@ void main() {
     });
 
     test('shutdown during retry stops retrying', () async {
-      // 503 triggers retry, but shutdown during delay -> lines 160-165
+      // 503 triggers retry, but shutdown during delay stops retrying
       await startServer(codes: [503, 503, 503, 503]);
-      final exp = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-        maxRetries: 5,
-        baseDelay: const Duration(milliseconds: 50),
-        maxDelay: const Duration(milliseconds: 100),
-      ));
+      final exp = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(
+          endpoint: 'http://localhost:$port',
+          maxRetries: 5,
+          baseDelay: const Duration(milliseconds: 50),
+          maxDelay: const Duration(milliseconds: 100),
+        ),
+      );
 
       // Start export (will get 503 and start retrying)
       final exportFuture = exp.export(makeMetrics());
@@ -261,30 +274,37 @@ void main() {
       expect(requestCount, lessThan(5));
     });
 
-    test('ClientException during shutdown-flagged export throws StateError',
-        () async {
-      // When wasShutdownDuringRetry is true and ClientException caught
-      // -> lines 182-186
-      await startServer(codes: [503], delay: const Duration(milliseconds: 100));
-      final exp = OtlpHttpMetricExporter(OtlpHttpMetricExporterConfig(
-        endpoint: 'http://localhost:$port',
-        maxRetries: 3,
-        baseDelay: const Duration(milliseconds: 50),
-        maxDelay: const Duration(milliseconds: 100),
-      ));
+    test(
+      'ClientException during shutdown-flagged export throws StateError',
+      () async {
+        // When wasShutdownDuringRetry is true and ClientException caught,
+        // the export throws a StateError
+        await startServer(
+          codes: [503],
+          delay: const Duration(milliseconds: 100),
+        );
+        final exp = OtlpHttpMetricExporter(
+          OtlpHttpMetricExporterConfig(
+            endpoint: 'http://localhost:$port',
+            maxRetries: 3,
+            baseDelay: const Duration(milliseconds: 50),
+            maxDelay: const Duration(milliseconds: 100),
+          ),
+        );
 
-      final exportFuture = exp.export(makeMetrics());
-      // Shutdown while waiting for retry
-      await Future<void>.delayed(const Duration(milliseconds: 200));
-      await exp.shutdown();
+        final exportFuture = exp.export(makeMetrics());
+        // Shutdown while waiting for retry
+        await Future<void>.delayed(const Duration(milliseconds: 200));
+        await exp.shutdown();
 
-      final result = await exportFuture;
-      expect(result, isFalse);
-    });
+        final result = await exportFuture;
+        expect(result, isFalse);
+      },
+    );
   });
 
   // ---------------------------------------------------------------
-  // forceFlush with pending exports (lines 380-393)
+  // forceFlush with pending exports
   // ---------------------------------------------------------------
   group('forceFlush with pending exports', () {
     test('waits for pending exports to complete', () async {
@@ -296,7 +316,7 @@ void main() {
       exp.export(makeMetrics());
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
-      // forceFlush should wait for it -> lines 380-390
+      // forceFlush should wait for the pending export to complete
       final flushed = await exp.forceFlush();
       expect(flushed, isTrue);
       await exp.shutdown();
@@ -315,7 +335,7 @@ void main() {
       // Kill the server mid-request
       await server.close(force: true);
 
-      // forceFlush should catch the error -> lines 391-395
+      // forceFlush should catch the error from the failed export
       // It may return true or false depending on timing
       await exp.forceFlush();
       await exp.shutdown();
@@ -323,7 +343,7 @@ void main() {
   });
 
   // ---------------------------------------------------------------
-  // shutdown with pending exports (lines 427-444)
+  // shutdown with pending exports
   // ---------------------------------------------------------------
   group('shutdown with pending exports', () {
     test('waits for pending exports with timeout', () async {
@@ -335,7 +355,7 @@ void main() {
       exp.export(makeMetrics());
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
-      // Shutdown waits for pending -> lines 427-440
+      // Shutdown waits for pending exports to complete with timeout
       final result = await exp.shutdown();
       expect(result, isTrue);
     });
@@ -352,7 +372,7 @@ void main() {
       // Kill server so export fails
       await server.close(force: true);
 
-      // Shutdown should handle the error -> lines 441-444
+      // Shutdown should handle the error from the failing pending export
       final result = await exp.shutdown();
       expect(result, isTrue); // shutdown still returns true
     });

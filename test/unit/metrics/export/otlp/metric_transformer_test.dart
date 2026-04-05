@@ -21,14 +21,16 @@ void main() {
 
     test('transformResource converts Resource attributes correctly', () {
       // Resource with various attribute types
-      final resource = OTel.resource(Attributes.of({
-        'service.name': 'test-service',
-        'service.version': '1.0.0',
-        'host.id': 'test-host',
-        'process.pid': 1234,
-        'is.test': true,
-        'cpu.usage': 0.75,
-      }));
+      final resource = OTel.resource(
+        Attributes.of({
+          'service.name': 'test-service',
+          'service.version': '1.0.0',
+          'host.id': 'test-host',
+          'process.pid': 1234,
+          'is.test': true,
+          'cpu.usage': 0.75,
+        }),
+      );
 
       // Transform the resourceAttributes
       final resourceProto = MetricTransformer.transformResource(resource);
@@ -38,7 +40,8 @@ void main() {
 
       // Check each attribute
       final attributeMap = Map.fromEntries(
-          resourceProto.attributes.map((kv) => MapEntry(kv.key, kv.value)));
+        resourceProto.attributes.map((kv) => MapEntry(kv.key, kv.value)),
+      );
 
       expect(attributeMap['service.name']!.stringValue, equals('test-service'));
       expect(attributeMap['service.version']!.stringValue, equals('1.0.0'));
@@ -83,10 +86,14 @@ void main() {
       // Check point details
       final gaugePoint = metricProto.gauge.dataPoints.first;
       expect(gaugePoint.asDouble, equals(42.5));
-      expect(gaugePoint.startTimeUnixNano,
-          equals(Int64(startTime.microsecondsSinceEpoch * 1000)));
-      expect(gaugePoint.timeUnixNano,
-          equals(Int64(nowTime.microsecondsSinceEpoch * 1000)));
+      expect(
+        gaugePoint.startTimeUnixNano,
+        equals(Int64(startTime.microsecondsSinceEpoch * 1000)),
+      );
+      expect(
+        gaugePoint.timeUnixNano,
+        equals(Int64(nowTime.microsecondsSinceEpoch * 1000)),
+      );
 
       // Check attributes
       expect(gaugePoint.attributes.length, equals(1));
@@ -129,17 +136,21 @@ void main() {
       expect(metricProto.sum.dataPoints.length, equals(1));
       expect(metricProto.sum.isMonotonic, isTrue);
       expect(
-          metricProto.sum.aggregationTemporality,
-          equals(
-              proto.AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE));
+        metricProto.sum.aggregationTemporality,
+        equals(proto.AggregationTemporality.AGGREGATION_TEMPORALITY_CUMULATIVE),
+      );
 
       // Check point details
       final sumPoint = metricProto.sum.dataPoints.first;
       expect(sumPoint.asDouble, equals(100.0));
-      expect(sumPoint.startTimeUnixNano,
-          equals(Int64(startTime.microsecondsSinceEpoch * 1000)));
-      expect(sumPoint.timeUnixNano,
-          equals(Int64(nowTime.microsecondsSinceEpoch * 1000)));
+      expect(
+        sumPoint.startTimeUnixNano,
+        equals(Int64(startTime.microsecondsSinceEpoch * 1000)),
+      );
+      expect(
+        sumPoint.timeUnixNano,
+        equals(Int64(nowTime.microsecondsSinceEpoch * 1000)),
+      );
 
       // Check attributes
       expect(sumPoint.attributes.length, equals(1));
@@ -190,8 +201,10 @@ void main() {
 
       // Verify it was transformed as a histogram
       expect(metricProto.histogram.dataPoints.length, equals(1));
-      expect(metricProto.histogram.aggregationTemporality,
-          equals(proto.AggregationTemporality.AGGREGATION_TEMPORALITY_DELTA));
+      expect(
+        metricProto.histogram.aggregationTemporality,
+        equals(proto.AggregationTemporality.AGGREGATION_TEMPORALITY_DELTA),
+      );
 
       // Check point details
       final histogramPoint = metricProto.histogram.dataPoints.first;
@@ -202,8 +215,10 @@ void main() {
 
       // Check buckets
       expect(histogramPoint.explicitBounds, equals([0, 10, 20, 50, 100]));
-      expect(histogramPoint.bucketCounts.map((c) => c.toInt()).toList(),
-          equals([1, 1, 2, 1, 0]));
+      expect(
+        histogramPoint.bucketCounts.map((c) => c.toInt()).toList(),
+        equals([1, 1, 2, 1, 0]),
+      );
 
       // Check attributes
       expect(histogramPoint.attributes.length, equals(1));
@@ -246,7 +261,8 @@ void main() {
 
       // Create a map for easier verification
       final attributeMap = Map.fromEntries(
-          protoAttributes.map((kv) => MapEntry(kv.key, kv.value)));
+        protoAttributes.map((kv) => MapEntry(kv.key, kv.value)),
+      );
 
       // Verify each attribute type was converted correctly
       expect(attributeMap['string_key']!.stringValue, equals('string_value'));

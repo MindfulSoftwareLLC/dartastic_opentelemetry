@@ -6,14 +6,15 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 Future<void> main() async {
   // Create a baggage with a single key-value pair
-  final baggage = OTel.baggage(
-      {'customer.id': OTel.baggageEntry('123', 'source=mobile app')});
+  final baggage = OTel.baggage({
+    'customer.id': OTel.baggageEntry('123', 'source=mobile app'),
+  });
 
   // Since baggage is immutable, each operation returns a new instance
   // Chain operations to build up the baggage you need
   // Best practice: Use dot notation for key namespacing to avoid conflicts
   final enrichedBaggage = baggage
-      .copyWith('deployment.environment', 'staging')
+      .copyWith(EnvironmentResource.deploymentEnvironment.key, 'staging')
       .copyWith('user.region', 'us-west', 'source=user profile');
 
   // Baggage is always associated with a Context
@@ -28,7 +29,8 @@ Future<void> main() async {
 
     // Baggage entries can be accessed individually
     print(
-        'Current customer ID: ${currentBaggage!.getEntry('customer.id')?.value}');
+      'Current customer ID: ${currentBaggage!.getEntry('customer.id')?.value}',
+    );
 
     // Or you can get all entries at once
     // Best practice: Check getAllEntries when debugging propagation issues
@@ -86,7 +88,7 @@ Future<void> distributedTracingExample() async {
     final serviceBaggage = Context.currentWithBaggage()
         .baggage!
         .copyWith('service.instance', 'backend-01')
-        .copyWith('service.version', '2.1.0');
+        .copyWith(ServiceResource.serviceVersion.key, '2.1.0');
 
     // Best practice: Update context when baggage changes
     // This ensures proper propagation
@@ -109,9 +111,11 @@ Future<void> monitoringExample() async {
   // Best practice: Start with low-cardinality data
   // These are values that have a small set of possible values
   // Examples: service names, regions, environments
-  final baseContext = OTel.context().withBaggage(OTel.baggage()
-      .copyWith('service.name', 'payment-processor')
-      .copyWith('deployment.region', 'us-west-2'));
+  final baseContext = OTel.context().withBaggage(
+    OTel.baggage()
+        .copyWith(ServiceResource.serviceName.key, 'payment-processor')
+        .copyWith('deployment.region', 'us-west-2'),
+  );
 
   await baseContext.run(() async {
     // High-cardinality data has many possible values
@@ -119,10 +123,14 @@ Future<void> monitoringExample() async {
     // Warning: Too much high-cardinality data can impact performance
     final processingBaggage = Context.currentWithBaggage()
         .baggage!
-        .copyWith('transaction.id',
-            'tx_789012') // High cardinality: Many possible values
-        .copyWith('user.tenant',
-            'tenant_456'); // High cardinality: Many possible values
+        .copyWith(
+          'transaction.id',
+          'tx_789012',
+        ) // High cardinality: Many possible values
+        .copyWith(
+          'user.tenant',
+          'tenant_456',
+        ); // High cardinality: Many possible values
 
     // Best practice: Scope high-cardinality baggage
     // Only use it where the detailed information is needed

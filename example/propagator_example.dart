@@ -56,11 +56,7 @@ void main() async {
   // === EXTRACT: Incoming Request ===
   print('3. Extracting trace context from HTTP headers (simulated)...');
   final getter = MapTextMapGetter(carrier);
-  final extractedContext = propagator.extract(
-    OTel.context(),
-    carrier,
-    getter,
-  );
+  final extractedContext = propagator.extract(OTel.context(), carrier, getter);
 
   final extractedSpanContext = extractedContext.spanContext;
   final extractedBaggage = extractedContext.baggage;
@@ -85,7 +81,8 @@ void main() async {
   print('   ✓ SpanId preserved: $sameSpanId');
   print('   ✓ Baggage preserved: $sameBaggage');
   print(
-      '   ✓ IsRemote set correctly: ${extractedSpanContext?.isRemote == true}\n');
+    '   ✓ IsRemote set correctly: ${extractedSpanContext?.isRemote == true}\n',
+  );
 
   // === Create Child Span in Extracted Context ===
   print('5. Creating child span in extracted context...');
@@ -96,9 +93,11 @@ void main() async {
     print('   Child TraceId: ${childContext.spanContext?.traceId.hexString}');
     print('   Child SpanId: ${childContext.spanContext?.spanId.hexString}');
     print(
-        '   Child Baggage: user.id=${childContext.baggage?.getValue('user.id')}');
+      '   Child Baggage: user.id=${childContext.baggage?.getValue('user.id')}',
+    );
     print(
-        '   → Same TraceId as parent: ${childContext.spanContext?.traceId.hexString == extractedSpanContext?.traceId.hexString}\n');
+      '   → Same TraceId as parent: ${childContext.spanContext?.traceId.hexString == extractedSpanContext?.traceId.hexString}\n',
+    );
 
     childSpan.end();
   });

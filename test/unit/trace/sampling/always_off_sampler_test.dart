@@ -11,9 +11,7 @@ void main() {
 
     setUp(() async {
       await OTel.reset();
-      await OTel.initialize(
-        serviceName: 'test-service',
-      );
+      await OTel.initialize(serviceName: 'test-service');
       sampler = const AlwaysOffSampler();
     });
 

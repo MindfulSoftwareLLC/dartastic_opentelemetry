@@ -109,11 +109,13 @@ void main() {
 
       // Values should match our initial values
       expect(
-          measurements1.where((m) => m.attributes == attributes1).first.value,
-          closeTo(22.5, 0.001));
+        measurements1.where((m) => m.attributes == attributes1).first.value,
+        closeTo(22.5, 0.001),
+      );
       expect(
-          measurements1.where((m) => m.attributes == attributes2).first.value,
-          closeTo(24.8, 0.001));
+        measurements1.where((m) => m.attributes == attributes2).first.value,
+        closeTo(24.8, 0.001),
+      );
 
       // Second collection
       final measurements2 = gauge.collect();
@@ -121,11 +123,13 @@ void main() {
 
       // Values should reflect the changes
       expect(
-          measurements2.where((m) => m.attributes == attributes1).first.value,
-          closeTo(23.0, 0.001));
+        measurements2.where((m) => m.attributes == attributes1).first.value,
+        closeTo(23.0, 0.001),
+      );
       expect(
-          measurements2.where((m) => m.attributes == attributes2).first.value,
-          closeTo(24.6, 0.001));
+        measurements2.where((m) => m.attributes == attributes2).first.value,
+        closeTo(24.6, 0.001),
+      );
 
       // Get metric points
       final metrics = gauge.collectMetrics();
@@ -148,11 +152,13 @@ void main() {
 
       // Values should reflect the changes
       expect(
-          measurements3.where((m) => m.attributes == attributes1).first.value,
-          closeTo(23.5, 0.001));
+        measurements3.where((m) => m.attributes == attributes1).first.value,
+        closeTo(23.5, 0.001),
+      );
       expect(
-          measurements3.where((m) => m.attributes == attributes2).first.value,
-          closeTo(24.4, 0.001));
+        measurements3.where((m) => m.attributes == attributes2).first.value,
+        closeTo(24.4, 0.001),
+      );
     });
 
     test('ObservableGauge with multiple callbacks', () {
@@ -165,8 +171,9 @@ void main() {
       // First callback
       double cpu1Usage = 45.2;
       final attributes1 = {'cpu': 'cpu0'}.toAttributes();
-      final registration1 =
-          gauge.addCallback((APIObservableResult<double> result) {
+      final registration1 = gauge.addCallback((
+        APIObservableResult<double> result,
+      ) {
         result.observe(cpu1Usage, attributes1);
         cpu1Usage = (cpu1Usage + 5.5) % 100; // Cycle between 0-100%
       });
@@ -174,8 +181,9 @@ void main() {
       // Second callback
       double cpu2Usage = 67.8;
       final attributes2 = {'cpu': 'cpu1'}.toAttributes();
-      final registration2 =
-          gauge.addCallback((APIObservableResult<double> result) {
+      final registration2 = gauge.addCallback((
+        APIObservableResult<double> result,
+      ) {
         result.observe(cpu2Usage, attributes2);
         cpu2Usage = (cpu2Usage - 3.2) % 100; // Cycle between 0-100%
       });
@@ -187,21 +195,25 @@ void main() {
       final measurements1 = gauge.collect();
       expect(measurements1.length, equals(2));
       expect(
-          measurements1.where((m) => m.attributes == attributes1).first.value,
-          closeTo(45.2, 0.001));
+        measurements1.where((m) => m.attributes == attributes1).first.value,
+        closeTo(45.2, 0.001),
+      );
       expect(
-          measurements1.where((m) => m.attributes == attributes2).first.value,
-          closeTo(67.8, 0.001));
+        measurements1.where((m) => m.attributes == attributes2).first.value,
+        closeTo(67.8, 0.001),
+      );
 
       // Second collection should have updated values
       final measurements2 = gauge.collect();
       expect(measurements2.length, equals(2));
       expect(
-          measurements2.where((m) => m.attributes == attributes1).first.value,
-          closeTo(50.7, 0.001));
+        measurements2.where((m) => m.attributes == attributes1).first.value,
+        closeTo(50.7, 0.001),
+      );
       expect(
-          measurements2.where((m) => m.attributes == attributes2).first.value,
-          closeTo(64.6, 0.001));
+        measurements2.where((m) => m.attributes == attributes2).first.value,
+        closeTo(64.6, 0.001),
+      );
 
       // Unregister first callback
       registration1.unregister();
@@ -360,7 +372,9 @@ void main() {
       // The SDK should handle exceptions gracefully and not crash
       final measurements1 = gauge.collect();
       expect(
-          measurements1.length, equals(0)); // No measurements due to exception
+        measurements1.length,
+        equals(0),
+      ); // No measurements due to exception
 
       // Fix the callback and collect again
       callbackThrows = false;

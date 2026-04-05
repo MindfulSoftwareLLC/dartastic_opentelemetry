@@ -251,13 +251,16 @@ void main() {
       await tracerProvider.shutdown();
 
       // Trying to add a processor should throw
-      expect(() => tracerProvider.addSpanProcessor(MockSpanProcessor()),
-          throwsStateError);
+      expect(
+        () => tracerProvider.addSpanProcessor(MockSpanProcessor()),
+        throwsStateError,
+      );
     });
 
     test('resource can be set and retrieved', () {
-      final newResource =
-          OTel.resource({'custom.key': 'custom.value'}.toAttributes());
+      final newResource = OTel.resource(
+        {'custom.key': 'custom.value'}.toAttributes(),
+      );
 
       tracerProvider.resource = newResource;
       expect(tracerProvider.resource, equals(newResource));

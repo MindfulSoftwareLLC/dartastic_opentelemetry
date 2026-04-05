@@ -27,42 +27,49 @@ void main() {
 
     group('endpoint validation', () {
       test('custom endpoint is preserved', () {
-        final config =
-            OtlpGrpcExporterConfig(endpoint: 'collector.example.com:4317');
+        final config = OtlpGrpcExporterConfig(
+          endpoint: 'collector.example.com:4317',
+        );
         expect(config.endpoint, equals('collector.example.com:4317'));
       });
 
       test('empty endpoint throws ArgumentError', () {
         expect(
           () => OtlpGrpcExporterConfig(endpoint: ''),
-          throwsA(isA<ArgumentError>().having(
-            (e) => e.message,
-            'message',
-            contains('empty'),
-          )),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('empty'),
+            ),
+          ),
         );
       });
 
       test('endpoint with spaces throws ArgumentError', () {
         expect(
           () => OtlpGrpcExporterConfig(endpoint: 'host name:4317'),
-          throwsA(isA<ArgumentError>().having(
-            (e) => e.message,
-            'message',
-            contains('spaces'),
-          )),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('spaces'),
+            ),
+          ),
         );
       });
 
       test('endpoint without scheme is accepted as host:port', () {
-        final config =
-            OtlpGrpcExporterConfig(endpoint: 'myhost.example.com:4317');
+        final config = OtlpGrpcExporterConfig(
+          endpoint: 'myhost.example.com:4317',
+        );
         expect(config.endpoint, equals('myhost.example.com:4317'));
       });
 
       test('endpoint with http:// scheme is preserved', () {
-        final config =
-            OtlpGrpcExporterConfig(endpoint: 'http://collector:4317');
+        final config = OtlpGrpcExporterConfig(
+          endpoint: 'http://collector:4317',
+        );
         expect(config.endpoint, equals('http://collector:4317'));
       });
 
@@ -77,8 +84,9 @@ void main() {
       });
 
       test('host-only endpoint gets default port appended', () {
-        final config =
-            OtlpGrpcExporterConfig(endpoint: 'collector.example.com');
+        final config = OtlpGrpcExporterConfig(
+          endpoint: 'collector.example.com',
+        );
         expect(config.endpoint, equals('collector.example.com:4317'));
       });
     });
@@ -89,7 +97,9 @@ void main() {
           headers: {'Authorization': 'Bearer token123', 'X-Custom': 'value'},
         );
         expect(
-            config.headers, containsPair('authorization', 'Bearer token123'));
+          config.headers,
+          containsPair('authorization', 'Bearer token123'),
+        );
         expect(config.headers, containsPair('x-custom', 'value'));
         // Original casing key should not be present
         expect(config.headers.containsKey('Authorization'), isFalse);
@@ -98,22 +108,26 @@ void main() {
       test('empty header key throws ArgumentError', () {
         expect(
           () => OtlpGrpcExporterConfig(headers: {'': 'value'}),
-          throwsA(isA<ArgumentError>().having(
-            (e) => e.message,
-            'message',
-            contains('empty'),
-          )),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('empty'),
+            ),
+          ),
         );
       });
 
       test('empty header value throws ArgumentError', () {
         expect(
           () => OtlpGrpcExporterConfig(headers: {'key': ''}),
-          throwsA(isA<ArgumentError>().having(
-            (e) => e.message,
-            'message',
-            contains('empty'),
-          )),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('empty'),
+            ),
+          ),
         );
       });
     });
@@ -122,11 +136,13 @@ void main() {
       test('negative maxRetries throws ArgumentError', () {
         expect(
           () => OtlpGrpcExporterConfig(maxRetries: -1),
-          throwsA(isA<ArgumentError>().having(
-            (e) => e.message,
-            'message',
-            contains('negative'),
-          )),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('negative'),
+            ),
+          ),
         );
       });
 
@@ -145,35 +161,42 @@ void main() {
       test('timeout below 1ms throws ArgumentError', () {
         expect(
           () => OtlpGrpcExporterConfig(timeout: Duration.zero),
-          throwsA(isA<ArgumentError>().having(
-            (e) => e.message,
-            'message',
-            contains('Timeout'),
-          )),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('Timeout'),
+            ),
+          ),
         );
       });
 
       test('timeout above 10 minutes throws ArgumentError', () {
         expect(
           () => OtlpGrpcExporterConfig(
-              timeout: const Duration(minutes: 10, milliseconds: 1)),
-          throwsA(isA<ArgumentError>().having(
-            (e) => e.message,
-            'message',
-            contains('Timeout'),
-          )),
+            timeout: const Duration(minutes: 10, milliseconds: 1),
+          ),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('Timeout'),
+            ),
+          ),
         );
       });
 
       test('timeout at lower bound (1ms) is valid', () {
-        final config =
-            OtlpGrpcExporterConfig(timeout: const Duration(milliseconds: 1));
+        final config = OtlpGrpcExporterConfig(
+          timeout: const Duration(milliseconds: 1),
+        );
         expect(config.timeout, equals(const Duration(milliseconds: 1)));
       });
 
       test('timeout at upper bound (10 minutes) is valid', () {
-        final config =
-            OtlpGrpcExporterConfig(timeout: const Duration(minutes: 10));
+        final config = OtlpGrpcExporterConfig(
+          timeout: const Duration(minutes: 10),
+        );
         expect(config.timeout, equals(const Duration(minutes: 10)));
       });
     });
@@ -182,11 +205,13 @@ void main() {
       test('baseDelay below 1ms throws ArgumentError', () {
         expect(
           () => OtlpGrpcExporterConfig(baseDelay: Duration.zero),
-          throwsA(isA<ArgumentError>().having(
-            (e) => e.message,
-            'message',
-            contains('baseDelay'),
-          )),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('baseDelay'),
+            ),
+          ),
         );
       });
 
@@ -196,11 +221,13 @@ void main() {
             baseDelay: const Duration(milliseconds: 1),
             maxDelay: Duration.zero,
           ),
-          throwsA(isA<ArgumentError>().having(
-            (e) => e.message,
-            'message',
-            contains('maxDelay'),
-          )),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('maxDelay'),
+            ),
+          ),
         );
       });
 
@@ -210,11 +237,13 @@ void main() {
             baseDelay: const Duration(minutes: 5, milliseconds: 1),
             maxDelay: const Duration(minutes: 5, milliseconds: 2),
           ),
-          throwsA(isA<ArgumentError>().having(
-            (e) => e.message,
-            'message',
-            contains('baseDelay'),
-          )),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('baseDelay'),
+            ),
+          ),
         );
       });
 
@@ -223,11 +252,13 @@ void main() {
           () => OtlpGrpcExporterConfig(
             maxDelay: const Duration(minutes: 5, milliseconds: 1),
           ),
-          throwsA(isA<ArgumentError>().having(
-            (e) => e.message,
-            'message',
-            contains('maxDelay'),
-          )),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('maxDelay'),
+            ),
+          ),
         );
       });
 
@@ -237,11 +268,13 @@ void main() {
             baseDelay: const Duration(seconds: 2),
             maxDelay: const Duration(seconds: 1),
           ),
-          throwsA(isA<ArgumentError>().having(
-            (e) => e.message,
-            'message',
-            contains('maxDelay cannot be less than baseDelay'),
-          )),
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('maxDelay cannot be less than baseDelay'),
+            ),
+          ),
         );
       });
 

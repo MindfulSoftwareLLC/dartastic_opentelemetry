@@ -76,8 +76,12 @@ class MemorySnapshot {
   static int _getCurrentRss() {
     if (Platform.isLinux || Platform.isMacOS) {
       try {
-        final result =
-            Process.runSync('ps', ['-o', 'rss=', '-p', pid.toString()]);
+        final result = Process.runSync('ps', [
+          '-o',
+          'rss=',
+          '-p',
+          pid.toString(),
+        ]);
         if (result.exitCode == 0 && result.stdout != null) {
           return int.parse((result.stdout as String).trim()) *
               1024; // Convert KB to bytes
@@ -87,8 +91,13 @@ class MemorySnapshot {
       }
     } else if (Platform.isWindows) {
       try {
-        final result = Process.runSync('wmic',
-            ['process', 'where', 'ProcessId=$pid', 'get', 'WorkingSetSize']);
+        final result = Process.runSync('wmic', [
+          'process',
+          'where',
+          'ProcessId=$pid',
+          'get',
+          'WorkingSetSize',
+        ]);
         if (result.exitCode == 0 && result.stdout != null) {
           final lines = (result.stdout as String).trim().split('\n');
           if (lines.length > 1) {

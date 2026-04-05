@@ -48,20 +48,14 @@ void main() {
       final span = tracer.startSpan('empty-list-test');
       span.end();
 
-      await expectLater(
-        composite.export([span]),
-        completes,
-      );
+      await expectLater(composite.export([span]), completes);
     });
 
     test('forceFlush delegates to all exporters', () async {
       final composite = CompositeExporter([exporter1, exporter2]);
 
       // forceFlush should complete without error on both exporters
-      await expectLater(
-        composite.forceFlush(),
-        completes,
-      );
+      await expectLater(composite.forceFlush(), completes);
     });
 
     test('shutdown delegates to all exporters', () async {
@@ -70,14 +64,8 @@ void main() {
       await composite.shutdown();
 
       // After shutdown, exporters should reject new exports
-      await expectLater(
-        () => exporter1.export([]),
-        throwsA(isA<StateError>()),
-      );
-      await expectLater(
-        () => exporter2.export([]),
-        throwsA(isA<StateError>()),
-      );
+      await expectLater(() => exporter1.export([]), throwsA(isA<StateError>()));
+      await expectLater(() => exporter2.export([]), throwsA(isA<StateError>()));
     });
 
     test('export sends the same spans to each exporter', () async {

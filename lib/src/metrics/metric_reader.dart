@@ -91,10 +91,13 @@ class PeriodicExportingMetricReader extends MetricReader {
         final exportFuture = _exporter.export(data);
 
         // Apply timeout to export
-        await exportFuture.timeout(_timeout, onTimeout: () {
-          print('Metric export timed out after $_timeout');
-          return false;
-        });
+        await exportFuture.timeout(
+          _timeout,
+          onTimeout: () {
+            print('Metric export timed out after $_timeout');
+            return false;
+          },
+        );
       }
     } catch (e) {
       print('Error during metric collection/export: $e');
@@ -106,7 +109,8 @@ class PeriodicExportingMetricReader extends MetricReader {
     if (meterProvider == null) {
       if (OTelLog.isLogMetrics()) {
         OTelLog.logMetric(
-            'PeriodicExportingMetricReader: No meter provider registered');
+          'PeriodicExportingMetricReader: No meter provider registered',
+        );
       }
       // Return an empty container with no metrics
       return MetricData.empty();
@@ -120,13 +124,11 @@ class PeriodicExportingMetricReader extends MetricReader {
 
     if (OTelLog.isLogMetrics()) {
       OTelLog.logMetric(
-          'PeriodicExportingMetricReader: Collected ${metrics.length} metrics');
+        'PeriodicExportingMetricReader: Collected ${metrics.length} metrics',
+      );
     }
 
-    return MetricData(
-      resource: meterProvider!.resource,
-      metrics: metrics,
-    );
+    return MetricData(resource: meterProvider!.resource, metrics: metrics);
   }
 
   @override

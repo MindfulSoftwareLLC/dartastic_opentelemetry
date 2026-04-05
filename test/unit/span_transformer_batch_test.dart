@@ -70,7 +70,9 @@ void main() {
     setUp(() async {
       await OTel.reset();
       await OTel.initialize(
-          serviceName: 'test-service', serviceVersion: '1.0.0');
+        serviceName: 'test-service',
+        serviceVersion: '1.0.0',
+      );
     });
 
     tearDown(() async {
@@ -80,12 +82,7 @@ void main() {
     test('handles large batch of simple spans', () {
       final spans = List.generate(
         1000,
-        (i) => createMockSpan(
-          name: 'span-$i',
-          attributes: {
-            'index': '$i',
-          },
-        ),
+        (i) => createMockSpan(name: 'span-$i', attributes: {'index': '$i'}),
       );
 
       final request = OtlpSpanTransformer.transformSpans(spans);
@@ -158,7 +155,8 @@ void main() {
         print('  Scope spans count: ${rs.scopeSpans.length}');
         for (final ss in rs.scopeSpans) {
           print(
-              '    Scope name: "${ss.scope.name}", version: "${ss.scope.version}"');
+            '    Scope name: "${ss.scope.name}", version: "${ss.scope.version}"',
+          );
           print('    Spans count: ${ss.spans.length}');
           for (final span in ss.spans) {
             print('      Span name: ${span.name}');
@@ -178,10 +176,16 @@ void main() {
       print('All scope names: $allScopeNames');
 
       // Check if we have the expected scope names
-      expect(allScopeNames.contains('http-instrumentation'), isTrue,
-          reason: 'Expected to find http-instrumentation scope');
-      expect(allScopeNames.contains('db-instrumentation'), isTrue,
-          reason: 'Expected to find db-instrumentation scope');
+      expect(
+        allScopeNames.contains('http-instrumentation'),
+        isTrue,
+        reason: 'Expected to find http-instrumentation scope',
+      );
+      expect(
+        allScopeNames.contains('db-instrumentation'),
+        isTrue,
+        reason: 'Expected to find db-instrumentation scope',
+      );
     });
 
     test('handles multiple resources', () {
@@ -217,19 +221,27 @@ void main() {
       }
 
       // We should have 2 different resource spans because the services are different
-      expect(request.resourceSpans.length, equals(2),
-          reason:
-              'Should have 2 different resource spans for different services');
+      expect(
+        request.resourceSpans.length,
+        equals(2),
+        reason: 'Should have 2 different resource spans for different services',
+      );
 
       // Find the service names from the resources
       final service1ResourceSpan = request.resourceSpans.firstWhere(
-        (rs) => rs.resource.attributes.any((attr) =>
-            attr.key == 'service.name' && attr.value.stringValue == 'service1'),
+        (rs) => rs.resource.attributes.any(
+          (attr) =>
+              attr.key == 'service.name' &&
+              attr.value.stringValue == 'service1',
+        ),
       );
 
       final service2ResourceSpan = request.resourceSpans.firstWhere(
-        (rs) => rs.resource.attributes.any((attr) =>
-            attr.key == 'service.name' && attr.value.stringValue == 'service2'),
+        (rs) => rs.resource.attributes.any(
+          (attr) =>
+              attr.key == 'service.name' &&
+              attr.value.stringValue == 'service2',
+        ),
       );
 
       // Verify both resource spans exist
@@ -241,26 +253,17 @@ void main() {
       final spans = [
         createMockSpan(
           name: 'span1',
-          resourceAttributes: {
-            'service.name': 'service1',
-            'attr1': 'val1',
-          },
+          resourceAttributes: {'service.name': 'service1', 'attr1': 'val1'},
           instrumentationName: 'scope1',
         ),
         createMockSpan(
           name: 'span2',
-          resourceAttributes: {
-            'service.name': 'service1',
-            'attr1': 'val1',
-          },
+          resourceAttributes: {'service.name': 'service1', 'attr1': 'val1'},
           instrumentationName: 'scope2',
         ),
         createMockSpan(
           name: 'span3',
-          resourceAttributes: {
-            'service.name': 'service2',
-            'attr2': 'val2',
-          },
+          resourceAttributes: {'service.name': 'service2', 'attr2': 'val2'},
           instrumentationName: 'scope1',
         ),
       ];
@@ -289,32 +292,48 @@ void main() {
 
       // Should have distinct resource spans for each service name
       expect(
-          request.resourceSpans
-              .where((rs) => rs.resource.attributes.any((attr) =>
-                  attr.key == 'service.name' &&
-                  attr.value.stringValue == 'service1'))
-              .length,
-          equals(1),
-          reason: 'Should have one resource span for service1');
+        request.resourceSpans
+            .where(
+              (rs) => rs.resource.attributes.any(
+                (attr) =>
+                    attr.key == 'service.name' &&
+                    attr.value.stringValue == 'service1',
+              ),
+            )
+            .length,
+        equals(1),
+        reason: 'Should have one resource span for service1',
+      );
 
       expect(
-          request.resourceSpans
-              .where((rs) => rs.resource.attributes.any((attr) =>
-                  attr.key == 'service.name' &&
-                  attr.value.stringValue == 'service2'))
-              .length,
-          equals(1),
-          reason: 'Should have one resource span for service2');
+        request.resourceSpans
+            .where(
+              (rs) => rs.resource.attributes.any(
+                (attr) =>
+                    attr.key == 'service.name' &&
+                    attr.value.stringValue == 'service2',
+              ),
+            )
+            .length,
+        equals(1),
+        reason: 'Should have one resource span for service2',
+      );
 
       // Find service1 resource span
       final service1ResourceSpan = request.resourceSpans.firstWhere(
-        (rs) => rs.resource.attributes.any((attr) =>
-            attr.key == 'service.name' && attr.value.stringValue == 'service1'),
+        (rs) => rs.resource.attributes.any(
+          (attr) =>
+              attr.key == 'service.name' &&
+              attr.value.stringValue == 'service1',
+        ),
       );
 
       // Service1 should have scopes for scope1 and scope2
-      expect(service1ResourceSpan.scopeSpans.length, equals(2),
-          reason: 'Service1 resource should have 2 different scope spans');
+      expect(
+        service1ResourceSpan.scopeSpans.length,
+        equals(2),
+        reason: 'Service1 resource should have 2 different scope spans',
+      );
 
       // Check that the scopes for service1 include scope1 and scope2
       final service1Scopes =
@@ -324,17 +343,25 @@ void main() {
 
       // Find service2 resource span
       final service2ResourceSpan = request.resourceSpans.firstWhere(
-        (rs) => rs.resource.attributes.any((attr) =>
-            attr.key == 'service.name' && attr.value.stringValue == 'service2'),
+        (rs) => rs.resource.attributes.any(
+          (attr) =>
+              attr.key == 'service.name' &&
+              attr.value.stringValue == 'service2',
+        ),
       );
 
       // Service2 should have only one scope: scope1
-      expect(service2ResourceSpan.scopeSpans.length, equals(1),
-          reason: 'Service2 resource should have 1 scope span');
+      expect(
+        service2ResourceSpan.scopeSpans.length,
+        equals(1),
+        reason: 'Service2 resource should have 1 scope span',
+      );
 
       // Check the scope for service2
       expect(
-          service2ResourceSpan.scopeSpans.first.scope.name, equals('scope1'));
+        service2ResourceSpan.scopeSpans.first.scope.name,
+        equals('scope1'),
+      );
     });
 
     test('maintains span order within scopes', () {
@@ -355,12 +382,18 @@ void main() {
       final request = OtlpSpanTransformer.transformSpans(spans);
 
       // Get the first resource span and scope span
-      expect(request.resourceSpans.length, greaterThan(0),
-          reason: 'Should have at least one resource span');
+      expect(
+        request.resourceSpans.length,
+        greaterThan(0),
+        reason: 'Should have at least one resource span',
+      );
       final resourceSpan = request.resourceSpans.first;
 
-      expect(resourceSpan.scopeSpans.length, greaterThan(0),
-          reason: 'Should have at least one scope span');
+      expect(
+        resourceSpan.scopeSpans.length,
+        greaterThan(0),
+        reason: 'Should have at least one scope span',
+      );
       final scopeSpan = resourceSpan.scopeSpans.first;
 
       // Get the transformed spans
@@ -389,8 +422,11 @@ void main() {
           }
         }
 
-        expect(isOrdered, isTrue,
-            reason: 'Spans should be ordered by start time');
+        expect(
+          isOrdered,
+          isTrue,
+          reason: 'Spans should be ordered by start time',
+        );
       }
     });
 
@@ -400,10 +436,7 @@ void main() {
         10,
         (i) => createMockSpan(
           name: 'common-span-name',
-          attributes: {
-            'common-key': 'common-value',
-            'index': '$i',
-          },
+          attributes: {'common-key': 'common-value', 'index': '$i'},
           resourceAttributes: {
             'service.name': 'test-service',
             'common.attribute': 'shared-value',
@@ -449,9 +482,12 @@ void main() {
       // The number of unique strings should be much less than the total number of attribute strings
       // For 10 spans with common attributes and names, we'd expect around ~15-25 unique strings
       // depending on system attributes
-      expect(stringTable.length, lessThan(50),
-          reason:
-              'String deduplication should result in fewer than 50 unique strings');
+      expect(
+        stringTable.length,
+        lessThan(50),
+        reason:
+            'String deduplication should result in fewer than 50 unique strings',
+      );
     });
   });
 }

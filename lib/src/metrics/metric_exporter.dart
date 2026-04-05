@@ -5,14 +5,7 @@ import 'dart:async';
 
 import 'data/metric_data.dart';
 
-/// Defines the result of a metric export operation.
-enum ExportResult {
-  /// The export was successful.
-  success,
-
-  /// The export failed.
-  failure
-}
+export '../export/export_result.dart';
 
 /// MetricExporter is responsible for sending metrics to a backend.
 abstract class MetricExporter {

@@ -45,8 +45,9 @@ void main() {
       final request = OtlpSpanTransformer.transformSpans([span]);
       final attrs =
           request.resourceSpans.first.scopeSpans.first.spans.first.attributes;
-      final attributeMap =
-          Map.fromEntries(attrs.map((a) => MapEntry(a.key, a.value)));
+      final attributeMap = Map.fromEntries(
+        attrs.map((a) => MapEntry(a.key, a.value)),
+      );
 
       expect(attributeMap['string_attr']?.stringValue, equals('value'));
       expect(attributeMap['int_attr']?.intValue, equals(Int64(42)));
@@ -89,7 +90,9 @@ void main() {
       final link = links[0];
       expect(bytesToHex(link.spanId), equals(linkedContext.spanId.toString()));
       expect(
-          bytesToHex(link.traceId), equals(linkedContext.traceId.toString()));
+        bytesToHex(link.traceId),
+        equals(linkedContext.traceId.toString()),
+      );
 
       final linkAttrs = Map.fromEntries(
         links[0].attributes.map((a) => MapEntry(a.key, a.value)),
@@ -114,10 +117,7 @@ void main() {
       };
 
       for (final entry in kindMap.entries) {
-        final span = tracer!.startSpan(
-          'kind-test',
-          kind: entry.key,
-        );
+        final span = tracer!.startSpan('kind-test', kind: entry.key);
 
         final request = OtlpSpanTransformer.transformSpans([span]);
         final protoSpan =

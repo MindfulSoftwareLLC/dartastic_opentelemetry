@@ -22,9 +22,8 @@ void main() {
     await OTel.reset();
     logOutput.clear();
 
-    // Enable the most verbose log level so every isDebug() guard evaluates
-    // to true, and capture all log output into the list for assertions.
-    OTelLog.enableTraceLogging();
+    // Set a no-op log function before initialize to prevent console noise,
+    // and mark it as custom so initializeLogging() preserves it.
     OTelLog.logFunction = logOutput.add;
 
     exporter = InMemorySpanExporter();
@@ -33,7 +32,12 @@ void main() {
       serviceName: 'debug-test',
       spanProcessor: processor,
       detectPlatformResources: false,
+      enableLogs: false,
     );
+    // Enable the most verbose log level AFTER initialize so every isDebug()
+    // guard evaluates to true. initializeLogging() reads OTEL_LOG_LEVEL from
+    // env and would override a level set before it.
+    OTelLog.enableTraceLogging();
   });
 
   tearDown(() async {
@@ -55,7 +59,8 @@ void main() {
     expect(span, isNotNull);
     expect(
       logOutput.any(
-          (msg) => msg.contains('SDKSpan') && msg.contains('Created new span')),
+        (msg) => msg.contains('SDKSpan') && msg.contains('Created new span'),
+      ),
       isTrue,
       reason: 'Expected a debug log about span creation',
     );
@@ -69,20 +74,23 @@ void main() {
     span.end();
 
     expect(
-      logOutput
-          .any((msg) => msg.contains('SDKSpan') && msg.contains('end span')),
+      logOutput.any(
+        (msg) => msg.contains('SDKSpan') && msg.contains('end span'),
+      ),
       isTrue,
       reason: 'Expected a debug log about ending the span',
     );
     expect(
-      logOutput.any((msg) =>
-          msg.contains('Notifying') && msg.contains('span processors')),
+      logOutput.any(
+        (msg) => msg.contains('Notifying') && msg.contains('span processors'),
+      ),
       isTrue,
       reason: 'Expected a debug log about notifying processors',
     );
     expect(
-      logOutput.any((msg) =>
-          msg.contains('onEnd') && msg.contains('SimpleSpanProcessor')),
+      logOutput.any(
+        (msg) => msg.contains('onEnd') && msg.contains('SimpleSpanProcessor'),
+      ),
       isTrue,
       reason: 'Expected a debug log about calling onEnd on the processor',
     );
@@ -98,8 +106,9 @@ void main() {
     tracer.startSpan('processor-onstart-test');
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('SimpleSpanProcessor') && msg.contains('onStart')),
+      logOutput.any(
+        (msg) => msg.contains('SimpleSpanProcessor') && msg.contains('onStart'),
+      ),
       isTrue,
       reason: 'Expected SimpleSpanProcessor onStart debug log',
     );
@@ -114,16 +123,20 @@ void main() {
     await Future<void>.delayed(const Duration(milliseconds: 50));
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('SimpleSpanProcessor') &&
-          msg.contains('Exporting span')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('SimpleSpanProcessor') &&
+            msg.contains('Exporting span'),
+      ),
       isTrue,
       reason: 'Expected SimpleSpanProcessor export debug log',
     );
     expect(
-      logOutput.any((msg) =>
-          msg.contains('SimpleSpanProcessor') &&
-          msg.contains('Successfully exported')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('SimpleSpanProcessor') &&
+            msg.contains('Successfully exported'),
+      ),
       isTrue,
       reason: 'Expected SimpleSpanProcessor success debug log',
     );
@@ -136,10 +149,12 @@ void main() {
     await processor.onNameUpdate(span, 'new-name');
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('SimpleSpanProcessor') &&
-          msg.contains('Name updated') &&
-          msg.contains('new-name')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('SimpleSpanProcessor') &&
+            msg.contains('Name updated') &&
+            msg.contains('new-name'),
+      ),
       isTrue,
       reason: 'Expected SimpleSpanProcessor name update debug log',
     );
@@ -159,15 +174,20 @@ void main() {
     await freshProcessor.shutdown();
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('SimpleSpanProcessor') && msg.contains('Shutting down')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('SimpleSpanProcessor') &&
+            msg.contains('Shutting down'),
+      ),
       isTrue,
       reason: 'Expected SimpleSpanProcessor shutdown debug log',
     );
     expect(
-      logOutput.any((msg) =>
-          msg.contains('SimpleSpanProcessor') &&
-          msg.contains('Shutdown complete')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('SimpleSpanProcessor') &&
+            msg.contains('Shutdown complete'),
+      ),
       isTrue,
       reason: 'Expected SimpleSpanProcessor shutdown complete debug log',
     );
@@ -183,9 +203,11 @@ void main() {
     await freshProcessor.shutdown();
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('SimpleSpanProcessor') &&
-          msg.contains('Already shut down')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('SimpleSpanProcessor') &&
+            msg.contains('Already shut down'),
+      ),
       isTrue,
       reason: 'Expected "Already shut down" debug log',
     );
@@ -199,23 +221,29 @@ void main() {
     await freshProcessor.forceFlush();
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('SimpleSpanProcessor') &&
-          msg.contains('Force flushing')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('SimpleSpanProcessor') &&
+            msg.contains('Force flushing'),
+      ),
       isTrue,
       reason: 'Expected SimpleSpanProcessor forceFlush debug log',
     );
     expect(
-      logOutput.any((msg) =>
-          msg.contains('SimpleSpanProcessor') &&
-          msg.contains('No pending exports')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('SimpleSpanProcessor') &&
+            msg.contains('No pending exports'),
+      ),
       isTrue,
       reason: 'Expected "No pending exports" debug log',
     );
     expect(
-      logOutput.any((msg) =>
-          msg.contains('SimpleSpanProcessor') &&
-          msg.contains('Force flush complete')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('SimpleSpanProcessor') &&
+            msg.contains('Force flush complete'),
+      ),
       isTrue,
       reason: 'Expected "Force flush complete" debug log',
     );
@@ -231,9 +259,11 @@ void main() {
     await freshProcessor.forceFlush();
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('SimpleSpanProcessor') &&
-          msg.contains('Cannot force flush')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('SimpleSpanProcessor') &&
+            msg.contains('Cannot force flush'),
+      ),
       isTrue,
       reason: 'Expected "Cannot force flush" debug log',
     );
@@ -251,8 +281,9 @@ void main() {
     span.setStatus(SpanStatusCode.Ok);
 
     expect(
-      logOutput
-          .any((msg) => msg.contains('SDKSpan') && msg.contains('Set status')),
+      logOutput.any(
+        (msg) => msg.contains('SDKSpan') && msg.contains('Set status'),
+      ),
       isTrue,
       reason: 'Expected setStatus debug log',
     );
@@ -330,8 +361,10 @@ void main() {
     expect(span.spanLinks!.length, greaterThanOrEqualTo(2));
 
     // recordException
-    span.recordException(Exception('test exception'),
-        stackTrace: StackTrace.current);
+    span.recordException(
+      Exception('test exception'),
+      stackTrace: StackTrace.current,
+    );
 
     otherSpan.end();
     linkSpan.end();
@@ -343,36 +376,37 @@ void main() {
   // ---------------------------------------------------------------------------
 
   test(
-      'span properties: kind, isRecording, isEnded, endTime, parentSpan, resource',
-      () {
-    final tracer = OTel.tracer();
-    final span = tracer.startSpan('prop-test', kind: SpanKind.client);
+    'span properties: kind, isRecording, isEnded, endTime, parentSpan, resource',
+    () {
+      final tracer = OTel.tracer();
+      final span = tracer.startSpan('prop-test', kind: SpanKind.client);
 
-    expect(span.kind, equals(SpanKind.client));
-    expect(span.isRecording, isTrue);
-    expect(span.isEnded, isFalse);
-    expect(span.endTime, isNull);
-    expect(span.startTime, isNotNull);
-    expect(span.spanId, isNotNull);
-    expect(span.spanContext, isNotNull);
-    expect(span.status, equals(SpanStatusCode.Unset));
-    expect(span.statusDescription, isNull);
-    expect(span.instrumentationScope, isNotNull);
-    // parentSpanContext may be null for a root span - just access it for coverage.
-    // ignore: unnecessary_statements
-    span.parentSpanContext;
-    expect(span.isValid, isTrue);
-    // parentSpan may be null for a root span - just access it for coverage.
-    // ignore: unnecessary_statements
-    span.parentSpan;
-    // resource comes from the tracer
-    expect(span.resource, isNotNull);
+      expect(span.kind, equals(SpanKind.client));
+      expect(span.isRecording, isTrue);
+      expect(span.isEnded, isFalse);
+      expect(span.endTime, isNull);
+      expect(span.startTime, isNotNull);
+      expect(span.spanId, isNotNull);
+      expect(span.spanContext, isNotNull);
+      expect(span.status, equals(SpanStatusCode.Unset));
+      expect(span.statusDescription, isNull);
+      expect(span.instrumentationScope, isNotNull);
+      // parentSpanContext may be null for a root span - just access it for coverage.
+      // ignore: unnecessary_statements
+      span.parentSpanContext;
+      expect(span.isValid, isTrue);
+      // parentSpan may be null for a root span - just access it for coverage.
+      // ignore: unnecessary_statements
+      span.parentSpan;
+      // resource comes from the tracer
+      expect(span.resource, isNotNull);
 
-    span.end();
-    expect(span.isEnded, isTrue);
-    expect(span.endTime, isNotNull);
-    expect(span.isRecording, isFalse);
-  });
+      span.end();
+      expect(span.isEnded, isTrue);
+      expect(span.endTime, isNotNull);
+      expect(span.isRecording, isFalse);
+    },
+  );
 
   test('span updateName notifies processors', () {
     final tracer = OTel.tracer();
@@ -382,10 +416,12 @@ void main() {
     span.updateName('renamed');
     expect(span.name, equals('renamed'));
     expect(
-      logOutput.any((msg) =>
-          msg.contains('SimpleSpanProcessor') &&
-          msg.contains('Name updated') &&
-          msg.contains('renamed')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('SimpleSpanProcessor') &&
+            msg.contains('Name updated') &&
+            msg.contains('renamed'),
+      ),
       isTrue,
       reason: 'Expected name update log from processor',
     );
@@ -423,13 +459,15 @@ void main() {
 
     expect(
       logOutput.any(
-          (msg) => msg.contains('Tracer') && msg.contains('withSpan called')),
+        (msg) => msg.contains('Tracer') && msg.contains('withSpan called'),
+      ),
       isTrue,
       reason: 'Expected Tracer withSpan debug log',
     );
     expect(
-      logOutput.any((msg) =>
-          msg.contains('Tracer') && msg.contains('withSpan completed')),
+      logOutput.any(
+        (msg) => msg.contains('Tracer') && msg.contains('withSpan completed'),
+      ),
       isTrue,
       reason: 'Expected Tracer withSpan completed debug log',
     );
@@ -445,14 +483,17 @@ void main() {
     expect(result, equals(99));
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('Tracer') && msg.contains('withSpanAsync called')),
+      logOutput.any(
+        (msg) => msg.contains('Tracer') && msg.contains('withSpanAsync called'),
+      ),
       isTrue,
       reason: 'Expected Tracer withSpanAsync debug log',
     );
     expect(
-      logOutput.any((msg) =>
-          msg.contains('Tracer') && msg.contains('withSpanAsync completed')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('Tracer') && msg.contains('withSpanAsync completed'),
+      ),
       isTrue,
       reason: 'Expected Tracer withSpanAsync completed debug log',
     );
@@ -472,7 +513,8 @@ void main() {
     // recordSpan starts a span, runs fn, then ends the span. All with debug.
     expect(
       logOutput.any(
-          (msg) => msg.contains('Tracer') && msg.contains('Starting span')),
+        (msg) => msg.contains('Tracer') && msg.contains('Starting span'),
+      ),
       isTrue,
       reason: 'Expected Tracer startSpan debug log from recordSpan',
     );
@@ -490,7 +532,8 @@ void main() {
 
     expect(
       logOutput.any(
-          (msg) => msg.contains('Tracer') && msg.contains('Starting span')),
+        (msg) => msg.contains('Tracer') && msg.contains('Starting span'),
+      ),
       isTrue,
       reason: 'Expected Tracer startSpan debug log from recordSpanAsync',
     );
@@ -505,15 +548,14 @@ void main() {
     final parentSpan = tracer.startSpan('parent-span');
     logOutput.clear();
 
-    final childSpan = tracer.startSpan(
-      'child-span',
-      parentSpan: parentSpan,
-    );
+    final childSpan = tracer.startSpan('child-span', parentSpan: parentSpan);
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('Creating child span') ||
-          (msg.contains('Tracer') && msg.contains('Starting span'))),
+      logOutput.any(
+        (msg) =>
+            msg.contains('Creating child span') ||
+            (msg.contains('Tracer') && msg.contains('Starting span')),
+      ),
       isTrue,
       reason: 'Expected child span creation debug log',
     );
@@ -531,7 +573,8 @@ void main() {
 
     expect(
       logOutput.any(
-          (msg) => msg.contains('Tracer') && msg.contains('Creating span')),
+        (msg) => msg.contains('Tracer') && msg.contains('Creating span'),
+      ),
       isTrue,
       reason: 'Expected Tracer createSpan debug log',
     );
@@ -551,7 +594,8 @@ void main() {
 
     expect(
       logOutput.any(
-          (msg) => msg.contains('Tracer') && msg.contains('Starting span')),
+        (msg) => msg.contains('Tracer') && msg.contains('Starting span'),
+      ),
       isTrue,
       reason: 'Expected Tracer startSpan debug log from startSpanWithContext',
     );
@@ -573,8 +617,10 @@ void main() {
 
     expect(tracer, isNotNull);
     expect(
-      logOutput.any((msg) =>
-          msg.contains('TracerProvider') && msg.contains('Getting tracer')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('TracerProvider') && msg.contains('Getting tracer'),
+      ),
       isTrue,
       reason: 'Expected TracerProvider getTracer debug log',
     );
@@ -588,14 +634,18 @@ void main() {
     await tp.shutdown();
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('TracerProvider') && msg.contains('Shutting down')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('TracerProvider') && msg.contains('Shutting down'),
+      ),
       isTrue,
       reason: 'Expected TracerProvider shutdown debug log',
     );
     expect(
-      logOutput.any((msg) =>
-          msg.contains('TracerProvider') && msg.contains('Shutdown complete')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('TracerProvider') && msg.contains('Shutdown complete'),
+      ),
       isTrue,
       reason: 'Expected TracerProvider shutdown complete debug log',
     );
@@ -609,8 +659,10 @@ void main() {
     await tp.shutdown();
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('TracerProvider') && msg.contains('Already shut down')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('TracerProvider') && msg.contains('Already shut down'),
+      ),
       isTrue,
       reason: 'Expected "Already shut down" debug log',
     );
@@ -623,15 +675,19 @@ void main() {
     await tp.forceFlush();
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('TracerProvider') && msg.contains('Force flushing')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('TracerProvider') && msg.contains('Force flushing'),
+      ),
       isTrue,
       reason: 'Expected TracerProvider forceFlush debug log',
     );
     expect(
-      logOutput.any((msg) =>
-          msg.contains('TracerProvider') &&
-          msg.contains('Force flush complete')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('TracerProvider') &&
+            msg.contains('Force flush complete'),
+      ),
       isTrue,
       reason: 'Expected TracerProvider force flush complete debug log',
     );
@@ -645,8 +701,11 @@ void main() {
     await tp.forceFlush();
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('TracerProvider') && msg.contains('Cannot force flush')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('TracerProvider') &&
+            msg.contains('Cannot force flush'),
+      ),
       isTrue,
       reason: 'Expected "Cannot force flush" debug log',
     );
@@ -661,9 +720,11 @@ void main() {
     tp.addSpanProcessor(freshProcessor);
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('SDKTracerProvider') &&
-          msg.contains('Adding span processor')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('SDKTracerProvider') &&
+            msg.contains('Adding span processor'),
+      ),
       isTrue,
       reason: 'Expected addSpanProcessor debug log',
     );
@@ -679,9 +740,11 @@ void main() {
     tp.ensureResourceIsSet();
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('TracerProvider') &&
-          msg.contains('Setting resource from default')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('TracerProvider') &&
+            msg.contains('Setting resource from default'),
+      ),
       isTrue,
       reason: 'Expected ensureResourceIsSet debug log',
     );
@@ -706,13 +769,19 @@ void main() {
 
     // Count the number of onEnd calls logged for SimpleSpanProcessor.
     final onEndLogs = logOutput
-        .where((msg) =>
-            msg.contains('SimpleSpanProcessor') && msg.contains('onEnd called'))
+        .where(
+          (msg) =>
+              msg.contains('SimpleSpanProcessor') &&
+              msg.contains('onEnd called'),
+        )
         .toList();
 
     // There should be at least 2 onEnd logs (one per processor).
-    expect(onEndLogs.length, greaterThanOrEqualTo(2),
-        reason: 'Expected onEnd logs from multiple processors');
+    expect(
+      onEndLogs.length,
+      greaterThanOrEqualTo(2),
+      reason: 'Expected onEnd logs from multiple processors',
+    );
   });
 
   // ---------------------------------------------------------------------------
@@ -732,8 +801,9 @@ void main() {
     );
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('Tracer') && msg.contains('withSpan completed')),
+      logOutput.any(
+        (msg) => msg.contains('Tracer') && msg.contains('withSpan completed'),
+      ),
       isTrue,
       reason: 'Expected withSpan completed log even on error (from finally)',
     );
@@ -753,8 +823,10 @@ void main() {
     );
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('Tracer') && msg.contains('withSpanAsync completed')),
+      logOutput.any(
+        (msg) =>
+            msg.contains('Tracer') && msg.contains('withSpanAsync completed'),
+      ),
       isTrue,
       reason:
           'Expected withSpanAsync completed log even on error (from finally)',
@@ -778,7 +850,8 @@ void main() {
 
     expect(
       logOutput.any(
-          (msg) => msg.contains('Tracer') && msg.contains('withSpan called')),
+        (msg) => msg.contains('Tracer') && msg.contains('withSpan called'),
+      ),
       isTrue,
       reason: 'Expected withSpan debug log from startActiveSpan',
     );
@@ -795,8 +868,9 @@ void main() {
     expect(result, equals('async-active-result'));
 
     expect(
-      logOutput.any((msg) =>
-          msg.contains('Tracer') && msg.contains('withSpanAsync called')),
+      logOutput.any(
+        (msg) => msg.contains('Tracer') && msg.contains('withSpanAsync called'),
+      ),
       isTrue,
       reason: 'Expected withSpanAsync debug log from startActiveSpanAsync',
     );
@@ -814,8 +888,9 @@ void main() {
     span.end(spanStatus: SpanStatusCode.Error);
 
     expect(
-      logOutput
-          .any((msg) => msg.contains('SDKSpan') && msg.contains('Set status')),
+      logOutput.any(
+        (msg) => msg.contains('SDKSpan') && msg.contains('Set status'),
+      ),
       isTrue,
       reason:
           'Expected setStatus debug log when ending with a spanStatus parameter',

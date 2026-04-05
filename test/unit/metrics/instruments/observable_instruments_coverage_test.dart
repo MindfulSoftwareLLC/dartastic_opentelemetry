@@ -157,8 +157,7 @@ void main() {
     group('Multiple callbacks', () {
       test('ObservableCounter with multiple callbacks works', () {
         final counter = meter.createObservableCounter<int>(
-          name: 'multi_callback_counter',
-        ) as ObservableCounter<int>;
+            name: 'multi_callback_counter') as ObservableCounter<int>;
 
         final attr1 = {'source': 'cb1'}.toAttributes();
         final attr2 = {'source': 'cb2'}.toAttributes();
@@ -174,16 +173,19 @@ void main() {
 
         final measurements = counter.collect();
         expect(measurements, hasLength(2));
-        expect(measurements.where((m) => m.attributes == attr1).first.value,
-            equals(100));
-        expect(measurements.where((m) => m.attributes == attr2).first.value,
-            equals(200));
+        expect(
+          measurements.where((m) => m.attributes == attr1).first.value,
+          equals(100),
+        );
+        expect(
+          measurements.where((m) => m.attributes == attr2).first.value,
+          equals(200),
+        );
       });
 
       test('ObservableGauge with multiple callbacks works', () {
         final gauge = meter.createObservableGauge<double>(
-          name: 'multi_callback_gauge',
-        ) as ObservableGauge<double>;
+            name: 'multi_callback_gauge') as ObservableGauge<double>;
 
         final attr1 = {'sensor': 'indoor'}.toAttributes();
         final attr2 = {'sensor': 'outdoor'}.toAttributes();
@@ -199,10 +201,14 @@ void main() {
 
         final measurements = gauge.collect();
         expect(measurements, hasLength(2));
-        expect(measurements.where((m) => m.attributes == attr1).first.value,
-            closeTo(22.5, 0.001));
-        expect(measurements.where((m) => m.attributes == attr2).first.value,
-            closeTo(15.0, 0.001));
+        expect(
+          measurements.where((m) => m.attributes == attr1).first.value,
+          closeTo(22.5, 0.001),
+        );
+        expect(
+          measurements.where((m) => m.attributes == attr2).first.value,
+          closeTo(15.0, 0.001),
+        );
       });
 
       test('ObservableUpDownCounter with multiple callbacks works', () {
@@ -224,33 +230,39 @@ void main() {
 
         final measurements = counter.collect();
         expect(measurements, hasLength(2));
-        expect(measurements.where((m) => m.attributes == attr1).first.value,
-            equals(10));
-        expect(measurements.where((m) => m.attributes == attr2).first.value,
-            equals(-5));
+        expect(
+          measurements.where((m) => m.attributes == attr1).first.value,
+          equals(10),
+        );
+        expect(
+          measurements.where((m) => m.attributes == attr2).first.value,
+          equals(-5),
+        );
       });
     });
 
     group('Observable with attributes', () {
-      test('ObservableCounter with attributes reports per-attribute values',
-          () {
-        final attr1 = {'region': 'us-east'}.toAttributes();
-        final attr2 = {'region': 'eu-west'}.toAttributes();
+      test(
+        'ObservableCounter with attributes reports per-attribute values',
+        () {
+          final attr1 = {'region': 'us-east'}.toAttributes();
+          final attr2 = {'region': 'eu-west'}.toAttributes();
 
-        final counter = meter.createObservableCounter<int>(
-          name: 'obs_counter_attrs',
-          callback: (APIObservableResult<int> result) {
-            result.observe(100, attr1);
-            result.observe(200, attr2);
-          },
-        ) as ObservableCounter<int>;
+          final counter = meter.createObservableCounter<int>(
+            name: 'obs_counter_attrs',
+            callback: (APIObservableResult<int> result) {
+              result.observe(100, attr1);
+              result.observe(200, attr2);
+            },
+          ) as ObservableCounter<int>;
 
-        counter.collect();
+          counter.collect();
 
-        final metrics = counter.collectMetrics();
-        expect(metrics, isNotEmpty);
-        expect(metrics.first.points, hasLength(2));
-      });
+          final metrics = counter.collectMetrics();
+          expect(metrics, isNotEmpty);
+          expect(metrics.first.points, hasLength(2));
+        },
+      );
 
       test('ObservableGauge with attributes reports per-attribute values', () {
         final attr1 = {'host': 'server1'}.toAttributes();
@@ -272,106 +284,118 @@ void main() {
       });
 
       test(
-          'ObservableUpDownCounter with attributes reports per-attribute values',
-          () {
-        final attr1 = {'queue': 'high'}.toAttributes();
-        final attr2 = {'queue': 'low'}.toAttributes();
+        'ObservableUpDownCounter with attributes reports per-attribute values',
+        () {
+          final attr1 = {'queue': 'high'}.toAttributes();
+          final attr2 = {'queue': 'low'}.toAttributes();
 
-        final counter = meter.createObservableUpDownCounter<int>(
-          name: 'obs_updown_attrs',
-          callback: (APIObservableResult<int> result) {
-            result.observe(30, attr1);
-            result.observe(-12, attr2);
-          },
-        ) as ObservableUpDownCounter<int>;
+          final counter = meter.createObservableUpDownCounter<int>(
+            name: 'obs_updown_attrs',
+            callback: (APIObservableResult<int> result) {
+              result.observe(30, attr1);
+              result.observe(-12, attr2);
+            },
+          ) as ObservableUpDownCounter<int>;
 
-        counter.collect();
+          counter.collect();
 
-        final metrics = counter.collectMetrics();
-        expect(metrics, isNotEmpty);
-        expect(metrics.first.points, hasLength(2));
-      });
+          final metrics = counter.collectMetrics();
+          expect(metrics, isNotEmpty);
+          expect(metrics.first.points, hasLength(2));
+        },
+      );
     });
 
     group('Collection returns metrics', () {
       test(
-          'ObservableCounter collection returns metrics with correct properties',
-          () {
-        final counter = meter.createObservableCounter<int>(
-          name: 'exported_counter',
-          unit: 'requests',
-          description: 'A counter for exported metrics',
-          callback: (APIObservableResult<int> result) {
-            result.observe(500);
-          },
-        ) as ObservableCounter<int>;
+        'ObservableCounter collection returns metrics with correct properties',
+        () {
+          final counter = meter.createObservableCounter<int>(
+            name: 'exported_counter',
+            unit: 'requests',
+            description: 'A counter for exported metrics',
+            callback: (APIObservableResult<int> result) {
+              result.observe(500);
+            },
+          ) as ObservableCounter<int>;
 
-        counter.collect();
+          counter.collect();
 
-        final metrics = counter.collectMetrics();
-        expect(metrics, isNotEmpty);
+          final metrics = counter.collectMetrics();
+          expect(metrics, isNotEmpty);
 
-        final counterMetric = metrics.first;
-        expect(counterMetric.type, equals(MetricType.sum));
-        expect(counterMetric.name, equals('exported_counter'));
-        expect(counterMetric.unit, equals('requests'));
-        expect(counterMetric.description,
-            equals('A counter for exported metrics'));
-        expect(counterMetric.points.isNotEmpty, isTrue);
-        expect(counterMetric.points.first.value, equals(500));
-      });
-
-      test('ObservableGauge collection returns metrics with correct properties',
-          () {
-        final gauge = meter.createObservableGauge<double>(
-          name: 'exported_gauge',
-          unit: 'percent',
-          description: 'A gauge for exported metrics',
-          callback: (APIObservableResult<double> result) {
-            result.observe(87.5);
-          },
-        ) as ObservableGauge<double>;
-
-        gauge.collect();
-
-        final metrics = gauge.collectMetrics();
-        expect(metrics, isNotEmpty);
-
-        final gaugeMetric = metrics.first;
-        expect(gaugeMetric.type, equals(MetricType.gauge));
-        expect(gaugeMetric.name, equals('exported_gauge'));
-        expect(gaugeMetric.unit, equals('percent'));
-        expect(gaugeMetric.description, equals('A gauge for exported metrics'));
-        expect(gaugeMetric.points.isNotEmpty, isTrue);
-        expect(gaugeMetric.points.first.value, closeTo(87.5, 0.001));
-      });
+          final counterMetric = metrics.first;
+          expect(counterMetric.type, equals(MetricType.sum));
+          expect(counterMetric.name, equals('exported_counter'));
+          expect(counterMetric.unit, equals('requests'));
+          expect(
+            counterMetric.description,
+            equals('A counter for exported metrics'),
+          );
+          expect(counterMetric.points.isNotEmpty, isTrue);
+          expect(counterMetric.points.first.value, equals(500));
+        },
+      );
 
       test(
-          'ObservableUpDownCounter collection returns metrics with correct properties',
-          () {
-        final counter = meter.createObservableUpDownCounter<int>(
-          name: 'exported_updown',
-          unit: 'connections',
-          description: 'An up-down counter for exported metrics',
-          callback: (APIObservableResult<int> result) {
-            result.observe(42);
-          },
-        ) as ObservableUpDownCounter<int>;
+        'ObservableGauge collection returns metrics with correct properties',
+        () {
+          final gauge = meter.createObservableGauge<double>(
+            name: 'exported_gauge',
+            unit: 'percent',
+            description: 'A gauge for exported metrics',
+            callback: (APIObservableResult<double> result) {
+              result.observe(87.5);
+            },
+          ) as ObservableGauge<double>;
 
-        counter.collect();
+          gauge.collect();
 
-        final metrics = counter.collectMetrics();
-        expect(metrics, isNotEmpty);
+          final metrics = gauge.collectMetrics();
+          expect(metrics, isNotEmpty);
 
-        final updownMetric = metrics.first;
-        expect(updownMetric.type, equals(MetricType.sum));
-        expect(updownMetric.name, equals('exported_updown'));
-        expect(updownMetric.unit, equals('connections'));
-        expect(updownMetric.description,
-            equals('An up-down counter for exported metrics'));
-        expect(updownMetric.points.isNotEmpty, isTrue);
-        expect(updownMetric.points.first.value, equals(42));
-      });
+          final gaugeMetric = metrics.first;
+          expect(gaugeMetric.type, equals(MetricType.gauge));
+          expect(gaugeMetric.name, equals('exported_gauge'));
+          expect(gaugeMetric.unit, equals('percent'));
+          expect(
+            gaugeMetric.description,
+            equals('A gauge for exported metrics'),
+          );
+          expect(gaugeMetric.points.isNotEmpty, isTrue);
+          expect(gaugeMetric.points.first.value, closeTo(87.5, 0.001));
+        },
+      );
+
+      test(
+        'ObservableUpDownCounter collection returns metrics with correct properties',
+        () {
+          final counter = meter.createObservableUpDownCounter<int>(
+            name: 'exported_updown',
+            unit: 'connections',
+            description: 'An up-down counter for exported metrics',
+            callback: (APIObservableResult<int> result) {
+              result.observe(42);
+            },
+          ) as ObservableUpDownCounter<int>;
+
+          counter.collect();
+
+          final metrics = counter.collectMetrics();
+          expect(metrics, isNotEmpty);
+
+          final updownMetric = metrics.first;
+          expect(updownMetric.type, equals(MetricType.sum));
+          expect(updownMetric.name, equals('exported_updown'));
+          expect(updownMetric.unit, equals('connections'));
+          expect(
+            updownMetric.description,
+            equals('An up-down counter for exported metrics'),
+          );
+          expect(updownMetric.points.isNotEmpty, isTrue);
+          expect(updownMetric.points.first.value, equals(42));
+        },
+      );
     });
   });
 }

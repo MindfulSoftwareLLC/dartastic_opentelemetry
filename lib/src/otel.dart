@@ -1,6 +1,7 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
@@ -38,6 +39,18 @@ import 'package:meta/meta.dart';
 class OTel {
   static OTelSDKFactory? _otelFactory;
   static Sampler? _defaultSampler;
+
+  /// Whether print interception is enabled (set via initialize).
+  static bool _logPrintEnabled = false;
+
+  /// Logger name for print interception (set via initialize).
+  static String _logPrintLoggerName = 'dart.print';
+
+  /// Lazily initialized DartLogBridge for print interception.
+  static DartLogBridge? _logBridge;
+
+  /// Lazily initialized zone specification for print interception.
+  static ZoneSpecification? _printInterceptionZoneSpec;
 
   /// Default resource for the SDK.
   ///
@@ -85,9 +98,17 @@ class OTel {
   /// @param metricExporter Custom metric exporter for metrics
   /// @param metricReader Custom metric reader for metrics
   /// @param enableMetrics Whether to enable metrics collection (default: true)
+  /// @param enableLogs Whether to enable logs collection and auto-configure exporter (default: true).
+  ///   When enabled, the logs exporter is configured based on OTEL_LOGS_EXPORTER env var.
+  /// @param logRecordExporter Custom log record exporter (overrides OTEL_LOGS_EXPORTER)
+  /// @param logRecordProcessor Custom log record processor (overrides auto-configuration)
   /// @param dartasticApiKey API key for Dartastic.io backend
   /// @param tenantId Tenant ID for multi-tenant backends (required for Dartastic.io)
   /// @param detectPlatformResources Whether to detect platform resources (default: true)
+  /// @param logPrint Whether to intercept print() calls and route them to OTel logs (default: false).
+  ///   When enabled, all print() calls within [runWithPrintInterception] will be captured
+  ///   as INFO level logs. Set to true to automatically bridge print statements to OpenTelemetry.
+  /// @param logPrintLoggerName Logger name for print-intercepted logs (default: 'dart.print')
   /// @param oTelFactoryCreationFunction Factory function for creating OTelSDKFactory instances
   /// @return A Future that completes when initialization is done
   /// @throws StateError if called more than once
@@ -106,9 +127,14 @@ class OTel {
     MetricExporter? metricExporter,
     MetricReader? metricReader,
     bool enableMetrics = true,
+    bool enableLogs = true,
+    LogRecordExporter? logRecordExporter,
+    LogRecordProcessor? logRecordProcessor,
     String? dartasticApiKey,
     String? tenantId,
     bool detectPlatformResources = true,
+    bool logPrint = false,
+    String logPrintLoggerName = 'dart.print',
     OTelFactoryCreationFunction? oTelFactoryCreationFunction =
         otelSDKFactoryFactoryFunction,
   }) async {
@@ -152,7 +178,8 @@ class OTel {
       }
       if (envServiceVersion != null) {
         OTelLog.debug(
-            'Using service version from environment: $serviceVersion');
+          'Using service version from environment: $serviceVersion',
+        );
       }
       if (envEndpoint != null) {
         OTelLog.debug('Using endpoint from environment: $endpoint');
@@ -181,12 +208,14 @@ class OTel {
     }
     if (OTelFactory.otelFactory != null) {
       throw StateError(
-          'OTelAPI can only be initialized once. If you need multiple endpoints or service names or versions create a named TracerProvider');
+        'OTelAPI can only be initialized once. If you need multiple endpoints or service names or versions create a named TracerProvider',
+      );
     }
 
     if (endpoint.isEmpty) {
       throw ArgumentError(
-          'endpoint must not be the empty string.'); //TODO validate url
+        'endpoint must not be the empty string.',
+      ); //TODO validate url
     }
     if (serviceName.isEmpty) {
       throw ArgumentError('serviceName must not be the empty string.');
@@ -205,13 +234,15 @@ class OTel {
     initializeLogging();
 
     OTelFactory.otelFactory = factoryFactory(
-        apiEndpoint: endpoint,
-        apiServiceName: serviceName,
-        apiServiceVersion: serviceVersion);
+      apiEndpoint: endpoint,
+      apiServiceName: serviceName,
+      apiServiceVersion: serviceVersion,
+    );
 
     if (OTelLog.isDebug()) {
       OTelLog.debug(
-          'OTel initialized with endpoint: $endpoint, service: $serviceName');
+        'OTel initialized with endpoint: $endpoint, service: $serviceName',
+      );
     }
 
     final serviceResourceAttributes = {
@@ -219,16 +250,19 @@ class OTel {
       'service.version': serviceVersion,
     };
     // Create initial resource with service attributes
-    var baseResource =
-        OTel.resource(OTel.attributesFromMap(serviceResourceAttributes));
+    var baseResource = OTel.resource(
+      OTel.attributesFromMap(serviceResourceAttributes),
+    );
 
     if (tenantId != null) {
       // Create a separate tenant_id resource to ensure it's preserved
-      final tenantResource =
-          OTel.resource(OTel.attributesFromMap({'tenant_id': tenantId}));
+      final tenantResource = OTel.resource(
+        OTel.attributesFromMap({'tenant_id': tenantId}),
+      );
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-            'OTel.initialize: Creating tenant_id resource with: $tenantId');
+          'OTel.initialize: Creating tenant_id resource with: $tenantId',
+        );
       }
       // Merge tenant into the base resource
       baseResource = baseResource.merge(tenantResource);
@@ -277,7 +311,8 @@ class OTel {
             hasTenantId = true;
             if (OTelLog.isDebug()) {
               OTelLog.debug(
-                  'Final resource check - tenant_id is present: ${attr.value}');
+                'Final resource check - tenant_id is present: ${attr.value}',
+              );
             }
           }
         });
@@ -287,8 +322,9 @@ class OTel {
           if (OTelLog.isDebug()) {
             OTelLog.debug('tenant_id was missing - adding it as fallback');
           }
-          final tenantResource =
-              OTel.resource(OTel.attributesFromMap({'tenant_id': tenantId}));
+          final tenantResource = OTel.resource(
+            OTel.attributesFromMap({'tenant_id': tenantId}),
+          );
           OTel.defaultResource = OTel.defaultResource!.merge(tenantResource);
         }
       }
@@ -351,18 +387,17 @@ class OTel {
         } else {
           // Fallback to gRPC for backward compatibility
           exporter = OtlpGrpcSpanExporter(
-            OtlpGrpcExporterConfig(
-              endpoint: endpoint,
-              insecure: !secure,
-            ),
+            OtlpGrpcExporterConfig(endpoint: endpoint, insecure: !secure),
           );
         }
 
         // Only add ConsoleExporter in debug mode or if explicitly requested
         final exporters = <SpanExporter>[exporter];
         if (OTelLog.isDebug() ||
-            const bool.fromEnvironment('OTEL_CONSOLE_EXPORTER',
-                defaultValue: false)) {
+            const bool.fromEnvironment(
+              'OTEL_CONSOLE_EXPORTER',
+              defaultValue: false,
+            )) {
           exporters.add(ConsoleExporter());
         }
 
@@ -403,6 +438,49 @@ class OTel {
         );
       }
     }
+
+    // Configure logs if enabled
+    if (enableLogs) {
+      // For HTTP, adjust endpoint if it's the gRPC default
+      String logsEndpoint = endpoint;
+      if (endpoint == defaultEndpoint) {
+        logsEndpoint = 'http://localhost:4318';
+      }
+      LogsConfiguration.configureLoggerProvider(
+        endpoint: logsEndpoint,
+        secure: secure,
+        logRecordExporter: logRecordExporter,
+        logRecordProcessor: logRecordProcessor,
+        resource: OTel.defaultResource,
+      );
+    }
+
+    // Store print interception configuration (lazily initialized when needed)
+    _logPrintEnabled = logPrint;
+    _logPrintLoggerName = logPrintLoggerName;
+
+    if (logPrint && OTelLog.isDebug()) {
+      OTelLog.debug(
+          'OTel: Print interception enabled with logger: $logPrintLoggerName');
+    }
+  }
+
+  /// Ensures the print interception bridge is initialized.
+  /// Called lazily when runWithPrintInterception is first used.
+  static void _ensurePrintInterceptionInitialized() {
+    if (_logBridge != null) return;
+
+    final logger = OTel.logger(_logPrintLoggerName);
+    _logBridge = DartLogBridge.install(
+      logger,
+      minimumSeverity: Severity.TRACE,
+    );
+    _printInterceptionZoneSpec = _logBridge!.createZoneSpecification();
+
+    if (OTelLog.isDebug()) {
+      OTelLog.debug(
+          'OTel: Print interception bridge initialized with logger: $_logPrintLoggerName');
+    }
   }
 
   /// Creates a Resource with the specified attributes and schema URL.
@@ -416,8 +494,10 @@ class OTel {
   /// @return A new Resource instance
   static Resource resource(Attributes? attributes, [String? schemaUrl]) {
     _getAndCacheOtelFactory();
-    return (_otelFactory as OTelSDKFactory)
-        .resource(attributes ?? OTel.attributes(), schemaUrl);
+    return (_otelFactory as OTelSDKFactory).resource(
+      attributes ?? OTel.attributes(),
+      schemaUrl,
+    );
   }
 
   /// Creates a new ContextKey with the given name.
@@ -564,10 +644,12 @@ class OTel {
     Resource? resource,
   }) {
     _getAndCacheOtelFactory();
-    final mp = _otelFactory!.addMeterProvider(name,
-        endpoint: endpoint,
-        serviceName: serviceName,
-        serviceVersion: serviceVersion) as MeterProvider;
+    final mp = _otelFactory!.addMeterProvider(
+      name,
+      endpoint: endpoint,
+      serviceName: serviceName,
+      serviceVersion: serviceVersion,
+    ) as MeterProvider;
     mp.resource = resource ?? defaultResource;
     return mp;
   }
@@ -587,8 +669,123 @@ class OTel {
   /// @return The default Meter instance
   static Meter meter([String? name]) {
     return meterProvider().getMeter(
-        name: name ?? defaultTracerName,
-        version: defaultTracerVersion) as Meter;
+      name: name ?? defaultTracerName,
+      version: defaultTracerVersion,
+    ) as Meter;
+  }
+
+  /// Gets a LoggerProvider for creating Loggers.
+  ///
+  /// If name is null, this returns the global default LoggerProvider, which shares
+  /// the endpoint, serviceName, serviceVersion and resource set in initialize().
+  /// If the name is not null, it returns a LoggerProvider for the name that was added
+  /// with addLoggerProvider.
+  ///
+  /// @param name Optional name of a specific LoggerProvider
+  /// @return The LoggerProvider instance
+  static LoggerProvider loggerProvider({String? name}) {
+    final logProvider = OTelAPI.loggerProvider(name) as LoggerProvider;
+    logProvider.resource ??= defaultResource;
+    return logProvider;
+  }
+
+  /// Adds or replaces a named LoggerProvider.
+  ///
+  /// This allows for creating multiple LoggerProviders with different configurations,
+  /// which can be useful for sending logs to different backends or with different
+  /// settings.
+  ///
+  /// @param name The name of the LoggerProvider
+  /// @param endpoint Optional custom endpoint URL
+  /// @param serviceName Optional custom service name
+  /// @param serviceVersion Optional custom service version
+  /// @param resource Optional custom resource
+  /// @return The newly created or replaced LoggerProvider
+  static LoggerProvider addLoggerProvider(
+    String name, {
+    String? endpoint,
+    String? serviceName,
+    String? serviceVersion,
+    Resource? resource,
+  }) {
+    _getAndCacheOtelFactory();
+    final lp = _otelFactory!.addLogProvider(name,
+        endpoint: endpoint,
+        serviceName: serviceName,
+        serviceVersion: serviceVersion) as LoggerProvider;
+    lp.resource = resource ?? defaultResource;
+    return lp;
+  }
+
+  /// Gets the default Logger from the default LoggerProvider.
+  ///
+  /// This is a convenience method for getting a Logger with the default configuration.
+  /// The endpoint, serviceName, serviceVersion and resource all flow down from
+  /// the OTel defaults set during initialization.
+  ///
+  /// @param name Optional custom name for the logger (defaults to defaultTracerName)
+  /// @return The default Logger instance
+  static Logger logger([String? name]) {
+    return loggerProvider().getLogger(
+      name ?? defaultTracerName,
+      version: defaultTracerVersion,
+    );
+  }
+
+  /// Whether print interception is enabled.
+  ///
+  /// Returns true if [initialize] was called with `logPrint: true`.
+  static bool get isLogPrintEnabled => _logPrintEnabled;
+
+  /// Gets the current DartLogBridge instance, if print interception is enabled.
+  ///
+  /// Returns null if print interception was not enabled during initialization.
+  static DartLogBridge? get logBridge => _logBridge;
+
+  /// Runs the given callback in a zone that intercepts print() calls.
+  ///
+  /// When [initialize] is called with `logPrint: true`, this method runs
+  /// the callback in a zone where all `print()` calls are captured and
+  /// routed to OpenTelemetry logs as INFO level messages.
+  ///
+  /// If print interception is not enabled, the callback is run directly
+  /// without any interception.
+  ///
+  /// Example usage:
+  /// ```dart
+  /// await OTel.initialize(
+  ///   serviceName: 'my-service',
+  ///   logPrint: true,
+  /// );
+  ///
+  /// OTel.runWithPrintInterception(() {
+  ///   print('This will be captured as an OTel log');
+  /// });
+  /// ```
+  ///
+  /// @param callback The code to run with print interception
+  /// @return The result of the callback
+  static R runWithPrintInterception<R>(R Function() callback) {
+    if (!_logPrintEnabled) {
+      return callback();
+    }
+    _ensurePrintInterceptionInitialized();
+    return runZoned(callback, zoneSpecification: _printInterceptionZoneSpec);
+  }
+
+  /// Runs the given async callback in a zone that intercepts print() calls.
+  ///
+  /// This is the async version of [runWithPrintInterception].
+  ///
+  /// @param callback The async code to run with print interception
+  /// @return A Future containing the result of the callback
+  static Future<R> runWithPrintInterceptionAsync<R>(
+      Future<R> Function() callback) {
+    if (!_logPrintEnabled) {
+      return callback();
+    }
+    _ensurePrintInterceptionInitialized();
+    return runZoned(callback, zoneSpecification: _printInterceptionZoneSpec);
   }
 
   /// Creates a SpanContext with the specified parameters.
@@ -604,13 +801,14 @@ class OTel {
   /// @param traceState Trace state
   /// @param isRemote Whether this context was received from a remote source
   /// @return A new SpanContext instance
-  static SpanContext spanContext(
-      {TraceId? traceId,
-      SpanId? spanId,
-      SpanId? parentSpanId,
-      TraceFlags? traceFlags,
-      TraceState? traceState,
-      bool? isRemote}) {
+  static SpanContext spanContext({
+    TraceId? traceId,
+    SpanId? spanId,
+    SpanId? parentSpanId,
+    TraceFlags? traceFlags,
+    TraceState? traceState,
+    bool? isRemote,
+  }) {
     return OTelAPI.spanContext(
       traceId: traceId ?? OTel.traceId(),
       spanId: spanId ?? OTel.spanId(),
@@ -665,8 +863,11 @@ class OTel {
   /// @param attributes Optional attributes to associate with the event
   /// @param timestamp Optional timestamp for the event (defaults to null)
   /// @return A new SpanEvent instance
-  static SpanEvent spanEvent(String name,
-      [Attributes? attributes, DateTime? timestamp]) {
+  static SpanEvent spanEvent(
+    String name, [
+    Attributes? attributes,
+    DateTime? timestamp,
+  ]) {
     _getAndCacheOtelFactory();
     return _otelFactory!.spanEvent(name, attributes, timestamp);
   }
@@ -756,7 +957,9 @@ class OTel {
   /// @param value The list of string values
   /// @return A new Attribute instance
   static Attribute<List<String>> attributeStringList(
-      String name, List<String> value) {
+    String name,
+    List<String> value,
+  ) {
     _getAndCacheOtelFactory();
     return _otelFactory!.attributeStringList(name, value);
   }
@@ -767,7 +970,9 @@ class OTel {
   /// @param value The list of boolean values
   /// @return A new Attribute instance
   static Attribute<List<bool>> attributeBoolList(
-      String name, List<bool> value) {
+    String name,
+    List<bool> value,
+  ) {
     _getAndCacheOtelFactory();
     return _otelFactory!.attributeBoolList(name, value);
   }
@@ -788,7 +993,9 @@ class OTel {
   /// @param value The list of double values
   /// @return A new Attribute instance
   static Attribute<List<double>> attributeDoubleList(
-      String name, List<double> value) {
+    String name,
+    List<double> value,
+  ) {
     _getAndCacheOtelFactory();
     return _otelFactory!.attributeDoubleList(name, value);
   }
@@ -883,7 +1090,8 @@ class OTel {
     _getAndCacheOtelFactory();
     if (traceId.length != TraceId.traceIdLength) {
       throw ArgumentError(
-          'Trace ID must be exactly ${TraceId.traceIdLength} bytes, got ${traceId.length} bytes');
+        'Trace ID must be exactly ${TraceId.traceIdLength} bytes, got ${traceId.length} bytes',
+      );
     }
     return OTelFactory.otelFactory!.traceId(traceId);
   }
@@ -919,7 +1127,8 @@ class OTel {
     _getAndCacheOtelFactory();
     if (spanId.length != 8) {
       throw ArgumentError(
-          'Span ID must be exactly 8 bytes, got ${spanId.length} bytes');
+        'Span ID must be exactly 8 bytes, got ${spanId.length} bytes',
+      );
     }
     return _otelFactory!.spanId(spanId);
   }
@@ -1054,6 +1263,15 @@ class OTel {
     _defaultSampler = null;
     defaultResource = null;
     dartasticApiKey = null;
+
+    // Reset print interception state
+    if (_logBridge != null) {
+      DartLogBridge.uninstall();
+    }
+    _logBridge = null;
+    _printInterceptionZoneSpec = null;
+    _logPrintEnabled = false;
+    _logPrintLoggerName = 'dart.print';
     if (OTelLog.isDebug()) OTelLog.debug('OTel: Reset static fields');
 
     // Reset API state
@@ -1082,15 +1300,17 @@ class OTel {
   /// [version] is optional and specifies the version of the instrumentation scope, defaults to '1.0.0'
   /// [schemaUrl] is optional and specifies the Schema URL
   /// [attributes] is optional and specifies instrumentation scope attributes
-  static InstrumentationScope instrumentationScope(
-      {required String name,
-      String version = '1.0.0',
-      String? schemaUrl,
-      Attributes? attributes}) {
+  static InstrumentationScope instrumentationScope({
+    required String name,
+    String version = '1.0.0',
+    String? schemaUrl,
+    Attributes? attributes,
+  }) {
     return OTelAPI.instrumentationScope(
-        name: name,
-        version: version,
-        schemaUrl: schemaUrl,
-        attributes: attributes);
+      name: name,
+      version: version,
+      schemaUrl: schemaUrl,
+      attributes: attributes,
+    );
   }
 }

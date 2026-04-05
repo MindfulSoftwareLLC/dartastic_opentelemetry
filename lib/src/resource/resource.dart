@@ -86,8 +86,10 @@ class Resource {
       mergedSchemaUrl = other._schemaUrl;
     }
 
-    final result =
-        Resource._(OTel.attributesFromMap(mergedMap), mergedSchemaUrl);
+    final result = Resource._(
+      OTel.attributesFromMap(mergedMap),
+      mergedSchemaUrl,
+    );
 
     if (OTelLog.isDebug()) {
       OTelLog.debug('Resource merge result attributes:');

@@ -35,9 +35,10 @@ void main() async {
   final tracer = tracerProvider.getTracer('example-sync-tracer');
 
   // Create and end a simple span
-  final span = tracer.startSpan('sync-operation',
-      attributes: OTel.attributesFromMap({'example.sync': true}))
-    ..end();
+  final span = tracer.startSpan(
+    'sync-operation',
+    attributes: OTel.attributesFromMap({'example.sync': true}),
+  )..end();
 
   try {
     // Add an event to match Python example

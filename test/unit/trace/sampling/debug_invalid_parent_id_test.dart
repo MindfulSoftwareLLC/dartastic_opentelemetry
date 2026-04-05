@@ -9,9 +9,7 @@ void main() {
   group('Debug Invalid Parent ID Tests', () {
     setUp(() async {
       await OTel.reset();
-      await OTel.initialize(
-        serviceName: 'test-service',
-      );
+      await OTel.initialize(serviceName: 'test-service');
     });
 
     tearDown(() async {
@@ -21,8 +19,11 @@ void main() {
     test('spanIdInvalid returns a proper zero-filled ID', () {
       final invalidId = OTel.spanIdInvalid();
       expect(invalidId.toString(), equals('0000000000000000'));
-      expect(invalidId.isValid, isFalse,
-          reason: 'Invalid span ID should not be valid');
+      expect(
+        invalidId.isValid,
+        isFalse,
+        reason: 'Invalid span ID should not be valid',
+      );
     });
 
     test('root span creation sets proper parent span ID directly', () {
@@ -39,10 +40,16 @@ void main() {
       );
 
       // Verify the parent span ID is zeros, not null
-      expect(spanContext.parentSpanId, isNotNull,
-          reason: 'Parent span ID should not be null');
-      expect(spanContext.parentSpanId.toString(), equals('0000000000000000'),
-          reason: 'Parent span ID should be all zeros for root spans');
+      expect(
+        spanContext.parentSpanId,
+        isNotNull,
+        reason: 'Parent span ID should not be null',
+      );
+      expect(
+        spanContext.parentSpanId.toString(),
+        equals('0000000000000000'),
+        reason: 'Parent span ID should be all zeros for root spans',
+      );
     });
 
     test('tracer creates root span with zero-filled parent ID', () {
@@ -55,13 +62,21 @@ void main() {
       print('Is valid: ${rootSpan.spanContext.parentSpanId!.isValid}');
 
       // Test that parent span ID is properly zero-filled
-      expect(rootSpan.spanContext.parentSpanId, isNotNull,
-          reason: 'Parent span ID should not be null');
-      expect(rootSpan.spanContext.parentSpanId.toString(),
-          equals('0000000000000000'),
-          reason: 'Parent span ID should be all zeros for root spans');
-      expect(rootSpan.spanContext.parentSpanId!.isValid, isFalse,
-          reason: 'Root span parent ID should be invalid');
+      expect(
+        rootSpan.spanContext.parentSpanId,
+        isNotNull,
+        reason: 'Parent span ID should not be null',
+      );
+      expect(
+        rootSpan.spanContext.parentSpanId.toString(),
+        equals('0000000000000000'),
+        reason: 'Parent span ID should be all zeros for root spans',
+      );
+      expect(
+        rootSpan.spanContext.parentSpanId!.isValid,
+        isFalse,
+        reason: 'Root span parent ID should be invalid',
+      );
 
       rootSpan.end();
     });

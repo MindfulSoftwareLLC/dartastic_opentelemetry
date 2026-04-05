@@ -97,10 +97,7 @@ void main() {
 
     test('Gauge supports different number types', () async {
       // Integer gauge
-      final intGauge = meter.createGauge<int>(
-        name: 'int-gauge',
-        unit: 'count',
-      );
+      final intGauge = meter.createGauge<int>(name: 'int-gauge', unit: 'count');
 
       // Double gauge
       final doubleGauge = meter.createGauge<double>(
@@ -135,17 +132,15 @@ void main() {
           double>; // Cast to implementation class to access recordWithMap
 
       // Record using recordWithMap
-      gauge.recordWithMap(23.5, {
-        'location': 'outside',
-        'sensor': 'primary',
-      });
+      gauge.recordWithMap(23.5, {'location': 'outside', 'sensor': 'primary'});
 
       // Force collection
       await metricReader.forceFlush();
 
       // Get metric
-      final metric = memoryExporter.exportedMetrics
-          .firstWhere((m) => m.name == 'map-attributes-gauge');
+      final metric = memoryExporter.exportedMetrics.firstWhere(
+        (m) => m.name == 'map-attributes-gauge',
+      );
 
       // Verify value
       expect(metric.points.length, equals(1));
@@ -158,9 +153,8 @@ void main() {
     });
 
     test('Gauge.getValue returns most recent value', () {
-      final gauge = meter.createGauge<int>(
-        name: 'get-value-gauge',
-      ) as Gauge<int>; // Cast to implementation class to access getValue
+      final gauge = meter.createGauge<int>(name: 'get-value-gauge')
+          as Gauge<int>; // Cast to implementation class to access getValue
 
       // Record values with different attributes
       final attrs1 = {'region': 'north'}.toAttributes();
@@ -194,8 +188,9 @@ void main() {
       await metricReader.forceFlush();
 
       // Get metric
-      final metric = memoryExporter.exportedMetrics
-          .firstWhere((m) => m.name == 'temperature-gauge');
+      final metric = memoryExporter.exportedMetrics.firstWhere(
+        (m) => m.name == 'temperature-gauge',
+      );
 
       // Verify negative value
       expect(metric.points.first.value, equals(-15.5));
@@ -219,8 +214,9 @@ void main() {
       await metricReader.forceFlush();
 
       // Get metric
-      final metric = memoryExporter.exportedMetrics
-          .firstWhere((m) => m.name == 'update-gauge');
+      final metric = memoryExporter.exportedMetrics.firstWhere(
+        (m) => m.name == 'update-gauge',
+      );
 
       // Verify only latest value is reported
       expect(metric.points.length, equals(1));
@@ -228,9 +224,8 @@ void main() {
     });
 
     test('Gauge collectMetrics respects enabled state', () {
-      final gauge = meter.createGauge<double>(
-        name: 'collect-metrics-gauge',
-      ) as Gauge<double>;
+      final gauge = meter.createGauge<double>(name: 'collect-metrics-gauge')
+          as Gauge<double>;
 
       // Record a value
       gauge.record(42.5);

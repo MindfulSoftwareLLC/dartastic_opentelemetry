@@ -8,9 +8,7 @@ void main() {
   group('Sampling Debugging', () {
     setUp(() async {
       await OTel.reset();
-      await OTel.initialize(
-        serviceName: 'test-service',
-      );
+      await OTel.initialize(serviceName: 'test-service');
     });
 
     tearDown(() async {
@@ -27,10 +25,7 @@ void main() {
 
       // Create a span using this explicit context
       final tracer = OTel.tracerProvider().getTracer('test');
-      final span = tracer.startSpan(
-        'test-span',
-        spanContext: explicitContext,
-      );
+      final span = tracer.startSpan('test-span', spanContext: explicitContext);
 
       // Verify the span has a new ID, not the one we provided
       expect(span.spanContext.spanId, isNot(equals(originalSpanId)));
@@ -50,8 +45,11 @@ void main() {
       final tracer1 = provider1.getTracer('test');
       final span1 = tracer1.startSpan('test');
 
-      expect(span1.spanContext.traceFlags.isSampled, isTrue,
-          reason: 'AlwaysOnSampler should set sampled flag to true');
+      expect(
+        span1.spanContext.traceFlags.isSampled,
+        isTrue,
+        reason: 'AlwaysOnSampler should set sampled flag to true',
+      );
 
       // Test with AlwaysOffSampler
       final provider2 = OTel.addTracerProvider(
@@ -61,8 +59,11 @@ void main() {
       final tracer2 = provider2.getTracer('test');
       final span2 = tracer2.startSpan('test');
 
-      expect(span2.spanContext.traceFlags.isSampled, isFalse,
-          reason: 'AlwaysOffSampler should set sampled flag to false');
+      expect(
+        span2.spanContext.traceFlags.isSampled,
+        isFalse,
+        reason: 'AlwaysOffSampler should set sampled flag to false',
+      );
 
       span1.end();
       span2.end();
@@ -85,17 +86,16 @@ void main() {
       final parentContext = OTel.context().withSpan(parent);
 
       // Create a child span with this context
-      final child = tracer.startSpan(
-        'child',
-        context: parentContext,
-      );
+      final child = tracer.startSpan('child', context: parentContext);
 
       // Child should inherit parent's sampling decision
       expect(child.spanContext.traceFlags.isSampled, isTrue);
       expect(child.spanContext.traceId, equals(parent.spanContext.traceId));
       expect(child.spanContext.parentSpanId, equals(parent.spanContext.spanId));
-      expect(child.spanContext.spanId.toString(),
-          isNot(equals(parent.spanContext.spanId.toString())));
+      expect(
+        child.spanContext.spanId.toString(),
+        isNot(equals(parent.spanContext.spanId.toString())),
+      );
 
       parent.end();
       child.end();

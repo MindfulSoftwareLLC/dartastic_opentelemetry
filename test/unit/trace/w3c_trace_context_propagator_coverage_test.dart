@@ -41,15 +41,19 @@ void main() {
         propagator.inject(context, carrier, mapSetter);
 
         expect(carrier.containsKey('traceparent'), isTrue);
-        expect(carrier['traceparent'],
-            equals('00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01'));
+        expect(
+          carrier['traceparent'],
+          equals('00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01'),
+        );
       });
 
       test('inject includes tracestate when present', () {
         final traceId = OTel.traceIdFrom('4bf92f3577b34da6a3ce929d0e0e4736');
         final spanId = OTel.spanIdFrom('00f067aa0ba902b7');
-        final traceState =
-            OTel.traceState({'vendor1': 'val1', 'vendor2': 'val2'});
+        final traceState = OTel.traceState({
+          'vendor1': 'val1',
+          'vendor2': 'val2',
+        });
         final spanContext = OTel.spanContext(
           traceId: traceId,
           spanId: spanId,
@@ -118,7 +122,9 @@ void main() {
         expect(sc, isNotNull);
         expect(sc!.isValid, isTrue);
         expect(
-            sc.traceId.hexString, equals('4bf92f3577b34da6a3ce929d0e0e4736'));
+          sc.traceId.hexString,
+          equals('4bf92f3577b34da6a3ce929d0e0e4736'),
+        );
         expect(sc.spanId.hexString, equals('00f067aa0ba902b7'));
         expect(sc.traceFlags.isSampled, isTrue);
         expect(sc.isRemote, isTrue);
@@ -180,7 +186,9 @@ void main() {
         expect(sc, isNotNull);
         expect(sc!.isValid, isTrue);
         expect(
-            sc.traceId.hexString, equals('abcdef1234567890abcdef1234567890'));
+          sc.traceId.hexString,
+          equals('abcdef1234567890abcdef1234567890'),
+        );
         expect(sc.spanId.hexString, equals('1234567890abcdef'));
       });
     });
@@ -206,8 +214,11 @@ void main() {
 
         // Extract from carrier
         final mapGetter = MapTextMapGetter(carrier);
-        final extractedContext =
-            propagator.extract(OTel.context(), carrier, mapGetter);
+        final extractedContext = propagator.extract(
+          OTel.context(),
+          carrier,
+          mapGetter,
+        );
 
         // Verify roundtrip
         final sc = extractedContext.spanContext;

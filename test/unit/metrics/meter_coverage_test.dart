@@ -60,133 +60,138 @@ void main() {
     });
 
     test(
-        'NoopMeter instruments create NoOp implementations when SDK not initialized',
-        () async {
-      // Reset the SDK state to force NoOp behavior
-      await OTel.reset();
-      OTelAPI.initialize();
+      'NoopMeter instruments create NoOp implementations when SDK not initialized',
+      () async {
+        // Reset the SDK state to force NoOp behavior
+        await OTel.reset();
+        OTelAPI.initialize();
 
-      // Get a meter WITHOUT initializing the SDK - this should return NoOp implementations
-      final noopMeter = OTel.meter('noop-test-meter');
+        // Get a meter WITHOUT initializing the SDK - this should return NoOp implementations
+        final noopMeter = OTel.meter('noop-test-meter');
 
-      // Verify the meter is a NoOp implementation (API factory creates disabled meters)
-      expect(noopMeter.enabled, isFalse);
+        // Verify the meter is a NoOp implementation (API factory creates disabled meters)
+        expect(noopMeter.enabled, isFalse);
 
-      // Create instruments and verify they work without errors (NoOp behavior)
-      final counter = noopMeter.createCounter<int>(name: 'noop_counter');
-      final upDownCounter =
-          noopMeter.createUpDownCounter<int>(name: 'noop_up_down');
-      final histogram =
-          noopMeter.createHistogram<double>(name: 'noop_histogram');
-      final gauge = noopMeter.createGauge<double>(name: 'noop_gauge');
-      final obsCounter = noopMeter.createObservableCounter<int>(
-        name: 'noop_obs_counter',
-        callback: (result) {
-          result.observe(123);
-        },
-      );
-      final obsUpDown = noopMeter.createObservableUpDownCounter<int>(
-        name: 'noop_obs_up_down',
-        callback: (result) {
-          result.observe(456);
-        },
-      );
-      final obsGauge = noopMeter.createObservableGauge<double>(
-        name: 'noop_obs_gauge',
-        callback: (result) {
-          result.observe(789.0);
-        },
-      );
+        // Create instruments and verify they work without errors (NoOp behavior)
+        final counter = noopMeter.createCounter<int>(name: 'noop_counter');
+        final upDownCounter = noopMeter.createUpDownCounter<int>(
+          name: 'noop_up_down',
+        );
+        final histogram = noopMeter.createHistogram<double>(
+          name: 'noop_histogram',
+        );
+        final gauge = noopMeter.createGauge<double>(name: 'noop_gauge');
+        final obsCounter = noopMeter.createObservableCounter<int>(
+          name: 'noop_obs_counter',
+          callback: (result) {
+            result.observe(123);
+          },
+        );
+        final obsUpDown = noopMeter.createObservableUpDownCounter<int>(
+          name: 'noop_obs_up_down',
+          callback: (result) {
+            result.observe(456);
+          },
+        );
+        final obsGauge = noopMeter.createObservableGauge<double>(
+          name: 'noop_obs_gauge',
+          callback: (result) {
+            result.observe(789.0);
+          },
+        );
 
-      // Verify instruments are disabled (NoOp implementations)
-      expect(counter.enabled, isFalse);
-      expect(upDownCounter.enabled, isFalse);
-      expect(histogram.enabled, isFalse);
-      expect(gauge.enabled, isFalse);
-      expect(obsCounter.enabled, isFalse);
-      expect(obsUpDown.enabled, isFalse);
-      expect(obsGauge.enabled, isFalse);
+        // Verify instruments are disabled (NoOp implementations)
+        expect(counter.enabled, isFalse);
+        expect(upDownCounter.enabled, isFalse);
+        expect(histogram.enabled, isFalse);
+        expect(gauge.enabled, isFalse);
+        expect(obsCounter.enabled, isFalse);
+        expect(obsUpDown.enabled, isFalse);
+        expect(obsGauge.enabled, isFalse);
 
-      // Exercise the APIs to ensure no exceptions - NoOp implementations should do nothing
-      counter.add(10);
-      upDownCounter.add(30);
-      upDownCounter.add(-15);
-      histogram.record(50.5);
-      gauge.record(70.5);
+        // Exercise the APIs to ensure no exceptions - NoOp implementations should do nothing
+        counter.add(10);
+        upDownCounter.add(30);
+        upDownCounter.add(-15);
+        histogram.record(50.5);
+        gauge.record(70.5);
 
-      // Check instrument properties
-      expect(counter.name, equals('noop_counter'));
-      expect(counter.isCounter, isTrue);
-      expect(counter.isGauge, isFalse);
-      expect(counter.isHistogram, isFalse);
-      expect(counter.isUpDownCounter, isFalse);
+        // Check instrument properties
+        expect(counter.name, equals('noop_counter'));
+        expect(counter.isCounter, isTrue);
+        expect(counter.isGauge, isFalse);
+        expect(counter.isHistogram, isFalse);
+        expect(counter.isUpDownCounter, isFalse);
 
-      expect(upDownCounter.name, equals('noop_up_down'));
-      expect(upDownCounter.isCounter, isFalse);
-      expect(upDownCounter.isGauge, isFalse);
-      expect(upDownCounter.isHistogram, isFalse);
-      expect(upDownCounter.isUpDownCounter, isTrue);
+        expect(upDownCounter.name, equals('noop_up_down'));
+        expect(upDownCounter.isCounter, isFalse);
+        expect(upDownCounter.isGauge, isFalse);
+        expect(upDownCounter.isHistogram, isFalse);
+        expect(upDownCounter.isUpDownCounter, isTrue);
 
-      expect(histogram.name, equals('noop_histogram'));
-      expect(histogram.isCounter, isFalse);
-      expect(histogram.isGauge, isFalse);
-      expect(histogram.isHistogram, isTrue);
-      expect(histogram.isUpDownCounter, isFalse);
+        expect(histogram.name, equals('noop_histogram'));
+        expect(histogram.isCounter, isFalse);
+        expect(histogram.isGauge, isFalse);
+        expect(histogram.isHistogram, isTrue);
+        expect(histogram.isUpDownCounter, isFalse);
 
-      expect(gauge.name, equals('noop_gauge'));
-      expect(gauge.isCounter, isFalse);
-      expect(gauge.isGauge, isTrue);
-      expect(gauge.isHistogram, isFalse);
-      expect(gauge.isUpDownCounter, isFalse);
+        expect(gauge.name, equals('noop_gauge'));
+        expect(gauge.isCounter, isFalse);
+        expect(gauge.isGauge, isTrue);
+        expect(gauge.isHistogram, isFalse);
+        expect(gauge.isUpDownCounter, isFalse);
 
-      // Test observable instrument methods
-      expect(obsCounter.callbacks.length, equals(1));
-      expect(obsCounter.collect(), isEmpty);
+        // Test observable instrument methods
+        expect(obsCounter.callbacks.length, equals(1));
+        expect(obsCounter.collect(), isEmpty);
 
-      expect(obsUpDown.callbacks.length, equals(1));
-      expect(obsUpDown.collect(), isEmpty);
+        expect(obsUpDown.callbacks.length, equals(1));
+        expect(obsUpDown.collect(), isEmpty);
 
-      expect(obsGauge.callbacks.length, equals(1));
-      expect(obsGauge.collect(), isEmpty);
+        expect(obsGauge.callbacks.length, equals(1));
+        expect(obsGauge.collect(), isEmpty);
 
-      // Test callback registration
-      final cbReg1 = obsCounter.addCallback((result) => result.observe(100));
-      final cbReg2 = obsUpDown.addCallback((result) => result.observe(200));
-      final cbReg3 = obsGauge.addCallback((result) => result.observe(300.0));
+        // Test callback registration
+        final cbReg1 = obsCounter.addCallback((result) => result.observe(100));
+        final cbReg2 = obsUpDown.addCallback((result) => result.observe(200));
+        final cbReg3 = obsGauge.addCallback((result) => result.observe(300.0));
 
-      expect(obsCounter.callbacks.length, equals(2));
-      expect(obsUpDown.callbacks.length, equals(2));
-      expect(obsGauge.callbacks.length, equals(2));
+        expect(obsCounter.callbacks.length, equals(2));
+        expect(obsUpDown.callbacks.length, equals(2));
+        expect(obsGauge.callbacks.length, equals(2));
 
-      // Test unregister
-      cbReg1.unregister();
-      cbReg2.unregister();
-      cbReg3.unregister();
+        // Test unregister
+        cbReg1.unregister();
+        cbReg2.unregister();
+        cbReg3.unregister();
 
-      expect(obsCounter.callbacks.length, equals(1));
-      expect(obsUpDown.callbacks.length, equals(1));
-      expect(obsGauge.callbacks.length, equals(1));
+        expect(obsCounter.callbacks.length, equals(1));
+        expect(obsUpDown.callbacks.length, equals(1));
+        expect(obsGauge.callbacks.length, equals(1));
 
-      // Reset before initializing the SDK (API was initialized above)
-      await OTel.reset();
+        // Reset before initializing the SDK (API was initialized above)
+        await OTel.reset();
 
-      // Now initialize the SDK and verify the API switches to using it
-      await OTel.initialize(
-        serviceName: 'switched-test-service',
-        metricReader: MemoryMetricReader(exporter: MemoryMetricExporter()),
-        detectPlatformResources: false,
-      );
+        // Now initialize the SDK and verify the API switches to using it
+        await OTel.initialize(
+          serviceName: 'switched-test-service',
+          metricReader: MemoryMetricReader(exporter: MemoryMetricExporter()),
+          detectPlatformResources: false,
+        );
 
-      // Get a new meter - this should now use the SDK factory
-      final sdkMeter = OTel.meter('sdk-test-meter');
+        // Get a new meter - this should now use the SDK factory
+        final sdkMeter = OTel.meter('sdk-test-meter');
 
-      // Verify the meter is now enabled (SDK implementation)
-      expect(sdkMeter.enabled, isTrue);
+        // Verify the meter is now enabled (SDK implementation)
+        expect(sdkMeter.enabled, isTrue);
 
-      // Create a new instrument with the SDK-backed meter
-      final sdkCounter = sdkMeter.createCounter<int>(name: 'sdk_counter');
-      expect(sdkCounter.enabled, isTrue);
-    }, skip: 'APIMeterProvider cannot be cast to SDK MeterProvider after API-only init');
+        // Create a new instrument with the SDK-backed meter
+        final sdkCounter = sdkMeter.createCounter<int>(name: 'sdk_counter');
+        expect(sdkCounter.enabled, isTrue);
+      },
+      skip:
+          'APIMeterProvider cannot be cast to SDK MeterProvider after API-only init',
+    );
   });
 
   group('MeterProvider Advanced Coverage Tests', () {
@@ -390,9 +395,12 @@ void main() {
 
       // Verify a log was captured about meter creation
       expect(
-          metricLogs.any((log) =>
-              log.contains('Created meter') && log.contains('log-test-meter')),
-          isTrue);
+        metricLogs.any(
+          (log) =>
+              log.contains('Created meter') && log.contains('log-test-meter'),
+        ),
+        isTrue,
+      );
     });
   });
 }

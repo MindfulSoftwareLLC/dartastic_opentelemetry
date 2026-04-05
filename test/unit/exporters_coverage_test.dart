@@ -122,13 +122,17 @@ void main() {
       await metricExporter.shutdown();
 
       expect(
-        () => metricExporter.export(MetricData(metrics: [
-          Metric.sum(
-            name: 'test',
-            points: [],
-            temporality: AggregationTemporality.cumulative,
+        () => metricExporter.export(
+          MetricData(
+            metrics: [
+              Metric.sum(
+                name: 'test',
+                points: [],
+                temporality: AggregationTemporality.cumulative,
+              ),
+            ],
           ),
-        ])),
+        ),
         throwsStateError,
       );
     });
@@ -136,9 +140,7 @@ void main() {
     test('export with empty metrics returns true', () async {
       await initForMetrics();
       final metricExporter = OtlpHttpMetricExporter(
-        OtlpHttpMetricExporterConfig(
-          endpoint: 'http://localhost:4318',
-        ),
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:4318'),
       );
 
       // Empty metrics should return true and log debug
@@ -153,41 +155,45 @@ void main() {
       await metricExporter.shutdown();
     });
 
-    test('export to unreachable endpoint returns false (tryExport catches)',
-        () async {
-      await initForMetrics();
-      final metricExporter = OtlpHttpMetricExporter(
-        OtlpHttpMetricExporterConfig(
-          endpoint: 'http://127.0.0.1:1', // unreachable port
-          maxRetries: 0,
-          timeout: const Duration(milliseconds: 500),
-        ),
-      );
-
-      final metric = Metric.sum(
-        name: 'test.counter',
-        description: 'test metric',
-        unit: 'count',
-        points: [
-          MetricPoint<int>(
-            value: 42,
-            startTime: DateTime.now().subtract(const Duration(seconds: 1)),
-            endTime: DateTime.now(),
-            attributes: OTel.attributesFromMap({'env': 'test'}),
+    test(
+      'export to unreachable endpoint returns false (tryExport catches)',
+      () async {
+        await initForMetrics();
+        final metricExporter = OtlpHttpMetricExporter(
+          OtlpHttpMetricExporterConfig(
+            endpoint: 'http://127.0.0.1:1', // unreachable port
+            maxRetries: 0,
+            timeout: const Duration(milliseconds: 500),
           ),
-        ],
-        temporality: AggregationTemporality.cumulative,
-        isMonotonic: true,
-      );
+        );
 
-      // Connection refused: _tryExport's generic catch returns false,
-      // or ClientException is rethrown and _export handles it.
-      // Either way, result is false.
-      final result = await metricExporter.export(MetricData(metrics: [metric]));
-      expect(result, isFalse);
+        final metric = Metric.sum(
+          name: 'test.counter',
+          description: 'test metric',
+          unit: 'count',
+          points: [
+            MetricPoint<int>(
+              value: 42,
+              startTime: DateTime.now().subtract(const Duration(seconds: 1)),
+              endTime: DateTime.now(),
+              attributes: OTel.attributesFromMap({'env': 'test'}),
+            ),
+          ],
+          temporality: AggregationTemporality.cumulative,
+          isMonotonic: true,
+        );
 
-      await metricExporter.shutdown();
-    });
+        // Connection refused: _tryExport's generic catch returns false,
+        // or ClientException is rethrown and _export handles it.
+        // Either way, result is false.
+        final result = await metricExporter.export(
+          MetricData(metrics: [metric]),
+        );
+        expect(result, isFalse);
+
+        await metricExporter.shutdown();
+      },
+    );
 
     test('createHttpClient with certificate error falls back to default',
         () async {
@@ -196,7 +202,7 @@ void main() {
       // The 'invalid-cert-path' triggers an ArgumentError from CertificateUtils
       // which propagates to the constructor. We must use test:// to avoid that.
       // Instead, test createSecurityContext returning null when all args are null
-      // For the error path (lines 71-76), we need a real file that fails:
+      // For the certificate error path, we need a real file that fails:
       final metricExporter = OtlpHttpMetricExporter(
         OtlpHttpMetricExporterConfig(
           endpoint: 'http://localhost:4318',
@@ -215,27 +221,20 @@ void main() {
     test('forceFlush on already-shutdown exporter returns true', () async {
       await initForMetrics();
       final metricExporter = OtlpHttpMetricExporter(
-        OtlpHttpMetricExporterConfig(
-          endpoint: 'http://localhost:4318',
-        ),
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:4318'),
       );
 
       await metricExporter.shutdown();
       // Line: _isShutdown path in forceFlush
       final result = await metricExporter.forceFlush();
       expect(result, isTrue);
-      expect(
-        logOutput.any((m) => m.contains('already shut down')),
-        isTrue,
-      );
+      expect(logOutput.any((m) => m.contains('already shut down')), isTrue);
     });
 
     test('forceFlush with no pending exports returns true', () async {
       await initForMetrics();
       final metricExporter = OtlpHttpMetricExporter(
-        OtlpHttpMetricExporterConfig(
-          endpoint: 'http://localhost:4318',
-        ),
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:4318'),
       );
 
       final result = await metricExporter.forceFlush();
@@ -251,9 +250,7 @@ void main() {
     test('shutdown on already-shutdown exporter returns true', () async {
       await initForMetrics();
       final metricExporter = OtlpHttpMetricExporter(
-        OtlpHttpMetricExporterConfig(
-          endpoint: 'http://localhost:4318',
-        ),
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:4318'),
       );
 
       // First shutdown
@@ -303,9 +300,7 @@ void main() {
       await initForMetrics();
       // Test with trailing slash
       final metricExporter1 = OtlpHttpMetricExporter(
-        OtlpHttpMetricExporterConfig(
-          endpoint: 'http://localhost:4318/',
-        ),
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:4318/'),
       );
 
       // Test with endpoint already having path
@@ -330,7 +325,7 @@ void main() {
   group('OTel.initialize exporter type paths', () {
     test('initialize with console exporter type (no spanProcessor)', () async {
       // We need to test the code path where spanProcessor == null
-      // and exporterType == 'console' (line 307-308).
+      // and exporterType == 'console'.
       // Since we can't easily set env vars for OTEL_TRACES_EXPORTER,
       // we test other code paths.
 
@@ -348,8 +343,8 @@ void main() {
     });
 
     test('initialize with enableMetrics true and no metricExporter', () async {
-      // Covers lines 387-394 (MetricsConfiguration.configureMeterProvider
-      // with default exporter)
+      // Exercises MetricsConfiguration.configureMeterProvider
+      // with default exporter
       await OTel.initialize(
         serviceName: 'metrics-default-test',
         serviceVersion: '1.0.0',
@@ -362,7 +357,7 @@ void main() {
     });
 
     test('initialize with custom metricExporter and metricReader', () async {
-      // Covers lines 396-404 (MetricsConfiguration with custom exporter/reader)
+      // Exercises MetricsConfiguration with custom exporter/reader
       final memExporter = MemoryMetricExporter();
       final memReader = MemoryMetricReader(exporter: memExporter);
 
@@ -398,9 +393,9 @@ void main() {
     });
 
     test('initialize logs environment variable usage with debug', () async {
-      // With trace logging enabled, lines 149-162 should be hit if env vars
-      // are null (they are in test environment, so the 'if' blocks don't enter,
-      // but the outer isDebug check is still evaluated, covering the guard).
+      // With trace logging enabled, the env var debug guards are evaluated.
+      // Env vars are null in the test environment, so the inner blocks don't
+      // enter, but the outer isDebug check is still evaluated.
       await OTel.initialize(
         serviceName: 'env-log-test',
         serviceVersion: '1.0.0',
@@ -418,7 +413,7 @@ void main() {
 
   group('OTel.shutdown error handling paths', () {
     test('shutdown with failing tracer provider flush logs error', () async {
-      // Lines 999-1000: error during tracer provider flush
+      // Exercises the error path during tracer provider flush
       final exporter = _ErrorShutdownExporter();
       final processor = SimpleSpanProcessor(exporter);
 
@@ -450,7 +445,7 @@ void main() {
     });
 
     test('shutdown with failing meter provider logs error', () async {
-      // Lines 1033-1034: error during meter provider shutdown
+      // Exercises the error path during meter provider shutdown
       await OTel.initialize(
         serviceName: 'meter-shutdown-test',
         serviceVersion: '1.0.0',
@@ -497,7 +492,7 @@ void main() {
 
       final attrs = resource.attributes.toList();
       final osType = attrs.where((a) => a.key == 'os.type').toList();
-      // Running on macOS, so os.type should be 'macos' (covers lines 75-76)
+      // Running on macOS, so os.type should be 'macos'
       if (Platform.isMacOS) {
         expect(osType, isNotEmpty);
         expect(osType.first.value.toString(), contains('macos'));
@@ -598,10 +593,7 @@ void main() {
       final span = tracer.startSpan('test-span');
       span.end();
 
-      expect(
-        () => spanExporter.export([span]),
-        throwsStateError,
-      );
+      expect(() => spanExporter.export([span]), throwsStateError);
     });
 
     test('export with empty spans returns immediately', () async {
@@ -618,34 +610,30 @@ void main() {
       // Empty spans should return immediately
       await spanExporter.export([]);
 
-      expect(
-        logOutput.any((m) => m.contains('No spans to export')),
-        isTrue,
-      );
+      expect(logOutput.any((m) => m.contains('No spans to export')), isTrue);
 
       await spanExporter.shutdown();
     });
 
-    test('forceFlush on already-shutdown exporter returns immediately',
-        () async {
-      await OTel.initialize(
-        serviceName: 'span-exporter-flush-test',
-        detectPlatformResources: false,
-        enableMetrics: false,
-      );
+    test(
+      'forceFlush on already-shutdown exporter returns immediately',
+      () async {
+        await OTel.initialize(
+          serviceName: 'span-exporter-flush-test',
+          detectPlatformResources: false,
+          enableMetrics: false,
+        );
 
-      final spanExporter = OtlpHttpSpanExporter(
-        OtlpHttpExporterConfig(endpoint: 'http://localhost:4318'),
-      );
+        final spanExporter = OtlpHttpSpanExporter(
+          OtlpHttpExporterConfig(endpoint: 'http://localhost:4318'),
+        );
 
-      await spanExporter.shutdown();
-      await spanExporter.forceFlush();
+        await spanExporter.shutdown();
+        await spanExporter.forceFlush();
 
-      expect(
-        logOutput.any((m) => m.contains('already shut down')),
-        isTrue,
-      );
-    });
+        expect(logOutput.any((m) => m.contains('already shut down')), isTrue);
+      },
+    );
 
     test('forceFlush with no pending exports completes', () async {
       await OTel.initialize(
@@ -703,7 +691,7 @@ void main() {
         10.0,
         20.0,
         5.0,
-        5.0
+        5.0,
       ]; // increase, increase, reset, zero-delta
 
       final counter = meter.createObservableCounter<double>(
@@ -718,7 +706,7 @@ void main() {
         },
       );
 
-      // First collect: 10.0 > 0.0 -> positive delta (covers line 162: double record)
+      // First collect: 10.0 > 0.0 -> positive delta (exercises double record path)
       var measurements = counter.collect();
       expect(measurements, isNotEmpty);
 
@@ -726,11 +714,11 @@ void main() {
       measurements = counter.collect();
       expect(measurements, isNotEmpty);
 
-      // Third collect: 5.0 < 20.0 -> counter reset (covers lines 150-151: double reset)
+      // Third collect: 5.0 < 20.0 -> counter reset (exercises double reset path)
       measurements = counter.collect();
       expect(measurements, isNotEmpty);
 
-      // Fourth collect: 5.0 == 5.0 -> zero delta (covers lines 173-174: double zero-delta)
+      // Fourth collect: 5.0 == 5.0 -> zero delta (exercises double zero-delta path)
       measurements = counter.collect();
       // Zero-delta should NOT produce a measurement in the result
       expect(measurements, isEmpty);
@@ -752,7 +740,7 @@ void main() {
         },
       );
 
-      // Collect should not throw - error is caught (lines 190-192)
+      // Collect should not throw - callback error is caught
       final measurements = counter.collect();
       expect(measurements, isEmpty);
     });
@@ -763,7 +751,7 @@ void main() {
   // =========================================================================
   group('OtlpGrpcExporterConfig endpoint validation', () {
     test('HTTP URL without port gets default port appended', () {
-      // Covers line 128: URL format without port
+      // Exercises URL format without port
       // http://myhost -> already has port 80 implicitly, but the logic
       // checks for explicit port.
       // We need an endpoint that starts with http:// but has no port.
@@ -778,7 +766,7 @@ void main() {
     });
 
     test('HTTP URL with valid format passes through', () {
-      // Covers line 140: return endpoint for valid URL
+      // Exercises the valid URL pass-through path
       final config = OtlpGrpcExporterConfig(
         endpoint: 'http://collector.example.com:4317',
       );
@@ -786,13 +774,13 @@ void main() {
     });
 
     test('host:port format with valid port passes through', () {
-      // Covers line 162: valid host:port
+      // Exercises the valid host:port path
       final config = OtlpGrpcExporterConfig(endpoint: 'collector:4317');
       expect(config.endpoint, equals('collector:4317'));
     });
 
     test('endpoint with non-numeric port throws ArgumentError', () {
-      // Covers lines 158-159: int.tryParse fails
+      // Exercises the int.tryParse failure path for non-numeric port
       expect(
         () => OtlpGrpcExporterConfig(endpoint: 'host:abc'),
         throwsArgumentError,
@@ -800,7 +788,7 @@ void main() {
     });
 
     test('endpoint with empty port throws ArgumentError', () {
-      // Covers lines 155-156: empty port string
+      // Exercises the empty port string validation
       expect(
         () => OtlpGrpcExporterConfig(endpoint: 'host:'),
         throwsArgumentError,
@@ -835,10 +823,7 @@ void main() {
     });
 
     test('negative maxRetries throws ArgumentError', () {
-      expect(
-        () => OtlpGrpcExporterConfig(maxRetries: -1),
-        throwsArgumentError,
-      );
+      expect(() => OtlpGrpcExporterConfig(maxRetries: -1), throwsArgumentError);
     });
 
     test('empty header key throws ArgumentError', () {
@@ -850,9 +835,7 @@ void main() {
 
     test('timeout too large throws ArgumentError', () {
       expect(
-        () => OtlpGrpcExporterConfig(
-          timeout: const Duration(minutes: 11),
-        ),
+        () => OtlpGrpcExporterConfig(timeout: const Duration(minutes: 11)),
         throwsArgumentError,
       );
     });
@@ -892,7 +875,7 @@ void main() {
       // "00-abcdef1234567890abcdef1234567-890-00f067aa0ba902b7-01" is 56 chars.
       // This is hard because the format is fixed at 55 chars.
       // Instead let's test a traceparent with invalid hex chars that causes
-      // a parse error (lines 216-221: catch in _parseTraceparent).
+      // a parse error in _parseTraceparent.
       final badHexCarrier = {
         'traceparent':
             '00-ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ-00f067aa0ba902b7-01',
@@ -900,16 +883,21 @@ void main() {
 
       logOutput.clear();
       propagator.extract(
-          OTel.context(), badHexCarrier, _MapGetter(badHexCarrier));
+        OTel.context(),
+        badHexCarrier,
+        _MapGetter(badHexCarrier),
+      );
 
       // The 'Z' chars are valid hex? No, Z is not valid hex.
       // Actually TraceId.fromString may accept it or throw.
-      // If it throws, we cover lines 217-218 (Error parsing traceparent).
+      // If it throws, we exercise the "Error parsing traceparent" path.
       expect(
-        logOutput.any((m) =>
-            m.contains('Error parsing traceparent') ||
-            m.contains('Invalid trace ID') ||
-            m.contains('Extracting traceparent')),
+        logOutput.any(
+          (m) =>
+              m.contains('Error parsing traceparent') ||
+              m.contains('Invalid trace ID') ||
+              m.contains('Extracting traceparent'),
+        ),
         isTrue,
       );
     });
@@ -922,8 +910,11 @@ void main() {
       };
 
       logOutput.clear();
-      final ctx =
-          propagator.extract(OTel.context(), carrier, _MapGetter(carrier));
+      final ctx = propagator.extract(
+        OTel.context(),
+        carrier,
+        _MapGetter(carrier),
+      );
 
       // Empty tracestate should not add traceState to the context
       expect(ctx.spanContext, isNotNull);
@@ -949,15 +940,19 @@ void main() {
       final promExporter = PrometheusExporter();
       await promExporter.shutdown();
 
-      final result = await promExporter.export(MetricData(metrics: [
-        Metric.sum(
-          name: 'test',
-          points: [],
-          temporality: AggregationTemporality.cumulative,
+      final result = await promExporter.export(
+        MetricData(
+          metrics: [
+            Metric.sum(
+              name: 'test',
+              points: [],
+              temporality: AggregationTemporality.cumulative,
+            ),
+          ],
         ),
-      ]));
+      );
 
-      // After shutdown, export returns false (lines 58-62)
+      // After shutdown, export returns false
       expect(result, isFalse);
     });
 
@@ -974,7 +969,7 @@ void main() {
       final promExporter = PrometheusExporter();
       final result = await promExporter.export(MetricData(metrics: []));
 
-      // Empty metrics returns true (lines 65-69)
+      // Empty metrics returns true
       expect(result, isTrue);
 
       await promExporter.shutdown();
@@ -1096,9 +1091,11 @@ void main() {
 
       // Debug logs should mention test certificates
       expect(
-        logOutput.any((m) =>
-            m.contains('test certificate') ||
-            m.contains('test client certificate')),
+        logOutput.any(
+          (m) =>
+              m.contains('test certificate') ||
+              m.contains('test client certificate'),
+        ),
         isTrue,
       );
     });
@@ -1112,8 +1109,10 @@ void main() {
       );
     });
 
-    test('validateCertificates accepts null paths',
-        CertificateUtils.validateCertificates);
+    test(
+      'validateCertificates accepts null paths',
+      CertificateUtils.validateCertificates,
+    );
 
     test('validateCertificates throws for invalid-cert-path', () {
       expect(
@@ -1130,7 +1129,7 @@ void main() {
   // =========================================================================
   group('SimpleSpanProcessor shutdown error paths', () {
     test('shutdown with failing exporter shutdown logs error', () async {
-      // Covers lines 159-161: error during exporter shutdown
+      // Exercises error path during exporter shutdown
       await OTel.initialize(
         serviceName: 'ssp-shutdown-err-test',
         detectPlatformResources: false,
@@ -1148,16 +1147,18 @@ void main() {
       await processor.shutdown();
 
       expect(
-        logOutput.any((m) =>
-            m.contains('Error shutting down exporter') ||
-            m.contains('shutdown fail')),
+        logOutput.any(
+          (m) =>
+              m.contains('Error shutting down exporter') ||
+              m.contains('shutdown fail'),
+        ),
         isTrue,
         reason: 'Expected error log from exporter shutdown failure',
       );
     });
 
     test('shutdown with pending exports error logs error', () async {
-      // Covers lines 143-145: error waiting for pending exports
+      // Exercises error path when waiting for pending exports
       await OTel.initialize(
         serviceName: 'ssp-pending-err-test',
         detectPlatformResources: false,
@@ -1180,11 +1181,13 @@ void main() {
       await processor.shutdown();
 
       expect(
-        logOutput.any((m) =>
-            m.contains('Export error') ||
-            m.contains('pending export fail') ||
-            m.contains('Error waiting for pending exports') ||
-            m.contains('Shutdown complete')),
+        logOutput.any(
+          (m) =>
+              m.contains('Export error') ||
+              m.contains('pending export fail') ||
+              m.contains('Error waiting for pending exports') ||
+              m.contains('Shutdown complete'),
+        ),
         isTrue,
       );
     });
@@ -1201,13 +1204,10 @@ void main() {
 
       await processor.shutdown();
 
-      // forceFlush after shutdown should return early (lines 178-184)
+      // forceFlush after shutdown should return early
       await processor.forceFlush();
 
-      expect(
-        logOutput.any((m) => m.contains('Cannot force flush')),
-        isTrue,
-      );
+      expect(logOutput.any((m) => m.contains('Cannot force flush')), isTrue);
     });
 
     test('onEnd after shutdown skips export', () async {
@@ -1225,7 +1225,7 @@ void main() {
       final tracer = OTel.tracer();
       final span = tracer.startSpan('post-shutdown');
 
-      // onEnd after shutdown should skip (lines 36-43)
+      // onEnd after shutdown should skip export
       await processor.onEnd(span);
 
       expect(exporter.spans, isEmpty);
@@ -1248,10 +1248,7 @@ void main() {
 
       await processor.onNameUpdate(span, 'new-name');
 
-      expect(
-        logOutput.any((m) => m.contains('Name updated')),
-        isTrue,
-      );
+      expect(logOutput.any((m) => m.contains('Name updated')), isTrue);
 
       span.end();
       await processor.shutdown();
@@ -1268,13 +1265,10 @@ void main() {
       final processor = SimpleSpanProcessor(exporter);
 
       await processor.shutdown();
-      // Second shutdown hits early return (lines 118-123)
+      // Second shutdown hits the already-shutdown early return
       await processor.shutdown();
 
-      expect(
-        logOutput.any((m) => m.contains('Already shut down')),
-        isTrue,
-      );
+      expect(logOutput.any((m) => m.contains('Already shut down')), isTrue);
     });
   });
 
@@ -1361,9 +1355,7 @@ void main() {
   // =========================================================================
   group('OtlpHttpExporterConfig endpoint handling', () {
     test('endpoint with trailing slash is handled', () {
-      final config = OtlpHttpExporterConfig(
-        endpoint: 'http://localhost:4318/',
-      );
+      final config = OtlpHttpExporterConfig(endpoint: 'http://localhost:4318/');
       expect(config.endpoint, equals('http://localhost:4318/'));
     });
 

@@ -30,7 +30,8 @@ void main() {
 
     test('constructor sets properties', () {
       final resource = OTel.resource(
-          OTel.attributes([OTel.attributeString('service.name', 'my-svc')]));
+        OTel.attributes([OTel.attributeString('service.name', 'my-svc')]),
+      );
       final metric = createMetric('test.metric');
       final data = MetricData(resource: resource, metrics: [metric]);
 
@@ -71,7 +72,8 @@ void main() {
 
     test('filter() preserves resource', () {
       final resource = OTel.resource(
-          OTel.attributes([OTel.attributeString('service.name', 'my-svc')]));
+        OTel.attributes([OTel.attributeString('service.name', 'my-svc')]),
+      );
       final m1 = createMetric('requests.count');
       final data = MetricData(resource: resource, metrics: [m1]);
 
@@ -98,9 +100,11 @@ void main() {
 
     test('merge() uses first resource if available', () {
       final resource1 = OTel.resource(
-          OTel.attributes([OTel.attributeString('service.name', 'svc-1')]));
+        OTel.attributes([OTel.attributeString('service.name', 'svc-1')]),
+      );
       final resource2 = OTel.resource(
-          OTel.attributes([OTel.attributeString('service.name', 'svc-2')]));
+        OTel.attributes([OTel.attributeString('service.name', 'svc-2')]),
+      );
 
       final data1 = MetricData(resource: resource1, metrics: []);
       final data2 = MetricData(resource: resource2, metrics: []);
@@ -112,7 +116,8 @@ void main() {
 
     test('merge() uses other resource if first is null', () {
       final resource2 = OTel.resource(
-          OTel.attributes([OTel.attributeString('service.name', 'svc-2')]));
+        OTel.attributes([OTel.attributeString('service.name', 'svc-2')]),
+      );
 
       final data1 = MetricData(metrics: []);
       final data2 = MetricData(resource: resource2, metrics: []);

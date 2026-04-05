@@ -9,9 +9,7 @@ void main() {
     late NoopMeter noopMeter;
 
     setUp(() {
-      noopMeter = NoopMeter(
-        name: 'test-noop-meter',
-      );
+      noopMeter = NoopMeter(name: 'test-noop-meter');
     });
 
     test('NoopMeter properties are set correctly', () {
@@ -24,7 +22,10 @@ void main() {
 
     test('NoopMeter creates NoopCounter', () {
       final counter = noopMeter.createCounter<int>(
-          name: 'test_counter', unit: 'ms', description: 'Test counter');
+        name: 'test_counter',
+        unit: 'ms',
+        description: 'Test counter',
+      );
 
       expect(counter, isA<NoopCounter<int>>());
       expect(counter.name, equals('test_counter'));
@@ -46,9 +47,10 @@ void main() {
 
     test('NoopMeter creates NoopUpDownCounter', () {
       final counter = noopMeter.createUpDownCounter<int>(
-          name: 'test_up_down',
-          unit: 'bytes',
-          description: 'Test up-down counter');
+        name: 'test_up_down',
+        unit: 'bytes',
+        description: 'Test up-down counter',
+      );
 
       expect(counter, isA<NoopUpDownCounter<int>>());
       expect(counter.name, equals('test_up_down'));
@@ -98,7 +100,10 @@ void main() {
 
     test('NoopMeter creates NoopGauge', () {
       final gauge = noopMeter.createGauge<double>(
-          name: 'test_gauge', unit: 'celsius', description: 'Test gauge');
+        name: 'test_gauge',
+        unit: 'celsius',
+        description: 'Test gauge',
+      );
 
       expect(gauge, isA<NoopGauge<double>>());
       expect(gauge.name, equals('test_gauge'));
@@ -233,33 +238,37 @@ void main() {
     });
 
     test(
-        '_NoopCallbackRegistration correctly unregisters from different instrument types',
-        () {
-      final obsCounter =
-          noopMeter.createObservableCounter<int>(name: 'test_counter');
-      final obsUpDown =
-          noopMeter.createObservableUpDownCounter<int>(name: 'test_up_down');
-      final obsGauge =
-          noopMeter.createObservableGauge<double>(name: 'test_gauge');
+      '_NoopCallbackRegistration correctly unregisters from different instrument types',
+      () {
+        final obsCounter = noopMeter.createObservableCounter<int>(
+          name: 'test_counter',
+        );
+        final obsUpDown = noopMeter.createObservableUpDownCounter<int>(
+          name: 'test_up_down',
+        );
+        final obsGauge = noopMeter.createObservableGauge<double>(
+          name: 'test_gauge',
+        );
 
-      // Add and verify callbacks
-      final reg1 = obsCounter.addCallback((result) => result.observe(1));
-      final reg2 = obsUpDown.addCallback((result) => result.observe(2));
-      final reg3 = obsGauge.addCallback((result) => result.observe(3.0));
+        // Add and verify callbacks
+        final reg1 = obsCounter.addCallback((result) => result.observe(1));
+        final reg2 = obsUpDown.addCallback((result) => result.observe(2));
+        final reg3 = obsGauge.addCallback((result) => result.observe(3.0));
 
-      expect(obsCounter.callbacks.length, equals(1));
-      expect(obsUpDown.callbacks.length, equals(1));
-      expect(obsGauge.callbacks.length, equals(1));
+        expect(obsCounter.callbacks.length, equals(1));
+        expect(obsUpDown.callbacks.length, equals(1));
+        expect(obsGauge.callbacks.length, equals(1));
 
-      // Unregister
-      reg1.unregister();
-      reg2.unregister();
-      reg3.unregister();
+        // Unregister
+        reg1.unregister();
+        reg2.unregister();
+        reg3.unregister();
 
-      // Verify callbacks were removed
-      expect(obsCounter.callbacks, isEmpty);
-      expect(obsUpDown.callbacks, isEmpty);
-      expect(obsGauge.callbacks, isEmpty);
-    });
+        // Verify callbacks were removed
+        expect(obsCounter.callbacks, isEmpty);
+        expect(obsUpDown.callbacks, isEmpty);
+        expect(obsGauge.callbacks, isEmpty);
+      },
+    );
   });
 }

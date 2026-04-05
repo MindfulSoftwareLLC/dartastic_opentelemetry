@@ -51,15 +51,10 @@ void main() {
         await exporter.shutdown();
 
         final metricData = MetricData(
-          metrics: [
-            Metric.sum(name: 'test-metric', points: []),
-          ],
+          metrics: [Metric.sum(name: 'test-metric', points: [])],
         );
 
-        expect(
-          () => exporter.export(metricData),
-          throwsA(isA<StateError>()),
-        );
+        expect(() => exporter.export(metricData), throwsA(isA<StateError>()));
       });
 
       test('with empty metrics returns true', () async {
@@ -102,15 +97,10 @@ void main() {
 
         // After shutdown, export should throw
         final metricData = MetricData(
-          metrics: [
-            Metric.sum(name: 'test-metric', points: []),
-          ],
+          metrics: [Metric.sum(name: 'test-metric', points: [])],
         );
 
-        expect(
-          () => exporter.export(metricData),
-          throwsA(isA<StateError>()),
-        );
+        expect(() => exporter.export(metricData), throwsA(isA<StateError>()));
       });
     });
 

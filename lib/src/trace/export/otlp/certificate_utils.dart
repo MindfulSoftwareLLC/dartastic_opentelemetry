@@ -38,14 +38,16 @@ class CertificateUtils {
       if (certificate.startsWith('test://')) {
         if (OTelLog.isDebug()) {
           OTelLog.debug(
-              'CertificateUtils: Using test certificate: $certificate');
+            'CertificateUtils: Using test certificate: $certificate',
+          );
         }
       } else {
         final certFile = File(certificate);
         context.setTrustedCertificatesBytes(certFile.readAsBytesSync());
         if (OTelLog.isDebug()) {
           OTelLog.debug(
-              'CertificateUtils: Loaded CA certificate from $certificate');
+            'CertificateUtils: Loaded CA certificate from $certificate',
+          );
         }
       }
     }
@@ -57,7 +59,8 @@ class CertificateUtils {
           clientKey.startsWith('test://')) {
         if (OTelLog.isDebug()) {
           OTelLog.debug(
-              'CertificateUtils: Using test client certificate and key');
+            'CertificateUtils: Using test client certificate and key',
+          );
         }
       } else {
         final certFile = File(clientCertificate);
@@ -66,7 +69,8 @@ class CertificateUtils {
         context.usePrivateKeyBytes(keyFile.readAsBytesSync());
         if (OTelLog.isDebug()) {
           OTelLog.debug(
-              'CertificateUtils: Loaded client certificate from $clientCertificate and key from $clientKey');
+            'CertificateUtils: Loaded client certificate from $clientCertificate and key from $clientKey',
+          );
         }
       }
     }
@@ -103,7 +107,8 @@ class CertificateUtils {
     }
     if (!isValidPath(clientCertificate)) {
       throw ArgumentError(
-          'Client certificate file not found: $clientCertificate');
+        'Client certificate file not found: $clientCertificate',
+      );
     }
   }
 }

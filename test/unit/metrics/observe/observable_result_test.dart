@@ -55,10 +55,7 @@ void main() {
     });
 
     test('observe with attributes adds measurement with attributes', () {
-      final attributes = Attributes.of({
-        'key1': 'value1',
-        'key2': 42,
-      });
+      final attributes = Attributes.of({'key1': 'value1', 'key2': 42});
 
       intResult.observe(100, attributes);
 
@@ -77,11 +74,7 @@ void main() {
     });
 
     test('observeWithMap adds measurement with map attributes', () {
-      final attributesMap = {
-        'key1': 'value1',
-        'key2': 42,
-        'key3': true,
-      };
+      final attributesMap = {'key1': 'value1', 'key2': 42, 'key3': true};
 
       doubleResult.observeWithMap(123.45, attributesMap);
 
@@ -113,10 +106,14 @@ void main() {
 
       // Third measurement should have the attribute
       expect(intResult.measurements[2].attributes!.toList().length, equals(1));
-      expect(intResult.measurements[2].attributes!.toList().first.key,
-          equals('tag'));
-      expect(intResult.measurements[2].attributes!.toList().first.value,
-          equals('value'));
+      expect(
+        intResult.measurements[2].attributes!.toList().first.key,
+        equals('tag'),
+      );
+      expect(
+        intResult.measurements[2].attributes!.toList().first.value,
+        equals('value'),
+      );
     });
 
     test('measurements returns unmodifiable list', () {
@@ -128,7 +125,9 @@ void main() {
 
       // Try to modify the list - this should throw UnsupportedError
       expect(
-          () => measurements.add(measurements.first), throwsUnsupportedError);
+        () => measurements.add(measurements.first),
+        throwsUnsupportedError,
+      );
     });
 
     test('observe with null OTelFactory does not add measurement', () {
