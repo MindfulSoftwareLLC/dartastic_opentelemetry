@@ -142,7 +142,8 @@ class ObservableGauge<T extends num>
         }
       } catch (e) {
         print(
-            'Error collecting measurements from ObservableGauge callback: $e');
+          'Error collecting measurements from ObservableGauge callback: $e',
+        );
       }
     }
 
@@ -171,7 +172,7 @@ class ObservableGauge<T extends num>
         description: description,
         unit: unit,
         points: points,
-      )
+      ),
     ];
   }
 

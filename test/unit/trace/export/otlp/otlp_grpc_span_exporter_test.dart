@@ -171,8 +171,12 @@ class MockSpan implements Span {
   }
 
   @override
-  void recordException(Object exception,
-      {StackTrace? stackTrace, Attributes? attributes, bool? escaped}) {
+  void recordException(
+    Object exception, {
+    StackTrace? stackTrace,
+    Attributes? attributes,
+    bool? escaped,
+  }) {
     // TODO: implement recordException
   }
 
@@ -197,10 +201,12 @@ Span createTestSpan({
     spanId: OTel.spanIdFrom(spanId ?? '0011223344556677'),
   );
 
-  final resource = OTel.resource(OTel.attributesFromMap({
-    'service.name': 'test-service',
-    'service.version': '1.0.0',
-  }));
+  final resource = OTel.resource(
+    OTel.attributesFromMap({
+      'service.name': 'test-service',
+      'service.version': '1.0.0',
+    }),
+  );
 
   final instrumentationScope = OTel.instrumentationScope(
     name: 'test-tracer',
@@ -240,10 +246,7 @@ void main() {
     test('creates proper OTLP export request from spans', () {
       final testSpan = createTestSpan(
         name: 'test-span',
-        attributes: {
-          'test.key': 'test.value',
-          'test.number': 42,
-        },
+        attributes: {'test.key': 'test.value', 'test.number': 42},
         traceId: '00112233445566778899aabbccddeeff',
         spanId: '0011223344556677',
       );
@@ -264,12 +267,14 @@ void main() {
       expect(protoSpan.name, equals('test-span'));
 
       // Verify attributes
-      final testKeyAttr =
-          protoSpan.attributes.firstWhere((a) => a.key == 'test.key');
+      final testKeyAttr = protoSpan.attributes.firstWhere(
+        (a) => a.key == 'test.key',
+      );
       expect(testKeyAttr.value.stringValue, equals('test.value'));
 
-      final testNumberAttr =
-          protoSpan.attributes.firstWhere((a) => a.key == 'test.number');
+      final testNumberAttr = protoSpan.attributes.firstWhere(
+        (a) => a.key == 'test.number',
+      );
       expect(testNumberAttr.value.intValue.toInt(), equals(42));
     });
 
@@ -302,8 +307,9 @@ void main() {
         final protoSpan = scopeSpan.spans[i];
         expect(protoSpan.name, equals('span-$i'));
 
-        final indexAttr =
-            protoSpan.attributes.firstWhere((a) => a.key == 'index');
+        final indexAttr = protoSpan.attributes.firstWhere(
+          (a) => a.key == 'index',
+        );
         expect(indexAttr.value.intValue.toInt(), equals(i));
       }
     });
@@ -369,20 +375,24 @@ void main() {
           request.resourceSpans.first.scopeSpans.first.spans.first;
 
       // Verify each attribute type
-      final stringAttr =
-          protoSpan.attributes.firstWhere((a) => a.key == 'string.attr');
+      final stringAttr = protoSpan.attributes.firstWhere(
+        (a) => a.key == 'string.attr',
+      );
       expect(stringAttr.value.stringValue, equals('string.value'));
 
-      final intAttr =
-          protoSpan.attributes.firstWhere((a) => a.key == 'int.attr');
+      final intAttr = protoSpan.attributes.firstWhere(
+        (a) => a.key == 'int.attr',
+      );
       expect(intAttr.value.intValue.toInt(), equals(123));
 
-      final boolAttr =
-          protoSpan.attributes.firstWhere((a) => a.key == 'bool.attr');
+      final boolAttr = protoSpan.attributes.firstWhere(
+        (a) => a.key == 'bool.attr',
+      );
       expect(boolAttr.value.boolValue, equals(true));
 
-      final doubleAttr =
-          protoSpan.attributes.firstWhere((a) => a.key == 'double.attr');
+      final doubleAttr = protoSpan.attributes.firstWhere(
+        (a) => a.key == 'double.attr',
+      );
       expect(doubleAttr.value.doubleValue, equals(45.67));
     });
 
@@ -401,19 +411,21 @@ void main() {
           request.resourceSpans.first.scopeSpans.first.spans.first;
 
       expect(protoSpan.startTimeUnixNano.toInt(), greaterThan(0));
-      expect(protoSpan.endTimeUnixNano.toInt(),
-          greaterThan(protoSpan.startTimeUnixNano.toInt()));
+      expect(
+        protoSpan.endTimeUnixNano.toInt(),
+        greaterThan(protoSpan.startTimeUnixNano.toInt()),
+      );
     });
 
     test('groups spans by resource correctly', () {
       // Create spans with different resources
-      final service1Resource = OTel.resource(OTel.attributesFromMap({
-        'service.name': 'service1',
-      }));
+      final service1Resource = OTel.resource(
+        OTel.attributesFromMap({'service.name': 'service1'}),
+      );
 
-      final service2Resource = OTel.resource(OTel.attributesFromMap({
-        'service.name': 'service2',
-      }));
+      final service2Resource = OTel.resource(
+        OTel.attributesFromMap({'service.name': 'service2'}),
+      );
 
       final instrumentationScope = OTel.instrumentationScope(
         name: 'test-tracer',
@@ -463,10 +475,14 @@ void main() {
         ),
       );
 
-      expect(service1ResourceSpan.scopeSpans.first.spans.first.name,
-          equals('span1'));
-      expect(service2ResourceSpan.scopeSpans.first.spans.first.name,
-          equals('span2'));
+      expect(
+        service1ResourceSpan.scopeSpans.first.spans.first.name,
+        equals('span1'),
+      );
+      expect(
+        service2ResourceSpan.scopeSpans.first.spans.first.name,
+        equals('span2'),
+      );
     });
 
     test('handles parent-child span relationships', () {
@@ -485,15 +501,19 @@ void main() {
         parentSpan: parentSpan,
       );
 
-      final request =
-          OtlpSpanTransformer.transformSpans([parentSpan, childSpan]);
+      final request = OtlpSpanTransformer.transformSpans([
+        parentSpan,
+        childSpan,
+      ]);
       final protoSpans = request.resourceSpans.first.scopeSpans.first.spans;
 
       // Find parent and child spans
-      final parentProtoSpan =
-          protoSpans.firstWhere((s) => s.name == 'parent-span');
-      final childProtoSpan =
-          protoSpans.firstWhere((s) => s.name == 'child-span');
+      final parentProtoSpan = protoSpans.firstWhere(
+        (s) => s.name == 'parent-span',
+      );
+      final childProtoSpan = protoSpans.firstWhere(
+        (s) => s.name == 'child-span',
+      );
 
       // Parent should not have parentSpanId
       expect(parentProtoSpan.hasParentSpanId(), isFalse);

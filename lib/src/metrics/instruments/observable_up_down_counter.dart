@@ -77,9 +77,10 @@ class ObservableUpDownCounter<T extends num>
 
     if (attributes == null) {
       // For no attributes, sum all points
-      value = _storage
-          .collectPoints()
-          .fold<num>(0, (sum, point) => sum + point.value);
+      value = _storage.collectPoints().fold<num>(
+            0,
+            (sum, point) => sum + point.value,
+          );
     } else {
       // For specific attributes, get that value
       value = _storage.getValue(attributes);
@@ -160,7 +161,8 @@ class ObservableUpDownCounter<T extends num>
         }
       } catch (e) {
         print(
-            'Error collecting measurements from ObservableUpDownCounter callback: $e');
+          'Error collecting measurements from ObservableUpDownCounter callback: $e',
+        );
       }
     }
 
@@ -202,7 +204,7 @@ class ObservableUpDownCounter<T extends num>
         temporality: AggregationTemporality.cumulative,
         points: points,
         isMonotonic: false, // Up/down counters are non-monotonic
-      )
+      ),
     ];
   }
 

@@ -59,7 +59,8 @@ void main() {
 
     setUp(() async {
       print(
-          'Setting up context_propagation_test in ${isIsolatedRun ? "ISOLATED" : "NORMAL"} mode');
+        'Setting up context_propagation_test in ${isIsolatedRun ? "ISOLATED" : "NORMAL"} mode',
+      );
       print('Using port $testPort and output file $outputPath');
 
       // Ensure OTel is reset
@@ -112,15 +113,9 @@ void main() {
         await collector.start();
       }
 
-      // Initialize OTel with proper configuration
-      await OTel.initialize(
-        endpoint: 'http://localhost:${collector.getPort}',
-        serviceName: 'test-service-context-$uniqueId',
-        serviceVersion: '1.0.0',
-      );
-
-      tracerProvider = OTel.tracerProvider();
-
+      // Create gRPC exporter and processor before initialization so we can
+      // pass the processor to initialize() and avoid a default HTTP exporter
+      // being created (the collector speaks gRPC, not HTTP).
       final exporter = OtlpGrpcSpanExporter(
         OtlpGrpcExporterConfig(
           endpoint: 'http://localhost:${collector.getPort}',
@@ -135,14 +130,25 @@ void main() {
       );
 
       final processor = SimpleSpanProcessor(exporter);
-      tracerProvider.addSpanProcessor(processor);
+
+      // Initialize OTel with the gRPC processor to prevent default HTTP exporter
+      await OTel.initialize(
+        endpoint: 'http://localhost:${collector.getPort}',
+        serviceName: 'test-service-context-$uniqueId',
+        serviceVersion: '1.0.0',
+        spanProcessor: processor,
+      );
+
+      tracerProvider = OTel.tracerProvider();
 
       tracer = tracerProvider.getTracer('test-tracer-$uniqueId');
 
       // Stabilization time (longer when in isolation mode)
-      await Future<void>.delayed(isIsolatedRun
-          ? const Duration(milliseconds: 500)
-          : const Duration(milliseconds: 100));
+      await Future<void>.delayed(
+        isIsolatedRun
+            ? const Duration(milliseconds: 500)
+            : const Duration(milliseconds: 100),
+      );
     });
 
     tearDown(() async {
@@ -160,10 +166,10 @@ void main() {
               'attributes': [
                 {
                   'key': 'test.key',
-                  'value': {'stringValue': 'test-value'}
+                  'value': {'stringValue': 'test-value'},
                 },
-              ]
-            }
+              ],
+            },
           ];
           await File(fallbackPath).writeAsString(json.encode(fallbackData));
         }
@@ -209,9 +215,11 @@ void main() {
       _PortManager.releasePort(collector.getPort);
 
       // Very short delay for cleanup
-      await Future<void>.delayed(isIsolatedRun
-          ? const Duration(seconds: 1)
-          : const Duration(milliseconds: 50));
+      await Future<void>.delayed(
+        isIsolatedRun
+            ? const Duration(seconds: 1)
+            : const Duration(milliseconds: 50),
+      );
 
       print('TearDown complete');
     });
@@ -236,15 +244,15 @@ void main() {
 
       print('Waiting for span to be exported...');
       try {
-        await collector.waitForSpans(1,
-            timeout: const Duration(seconds: 3)); // Reduced timeout
+        await collector.waitForSpans(
+          1,
+          timeout: const Duration(seconds: 3),
+        ); // Reduced timeout
 
         print('Verifying span attributes...');
         await collector.assertSpanExists(
           name: 'attributed-span-test-$uniqueId',
-          attributes: {
-            'test.key': 'test-value',
-          },
+          attributes: {'test.key': 'test-value'},
         );
         print('Context attributes test completed');
       } catch (e) {
@@ -257,79 +265,97 @@ void main() {
       }
     }, timeout: testTimeout);
 
-    test('propagates context between spans correctly using withSpan', () async {
-      print('Starting context propagation test with withSpan');
+    test(
+      'propagates context between spans correctly using withSpan',
+      () async {
+        print('Starting context propagation test with withSpan');
 
-      final parentSpan = tracer.startSpan('parent-span-test-$uniqueId');
-      parentSpan.spanContext.spanId.toString();
+        final parentSpan = tracer.startSpan('parent-span-test-$uniqueId');
+        parentSpan.spanContext.spanId.toString();
 
-      final parentContext = OTel.context().withSpan(parentSpan);
+        final parentContext = OTel.context().withSpan(parentSpan);
 
-      final childSpan = tracer.startSpan(
-        'child-span-test-$uniqueId',
-        context: parentContext,
-      );
+        final childSpan = tracer.startSpan(
+          'child-span-test-$uniqueId',
+          context: parentContext,
+        );
 
-      // Verify parent-child relationship at the span level
-      expect(
-          childSpan.spanContext.traceId, equals(parentSpan.spanContext.traceId),
-          reason: 'Child span should inherit trace ID from parent');
-      expect(childSpan.parentSpanContext, equals(parentSpan.spanContext),
-          reason: 'Child span should have parent span context');
-
-      print('Ending spans...');
-      childSpan.end();
-      parentSpan.end();
-
-      // Force flush to ensure immediate export
-      await tracerProvider.forceFlush();
-
-      print('Waiting for spans to be exported...');
-      try {
-        await collector.waitForSpans(2,
-            timeout: const Duration(seconds: 3)); // Reduced timeout
-
-        final spans = await collector.getSpans();
-        print('Got ${spans.length} spans');
-
-        print('Available spans:');
-        for (var span in spans) {
-          print('  Span: ${span['name']}, ID: ${span['spanId']}');
-        }
-
+        // Verify parent-child relationship at the span level
         expect(
-            spans.any((s) => s['name'] == 'parent-span-test-$uniqueId'), isTrue,
-            reason: 'Parent span should be exported');
+          childSpan.spanContext.traceId,
+          equals(parentSpan.spanContext.traceId),
+          reason: 'Child span should inherit trace ID from parent',
+        );
         expect(
-            spans.any((s) => s['name'] == 'child-span-test-$uniqueId'), isTrue,
-            reason: 'Child span should be exported');
+          childSpan.parentSpanContext,
+          equals(parentSpan.spanContext),
+          reason: 'Child span should have parent span context',
+        );
 
-        final parentExportedSpan = spans.firstWhere(
-            (s) => s['name'] == 'parent-span-test-$uniqueId',
-            orElse: () => <String, dynamic>{});
+        print('Ending spans...');
+        childSpan.end();
+        parentSpan.end();
 
-        final childExportedSpan = spans.firstWhere(
-            (s) => s['name'] == 'child-span-test-$uniqueId',
-            orElse: () => <String, dynamic>{});
+        // Force flush to ensure immediate export
+        await tracerProvider.forceFlush();
 
-        if (parentExportedSpan.isNotEmpty && childExportedSpan.isNotEmpty) {
-          if (childExportedSpan['parentSpanId'] != null) {
-            expect(childExportedSpan['parentSpanId'], isNotNull);
+        print('Waiting for spans to be exported...');
+        try {
+          await collector.waitForSpans(
+            2,
+            timeout: const Duration(seconds: 3),
+          ); // Reduced timeout
 
-            expect(
-              childExportedSpan['traceId'],
-              equals(parentExportedSpan['traceId']),
-              reason: 'Child span should inherit trace ID from parent',
-            );
+          final spans = await collector.getSpans();
+          print('Got ${spans.length} spans');
+
+          print('Available spans:');
+          for (var span in spans) {
+            print('  Span: ${span['name']}, ID: ${span['spanId']}');
           }
+
+          expect(
+            spans.any((s) => s['name'] == 'parent-span-test-$uniqueId'),
+            isTrue,
+            reason: 'Parent span should be exported',
+          );
+          expect(
+            spans.any((s) => s['name'] == 'child-span-test-$uniqueId'),
+            isTrue,
+            reason: 'Child span should be exported',
+          );
+
+          final parentExportedSpan = spans.firstWhere(
+            (s) => s['name'] == 'parent-span-test-$uniqueId',
+            orElse: () => <String, dynamic>{},
+          );
+
+          final childExportedSpan = spans.firstWhere(
+            (s) => s['name'] == 'child-span-test-$uniqueId',
+            orElse: () => <String, dynamic>{},
+          );
+
+          if (parentExportedSpan.isNotEmpty && childExportedSpan.isNotEmpty) {
+            if (childExportedSpan['parentSpanId'] != null) {
+              expect(childExportedSpan['parentSpanId'], isNotNull);
+
+              expect(
+                childExportedSpan['traceId'],
+                equals(parentExportedSpan['traceId']),
+                reason: 'Child span should inherit trace ID from parent',
+              );
+            }
+          }
+        } catch (e) {
+          print(
+            'Export verification failed, but spans were created correctly: $e',
+          );
+          // We already verified the relationship at span level above
+          print('Context propagation verified at span level');
         }
-      } catch (e) {
-        print(
-            'Export verification failed, but spans were created correctly: $e');
-        // We already verified the relationship at span level above
-        print('Context propagation verified at span level');
-      }
-    }, timeout: testTimeout);
+      },
+      timeout: testTimeout,
+    );
 
     test('withSpanContext prevents trace ID changes', () async {
       final uniqueSpanName1 = 'span1-$uniqueId';
@@ -363,10 +389,7 @@ void main() {
       final context = OTel.context().withSpanContext(remoteContext);
 
       final uniqueChildName = 'remote-child-$uniqueId';
-      final childSpan = tracer.startSpan(
-        uniqueChildName,
-        context: context,
-      );
+      final childSpan = tracer.startSpan(uniqueChildName, context: context);
 
       expect(
         childSpan.spanContext.traceId,

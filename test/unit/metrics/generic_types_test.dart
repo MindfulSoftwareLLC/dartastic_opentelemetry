@@ -201,9 +201,7 @@ void main() {
     test('Metrics with attributes have correct generic types', () {
       // Create counters with different generic types
       final intCounter = meter.createCounter<int>(
-        name: 'attr-int-counter',
-        unit: 'items',
-      ) as Counter<int>;
+          name: 'attr-int-counter', unit: 'items') as Counter<int>;
 
       final doubleCounter = meter.createCounter<double>(
         name: 'attr-double-counter',

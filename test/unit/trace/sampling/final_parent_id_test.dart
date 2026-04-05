@@ -8,9 +8,7 @@ void main() {
   group('Final Parent ID Tests', () {
     setUp(() async {
       await OTel.reset();
-      await OTel.initialize(
-        serviceName: 'test-service',
-      );
+      await OTel.initialize(serviceName: 'test-service');
     });
 
     tearDown(() async {
@@ -25,14 +23,18 @@ void main() {
       // Print debug info
       print('Root span parent ID: ${rootSpan.spanContext.parentSpanId}');
       print(
-          'Root span parent ID toString: ${rootSpan.spanContext.parentSpanId}');
+        'Root span parent ID toString: ${rootSpan.spanContext.parentSpanId}',
+      );
       print(
-          'Root span parent ID isValid: ${rootSpan.spanContext.parentSpanId!.isValid}');
+        'Root span parent ID isValid: ${rootSpan.spanContext.parentSpanId!.isValid}',
+      );
 
       // Test that the parent ID is zero-filled
       expect(rootSpan.spanContext.parentSpanId, isNotNull);
-      expect(rootSpan.spanContext.parentSpanId.toString(),
-          equals('0000000000000000'));
+      expect(
+        rootSpan.spanContext.parentSpanId.toString(),
+        equals('0000000000000000'),
+      );
       expect(rootSpan.spanContext.parentSpanId!.isValid, isFalse);
 
       rootSpan.end();

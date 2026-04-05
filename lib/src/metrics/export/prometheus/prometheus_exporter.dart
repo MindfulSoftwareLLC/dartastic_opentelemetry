@@ -72,7 +72,8 @@ class PrometheusExporter implements MetricExporter {
     try {
       if (OTelLog.isLogExport()) {
         OTelLog.logExport(
-            'PrometheusExporter: Exporting ${data.metrics.length} metrics');
+          'PrometheusExporter: Exporting ${data.metrics.length} metrics',
+        );
       }
 
       // Convert metrics to Prometheus format
@@ -98,12 +99,14 @@ class PrometheusExporter implements MetricExporter {
       // Add HELP comment
       if (metric.description != null) {
         buffer.writeln(
-            '# HELP ${_sanitizeName(metric.name)} ${_sanitizeComment(metric.description!)}');
+          '# HELP ${_sanitizeName(metric.name)} ${_sanitizeComment(metric.description!)}',
+        );
       }
 
       // Add TYPE comment
       buffer.writeln(
-          '# TYPE ${_sanitizeName(metric.name)} ${_getPrometheusType(metric)}');
+        '# TYPE ${_sanitizeName(metric.name)} ${_getPrometheusType(metric)}',
+      );
 
       // Add metric data points
       for (final point in metric.points) {
@@ -119,7 +122,10 @@ class PrometheusExporter implements MetricExporter {
 
   /// Writes a metric point in Prometheus format.
   void _writeMetricPoint(
-      StringBuffer buffer, Metric metric, MetricPoint<dynamic> point) {
+    StringBuffer buffer,
+    Metric metric,
+    MetricPoint<dynamic> point,
+  ) {
     final metricName = _sanitizeName(metric.name);
 
     // Add labels
@@ -140,12 +146,14 @@ class PrometheusExporter implements MetricExporter {
         final boundary = histogram.boundaries[i];
         final count = histogram.bucketCounts[i];
         buffer.writeln(
-            '${metricName}_bucket{${_formatLabelsWithLe(point.attributes.toMap(), boundary)}} $count');
+          '${metricName}_bucket{${_formatLabelsWithLe(point.attributes.toMap(), boundary)}} $count',
+        );
       }
 
       // Add +Inf bucket
       buffer.writeln(
-          '${metricName}_bucket{${_formatLabelsWithLe(point.attributes.toMap(), double.infinity)}} ${histogram.count}');
+        '${metricName}_bucket{${_formatLabelsWithLe(point.attributes.toMap(), double.infinity)}} ${histogram.count}',
+      );
     } else {
       // Simple metrics (counters, gauges)
       buffer.writeln('$metricName$labels ${point.value}');
@@ -216,9 +224,10 @@ class PrometheusExporter implements MetricExporter {
     if (value.toString().startsWith('AttributeValue(') &&
         value.toString().endsWith(')')) {
       // Extract the value inside AttributeValue(...)
-      final rawValue = value
-          .toString()
-          .substring('AttributeValue('.length, value.toString().length - 1);
+      final rawValue = value.toString().substring(
+            'AttributeValue('.length,
+            value.toString().length - 1,
+          );
       value = rawValue;
     }
 

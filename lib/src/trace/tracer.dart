@@ -88,7 +88,8 @@ class Tracer implements APITracer {
   T withSpan<T>(APISpan span, T Function() fn) {
     if (OTelLog.isDebug()) {
       OTelLog.debug(
-          'Tracer: withSpan called with span ${span.name}, spanId: ${span.spanContext.spanId}');
+        'Tracer: withSpan called with span ${span.name}, spanId: ${span.spanContext.spanId}',
+      );
     }
     final originalContext = Context.current;
     try {
@@ -99,7 +100,8 @@ class Tracer implements APITracer {
       final result = fn();
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-            'Tracer: Function completed in withSpan for ${span.name}');
+          'Tracer: Function completed in withSpan for ${span.name}',
+        );
       }
       return result;
     } catch (e, stackTrace) {
@@ -120,7 +122,8 @@ class Tracer implements APITracer {
       if (!span.isValid) {
         if (OTelLog.isDebug()) {
           OTelLog.debug(
-              'Tracer: Warning - span ${span.name} is invalid after withSpan operation');
+            'Tracer: Warning - span ${span.name} is invalid after withSpan operation',
+          );
         }
       }
     }
@@ -130,20 +133,23 @@ class Tracer implements APITracer {
   Future<T> withSpanAsync<T>(APISpan span, Future<T> Function() fn) async {
     if (OTelLog.isDebug()) {
       OTelLog.debug(
-          'Tracer: withSpanAsync called with span ${span.name}, spanId: ${span.spanContext.spanId}');
+        'Tracer: withSpanAsync called with span ${span.name}, spanId: ${span.spanContext.spanId}',
+      );
     }
     final originalContext = Context.current;
     try {
       Context.current = originalContext.setCurrentSpan(span);
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-            'Tracer: Context set with span ${span.name} for async operation');
+          'Tracer: Context set with span ${span.name} for async operation',
+        );
       }
       return await fn();
     } catch (e, stackTrace) {
       if (OTelLog.isError()) {
         OTelLog.error(
-            'Tracer: Exception in withSpanAsync for ${span.name}: $e');
+          'Tracer: Exception in withSpanAsync for ${span.name}: $e',
+        );
       }
       if (span is Span) {
         span.recordException(e, stackTrace: stackTrace);
@@ -159,7 +165,8 @@ class Tracer implements APITracer {
       if (!span.isValid) {
         if (OTelLog.isDebug()) {
           OTelLog.debug(
-              'Tracer: Warning - span ${span.name} is invalid after withSpanAsync operation');
+            'Tracer: Warning - span ${span.name} is invalid after withSpanAsync operation',
+          );
         }
       }
     }
@@ -221,10 +228,7 @@ class Tracer implements APITracer {
       context: context,
     );
 
-    return SDKSpanCreate.create(
-      delegateSpan: delegateSpan,
-      sdkTracer: this,
-    );
+    return SDKSpanCreate.create(delegateSpan: delegateSpan, sdkTracer: this);
   }
 
   @override
@@ -272,9 +276,10 @@ class Tracer implements APITracer {
       if (parentContext != null && parentContext.isValid) {
         if (parentContext.traceId != traceId) {
           throw ArgumentError(
-              'Cannot create span with different trace ID than parent. '
-              'Parent trace ID: ${parentContext.traceId}, '
-              'Provided trace ID: $traceId');
+            'Cannot create span with different trace ID than parent. '
+            'Parent trace ID: ${parentContext.traceId}, '
+            'Provided trace ID: $traceId',
+          );
         }
       }
     } else if (parentContext != null && parentContext.isValid) {
@@ -305,7 +310,8 @@ class Tracer implements APITracer {
     if (OTelLog.isDebug()) {
       if (parentSpanId != null) {
         OTelLog.debug(
-            'Creating child span: traceId=$traceId, parentSpanId=$parentSpanId');
+          'Creating child span: traceId=$traceId, parentSpanId=$parentSpanId',
+        );
       } else {
         OTelLog.debug('Creating root span: traceId=$traceId');
       }
@@ -329,7 +335,8 @@ class Tracer implements APITracer {
       // Update trace flags based on sampling decision
       if (traceFlags == null) {
         traceFlags = OTel.traceFlags(
-            shouldRecord ? TraceFlags.SAMPLED_FLAG : TraceFlags.NONE_FLAG);
+          shouldRecord ? TraceFlags.SAMPLED_FLAG : TraceFlags.NONE_FLAG,
+        );
       } else if (shouldRecord && !traceFlags.isSampled) {
         // Upgrade to sampled if necessary
         traceFlags = OTel.traceFlags(TraceFlags.SAMPLED_FLAG);
@@ -343,14 +350,16 @@ class Tracer implements APITracer {
         if (attributes == null) {
           attributes = samplingResult.attributes;
         } else {
-          attributes =
-              attributes.copyWithAttributes(samplingResult.attributes!);
+          attributes = attributes.copyWithAttributes(
+            samplingResult.attributes!,
+          );
         }
       }
 
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-            'Sampling decision for span $name: ${samplingResult.decision}');
+          'Sampling decision for span $name: ${samplingResult.decision}',
+        );
       }
     }
 
@@ -365,14 +374,16 @@ class Tracer implements APITracer {
     );
 
     // Create the delegate span with our newly created span context
-    final APISpan delegateSpan = _delegate.startSpan(name,
-        context: effectiveContext,
-        spanContext: newSpanContext,
-        parentSpan: effectiveParentSpan,
-        kind: kind,
-        attributes: attributes,
-        links: links,
-        isRecording: isRecording ?? shouldRecord);
+    final APISpan delegateSpan = _delegate.startSpan(
+      name,
+      context: effectiveContext,
+      spanContext: newSpanContext,
+      parentSpan: effectiveParentSpan,
+      kind: kind,
+      attributes: attributes,
+      links: links,
+      isRecording: isRecording ?? shouldRecord,
+    );
 
     // Wrap it in our SDK span which will handle processing
     final sdkSpan = SDKSpanCreate.create(

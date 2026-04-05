@@ -103,10 +103,7 @@ void main() {
 
   group('CertificateUtils.validateCertificates', () {
     test('succeeds when all parameters are null', () {
-      expect(
-        CertificateUtils.validateCertificates,
-        returnsNormally,
-      );
+      expect(CertificateUtils.validateCertificates, returnsNormally);
     });
 
     test('succeeds with test:// paths', () {
@@ -137,9 +134,8 @@ void main() {
 
       try {
         expect(
-          () => CertificateUtils.validateCertificates(
-            certificate: certFile.path,
-          ),
+          () =>
+              CertificateUtils.validateCertificates(certificate: certFile.path),
           returnsNormally,
         );
       } finally {
@@ -192,20 +188,22 @@ void main() {
       );
     });
 
-    test('throws ArgumentError when client certificate file does not exist',
-        () {
-      expect(
-        () => CertificateUtils.validateCertificates(
-          clientCertificate: '/nonexistent/path/client.pem',
-        ),
-        throwsA(
-          isA<ArgumentError>().having(
-            (e) => e.message,
-            'message',
-            contains('Client certificate file not found'),
+    test(
+      'throws ArgumentError when client certificate file does not exist',
+      () {
+        expect(
+          () => CertificateUtils.validateCertificates(
+            clientCertificate: '/nonexistent/path/client.pem',
           ),
-        ),
-      );
-    });
+          throwsA(
+            isA<ArgumentError>().having(
+              (e) => e.message,
+              'message',
+              contains('Client certificate file not found'),
+            ),
+          ),
+        );
+      },
+    );
   });
 }

@@ -95,7 +95,7 @@ void main() {
         LogLevel.info,
         LogLevel.warn,
         LogLevel.error,
-        LogLevel.fatal
+        LogLevel.fatal,
       ];
 
       for (final level in logLevels) {

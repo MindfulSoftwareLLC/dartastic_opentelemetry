@@ -43,7 +43,8 @@ class CompositeMetricExporter implements MetricExporter {
     if (_shutdown) {
       if (OTelLog.isLogExport()) {
         OTelLog.logExport(
-            'CompositeMetricExporter: Cannot export after shutdown');
+          'CompositeMetricExporter: Cannot export after shutdown',
+        );
       }
       return false;
     }
@@ -56,7 +57,8 @@ class CompositeMetricExporter implements MetricExporter {
       } catch (e) {
         if (OTelLog.isLogExport()) {
           OTelLog.logExport(
-              'CompositeMetricExporter: Export failed for $exporter: $e');
+            'CompositeMetricExporter: Export failed for $exporter: $e',
+          );
         }
         success = false;
       }

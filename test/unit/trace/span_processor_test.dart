@@ -71,15 +71,21 @@ void main() {
       );
 
       // Verify that isRecording is true before ending
-      expect(span.isRecording, isTrue,
-          reason: 'Span should be recording before end()');
+      expect(
+        span.isRecording,
+        isTrue,
+        reason: 'Span should be recording before end()',
+      );
 
       // End the span
       span.end();
 
       // Verify that isRecording is false after ending
-      expect(span.isRecording, isFalse,
-          reason: 'Span should NOT be recording after end()');
+      expect(
+        span.isRecording,
+        isFalse,
+        reason: 'Span should NOT be recording after end()',
+      );
 
       // Wait a bit for async operations to complete
       await Future<void>.delayed(const Duration(milliseconds: 100));
@@ -103,10 +109,7 @@ void main() {
       tracerProvider.addSpanProcessor(processor);
 
       // Create and end a span - this should not throw despite the exporter having an error
-      final span = tracer.startSpan(
-        'test-span',
-        kind: SpanKind.internal,
-      );
+      final span = tracer.startSpan('test-span', kind: SpanKind.internal);
 
       // Should not throw
       span.end();
@@ -131,10 +134,7 @@ void main() {
       await processor.shutdown();
 
       // Create and end a span after shutdown
-      final span = tracer.startSpan(
-        'test-span',
-        kind: SpanKind.internal,
-      );
+      final span = tracer.startSpan('test-span', kind: SpanKind.internal);
 
       span.end();
 
@@ -188,10 +188,7 @@ void main() {
       // Verify spans were exported
       expect(exporter.exportedSpans, hasLength(3));
       for (var i = 0; i < 3; i++) {
-        expect(
-          exporter.exportedSpans[i].name,
-          equals('test-span-$i'),
-        );
+        expect(exporter.exportedSpans[i].name, equals('test-span-$i'));
       }
 
       await processor.shutdown();
@@ -209,10 +206,7 @@ void main() {
       tracerProvider.addSpanProcessor(processor);
 
       // Create and end a span
-      final span = tracer.startSpan(
-        'test-span',
-        kind: SpanKind.internal,
-      );
+      final span = tracer.startSpan('test-span', kind: SpanKind.internal);
       span.end();
 
       // Should not throw
@@ -232,10 +226,7 @@ void main() {
       tracerProvider.addSpanProcessor(processor);
 
       // Create and end a span
-      final span = tracer.startSpan(
-        'test-span',
-        kind: SpanKind.internal,
-      );
+      final span = tracer.startSpan('test-span', kind: SpanKind.internal);
       span.end();
 
       // Wait a bit for async processing
@@ -254,13 +245,13 @@ void main() {
 
       // Create batch processor with small batch size for testing
       final processor = BatchSpanProcessor(
-          exporter,
-          const BatchSpanProcessorConfig(
-              maxExportBatchSize: 2,
-              exportTimeout: Duration(milliseconds: 1000),
-              scheduleDelay: Duration(
-                milliseconds: 100,
-              )));
+        exporter,
+        const BatchSpanProcessorConfig(
+          maxExportBatchSize: 2,
+          exportTimeout: Duration(milliseconds: 1000),
+          scheduleDelay: Duration(milliseconds: 100),
+        ),
+      );
 
       // Register the processor with the tracer provider
       tracerProvider.addSpanProcessor(processor);
@@ -283,8 +274,9 @@ void main() {
       // Verify span names
       for (var i = 0; i < 5; i++) {
         expect(
-          exporter.exportedSpans
-              .any((span) => span.name == 'batch-test-span-$i'),
+          exporter.exportedSpans.any(
+            (span) => span.name == 'batch-test-span-$i',
+          ),
           isTrue,
           reason: 'Should find span with name batch-test-span-$i',
         );

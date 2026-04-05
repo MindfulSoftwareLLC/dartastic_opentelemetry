@@ -5,25 +5,25 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
 void main() async {
   // Initialize OTel first with the endpoint
-  // String endpoint = 'https://otel-dev.dartastic.io:443';
+  // String endpoint = 'https://otel.dartastic.io:443';
   // var secure = true;
-  final endpoint =
-      'http://ec2-3-139-70-11.us-east-2.compute.amazonaws.com:4317';
+  final endpoint = 'http://my-otel-collector:4317';
   final secure = false;
   await OTel.initialize(
-      secure: secure,
-      endpoint: endpoint,
-      serviceName: 'dartastic-examples',
-      tracerName: 'otlp_grpc_example',
-      tracerVersion: '1.0.0',
-      tenantId: 'my-valued-customer',
-      // Always consult the OTel Semantic Conventions to find an existing
-      // convention name for an attribute:
-      // https://opentelemetry.io/docs/specs/semconv/general/attributes/
-      resourceAttributes: {
-        DeploymentResource.deploymentEnvironmentName.key:
-            'dev', //https://opentelemetry.io/docs/specs/semconv/resource/deployment-environment/
-      }.toAttributes());
+    secure: secure,
+    endpoint: endpoint,
+    serviceName: 'dartastic-examples',
+    tracerName: 'otlp_grpc_example',
+    tracerVersion: '1.0.0',
+    tenantId: 'my-valued-customer',
+    // Always consult the OTel Semantic Conventions to find an existing
+    // convention name for an attribute:
+    // https://opentelemetry.io/docs/specs/semconv/general/attributes/
+    resourceAttributes: {
+      DeploymentResource.deploymentEnvironmentName.key:
+          'dev', //https://opentelemetry.io/docs/specs/semconv/resource/deployment-environment/
+    }.toAttributes(),
+  );
 
   // Get the default tracer
   final tracer = OTel.tracer();
@@ -32,8 +32,9 @@ void main() async {
   // Always consult the OTel Semantic Conventions to find an existing
   // convention name for an attribute:
   // https://opentelemetry.io/docs/specs/semconv/general/attributes/
-  tracer.attributes =
-      OTel.attributesFromMap({SourceCodeResource.codeFunctionName.key: 'main'});
+  tracer.attributes = OTel.attributesFromMap({
+    SourceCodeResource.codeFunctionName.key: 'main',
+  });
 
   // Create a new root span
   final rootSpan = tracer.startSpan(

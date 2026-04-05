@@ -61,12 +61,14 @@ void main() {
       expect(metrics2.isNotEmpty, isTrue);
 
       // Find the test_counter metric in each exporter
-      final metric1 = metrics1.firstWhere((m) => m.name == 'test_counter',
-          orElse: () =>
-              throw StateError('test_counter not found in exporter1'));
-      final metric2 = metrics2.firstWhere((m) => m.name == 'test_counter',
-          orElse: () =>
-              throw StateError('test_counter not found in exporter2'));
+      final metric1 = metrics1.firstWhere(
+        (m) => m.name == 'test_counter',
+        orElse: () => throw StateError('test_counter not found in exporter1'),
+      );
+      final metric2 = metrics2.firstWhere(
+        (m) => m.name == 'test_counter',
+        orElse: () => throw StateError('test_counter not found in exporter2'),
+      );
 
       // Verify the metrics exist
       expect(metric1, isNotNull);
@@ -77,90 +79,94 @@ void main() {
       expect(metric2.name, equals('test_counter'));
     });
 
-    test('CompositeMetricExporter handles exporter failures gracefully',
-        () async {
-      // Create a test exporter that fails on export
-      final failingExporter = _FailingMetricExporter();
+    test(
+      'CompositeMetricExporter handles exporter failures gracefully',
+      () async {
+        // Create a test exporter that fails on export
+        final failingExporter = _FailingMetricExporter();
 
-      // Create a composite with the failing exporter and one normal one
-      final compositeWithFailure = CompositeMetricExporter([
-        failingExporter,
-        exporter1,
-      ]);
+        // Create a composite with the failing exporter and one normal one
+        final compositeWithFailure = CompositeMetricExporter([
+          failingExporter,
+          exporter1,
+        ]);
 
-      // Clear previous metrics
-      exporter1.clear();
+        // Clear previous metrics
+        exporter1.clear();
 
-      // Create a new instance with our test reader
-      await OTel.reset();
-      // Use a separate reader for test infrastructure
-      final memoryMetricReader = MemoryMetricReader();
+        // Create a new instance with our test reader
+        await OTel.reset();
+        // Use a separate reader for test infrastructure
+        final memoryMetricReader = MemoryMetricReader();
 
-      await OTel.initialize(
-        serviceName: 'failure-test-service',
-        metricReader: memoryMetricReader,
-        detectPlatformResources: false,
-      );
+        await OTel.initialize(
+          serviceName: 'failure-test-service',
+          metricReader: memoryMetricReader,
+          detectPlatformResources: false,
+        );
 
-      // Get a meter and record data
-      final meter = OTel.meter('failure-test');
-      final counter = meter.createCounter<int>(name: 'failure_counter');
-      counter.add(42);
+        // Get a meter and record data
+        final meter = OTel.meter('failure-test');
+        final counter = meter.createCounter<int>(name: 'failure_counter');
+        counter.add(42);
 
-      // Collect metrics
-      final data = await memoryMetricReader.collect();
+        // Collect metrics
+        final data = await memoryMetricReader.collect();
 
-      // Manually export through our composite exporter
-      final bool result = await compositeWithFailure.export(data);
+        // Manually export through our composite exporter
+        final bool result = await compositeWithFailure.export(data);
 
-      // Since one exporter fails, the composite should return false
-      expect(result, isFalse);
+        // Since one exporter fails, the composite should return false
+        expect(result, isFalse);
 
-      // But metrics should still reach the working exporter
-      expect(exporter1.exportedMetrics.isNotEmpty, isTrue);
-    });
+        // But metrics should still reach the working exporter
+        expect(exporter1.exportedMetrics.isNotEmpty, isTrue);
+      },
+    );
 
-    test('CompositeMetricExporter forceFlush and shutdown calls all exporters',
-        () async {
-      // Create tracked exporters
-      final trackedExporter1 = _TrackedMetricExporter();
-      final trackedExporter2 = _TrackedMetricExporter();
+    test(
+      'CompositeMetricExporter forceFlush and shutdown calls all exporters',
+      () async {
+        // Create tracked exporters
+        final trackedExporter1 = _TrackedMetricExporter();
+        final trackedExporter2 = _TrackedMetricExporter();
 
-      // Create composite
-      final composite = CompositeMetricExporter([
-        trackedExporter1,
-        trackedExporter2,
-      ]);
+        // Create composite
+        final composite = CompositeMetricExporter([
+          trackedExporter1,
+          trackedExporter2,
+        ]);
 
-      // Create an empty MetricData for testing
-      final emptyData = MetricData.empty();
+        // Create an empty MetricData for testing
+        final emptyData = MetricData.empty();
 
-      // Call export
-      final bool result = await composite.export(emptyData);
+        // Call export
+        final bool result = await composite.export(emptyData);
 
-      // Export should succeed
-      expect(result, isTrue);
+        // Export should succeed
+        expect(result, isTrue);
 
-      // Verify both exporters had export called
-      expect(trackedExporter1.exportCalled, isTrue);
-      expect(trackedExporter2.exportCalled, isTrue);
+        // Verify both exporters had export called
+        expect(trackedExporter1.exportCalled, isTrue);
+        expect(trackedExporter2.exportCalled, isTrue);
 
-      // Call forceFlush
-      final bool flushResult = await composite.forceFlush();
-      expect(flushResult, isTrue);
+        // Call forceFlush
+        final bool flushResult = await composite.forceFlush();
+        expect(flushResult, isTrue);
 
-      // Verify both exporters had forceFlush called
-      expect(trackedExporter1.forceFlushCalled, isTrue);
-      expect(trackedExporter2.forceFlushCalled, isTrue);
+        // Verify both exporters had forceFlush called
+        expect(trackedExporter1.forceFlushCalled, isTrue);
+        expect(trackedExporter2.forceFlushCalled, isTrue);
 
-      // Call shutdown
-      final bool shutdownResult = await composite.shutdown();
-      expect(shutdownResult, isTrue);
+        // Call shutdown
+        final bool shutdownResult = await composite.shutdown();
+        expect(shutdownResult, isTrue);
 
-      // Verify both exporters had shutdown called
-      expect(trackedExporter1.shutdownCalled, isTrue);
-      expect(trackedExporter2.shutdownCalled, isTrue);
-    });
+        // Verify both exporters had shutdown called
+        expect(trackedExporter1.shutdownCalled, isTrue);
+        expect(trackedExporter2.shutdownCalled, isTrue);
+      },
+    );
   });
 }
 
@@ -170,7 +176,7 @@ class _FailingMetricExporter implements MetricExporter {
 
   @override
   Future<bool> export(MetricData data) async {
-// This exporter intentionally fails and returns false to test that the composite exporter correctly propagates failures
+    // This exporter intentionally fails and returns false to test that the composite exporter correctly propagates failures
     print('Intentional export failure that should be caught internally');
     return false;
   }

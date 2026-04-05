@@ -38,7 +38,7 @@ void main() {
         // Arrange
         final carrier = {
           'traceparent':
-              '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01'
+              '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
         };
         final getter = MapTextMapGetter(carrier);
         final context = OTel.context();
@@ -50,8 +50,10 @@ void main() {
         final spanContext = extracted.spanContext;
         expect(spanContext, isNotNull);
         expect(spanContext!.isValid, isTrue);
-        expect(spanContext.traceId.hexString,
-            equals('4bf92f3577b34da6a3ce929d0e0e4736'));
+        expect(
+          spanContext.traceId.hexString,
+          equals('4bf92f3577b34da6a3ce929d0e0e4736'),
+        );
         expect(spanContext.spanId.hexString, equals('00f067aa0ba902b7'));
         expect(spanContext.traceFlags.isSampled, isTrue);
         expect(spanContext.isRemote, isTrue);
@@ -62,7 +64,7 @@ void main() {
         final carrier = {
           'traceparent':
               '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
-          'tracestate': 'rojo=00f067aa0ba902b7,congo=t61rcWkgMzE'
+          'tracestate': 'rojo=00f067aa0ba902b7,congo=t61rcWkgMzE',
         };
         final getter = MapTextMapGetter(carrier);
         final context = OTel.context();
@@ -75,8 +77,10 @@ void main() {
         expect(spanContext, isNotNull);
         expect(spanContext!.traceState, isNotNull);
         expect(spanContext.traceState!.entries, hasLength(2));
-        expect(spanContext.traceState!.entries['rojo'],
-            equals('00f067aa0ba902b7'));
+        expect(
+          spanContext.traceState!.entries['rojo'],
+          equals('00f067aa0ba902b7'),
+        );
         expect(spanContext.traceState!.entries['congo'], equals('t61rcWkgMzE'));
       });
 
@@ -84,7 +88,7 @@ void main() {
         // Arrange
         final carrier = {
           'traceparent':
-              '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00'
+              '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00',
         };
         final getter = MapTextMapGetter(carrier);
         final context = OTel.context();
@@ -127,7 +131,7 @@ void main() {
       test('rejects traceparent with wrong length', () {
         // Arrange
         final carrier = {
-          'traceparent': '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7'
+          'traceparent': '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7',
         };
         final getter = MapTextMapGetter(carrier);
         final context = OTel.context();
@@ -142,7 +146,7 @@ void main() {
       test('rejects traceparent with wrong number of parts', () {
         // Arrange
         final carrier = {
-          'traceparent': '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7'
+          'traceparent': '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7',
         };
         final getter = MapTextMapGetter(carrier);
         final context = OTel.context();
@@ -158,7 +162,7 @@ void main() {
         // Arrange
         final carrier = {
           'traceparent':
-              '01-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01'
+              '01-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
         };
         final getter = MapTextMapGetter(carrier);
         final context = OTel.context();
@@ -174,7 +178,7 @@ void main() {
         // Arrange
         final carrier = {
           'traceparent':
-              '00-00000000000000000000000000000000-00f067aa0ba902b7-01'
+              '00-00000000000000000000000000000000-00f067aa0ba902b7-01',
         };
         final getter = MapTextMapGetter(carrier);
         final context = OTel.context();
@@ -190,7 +194,7 @@ void main() {
         // Arrange
         final carrier = {
           'traceparent':
-              '00-4bf92f3577b34da6a3ce929d0e0e4736-0000000000000000-01'
+              '00-4bf92f3577b34da6a3ce929d0e0e4736-0000000000000000-01',
         };
         final getter = MapTextMapGetter(carrier);
         final context = OTel.context();
@@ -206,7 +210,7 @@ void main() {
         // Arrange
         final carrier = {
           'traceparent':
-              '00-4bf92f3577b34da6a3ce929d0e0e473-00f067aa0ba902b7-01'
+              '00-4bf92f3577b34da6a3ce929d0e0e473-00f067aa0ba902b7-01',
         };
         final getter = MapTextMapGetter(carrier);
         final context = OTel.context();
@@ -222,7 +226,7 @@ void main() {
         // Arrange
         final carrier = {
           'traceparent':
-              '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b-01'
+              '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b-01',
         };
         final getter = MapTextMapGetter(carrier);
         final context = OTel.context();
@@ -238,7 +242,7 @@ void main() {
         // Arrange
         final carrier = {
           'traceparent':
-              '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-1'
+              '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-1',
         };
         final getter = MapTextMapGetter(carrier);
         final context = OTel.context();
@@ -255,7 +259,7 @@ void main() {
         final carrier = {
           'traceparent':
               '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
-          'tracestate': 'invalid-format'
+          'tracestate': 'invalid-format',
         };
         final getter = MapTextMapGetter(carrier);
         final context = OTel.context();
@@ -269,9 +273,10 @@ void main() {
         expect(spanContext!.isValid, isTrue);
         // Tracestate should be null or empty since it was malformed
         expect(
-            spanContext.traceState == null ||
-                spanContext.traceState!.entries.isEmpty,
-            isTrue);
+          spanContext.traceState == null ||
+              spanContext.traceState!.entries.isEmpty,
+          isTrue,
+        );
       });
 
       test('handles tracestate with empty entries', () {
@@ -279,7 +284,7 @@ void main() {
         final carrier = {
           'traceparent':
               '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
-          'tracestate': 'key1=value1,,key2=value2'
+          'tracestate': 'key1=value1,,key2=value2',
         };
         final getter = MapTextMapGetter(carrier);
         final context = OTel.context();
@@ -301,7 +306,7 @@ void main() {
         final carrier = {
           'traceparent':
               '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
-          'tracestate': ' key1 = value1 , key2 = value2 '
+          'tracestate': ' key1 = value1 , key2 = value2 ',
         };
         final getter = MapTextMapGetter(carrier);
         final context = OTel.context();
@@ -338,8 +343,10 @@ void main() {
         propagator.inject(context, carrier, setter);
 
         // Assert
-        expect(carrier['traceparent'],
-            equals('00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01'));
+        expect(
+          carrier['traceparent'],
+          equals('00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01'),
+        );
       });
 
       test('injects span context with tracestate', () {
@@ -347,8 +354,10 @@ void main() {
         final traceId = OTel.traceIdFrom('4bf92f3577b34da6a3ce929d0e0e4736');
         final spanId = OTel.spanIdFrom('00f067aa0ba902b7');
         final traceFlags = TraceFlags.sampled;
-        final traceState = OTel.traceState(
-            {'rojo': '00f067aa0ba902b7', 'congo': 't61rcWkgMzE'});
+        final traceState = OTel.traceState({
+          'rojo': '00f067aa0ba902b7',
+          'congo': 't61rcWkgMzE',
+        });
         final spanContext = OTel.spanContext(
           traceId: traceId,
           spanId: spanId,
@@ -366,11 +375,12 @@ void main() {
         expect(carrier['traceparent'], isNotNull);
         expect(carrier['tracestate'], isNotNull);
         expect(
-            carrier['tracestate'],
-            anyOf(
-              equals('rojo=00f067aa0ba902b7,congo=t61rcWkgMzE'),
-              equals('congo=t61rcWkgMzE,rojo=00f067aa0ba902b7'),
-            ));
+          carrier['tracestate'],
+          anyOf(
+            equals('rojo=00f067aa0ba902b7,congo=t61rcWkgMzE'),
+            equals('congo=t61rcWkgMzE,rojo=00f067aa0ba902b7'),
+          ),
+        );
       });
 
       test('injects non-sampled span context', () {
@@ -391,8 +401,10 @@ void main() {
         propagator.inject(context, carrier, setter);
 
         // Assert
-        expect(carrier['traceparent'],
-            equals('00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00'));
+        expect(
+          carrier['traceparent'],
+          equals('00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-00'),
+        );
       });
 
       test('does not inject invalid span context', () {
@@ -457,12 +469,15 @@ void main() {
     group('round-trip', () {
       test('can extract what was injected', () {
         // Arrange
-        final originalTraceId =
-            OTel.traceIdFrom('4bf92f3577b34da6a3ce929d0e0e4736');
+        final originalTraceId = OTel.traceIdFrom(
+          '4bf92f3577b34da6a3ce929d0e0e4736',
+        );
         final originalSpanId = OTel.spanIdFrom('00f067aa0ba902b7');
         final originalTraceFlags = TraceFlags.sampled;
-        final originalTraceState =
-            OTel.traceState({'vendor1': 'value1', 'vendor2': 'value2'});
+        final originalTraceState = OTel.traceState({
+          'vendor1': 'value1',
+          'vendor2': 'value2',
+        });
         final originalSpanContext = OTel.spanContext(
           traceId: originalTraceId,
           spanId: originalSpanId,
@@ -478,28 +493,40 @@ void main() {
         propagator.inject(originalContext, carrier, setter);
 
         // Act - Extract
-        final extractedContext =
-            propagator.extract(OTel.context(), carrier, getter);
+        final extractedContext = propagator.extract(
+          OTel.context(),
+          carrier,
+          getter,
+        );
 
         // Assert
         final extractedSpanContext = extractedContext.spanContext;
         expect(extractedSpanContext, isNotNull);
-        expect(extractedSpanContext!.traceId.hexString,
-            equals(originalTraceId.hexString));
-        expect(extractedSpanContext.spanId.hexString,
-            equals(originalSpanId.hexString));
-        expect(extractedSpanContext.traceFlags.isSampled,
-            equals(originalTraceFlags.isSampled));
+        expect(
+          extractedSpanContext!.traceId.hexString,
+          equals(originalTraceId.hexString),
+        );
+        expect(
+          extractedSpanContext.spanId.hexString,
+          equals(originalSpanId.hexString),
+        );
+        expect(
+          extractedSpanContext.traceFlags.isSampled,
+          equals(originalTraceFlags.isSampled),
+        );
         expect(extractedSpanContext.isRemote, isTrue);
         expect(extractedSpanContext.traceState, isNotNull);
-        expect(extractedSpanContext.traceState!.entries,
-            equals(originalTraceState.entries));
+        expect(
+          extractedSpanContext.traceState!.entries,
+          equals(originalTraceState.entries),
+        );
       });
 
       test('preserves trace context through multiple hops', () {
         // Arrange
-        final originalTraceId =
-            OTel.traceIdFrom('4bf92f3577b34da6a3ce929d0e0e4736');
+        final originalTraceId = OTel.traceIdFrom(
+          '4bf92f3577b34da6a3ce929d0e0e4736',
+        );
         final originalSpanId = OTel.spanIdFrom('00f067aa0ba902b7');
         final originalTraceFlags = TraceFlags.sampled;
         final originalSpanContext = OTel.spanContext(
@@ -533,8 +560,10 @@ void main() {
         // Assert - TraceId should be preserved through all hops
         final finalSpanContext = context3.spanContext;
         expect(finalSpanContext, isNotNull);
-        expect(finalSpanContext!.traceId.hexString,
-            equals(originalTraceId.hexString));
+        expect(
+          finalSpanContext!.traceId.hexString,
+          equals(originalTraceId.hexString),
+        );
         expect(finalSpanContext.isRemote, isTrue);
       });
     });
@@ -544,7 +573,7 @@ void main() {
         // Example from W3C spec
         final carrier = {
           'traceparent':
-              '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01'
+              '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
         };
         final getter = MapTextMapGetter(carrier);
         final context = OTel.context();
@@ -560,7 +589,7 @@ void main() {
         // Smallest non-zero values
         final carrier = {
           'traceparent':
-              '00-00000000000000000000000000000001-0000000000000001-01'
+              '00-00000000000000000000000000000001-0000000000000001-01',
         };
         final getter = MapTextMapGetter(carrier);
         final context = OTel.context();

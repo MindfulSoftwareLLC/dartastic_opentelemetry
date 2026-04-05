@@ -40,15 +40,9 @@ void main() {
       );
 
       // Create spans
-      final httpSpan = httpTracer.startSpan(
-        'http-span',
-        kind: SpanKind.server,
-      );
+      final httpSpan = httpTracer.startSpan('http-span', kind: SpanKind.server);
 
-      final dbSpan = dbTracer.startSpan(
-        'db-span',
-        kind: SpanKind.client,
-      );
+      final dbSpan = dbTracer.startSpan('db-span', kind: SpanKind.client);
 
       // End spans
       httpSpan.end();
@@ -59,9 +53,11 @@ void main() {
       final dbScope = dbSpan.instrumentationScope;
 
       print(
-          'HTTP Span Instrumentation Scope: ${httpScope.name}, version: ${httpScope.version}');
+        'HTTP Span Instrumentation Scope: ${httpScope.name}, version: ${httpScope.version}',
+      );
       print(
-          'DB Span Instrumentation Scope: ${dbScope.name}, version: ${dbScope.version}');
+        'DB Span Instrumentation Scope: ${dbScope.name}, version: ${dbScope.version}',
+      );
 
       // Verify the instrumentation scopes
       expect(httpScope.name, equals('http-instrumentation'));
@@ -103,10 +99,16 @@ void main() {
       print('All scope names: $allScopeNames');
 
       // Check for both instrumentation scopes
-      expect(allScopeNames.contains('http-instrumentation'), isTrue,
-          reason: 'Should contain http-instrumentation scope');
-      expect(allScopeNames.contains('db-instrumentation'), isTrue,
-          reason: 'Should contain db-instrumentation scope');
+      expect(
+        allScopeNames.contains('http-instrumentation'),
+        isTrue,
+        reason: 'Should contain http-instrumentation scope',
+      );
+      expect(
+        allScopeNames.contains('db-instrumentation'),
+        isTrue,
+        reason: 'Should contain db-instrumentation scope',
+      );
     });
   });
 }

@@ -124,16 +124,19 @@ void main() {
 
       // Find our histograms
       final intMetric = metrics.firstWhere((m) => m.name == 'int-histogram');
-      final doubleMetric =
-          metrics.firstWhere((m) => m.name == 'double-histogram');
+      final doubleMetric = metrics.firstWhere(
+        (m) => m.name == 'double-histogram',
+      );
 
       // Verify int histogram
       expect(intMetric.points.first.histogram().sum, equals(142.0)); // 42 + 100
       expect(intMetric.points.first.histogram().count, equals(2));
 
       // Verify double histogram
-      expect(doubleMetric.points.first.histogram().sum,
-          equals(4.25)); // 1.5 + 2.75
+      expect(
+        doubleMetric.points.first.histogram().sum,
+        equals(4.25),
+      ); // 1.5 + 2.75
       expect(doubleMetric.points.first.histogram().count, equals(2));
     });
 
@@ -148,7 +151,7 @@ void main() {
         100.0,
         250.0,
         500.0,
-        1000.0
+        1000.0,
       ];
 
       final histogram = meter.createHistogram<double>(
@@ -168,8 +171,9 @@ void main() {
       await metricReader.forceFlush();
 
       // Get metric
-      final metric = memoryExporter.exportedMetrics
-          .firstWhere((m) => m.name == 'custom-boundaries-histogram');
+      final metric = memoryExporter.exportedMetrics.firstWhere(
+        (m) => m.name == 'custom-boundaries-histogram',
+      );
 
       // Verify histogram data
       final histData = metric.points.first.histogram();
@@ -210,9 +214,10 @@ void main() {
     });
 
     test('Histogram.getValue returns sum of recorded values', () {
-      final histogram = meter.createHistogram<double>(
-        name: 'get-value-histogram',
-      ) as Histogram<double>; // Cast to implementation class to access getValue
+      final histogram =
+          meter.createHistogram<double>(name: 'get-value-histogram')
+              as Histogram<
+                  double>; // Cast to implementation class to access getValue
 
       // Record values with different attributes
       final attrs1 = {'endpoint': '/api/users'}.toAttributes();
@@ -247,32 +252,29 @@ void main() {
           double>; // Cast to implementation class to access recordWithMap
 
       // Record using recordWithMap
-      histogram.recordWithMap(15.5, {
-        'method': 'GET',
-        'status': 200,
-      });
+      histogram.recordWithMap(15.5, {'method': 'GET', 'status': 200});
 
-      histogram.recordWithMap(250.0, {
-        'method': 'POST',
-        'status': 201,
-      });
+      histogram.recordWithMap(250.0, {'method': 'POST', 'status': 201});
 
       // Force collection
       await metricReader.forceFlush();
 
       // Get metric
-      final metric = memoryExporter.exportedMetrics
-          .firstWhere((m) => m.name == 'map-attributes-histogram');
+      final metric = memoryExporter.exportedMetrics.firstWhere(
+        (m) => m.name == 'map-attributes-histogram',
+      );
 
       // Verify we have two data points (one for each attribute set)
       expect(metric.points.length, equals(2));
 
       // Find each point
-      final getPoint = metric.points
-          .firstWhere((p) => p.attributes.getString('method') == 'GET');
+      final getPoint = metric.points.firstWhere(
+        (p) => p.attributes.getString('method') == 'GET',
+      );
 
-      final postPoint = metric.points
-          .firstWhere((p) => p.attributes.getString('method') == 'POST');
+      final postPoint = metric.points.firstWhere(
+        (p) => p.attributes.getString('method') == 'POST',
+      );
 
       // Verify values
       expect(getPoint.histogram().sum, equals(15.5));
@@ -284,8 +286,7 @@ void main() {
 
     test('Histogram collectMetrics respects enabled state', () {
       final histogram = meter.createHistogram<double>(
-        name: 'collect-metrics-histogram',
-      ) as Histogram<double>;
+          name: 'collect-metrics-histogram') as Histogram<double>;
 
       // Record a value
       histogram.record(42.5);
@@ -304,8 +305,7 @@ void main() {
 
     test('Histogram collectPoints returns all points', () {
       final histogram = meter.createHistogram<double>(
-        name: 'collect-points-histogram',
-      ) as Histogram<double>;
+          name: 'collect-points-histogram') as Histogram<double>;
 
       // Record values with different attributes
       final attrs1 = {'region': 'east'}.toAttributes();
@@ -321,11 +321,13 @@ void main() {
       expect(points.length, equals(2));
 
       // Find each point
-      final eastPoint =
-          points.firstWhere((p) => p.attributes.getString('region') == 'east');
+      final eastPoint = points.firstWhere(
+        (p) => p.attributes.getString('region') == 'east',
+      );
 
-      final westPoint =
-          points.firstWhere((p) => p.attributes.getString('region') == 'west');
+      final westPoint = points.firstWhere(
+        (p) => p.attributes.getString('region') == 'west',
+      );
 
       // Verify values
       expect(eastPoint.histogram().sum, equals(100.0));
@@ -333,9 +335,8 @@ void main() {
     });
 
     test('Histogram reset clears accumulated values', () async {
-      final histogram = meter.createHistogram<double>(
-        name: 'reset-histogram',
-      ) as Histogram<double>;
+      final histogram = meter.createHistogram<double>(name: 'reset-histogram')
+          as Histogram<double>;
 
       // Record initial values
       histogram.record(10.0);
@@ -345,8 +346,9 @@ void main() {
       await metricReader.forceFlush();
 
       // Verify the exported metric
-      var metric = memoryExporter.exportedMetrics
-          .firstWhere((m) => m.name == 'reset-histogram');
+      var metric = memoryExporter.exportedMetrics.firstWhere(
+        (m) => m.name == 'reset-histogram',
+      );
 
       expect(metric.points.first.histogram().sum, equals(30.0)); // 10 + 20
 
@@ -363,8 +365,9 @@ void main() {
       await metricReader.forceFlush();
 
       // Get the new metric
-      metric = memoryExporter.exportedMetrics
-          .firstWhere((m) => m.name == 'reset-histogram');
+      metric = memoryExporter.exportedMetrics.firstWhere(
+        (m) => m.name == 'reset-histogram',
+      );
 
       // Verify only new value is present
       expect(metric.points.first.histogram().sum, equals(5.0));

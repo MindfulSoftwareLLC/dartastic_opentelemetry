@@ -15,7 +15,7 @@ class TestAttributes {
                 ? i
                 : i % 4 == 2
                     ? i.toDouble()
-                    : i % 2 == 0
+                    : i % 2 == 0,
     };
   }
 

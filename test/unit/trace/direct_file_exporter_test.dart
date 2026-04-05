@@ -78,9 +78,13 @@ void main() {
       final tracer = tracerProvider.getTracer('direct-file-test');
       print('Got tracer from provider');
 
-      final span = tracer.startSpan('direct-test-span',
-          attributes:
-              Attributes.of({'test.key': 'test.value', 'test.number': 123}));
+      final span = tracer.startSpan(
+        'direct-test-span',
+        attributes: Attributes.of({
+          'test.key': 'test.value',
+          'test.number': 123,
+        }),
+      );
       print('Created span: ${span.name}');
 
       // Small delay to simulate work
@@ -104,7 +108,8 @@ void main() {
       // Verify the file has content
       final fileContent = await File(outputPath).readAsString();
       print(
-          'File content after export (length=${fileContent.length}): $fileContent');
+        'File content after export (length=${fileContent.length}): $fileContent',
+      );
 
       // Basic sanity check - the file should contain our span name
       expect(fileContent.contains('direct-test-span'), isTrue);
@@ -174,7 +179,8 @@ void main() {
       // Verify span was exported
       final fileContent = await File(outputPath).readAsString();
       print(
-          'recordSpan file content (length=${fileContent.length}): $fileContent');
+        'recordSpan file content (length=${fileContent.length}): $fileContent',
+      );
 
       expect(fileContent.contains('record-span-test'), isTrue);
 
@@ -205,8 +211,10 @@ void main() {
       // Create multiple spans
       print('Creating 3 spans...');
       for (int i = 0; i < 3; i++) {
-        final span = tracer.startSpan('multi-span-$i',
-            attributes: Attributes.of({'span.index': i}));
+        final span = tracer.startSpan(
+          'multi-span-$i',
+          attributes: Attributes.of({'span.index': i}),
+        );
         span.end();
         print('Created and ended span $i');
       }
@@ -222,7 +230,8 @@ void main() {
       // Verify spans were exported
       final fileContent = await File(outputPath).readAsString();
       print(
-          'Multiple spans file content (length=${fileContent.length}): $fileContent');
+        'Multiple spans file content (length=${fileContent.length}): $fileContent',
+      );
 
       expect(fileContent, isNotEmpty);
 
@@ -258,7 +267,8 @@ void main() {
           final matchingSpan = allSpans.firstWhere(
             (span) => span['name'] == expectedSpanName,
             orElse: () => throw StateError(
-                'Span $expectedSpanName not found in: ${allSpans.map((s) => s['name']).toList()}'),
+              'Span $expectedSpanName not found in: ${allSpans.map((s) => s['name']).toList()}',
+            ),
           );
 
           expect(matchingSpan['attributes']['span.index'], equals(i));

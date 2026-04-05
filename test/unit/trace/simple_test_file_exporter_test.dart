@@ -84,8 +84,11 @@ void main() {
       // Verify the file has content
       final content = file.readAsStringSync();
       print('File content after export: $content');
-      expect(content.isNotEmpty, isTrue,
-          reason: 'Expected file to have content');
+      expect(
+        content.isNotEmpty,
+        isTrue,
+        reason: 'Expected file to have content',
+      );
 
       // Verify the content can be parsed as JSON
       try {
@@ -96,8 +99,11 @@ void main() {
 
         // Cast to List for type safety
         final batches = jsonData as List;
-        expect(batches, isNotEmpty,
-            reason: 'Expected non-empty list of batches');
+        expect(
+          batches,
+          isNotEmpty,
+          reason: 'Expected non-empty list of batches',
+        );
 
         // Get the first batch
         final firstBatch = batches[0];
@@ -115,14 +121,23 @@ void main() {
         final spanMap = spanData as Map<String, dynamic>;
 
         // Verify span properties
-        expect(spanMap['name'], equals('test-span'),
-            reason: 'Expected span name to match');
-        expect(spanMap['attributes'], isA<Map>(),
-            reason: 'Expected span to have attributes');
+        expect(
+          spanMap['name'],
+          equals('test-span'),
+          reason: 'Expected span name to match',
+        );
+        expect(
+          spanMap['attributes'],
+          isA<Map>(),
+          reason: 'Expected span to have attributes',
+        );
 
         final attributes = spanMap['attributes'] as Map<String, dynamic>;
-        expect(attributes['test.key'], equals('test.value'),
-            reason: 'Expected attribute to be set');
+        expect(
+          attributes['test.key'],
+          equals('test.value'),
+          reason: 'Expected attribute to be set',
+        );
       } catch (e) {
         fail('Error parsing JSON: $e\nContent: $content');
       }

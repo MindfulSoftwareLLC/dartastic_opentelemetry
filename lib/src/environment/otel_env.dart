@@ -17,39 +17,48 @@ class OTelEnv {
   ///
   /// This method reads the logging-related environment variables
   /// and configures the OTelLog accordingly.
+  ///
+  /// If a custom log function has already been set (e.g., by tests),
+  /// this method will preserve it along with the current log level.
+  /// This allows tests to fully control logging configuration without
+  /// environment variables overriding their settings.
   static void initializeLogging() {
-    // Set log level based on environment variable
+    // Save the current log function to check if it's custom
+    final existingLogFunction = OTelLog.logFunction;
+
+    // A custom function is one that's not null and not the default print function
+    final hasCustomLogFunction =
+        existingLogFunction != null && existingLogFunction != print;
+
+    // Set log level and function based on environment variable,
+    // but only if no custom log function is already configured.
     final logLevel = _getEnv(otelLogLevel)?.toLowerCase();
-    if (logLevel != null) {
+    if (logLevel != null && !hasCustomLogFunction) {
       switch (logLevel) {
         case 'trace':
           OTelLog.enableTraceLogging();
-          OTelLog.logFunction = print;
           break;
         case 'debug':
           OTelLog.enableDebugLogging();
-          OTelLog.logFunction = print;
           break;
         case 'info':
           OTelLog.enableInfoLogging();
-          OTelLog.logFunction = print;
           break;
         case 'warn':
           OTelLog.enableWarnLogging();
-          OTelLog.logFunction = print;
           break;
         case 'error':
           OTelLog.enableErrorLogging();
-          OTelLog.logFunction = print;
           break;
         case 'fatal':
           OTelLog.enableFatalLogging();
-          OTelLog.logFunction = print;
           break;
         default:
           // No change to logging if level not recognized
           break;
       }
+
+      OTelLog.logFunction = print;
     }
 
     // Enable metrics logging based on environment variable
@@ -369,6 +378,86 @@ class OTelEnv {
       default:
         return null;
     }
+  }
+
+  /// Get Batch LogRecord Processor (BLRP) configuration from environment variables.
+  ///
+  /// Returns a map containing the BLRP configuration read from environment variables.
+  /// Keys returned:
+  /// - 'scheduleDelay': Duration for the schedule delay
+  /// - 'exportTimeout': Duration for the export timeout
+  /// - 'maxQueueSize': int for maximum queue size
+  /// - 'maxExportBatchSize': int for maximum export batch size
+  static Map<String, dynamic> getBlrpConfig() {
+    final config = <String, dynamic>{};
+
+    // Get schedule delay
+    final scheduleDelay = _getEnv(otelBlrpScheduleDelay);
+    if (scheduleDelay != null) {
+      final delayMs = int.tryParse(scheduleDelay);
+      if (delayMs != null) {
+        config['scheduleDelay'] = Duration(milliseconds: delayMs);
+      }
+    }
+
+    // Get export timeout
+    final exportTimeout = _getEnv(otelBlrpExportTimeout);
+    if (exportTimeout != null) {
+      final timeoutMs = int.tryParse(exportTimeout);
+      if (timeoutMs != null) {
+        config['exportTimeout'] = Duration(milliseconds: timeoutMs);
+      }
+    }
+
+    // Get max queue size
+    final maxQueueSize = _getEnv(otelBlrpMaxQueueSize);
+    if (maxQueueSize != null) {
+      final size = int.tryParse(maxQueueSize);
+      if (size != null) {
+        config['maxQueueSize'] = size;
+      }
+    }
+
+    // Get max export batch size
+    final maxExportBatchSize = _getEnv(otelBlrpMaxExportBatchSize);
+    if (maxExportBatchSize != null) {
+      final size = int.tryParse(maxExportBatchSize);
+      if (size != null) {
+        config['maxExportBatchSize'] = size;
+      }
+    }
+
+    return config;
+  }
+
+  /// Get LogRecord attribute limits from environment variables.
+  ///
+  /// Returns a map containing the log record attribute limits.
+  /// Keys returned:
+  /// - 'attributeValueLengthLimit': int for max attribute value length
+  /// - 'attributeCountLimit': int for max number of attributes
+  static Map<String, dynamic> getLogRecordLimits() {
+    final config = <String, dynamic>{};
+
+    // Get attribute value length limit
+    final valueLengthLimit = _getEnv(otelLogrecordAttributeValueLengthLimit);
+    if (valueLengthLimit != null) {
+      final limit = int.tryParse(valueLengthLimit);
+      if (limit != null) {
+        config['attributeValueLengthLimit'] = limit;
+      }
+    }
+
+    // Get attribute count limit
+    final countLimit = _getEnv(otelLogrecordAttributeCountLimit);
+    if (countLimit != null) {
+      final limit = int.tryParse(countLimit);
+      if (limit != null) {
+        config['attributeCountLimit'] = limit;
+      }
+    }
+
+    return config;
   }
 
   /// Parse headers from the environment variable format.

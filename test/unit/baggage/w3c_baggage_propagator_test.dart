@@ -100,10 +100,14 @@ void main() {
       final extractedContext = propagator.extract(context, carrier, getter);
       final extractedBaggage = extractedContext.baggage;
 
-      expect(extractedBaggage!.getEntry('key with spaces')?.value,
-          equals('value with spaces'));
-      expect(extractedBaggage.getEntry('key,with,commas')?.value,
-          equals('value,with,commas'));
+      expect(
+        extractedBaggage!.getEntry('key with spaces')?.value,
+        equals('value with spaces'),
+      );
+      expect(
+        extractedBaggage.getEntry('key,with,commas')?.value,
+        equals('value,with,commas'),
+      );
     });
 
     test('handles empty baggage', () {

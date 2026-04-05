@@ -219,8 +219,13 @@ class AttributeSamplingCondition extends SamplingCondition {
   /// @param boolValue Optional boolean value to match
   /// @param intValue Optional integer value to match
   /// @param doubleValue Optional double value to match
-  AttributeSamplingCondition(this.key,
-      {this.stringValue, this.boolValue, this.intValue, this.doubleValue}) {
+  AttributeSamplingCondition(
+    this.key, {
+    this.stringValue,
+    this.boolValue,
+    this.intValue,
+    this.doubleValue,
+  }) {
     int nonNullCount = 0;
     if (stringValue != null) {
       nonNullCount++;
@@ -236,7 +241,8 @@ class AttributeSamplingCondition extends SamplingCondition {
     }
     if (nonNullCount != 1) {
       throw ArgumentError(
-          'One of the type values must be non-null. string: $stringValue, bool: $boolValue, int: $intValue, double: $doubleValue');
+        'One of the type values must be non-null. string: $stringValue, bool: $boolValue, int: $intValue, double: $doubleValue',
+      );
     }
   }
 

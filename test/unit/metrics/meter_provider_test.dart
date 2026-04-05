@@ -77,19 +77,13 @@ void main() {
       final meterProvider = OTel.meterProvider();
 
       // Get meter with specific configuration
-      final meter1 = meterProvider.getMeter(
-        name: 'test-meter',
-      );
+      final meter1 = meterProvider.getMeter(name: 'test-meter');
 
       // Get meter with same configuration
-      final meter2 = meterProvider.getMeter(
-        name: 'test-meter',
-      );
+      final meter2 = meterProvider.getMeter(name: 'test-meter');
 
       // Get meter with different configuration
-      final meter3 = meterProvider.getMeter(
-        name: 'test-meter-different',
-      );
+      final meter3 = meterProvider.getMeter(name: 'test-meter-different');
 
       // Verify same configuration returns same meter
       expect(identical(meter1, meter2), isTrue);

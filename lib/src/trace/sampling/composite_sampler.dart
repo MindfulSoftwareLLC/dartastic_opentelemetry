@@ -64,8 +64,8 @@ class CompositeSampler implements Sampler {
 
       // Combine attributes if present
       if (result.attributes != null) {
-        combinedAttributes ?? OTel.attributes(); //TODO simplify
-        combinedAttributes!.copyWithAttributes(result.attributes!);
+        combinedAttributes ??= OTel.attributes();
+        combinedAttributes.copyWithAttributes(result.attributes!);
       }
     }
 
@@ -81,7 +81,4 @@ class CompositeSampler implements Sampler {
   }
 }
 
-enum _Operation {
-  and,
-  or,
-}
+enum _Operation { and, or }

@@ -152,10 +152,7 @@ void main() {
       final context = OTel.context().withSpanContext(remoteContext);
 
       // Create a child span
-      final childSpan = tracer.startSpan(
-        'remote-child-test',
-        context: context,
-      );
+      final childSpan = tracer.startSpan('remote-child-test', context: context);
 
       // Verify the child inherited the remote trace ID
       expect(
@@ -175,10 +172,7 @@ void main() {
       final rootContext = OTel.context().withSpan(rootSpan);
 
       // Create a child span
-      final childSpan = tracer.startSpan(
-        'child-span',
-        context: rootContext,
-      );
+      final childSpan = tracer.startSpan('child-span', context: rootContext);
       final childContext = OTel.context().withSpan(childSpan);
 
       // Create a grandchild span
@@ -196,8 +190,10 @@ void main() {
 
       // Verify all spans were captured
       expect(exporter.spans, hasLength(3));
-      expect(exporter.spanNames,
-          containsAll(['root-span', 'child-span', 'grandchild-span']));
+      expect(
+        exporter.spanNames,
+        containsAll(['root-span', 'child-span', 'grandchild-span']),
+      );
 
       final rootExported = exporter.findSpanByName('root-span')!;
       final childExported = exporter.findSpanByName('child-span')!;
@@ -210,10 +206,14 @@ void main() {
 
       // Verify parent relationships
       expect(rootExported.parentSpanContext, isNull);
-      expect(childExported.parentSpanContext!.spanId,
-          equals(rootExported.spanContext.spanId));
-      expect(grandchildExported.parentSpanContext!.spanId,
-          equals(childExported.spanContext.spanId));
+      expect(
+        childExported.parentSpanContext!.spanId,
+        equals(rootExported.spanContext.spanId),
+      );
+      expect(
+        grandchildExported.parentSpanContext!.spanId,
+        equals(childExported.spanContext.spanId),
+      );
     });
 
     test('context attributes inheritance', () async {
@@ -244,10 +244,14 @@ void main() {
       final childExported = exporter.findSpanByName('child-with-attrs')!;
 
       // Verify each span has its own attributes
-      expect(parentExported.attributes.getString('parent.key'),
-          equals('parent.value'));
-      expect(childExported.attributes.getString('child.key'),
-          equals('child.value'));
+      expect(
+        parentExported.attributes.getString('parent.key'),
+        equals('parent.value'),
+      );
+      expect(
+        childExported.attributes.getString('child.key'),
+        equals('child.value'),
+      );
 
       // Verify child doesn't inherit parent's attributes (this is correct behavior)
       expect(childExported.attributes.getString('parent.key'), isNull);
@@ -263,10 +267,7 @@ void main() {
       // ignore: inference_failure_on_instance_creation
       await Future.delayed(const Duration(milliseconds: 10));
 
-      final childSpan = tracer.startSpan(
-        'async-child',
-        context: parentContext,
-      );
+      final childSpan = tracer.startSpan('async-child', context: parentContext);
 
       // End spans
       childSpan.end();
@@ -280,10 +281,14 @@ void main() {
       final childExported = exporter.findSpanByName('async-child')!;
 
       // Verify relationship maintained across async boundary
-      expect(childExported.parentSpanContext!.spanId,
-          equals(parentExported.spanContext.spanId));
-      expect(childExported.spanContext.traceId,
-          equals(parentExported.spanContext.traceId));
+      expect(
+        childExported.parentSpanContext!.spanId,
+        equals(parentExported.spanContext.spanId),
+      );
+      expect(
+        childExported.spanContext.traceId,
+        equals(parentExported.spanContext.traceId),
+      );
     });
   });
 }

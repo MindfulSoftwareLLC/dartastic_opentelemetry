@@ -28,11 +28,15 @@ void main() {
       }.toAttributes();
 
       final resource = OTel.resource(attributes);
-      expect(resource.attributes.getString('service.name'),
-          equals('test-service'));
+      expect(
+        resource.attributes.getString('service.name'),
+        equals('test-service'),
+      );
       expect(resource.attributes.getString('service.version'), equals('1.0.0'));
-      expect(resource.attributes.getString('service.instance.id'),
-          equals('12345'));
+      expect(
+        resource.attributes.getString('service.instance.id'),
+        equals('12345'),
+      );
     });
 
     test('creates resource with all attribute types', () {
@@ -53,25 +57,29 @@ void main() {
       expect(resource.attributes.getBool('bool.key'), isTrue);
       expect(resource.attributes.getInt('int.key'), equals(42));
       expect(resource.attributes.getDouble('double.key'), equals(3.14));
-      expect(resource.attributes.getStringList('string.list.key'),
-          equals(['a', 'b', 'c']));
-      expect(resource.attributes.getBoolList('bool.list.key'),
-          equals([true, false]));
+      expect(
+        resource.attributes.getStringList('string.list.key'),
+        equals(['a', 'b', 'c']),
+      );
+      expect(
+        resource.attributes.getBoolList('bool.list.key'),
+        equals([true, false]),
+      );
       expect(resource.attributes.getIntList('int.list.key'), equals([1, 2, 3]));
-      expect(resource.attributes.getDoubleList('double.list.key'),
-          equals([1.1, 2.2, 3.3]));
+      expect(
+        resource.attributes.getDoubleList('double.list.key'),
+        equals([1.1, 2.2, 3.3]),
+      );
     });
 
     test('merges resources', () {
-      final resource1 = OTel.resource({
-        'key1': 'value1',
-        'key2': 'original',
-      }.toAttributes());
+      final resource1 = OTel.resource(
+        {'key1': 'value1', 'key2': 'original'}.toAttributes(),
+      );
 
-      final resource2 = OTel.resource({
-        'key2': 'updated',
-        'key3': 'value3',
-      }.toAttributes());
+      final resource2 = OTel.resource(
+        {'key2': 'updated', 'key3': 'value3'}.toAttributes(),
+      );
 
       final merged = resource1.merge(resource2);
 
@@ -81,23 +89,21 @@ void main() {
     });
 
     test('creates immutable resources', () {
-      final attributes = {
-        'key': 'value',
-      }.toAttributes();
+      final attributes = {'key': 'value'}.toAttributes();
 
       final resource = OTel.resource(attributes);
 
       // Modifying original attributes should not affect resource
-      final newAttributes =
-          attributes.copyWithStringAttribute('key', 'new-value');
+      final newAttributes = attributes.copyWithStringAttribute(
+        'key',
+        'new-value',
+      );
       expect(resource.attributes.getString('key'), equals('value'));
       expect(newAttributes.getString('key'), equals('new-value'));
     });
 
     test('returns schema url', () {
-      final resource = OTel.resource(
-        OTel.attributes(),
-      );
+      final resource = OTel.resource(OTel.attributes());
       expect(resource.schemaUrl, isNull);
     });
 
@@ -108,17 +114,9 @@ void main() {
     });
 
     test('preserves attribute order in merged resources', () {
-      final resource1 = OTel.resource({
-        'a': 1,
-        'b': 2,
-        'c': 3,
-      }.toAttributes());
+      final resource1 = OTel.resource({'a': 1, 'b': 2, 'c': 3}.toAttributes());
 
-      final resource2 = OTel.resource({
-        'd': 4,
-        'e': 5,
-        'f': 6,
-      }.toAttributes());
+      final resource2 = OTel.resource({'d': 4, 'e': 5, 'f': 6}.toAttributes());
 
       final merged = resource1.merge(resource2);
       final keys = merged.attributes.toMap().keys.toList();

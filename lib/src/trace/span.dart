@@ -51,7 +51,8 @@ class Span implements APISpan {
   void end({DateTime? endTime, SpanStatusCode? spanStatus}) {
     if (OTelLog.isDebug()) {
       OTelLog.debug(
-          'SDKSpan: Starting to end span ${spanContext.spanId} with name $name');
+        'SDKSpan: Starting to end span ${spanContext.spanId} with name $name',
+      );
     }
 
     if (spanStatus != null) {
@@ -71,23 +72,27 @@ class Span implements APISpan {
       final provider = _sdkTracer.provider;
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-            'SDKSpan: Notifying ${provider.spanProcessors.length} span processors');
+          'SDKSpan: Notifying ${provider.spanProcessors.length} span processors',
+        );
       }
       for (final processor in provider.spanProcessors) {
         try {
           if (OTelLog.isDebug()) {
             OTelLog.debug(
-                'SDKSpan: Calling onEnd for processor ${processor.runtimeType}');
+              'SDKSpan: Calling onEnd for processor ${processor.runtimeType}',
+            );
           }
           processor.onEnd(this);
           if (OTelLog.isDebug()) {
             OTelLog.debug(
-                'SDKSpan: Successfully called onEnd for processor ${processor.runtimeType}');
+              'SDKSpan: Successfully called onEnd for processor ${processor.runtimeType}',
+            );
           }
         } catch (e, stackTrace) {
           if (OTelLog.isError()) {
             OTelLog.error(
-                'SDKSpan: Error calling onEnd for processor ${processor.runtimeType}: $e');
+              'SDKSpan: Error calling onEnd for processor ${processor.runtimeType}: $e',
+            );
             OTelLog.error('Stack trace: $stackTrace');
           }
         }
@@ -144,10 +149,18 @@ class Span implements APISpan {
   APISpan? get parentSpan => _delegate.parentSpan;
 
   @override
-  void recordException(Object exception,
-          {StackTrace? stackTrace, Attributes? attributes, bool? escaped}) =>
-      _delegate.recordException(exception,
-          stackTrace: stackTrace, attributes: attributes, escaped: escaped);
+  void recordException(
+    Object exception, {
+    StackTrace? stackTrace,
+    Attributes? attributes,
+    bool? escaped,
+  }) =>
+      _delegate.recordException(
+        exception,
+        stackTrace: stackTrace,
+        attributes: attributes,
+        escaped: escaped,
+      );
 
   @override
   void setBoolAttribute(String name, bool value) =>
@@ -178,7 +191,8 @@ class Span implements APISpan {
     _delegate.setStatus(statusCode, description);
     if (OTelLog.isDebug()) {
       OTelLog.debug(
-          'SDKSpan: Set status to $statusCode for span ${spanContext.spanId}');
+        'SDKSpan: Set status to $statusCode for span ${spanContext.spanId}',
+      );
     }
   }
 

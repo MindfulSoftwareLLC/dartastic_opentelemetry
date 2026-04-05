@@ -33,16 +33,20 @@ extension NavigatorJSExtension on NavigatorJS {
 }
 
 // Pure JS function to safely get languages as string
-@JS('function() { '
-    'var langs = window.navigator.languages;'
-    'return (langs && Array.isArray(langs)) ? langs.join(",") : "";'
-    '}')
+@JS(
+  'function() { '
+  'var langs = window.navigator.languages;'
+  'return (langs && Array.isArray(langs)) ? langs.join(",") : "";'
+  '}',
+)
 external String _getLanguagesString();
 
 // Pure JS function to check if mobile
-@JS('function() { '
-    'return /Mobile|Android|iPhone|iPad|iPod|Windows Phone/i.test(window.navigator.userAgent) ? "true" : "false";'
-    '}')
+@JS(
+  'function() { '
+  'return /Mobile|Android|iPhone|iPad|iPod|Windows Phone/i.test(window.navigator.userAgent) ? "true" : "false";'
+  '}',
+)
 external String _isMobile();
 
 /// Detects browser and web-specific resource information.
@@ -88,6 +92,7 @@ class WebResourceDetector implements ResourceDetector {
     }
 
     return ResourceCreate.create(
-        OTelFactory.otelFactory!.attributesFromMap(attributes));
+      OTelFactory.otelFactory!.attributesFromMap(attributes),
+    );
   }
 }

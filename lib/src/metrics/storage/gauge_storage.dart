@@ -22,10 +22,7 @@ class GaugeStorage<T extends num> extends NumericStorage<T> {
     final key = attributes ?? _emptyAttributes();
 
     // Always update with the latest value
-    _points[key] = _GaugePointData<T>(
-      value: value,
-      updateTime: DateTime.now(),
-    );
+    _points[key] = _GaugePointData<T>(value: value, updateTime: DateTime.now());
   }
 
   /// Helper to get empty attributes safely
@@ -121,8 +118,5 @@ class _GaugePointData<T extends num> {
   /// Exemplars for this point.
   final List<Exemplar> exemplars = [];
 
-  _GaugePointData({
-    required this.value,
-    required this.updateTime,
-  });
+  _GaugePointData({required this.value, required this.updateTime});
 }

@@ -54,10 +54,7 @@ void main() {
         'test.double': 3.14,
       }.toAttributes();
 
-      final span = tracer.startSpan(
-        'direct-test-span',
-        attributes: attributes,
-      );
+      final span = tracer.startSpan('direct-test-span', attributes: attributes);
 
       span.end();
 
@@ -127,7 +124,9 @@ void main() {
       expect(events[0].name, equals('event1'));
       expect(events[1].name, equals('event2'));
       expect(
-          events[1].attributes!.getString('event.key'), equals('event.value'));
+        events[1].attributes!.getString('event.key'),
+        equals('event.value'),
+      );
     });
 
     test('span should record exceptions', () async {
@@ -157,10 +156,14 @@ void main() {
       expect(events, isNotNull);
       expect(events!.length, equals(1));
       expect(events[0].name, equals('exception'));
-      expect(events[0].attributes!.getString('exception.type'),
-          contains('Exception'));
-      expect(events[0].attributes!.getString('exception.message'),
-          contains('Test exception'));
+      expect(
+        events[0].attributes!.getString('exception.type'),
+        contains('Exception'),
+      );
+      expect(
+        events[0].attributes!.getString('exception.message'),
+        contains('Test exception'),
+      );
     });
 
     test('span should support adding links', () async {
@@ -219,13 +222,15 @@ void main() {
       expect(exportedSpan.startTime, isNotNull);
       expect(exportedSpan.endTime, isNotNull);
       expect(
-          exportedSpan.startTime
-              .isAfter(startTime.subtract(const Duration(seconds: 1))),
-          isTrue);
+        exportedSpan.startTime.isAfter(
+          startTime.subtract(const Duration(seconds: 1)),
+        ),
+        isTrue,
+      );
       expect(
-          exportedSpan.endTime!
-              .isBefore(endTime.add(const Duration(seconds: 1))),
-          isTrue);
+        exportedSpan.endTime!.isBefore(endTime.add(const Duration(seconds: 1))),
+        isTrue,
+      );
       expect(exportedSpan.endTime!.isAfter(exportedSpan.startTime), isTrue);
     });
 

@@ -54,7 +54,7 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
     2500,
     5000,
     7500,
-    10000
+    10000,
   ];
 
   @override

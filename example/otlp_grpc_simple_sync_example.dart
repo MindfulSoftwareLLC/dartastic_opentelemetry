@@ -11,8 +11,7 @@ void main() async {
   // Initialize with automatic resource detection
 
   // Configure the OTLP exporter
-  final endpoint =
-      'http://ec2-3-139-70-11.us-east-2.compute.amazonaws.com:4317';
+  final endpoint = 'http://my-otel-endpoint:4317';
   final exporter = OtlpGrpcSpanExporter(
     OtlpGrpcExporterConfig(
       endpoint: endpoint,
@@ -36,9 +35,10 @@ void main() async {
   final tracer = tracerProvider.getTracer('example-sync-tracer');
 
   // Create and end a simple span
-  final span = tracer.startSpan('sync-operation',
-      attributes: OTel.attributesFromMap({'example.sync': true}))
-    ..end();
+  final span = tracer.startSpan(
+    'sync-operation',
+    attributes: OTel.attributesFromMap({'example.sync': true}),
+  )..end();
 
   try {
     // Add an event to match Python example

@@ -11,9 +11,7 @@ void main() {
   group('TraceIdRatioSampler Tests', () {
     setUp(() async {
       await OTel.reset();
-      await OTel.initialize(
-        serviceName: 'test-service',
-      );
+      await OTel.initialize(serviceName: 'test-service');
     });
     test('constructor throws ArgumentError for invalid ratio values', () {
       expect(() => TraceIdRatioSampler(-0.1), throwsArgumentError);
@@ -121,8 +119,9 @@ void main() {
         // Create a random trace ID using random bytes
         final buffer = StringBuffer();
         for (int j = 0; j < 32; j++) {
-          buffer
-              .write(random.nextInt(16).toRadixString(16)); // Random hex digit
+          buffer.write(
+            random.nextInt(16).toRadixString(16),
+          ); // Random hex digit
         }
         final traceId = buffer.toString();
 
@@ -144,7 +143,8 @@ void main() {
       // Allow for some statistical variation (±10%)
       final samplingRate = sampledCount / totalRuns;
       print(
-          'Sampled $sampledCount out of $totalRuns traces (rate: $samplingRate)');
+        'Sampled $sampledCount out of $totalRuns traces (rate: $samplingRate)',
+      );
       expect(samplingRate, closeTo(0.3, 0.1));
     });
   });
