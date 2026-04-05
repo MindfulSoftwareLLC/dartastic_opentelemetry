@@ -387,37 +387,36 @@ void main() {
     test(
       'broken protocol server exercises generic error handling',
       () async {
-        // Start a raw HTTP server that immediately closes connections
-        final rawServer = await HttpServer.bind('127.0.0.1', 0);
+        // Start a raw TCP server that immediately closes connections.
+        // This triggers a non-GrpcError (SocketException) in the gRPC client,
+        // exercising the generic catch block. Unlike an HTTP server that sends
+        // a non-gRPC response, closing immediately avoids HTTP/2 negotiation
+        // hangs that cause flaky timeouts.
+        final rawServer = await ServerSocket.bind('127.0.0.1', 0);
         final port = rawServer.port;
-        rawServer.listen((request) {
-          // Send a non-gRPC response to break protocol
-          request.response.statusCode = 200;
-          request.response.headers.set('content-type', 'text/plain');
-          request.response.write('not a gRPC response');
-          request.response.close();
+        rawServer.listen((socket) {
+          socket.destroy();
         });
 
-        // Use no retries; generous timeout to avoid flakiness under concurrency
         final exporter = OtlpGrpcSpanExporter(
           OtlpGrpcExporterConfig(
             endpoint: 'http://localhost:$port',
             insecure: true,
             maxRetries: 0,
-            timeout: const Duration(seconds: 10),
+            timeout: const Duration(seconds: 5),
             baseDelay: const Duration(milliseconds: 1),
             maxDelay: const Duration(milliseconds: 10),
           ),
         );
         final span = _createTestSpan(name: 'broken-protocol-span');
 
-        // Should throw some kind of error (GrpcError or other)
+        // Should throw some kind of error (GrpcError or SocketException)
         await expectLater(() => exporter.export([span]), throwsA(anything));
 
         await exporter.shutdown();
-        await rawServer.close(force: true);
+        await rawServer.close();
       },
-      timeout: const Timeout(Duration(seconds: 60)),
+      timeout: const Timeout(Duration(seconds: 30)),
     );
 
     // -----------------------------------------------------------------------
