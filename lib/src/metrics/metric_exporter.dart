@@ -5,8 +5,6 @@ import 'dart:async';
 
 import 'data/metric_data.dart';
 
-export '../export/export_result.dart';
-
 /// MetricExporter is responsible for sending metrics to a backend.
 abstract class MetricExporter {
   /// Export a batch of metrics to the backend.
