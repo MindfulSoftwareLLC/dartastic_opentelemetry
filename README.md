@@ -50,7 +50,8 @@ OpenTelemetry data.
   - Metrics collection and aggregation
   - Logs with log record processors and exporters
   - Context propagation
-  - Baggage management
+  - Baggage management and optional `BaggageSpanProcessor` to automatically copy baggage entries as span attributes
+  - Logging is not available yet
 
 [Dartastic OTel](https://pub.dev/packages/dartastic_opentelemetry) is suitable for Dart backends, CLIs or any
 Dart application.
