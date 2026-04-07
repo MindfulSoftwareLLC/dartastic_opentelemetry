@@ -73,10 +73,10 @@ class SimpleLogRecordProcessor implements LogRecordProcessor {
       return;
     }
 
-    _isShutdown = true;
-
-    // Flush any pending exports
+    // Flush before setting _isShutdown (forceFlush is a no-op after shutdown)
     await forceFlush();
+
+    _isShutdown = true;
 
     // Shutdown the exporter
     await exporter.shutdown();
