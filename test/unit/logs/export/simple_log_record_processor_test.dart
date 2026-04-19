@@ -77,8 +77,13 @@ void main() {
 
     test('SimpleLogRecordProcessor forceFlush calls exporter forceFlush',
         () async {
-      // forceFlush should complete without error
-      await expectLater(processor.forceFlush(), completes);
+      final trackingExporter = _TrackingLogRecordExporter();
+      final trackingProcessor = SimpleLogRecordProcessor(trackingExporter);
+
+      await trackingProcessor.forceFlush();
+
+      expect(trackingExporter.forceFlushCallCount, equals(1));
+      expect(trackingExporter.shutdownCallCount, equals(0));
     });
 
     test('SimpleLogRecordProcessor handles export failure gracefully',
@@ -112,6 +117,21 @@ void main() {
 
       expect(exporter.count, equals(1));
     });
+
+    test('SimpleLogRecordProcessor shutdown forceFlushes before shutdown',
+        () async {
+      final trackingExporter = _TrackingLogRecordExporter();
+      final trackingProcessor = SimpleLogRecordProcessor(trackingExporter);
+
+      await trackingProcessor.shutdown();
+
+      expect(trackingExporter.forceFlushCallCount, equals(1));
+      expect(trackingExporter.shutdownCallCount, equals(1));
+      expect(
+        trackingExporter.events,
+        equals(const ['forceFlush', 'shutdown']),
+      );
+    });
   });
 }
 
@@ -127,4 +147,27 @@ class _FailingLogRecordExporter implements LogRecordExporter {
 
   @override
   Future<void> shutdown() async {}
+}
+
+class _TrackingLogRecordExporter implements LogRecordExporter {
+  final List<String> events = [];
+  int forceFlushCallCount = 0;
+  int shutdownCallCount = 0;
+
+  @override
+  Future<ExportResult> export(List<ReadableLogRecord> logRecords) async {
+    return ExportResult.success;
+  }
+
+  @override
+  Future<void> forceFlush() async {
+    forceFlushCallCount++;
+    events.add('forceFlush');
+  }
+
+  @override
+  Future<void> shutdown() async {
+    shutdownCallCount++;
+    events.add('shutdown');
+  }
 }
