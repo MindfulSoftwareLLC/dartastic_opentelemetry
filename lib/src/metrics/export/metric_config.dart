@@ -61,10 +61,9 @@ class MetricsConfiguration {
   static MetricExporter _createDefaultExporter(String endpoint, bool secure) {
     final otlpConfig = OTelEnv.getOtlpConfig(signal: 'metrics');
     final protocol = otlpConfig['protocol'] as String? ?? 'http/protobuf';
-    final headers =
-        otlpConfig['headers'] as Map<String, String>? ?? const {};
-    final timeout = otlpConfig['timeout'] as Duration? ??
-        const Duration(seconds: 10);
+    final headers = otlpConfig['headers'] as Map<String, String>? ?? const {};
+    final timeout =
+        otlpConfig['timeout'] as Duration? ?? const Duration(seconds: 10);
     final compression = otlpConfig['compression'] == 'gzip';
     final certificate = otlpConfig['certificate'] as String?;
     final clientKey = otlpConfig['clientKey'] as String?;

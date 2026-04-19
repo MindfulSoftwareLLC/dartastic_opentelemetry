@@ -16,7 +16,8 @@ void main() {
       expect(OTel.defaultEndpoint, equals('http://localhost:4318'));
     });
 
-    test('default trace exporter targets port 4318 when no endpoint is supplied',
+    test(
+        'default trace exporter targets port 4318 when no endpoint is supplied',
         () async {
       await OTel.initialize(serviceName: 'default-endpoint-test');
       try {
@@ -38,7 +39,8 @@ void main() {
       }
     });
 
-    test('default metric exporter targets port 4318 over HTTP when no endpoint is supplied',
+    test(
+        'default metric exporter targets port 4318 over HTTP when no endpoint is supplied',
         () async {
       await OTel.initialize(serviceName: 'default-endpoint-test-metrics');
       try {
