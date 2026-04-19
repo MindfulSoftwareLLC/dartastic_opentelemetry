@@ -5,9 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+
+## [1.0.2-alpha] - 2026-04-19
 ### Fixed
-- Fixed SimpleLogRecordProcessor.shutdown() not flushing pending exports
+- Fixed `OTel.defaultEndpoint` to use the OTLP/HTTP port `4318` instead of the gRPC port `4317`,
+  matching the default `http/protobuf` protocol per the OpenTelemetry specification (#29).
+  Removed the conditional port-swap workarounds in trace and logs configuration.
+- Fixed `SimpleLogRecordProcessor.shutdown()` not flushing pending exports (#28).
+- Fixed flaky `OtlpGrpcLogRecordExporter endpoint empty host defaults to 127.0.0.1`
+  test that depended on no process listening on port 4317.
+
+### Changed
+- `MetricsConfiguration` now defaults to the HTTP/protobuf protocol (consistent with
+  the trace and logs pipelines and with the OpenTelemetry specification). Set
+  `OTEL_EXPORTER_OTLP_PROTOCOL=grpc` (or
+  `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL=grpc`) to opt back into gRPC.
+
+### Added
+- Public `exporter` getter on `PeriodicExportingMetricReader` and `exporters`
+  getter on `CompositeMetricExporter` for introspection and testability.
 
 ## [1.0.1-alpha] - 2026-04-05
 - Added a BaggageSpanProcessor that adds Baggage as SpanAttributes

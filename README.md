@@ -82,7 +82,7 @@ billions of customers.  Don't forget:
 Include this in your pubspec.yaml:
 ```
 dependencies:
-  dartastic_opentelemetry: ^1.0.0-alpha
+  dartastic_opentelemetry: ^1.0.2-alpha
 ```
 
 The entrypoint to the SDK is the `OTel` class.  `OTel` has static "factory" methods for all

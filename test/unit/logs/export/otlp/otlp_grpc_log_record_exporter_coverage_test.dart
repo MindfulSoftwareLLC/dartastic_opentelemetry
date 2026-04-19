@@ -1397,14 +1397,20 @@ void main() {
     });
 
     // -----------------------------------------------------------------------
-    // Endpoint without port gets default 4317
-    // (testing the _setupChannel parsing)
+    // Endpoint with empty host falls back to 127.0.0.1 (testing the
+    // _setupChannel parsing path). Uses a real local server bound to an
+    // OS-assigned port so the assertion does not depend on whether port 4317
+    // is occupied by some other process (e.g. a local Docker collector).
     // -----------------------------------------------------------------------
     test('endpoint empty host defaults to 127.0.0.1', () async {
-      // This exercises the empty host fallback in _setupChannel
+      final service = SuccessLogsService();
+      final server = Server.create(services: [service]);
+      await server.serve(port: 0);
+      final port = server.port!;
+
       final exporter = OtlpGrpcLogRecordExporter(
         OtlpGrpcLogRecordExporterConfig(
-          endpoint: ':4317',
+          endpoint: ':$port',
           insecure: true,
           maxRetries: 0,
           baseDelay: const Duration(milliseconds: 1),
@@ -1413,11 +1419,14 @@ void main() {
       );
 
       final logRecord = _createTestLogRecord();
-      // This will fail to connect but exercises the host parsing path
+      // The exporter must rewrite the empty host to 127.0.0.1 and reach the
+      // local server, so the export should succeed.
       final result = await exporter.export([logRecord]);
-      expect(result, equals(ExportResult.failure));
+      expect(result, equals(ExportResult.success));
+      expect(service.callCount, greaterThanOrEqualTo(1));
 
       await exporter.shutdown();
+      await server.shutdown();
     });
 
     // -----------------------------------------------------------------------
