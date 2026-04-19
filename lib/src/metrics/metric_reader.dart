@@ -49,6 +49,9 @@ class PeriodicExportingMetricReader extends MetricReader {
   /// The exporter to send metrics to.
   final MetricExporter _exporter;
 
+  /// The configured exporter that this reader sends metrics to.
+  MetricExporter get exporter => _exporter;
+
   /// How often to collect and export metrics.
   final Duration _interval;
 

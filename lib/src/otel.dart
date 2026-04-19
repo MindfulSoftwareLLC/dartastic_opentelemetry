@@ -64,8 +64,12 @@ class OTel {
   /// Default service name used if none is provided.
   static const defaultServiceName = "@dart/dartastic_opentelemetry";
 
-  /// Default OTEL endpoint
-  static const defaultEndpoint = "http://localhost:4317";
+  /// Default OTEL endpoint.
+  ///
+  /// Defaults to the OTLP/HTTP port (4318) since http/protobuf is the default
+  /// protocol per the OpenTelemetry specification. When using gRPC, override
+  /// this with port 4317.
+  static const defaultEndpoint = "http://localhost:4318";
 
   /// Default tracer name used if none is provided.
   static const String _defaultTracerName = 'dartastic';
@@ -85,7 +89,7 @@ class OTel {
   /// OTEL_CONSOLE_EXPORTER is set to true, a ConsoleExporter is added to the
   /// exports to print spans.
   ///
-  /// @param endpoint The endpoint URL for the OpenTelemetry collector (default: http://localhost:4317)
+  /// @param endpoint The endpoint URL for the OpenTelemetry collector (default: http://localhost:4318)
   /// @param secure Whether to use TLS for the connection (default: true)
   /// @param serviceName Name that uniquely identifies the service (default: "@dart/dartastic_opentelemetry")
   /// @param serviceVersion Version of the service (defaults to the OTel spec version)
@@ -363,14 +367,9 @@ class OTel {
             );
           } else {
             // Default to http/protobuf
-            // For HTTP, adjust endpoint if it's the gRPC default
-            String httpEndpoint = endpoint;
-            if (endpoint == defaultEndpoint) {
-              httpEndpoint = 'http://localhost:4318';
-            }
             exporter = OtlpHttpSpanExporter(
               OtlpHttpExporterConfig(
-                endpoint: httpEndpoint,
+                endpoint: endpoint,
                 headers:
                     otlpConfigForExporter['headers'] as Map<String, String>? ??
                         {},
@@ -441,13 +440,8 @@ class OTel {
 
     // Configure logs if enabled
     if (enableLogs) {
-      // For HTTP, adjust endpoint if it's the gRPC default
-      String logsEndpoint = endpoint;
-      if (endpoint == defaultEndpoint) {
-        logsEndpoint = 'http://localhost:4318';
-      }
       LogsConfiguration.configureLoggerProvider(
-        endpoint: logsEndpoint,
+        endpoint: endpoint,
         secure: secure,
         logRecordExporter: logRecordExporter,
         logRecordProcessor: logRecordProcessor,

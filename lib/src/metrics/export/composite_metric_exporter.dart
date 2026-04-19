@@ -30,6 +30,9 @@ class CompositeMetricExporter implements MetricExporter {
   /// @param exporters The list of exporters to which operations will be delegated
   CompositeMetricExporter(this._exporters);
 
+  /// The delegate exporters this composite forwards to.
+  List<MetricExporter> get exporters => List.unmodifiable(_exporters);
+
   /// Exports metrics to all delegate exporters.
   ///
   /// This method forwards the export operation to each delegate exporter.
