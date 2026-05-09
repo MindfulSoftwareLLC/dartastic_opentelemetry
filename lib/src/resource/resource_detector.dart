@@ -1,13 +1,18 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'dart:io' as io;
-
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import '../environment/environment_service.dart';
+import 'native_detectors.dart';
 import 'resource.dart';
 import 'web_detector.dart';
+
+// Re-export the platform-conditional native detectors so existing
+// imports of `package:dartastic_opentelemetry/src/resource/resource_detector.dart`
+// continue to find `ProcessResourceDetector` and `HostResourceDetector`.
+export 'native_detectors.dart'
+    show ProcessResourceDetector, HostResourceDetector;
 
 /// Interface for resource detectors that automatically discover resource information.
 ///
@@ -21,73 +26,6 @@ abstract class ResourceDetector {
   ///
   /// @return A resource containing the detected attributes
   Future<Resource> detect();
-}
-
-/// Detects process-related resource information.
-///
-/// This detector populates resource attributes with information about the
-/// current process, such as executable name, command line, and runtime information.
-///
-/// Semantic conventions:
-/// https://opentelemetry.io/docs/specs/semconv/resource/process/
-class ProcessResourceDetector implements ResourceDetector {
-  @override
-  Future<Resource> detect() async {
-    if (OTelFactory.otelFactory == null) {
-      throw 'OTel initialize must be called first.';
-    }
-    return ResourceCreate.create(
-      OTelFactory.otelFactory!.attributesFromMap({
-        'process.executable.name': io.Platform.executable,
-        'process.command_line': io.Platform.executableArguments.join(' '),
-        'process.runtime.name': 'dart',
-        'process.runtime.version': io.Platform.version,
-        'process.num_threads': io.Platform.numberOfProcessors.toString(),
-      }),
-    );
-  }
-}
-
-/// Detects host-related resource information.
-///
-/// This detector populates resource attributes with information about the
-/// host machine, such as hostname, architecture, and operating system details.
-///
-/// Semantic conventions:
-/// https://opentelemetry.io/docs/specs/semconv/resource/host/
-class HostResourceDetector implements ResourceDetector {
-  @override
-  Future<Resource> detect() async {
-    if (OTelFactory.otelFactory == null) {
-      throw 'OTel initialize must be called first.';
-    }
-    final Map<String, Object> attributes = {
-      'host.name': io.Platform.localHostname,
-      'host.arch': io.Platform.localHostname,
-      'host.processors': io.Platform.numberOfProcessors,
-      'host.os.name': io.Platform.operatingSystem,
-      'host.locale': io.Platform.localeName,
-    };
-
-    // Add OS-specific information
-    if (io.Platform.isLinux) {
-      attributes['os.type'] = 'linux';
-    } else if (io.Platform.isWindows) {
-      attributes['os.type'] = 'windows';
-    } else if (io.Platform.isMacOS) {
-      attributes['os.type'] = 'macos';
-    } else if (io.Platform.isAndroid) {
-      attributes['os.type'] = 'android';
-    } else if (io.Platform.isIOS) {
-      attributes['os.type'] = 'ios';
-    }
-
-    attributes['os.version'] = io.Platform.operatingSystemVersion;
-
-    return ResourceCreate.create(
-      OTelFactory.otelFactory!.attributesFromMap(attributes),
-    );
-  }
 }
 
 /// Detects resource information from environment variables.

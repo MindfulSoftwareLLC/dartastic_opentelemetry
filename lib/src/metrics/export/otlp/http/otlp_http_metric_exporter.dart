@@ -2,19 +2,17 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/src/metrics/export/otlp/metric_transformer.dart';
 import 'package:http/http.dart' as http;
-import 'package:http/io_client.dart';
 
 import '../../../../../proto/collector/metrics/v1/metrics_service.pb.dart';
 import '../../../../../proto/common/v1/common.pb.dart' as common_pb;
 import '../../../../../proto/metrics/v1/metrics.pb.dart' as metrics_pb;
-import '../../../../trace/export/otlp/certificate_utils.dart';
+import '../../../../trace/export/otlp/http/http_client_factory.dart';
 import '../../../../util/zip/gzip.dart';
 
 /// An OpenTelemetry metric exporter that exports metrics using OTLP over HTTP/protobuf
@@ -40,43 +38,15 @@ class OtlpHttpMetricExporter implements MetricExporter {
   }
 
   /// Creates an HTTP client with custom certificates if configured.
-  ///
-  /// This method creates an HttpClient with a SecurityContext configured
-  /// with any custom certificates specified in the exporter configuration.
-  http.Client _createHttpClient() {
-    // If no certificates are configured, use the default client
-    if (_config.certificate == null &&
-        _config.clientKey == null &&
-        _config.clientCertificate == null) {
-      return http.Client();
-    }
-
-    try {
-      final context = CertificateUtils.createSecurityContext(
+  /// Delegated to a platform-conditional factory: native gets an
+  /// `IOClient` wrapping an `HttpClient` with a custom `SecurityContext`;
+  /// web gets a `BrowserClient` (the browser handles TLS).
+  http.Client _createHttpClient() => createOtlpHttpClient(
+        exporterName: 'OtlpHttpMetricExporter',
         certificate: _config.certificate,
         clientKey: _config.clientKey,
         clientCertificate: _config.clientCertificate,
       );
-
-      if (context == null) {
-        return http.Client();
-      }
-
-      // Create an HttpClient with the custom SecurityContext
-      final httpClient = HttpClient(context: context);
-
-      // Wrap in IOClient for use with the http package
-      return IOClient(httpClient);
-    } catch (e) {
-      if (OTelLog.isError()) {
-        OTelLog.error(
-          'OtlpHttpMetricExporter: Failed to create HTTP client with certificates: $e',
-        );
-      }
-      // Fall back to default client on error
-      return http.Client();
-    }
-  }
 
   Duration _calculateJitteredDelay(int retries) {
     final baseMs = _config.baseDelay.inMilliseconds;

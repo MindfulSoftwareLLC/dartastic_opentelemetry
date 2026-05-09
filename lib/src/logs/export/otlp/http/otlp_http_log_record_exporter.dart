@@ -2,16 +2,14 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
     show OTelLog;
 import 'package:http/http.dart' as http;
-import 'package:http/io_client.dart';
 
-import '../../../../trace/export/otlp/certificate_utils.dart';
+import '../../../../trace/export/otlp/http/http_client_factory.dart';
 import '../../../../util/zip/gzip.dart';
 import '../../../readable_log_record.dart';
 import '../../log_record_exporter.dart';
@@ -54,34 +52,15 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
   }
 
   /// Creates an HTTP client with custom certificates if configured.
-  http.Client _createHttpClient() {
-    if (_config.certificate == null &&
-        _config.clientKey == null &&
-        _config.clientCertificate == null) {
-      return http.Client();
-    }
-
-    try {
-      final context = CertificateUtils.createSecurityContext(
+  /// Delegated to a platform-conditional factory: native gets an
+  /// `IOClient` wrapping an `HttpClient` with a custom `SecurityContext`;
+  /// web gets a `BrowserClient` (the browser handles TLS).
+  http.Client _createHttpClient() => createOtlpHttpClient(
+        exporterName: 'OtlpHttpLogRecordExporter',
         certificate: _config.certificate,
         clientKey: _config.clientKey,
         clientCertificate: _config.clientCertificate,
       );
-
-      if (context == null) {
-        return http.Client();
-      }
-
-      final httpClient = HttpClient(context: context);
-      return IOClient(httpClient);
-    } catch (e) {
-      if (OTelLog.isError()) {
-        OTelLog.error(
-            'OtlpHttpLogRecordExporter: Failed to create HTTP client with certificates: $e');
-      }
-      return http.Client();
-    }
-  }
 
   Duration _calculateJitteredDelay(int retries) {
     final baseMs = _config.baseDelay.inMilliseconds;

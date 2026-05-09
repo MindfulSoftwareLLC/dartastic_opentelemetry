@@ -9,7 +9,7 @@ import '../../../../dartastic_opentelemetry.dart';
 import '../../../../proto/collector/metrics/v1/metrics_service.pbgrpc.dart';
 import '../../../../proto/common/v1/common.pb.dart' as common_proto;
 import '../../../../proto/metrics/v1/metrics.pb.dart' as proto;
-import '../../../trace/export/otlp/certificate_utils.dart';
+import '../../../trace/export/otlp/certificate_utils_io.dart';
 import 'metric_transformer.dart';
 
 /// OtlpGrpcMetricExporter exports metrics to the OpenTelemetry collector via gRPC.

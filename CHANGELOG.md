@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.3`. Beta.3 fixes a `ServiceResource` semconv key that was mangled by an over-broad find/replace: the entry called `ServiceResource.serviceResourcepace` (with key `service.Resourcepace`) is restored to `ServiceResource.serviceNamespace` / `service.namespace`. If you used the misspelled name in your own code, replace it with `ServiceResource.serviceNamespace`.
 
+### Fixed
+- **Web compatibility:** `package:dartastic_opentelemetry/dartastic_opentelemetry.dart` is now safe to import on web targets (Flutter web, `dart compile js`, `dart compile wasm`). Previously the main library transitively pulled in `dart:io` via the OTLP/HTTP exporters, certificate utilities, and the platform resource detectors — `dart compile js` accepted these imports thanks to Dart 3 stubs, but the moment any of those classes ran (`HttpClient`, `SecurityContext`, `Platform.executable`, etc.) you got `UnsupportedError` at runtime. Split into platform-conditional facades:
+  - `lib/src/resource/native_detectors.dart` — exports `ProcessResourceDetector` and `HostResourceDetector` from `_io.dart` on native, from `_stub.dart` on web (stubs throw with a clear migration message if instantiated; `PlatformResourceDetector.create()` skips them on web by design).
+  - `lib/src/trace/export/otlp/certificate_utils.dart` — `_io.dart` keeps `validateCertificates` + `createSecurityContext`; `_stub.dart` keeps only `validateCertificates`. The IO-only `createSecurityContext` is reachable via the IO HTTP exporter path. gRPC exporters import `certificate_utils_io.dart` directly (gRPC is IO-only by nature).
+  - `lib/src/trace/export/otlp/http/http_client_factory.dart` — new helper that returns `IOClient(HttpClient(...))` on native and `BrowserClient` on web. The three OTLP HTTP exporters (`OtlpHttpSpanExporter` / `OtlpHttpMetricExporter` / `OtlpHttpLogRecordExporter`) lost their direct `dart:io` imports and now delegate `_createHttpClient()` to this factory.
+
+  Net effect on web: tracer/metrics/logs API works, OTLP/HTTP exporters work via the browser's fetch (browser owns TLS — custom CA / mTLS settings are ignored with a warning), `PlatformResourceDetector.create()` returns the env-var + web detector composite. `OtlpGrpcSpanExporter` and friends remain native-only — gRPC over HTTP/2 trailers isn't a thing in browsers regardless of dart:io.
+
+  New regression test: `test/web/web_compile_smoke_test.dart` runs in Chrome, imports the main library, initializes the SDK, constructs all three HTTP exporters, and runs the platform resource detector.
+
 ## [1.1.0-beta] - 2026-05-07
 
 ### Changed

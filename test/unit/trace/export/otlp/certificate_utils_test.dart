@@ -1,12 +1,17 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+@TestOn('vm')
+library;
+
 import 'dart:io';
 
-import 'package:dartastic_opentelemetry/src/trace/export/otlp/certificate_utils.dart';
+import 'package:dartastic_opentelemetry/src/trace/export/otlp/certificate_utils_io.dart';
 import 'package:test/test.dart';
 
-/// Unit tests for CertificateUtils
+/// Unit tests for CertificateUtils — VM-only because `createSecurityContext`
+/// is `dart:io`-bound. The web stub doesn't expose this method (browsers
+/// own TLS).
 void main() {
   group('CertificateUtils.createSecurityContext', () {
     test('returns null when no certificates are provided', () {
