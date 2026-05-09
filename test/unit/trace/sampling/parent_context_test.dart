@@ -23,48 +23,42 @@ void main() {
     });
 
     test('uses current context when no context provided', () {
-      // Set current context with a span
       final parentSpan = tracer.startSpan('parent');
       final parentContext = Context.current.withSpan(parentSpan);
-      Context.current = parentContext;
 
-      // Create span without explicit context
-      final span = tracer.startSpan('child');
+      // Activate the parent context for a synchronous scope. runSync attaches
+      // it via Zone, so any tracer.startSpan inside picks it up via
+      // Context.current without mutating the static field.
+      parentContext.runSync(() {
+        final span = tracer.startSpan('child');
 
-      // Verify parent relationship
-      expect(span.spanContext.traceId, equals(parentSpan.spanContext.traceId));
-      expect(
-        span.spanContext.parentSpanId,
-        equals(parentSpan.spanContext.spanId),
-      );
-
-      // Reset current context
-      Context.current = Context.root;
+        expect(
+            span.spanContext.traceId, equals(parentSpan.spanContext.traceId));
+        expect(
+          span.spanContext.parentSpanId,
+          equals(parentSpan.spanContext.spanId),
+        );
+      });
     });
 
     test('uses provided context over current context', () {
-      // Create parent span and context
       final parentSpan1 = tracer.startSpan('parent1');
       final parentContext1 = Context.current.withSpan(parentSpan1);
 
       final parentSpan2 = tracer.startSpan('parent2');
       final parentContext2 = Context.current.withSpan(parentSpan2);
 
-      // Set current context to parent1
-      Context.current = parentContext1;
+      // Activate parentContext1 for the scope; pass parentContext2 explicitly.
+      parentContext1.runSync(() {
+        final span = tracer.startSpan('child', context: parentContext2);
 
-      // Create span with explicit parent2 context
-      final span = tracer.startSpan('child', context: parentContext2);
-
-      // Verify parent relationship is with parent2
-      expect(span.spanContext.traceId, equals(parentSpan2.spanContext.traceId));
-      expect(
-        span.spanContext.parentSpanId,
-        equals(parentSpan2.spanContext.spanId),
-      );
-
-      // Reset current context
-      Context.current = Context.root;
+        expect(
+            span.spanContext.traceId, equals(parentSpan2.spanContext.traceId));
+        expect(
+          span.spanContext.parentSpanId,
+          equals(parentSpan2.spanContext.spanId),
+        );
+      });
     });
 
     test('validates trace ID when using explicit span context', () {

@@ -1261,7 +1261,7 @@ void main() {
       expect(OTel.meterProvider(), isA<MeterProvider>());
     });
 
-    test('logger() returns a Logger from default LoggerProvider', () async {
+    test('logger() returns a OTelLogger from default LoggerProvider', () async {
       await OTel.initialize(
         serviceName: 'logger-test',
         detectPlatformResources: false,
@@ -1271,7 +1271,7 @@ void main() {
       );
 
       final logger = OTel.logger('test-logger');
-      expect(logger, isA<Logger>());
+      expect(logger, isA<OTelLogger>());
     });
 
     test('logger() with default name uses defaultTracerName', () async {
@@ -1284,7 +1284,7 @@ void main() {
       );
 
       final logger = OTel.logger();
-      expect(logger, isA<Logger>());
+      expect(logger, isA<OTelLogger>());
     });
   });
 

@@ -5,6 +5,25 @@ import 'dart:convert';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
+/// Example-only attribute keys for things not in the OTel semantic
+/// conventions (https://opentelemetry.io/docs/specs/semconv/). Always
+/// check the conventions first — the API's built-in enums (UserSemantics,
+/// HttpResource, ServerResource, DatabaseResource, ClientResource,
+/// SessionViewSemantics) cover the spec keys. Rename this in your own
+/// code (e.g. `CheckoutAttribute`) so the names reflect your domain.
+enum ExampleAttribute implements OTelSemantic {
+  authMethod('auth.method'),
+  permissions('permissions');
+
+  @override
+  final String key;
+
+  @override
+  String toString() => key;
+
+  const ExampleAttribute(this.key);
+}
+
 /// Example: Configuring OpenTelemetry for Grafana Cloud using environment variables
 ///
 /// This example demonstrates how to use OTEL_EXPORTER_OTLP_HEADERS to configure
@@ -38,7 +57,7 @@ Future<void> main() async {
 
   print('OpenTelemetry initialized with environment configuration');
   print(
-    'Service: ${OTel.defaultResource?.attributes.toList().firstWhere((a) => a.key == 'service.name').value}',
+    'Service: ${OTel.defaultResource?.attributes.toList().firstWhere((a) => a.key == ServiceResource.serviceName.key).value}',
   );
 
   // Create a tracer
@@ -60,39 +79,40 @@ Future<void> main() async {
   print('All spans exported to Grafana Cloud');
 }
 
-/// Example: Tracing a user login operation
+/// Example: Tracing a user login operation.
 Future<void> traceUserLogin(Tracer tracer, String userId) async {
   final span = tracer.startSpan(
     'user.login',
     kind: SpanKind.server,
     attributes: OTel.attributesFromMap({
-      'user.id': userId,
-      'auth.method': 'oauth2',
-      'client.ip': '192.168.1.100',
+      UserSemantics.userId.key: userId,
+      ExampleAttribute.authMethod.key: 'oauth2',
+      // client.address replaces the deprecated client.ip per OTel semconv.
+      ClientResource.clientAddress.key: '192.168.1.100',
     }),
   );
 
   try {
-    // Simulate authentication check
+    // Simulate authentication check.
     await Future<void>.delayed(const Duration(milliseconds: 100));
 
-    // Add event for successful authentication
+    // Add event for successful authentication.
     span.addEvent(
       OTel.spanEventNow(
         'authentication.success',
         OTel.attributesFromMap({
-          'session.id': 'sess_${DateTime.now().millisecondsSinceEpoch}',
-          'permissions': 'read,write',
+          SessionViewSemantics.sessionId.key:
+              'sess_${DateTime.now().millisecondsSinceEpoch}',
+          ExampleAttribute.permissions.key: 'read,write',
         }),
       ),
     );
-
-    // Record success
-    span.setStatus(SpanStatusCode.Ok);
-  } catch (error) {
-    // Record error
-    span.setStatus(SpanStatusCode.Error, error.toString());
-    span.recordException(error);
+  } catch (e, stackTrace) {
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
+    span.recordException(e, stackTrace: stackTrace);
+    span.setStatus(SpanStatusCode.Error, e.toString());
+    rethrow;
   } finally {
     span.end();
   }
@@ -105,39 +125,38 @@ Future<void> traceHttpRequest(Tracer tracer) async {
     kind: SpanKind.client,
     attributes: OTel.attributesFromMap({
       HttpResource.requestMethod.key: 'GET',
-      // TODO: Replace with UrlResource.urlFull.key once added to the API
-      // semantics (OTel renamed http.url → url.full).
-      'url.full': 'https://api.example.com/users/123',
-      'url.path': '/users/123',
-      'net.peer.name': 'api.example.com',
-      'net.peer.port': 443,
+      UrlResource.urlFull.key: 'https://api.example.com/users/123',
+      UrlResource.urlPath.key: '/users/123',
+      ServerResource.serverAddress.key: 'api.example.com',
+      ServerResource.serverPort.key: 443,
     }),
   );
 
   try {
-    // Simulate HTTP request
+    // Simulate HTTP request.
     await Future<void>.delayed(const Duration(milliseconds: 200));
 
-    // Set response attributes
+    // Set response attributes.
     span.addAttributes(
       OTel.attributesFromMap({
         HttpResource.responseStatusCode.key: 200,
-        'http.response_content_length': 1234,
+        HttpResource.responseBodySize.key: 1234,
       }),
     );
-
-    span.setStatus(SpanStatusCode.Ok);
-  } catch (error) {
+  } catch (e, stackTrace) {
     span.addAttributes(
         OTel.attributesFromMap({HttpResource.responseStatusCode.key: 500}));
-    span.setStatus(SpanStatusCode.Error, 'HTTP request failed');
-    span.recordException(error);
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
+    span.recordException(e, stackTrace: stackTrace);
+    span.setStatus(SpanStatusCode.Error, 'HTTP request failed: $e');
+    rethrow;
   } finally {
     span.end();
   }
 }
 
-/// Example: Tracing a database operation
+/// Example: Tracing a database operation.
 Future<void> traceDatabaseOperation(Tracer tracer) async {
   final span = tracer.startSpan(
     'db.query',
@@ -149,21 +168,26 @@ Future<void> traceDatabaseOperation(Tracer tracer) async {
       DatabaseResource.dbStatement.key:
           'SELECT * FROM users WHERE active = true LIMIT 100',
       DatabaseResource.dbUser.key: 'app_user',
-      'net.peer.name': 'postgres.example.com',
-      'net.peer.port': 5432,
+      // server.address / server.port replace the deprecated net.peer.*
+      // per OTel semconv.
+      ServerResource.serverAddress.key: 'postgres.example.com',
+      ServerResource.serverPort.key: 5432,
     }),
   );
 
   try {
-    // Simulate database query
+    // Simulate database query.
     await Future<void>.delayed(const Duration(milliseconds: 50));
 
-    // Add result metadata
-    span.addAttributes(Attributes.of({'db.rows_affected': 42}));
-    span.setStatus(SpanStatusCode.Ok);
-  } catch (error) {
-    span.setStatus(SpanStatusCode.Error, 'Database query failed');
-    span.recordException(error);
+    // Add result metadata.
+    span.addAttributes(
+        Attributes.of({DatabaseResource.dbResponseReturnedRows.key: 42}));
+  } catch (e, stackTrace) {
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
+    span.recordException(e, stackTrace: stackTrace);
+    span.setStatus(SpanStatusCode.Error, 'Database query failed: $e');
+    rethrow;
   } finally {
     span.end();
   }

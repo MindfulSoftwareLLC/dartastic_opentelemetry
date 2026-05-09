@@ -30,90 +30,118 @@ void main() async {
   ]);
 
   print('1. Creating a span with trace context...');
+  // Per the OTel spec, tracer.startSpan() does NOT activate the span.
+  // Build the Context to inject directly from the span's SpanContext.
+  // To make the span active for downstream code, wrap that code in
+  // tracer.withSpan / withSpanAsync.
   final span = OTel.tracer().startSpan('parent-operation');
-  final context = Context.current;
+  try {
+    final baggage =
+        OTel.baggage({UserSemantics.userId.key: OTel.baggageEntry('user123')});
+    final contextWithBaggage =
+        OTel.context(spanContext: span.spanContext).withBaggage(baggage);
 
-  // Add some baggage
-  final baggage = OTel.baggage({'user.id': OTel.baggageEntry('user123')});
-  final contextWithBaggage = context.withBaggage(baggage);
-
-  print('   TraceId: ${context.spanContext?.traceId.hexString}');
-  print('   SpanId: ${context.spanContext?.spanId.hexString}');
-  print('   Baggage: user.id=${baggage.getValue('user.id')}\n');
-
-  // === INJECT: Outgoing Request ===
-  print('2. Injecting trace context into HTTP headers (simulated)...');
-  final carrier = <String, String>{};
-  final setter = MapTextMapSetter(carrier);
-
-  propagator.inject(contextWithBaggage, carrier, setter);
-
-  print('   Injected headers:');
-  carrier.forEach((key, value) {
-    print('     $key: $value');
-  });
-
-  // === EXTRACT: Incoming Request ===
-  print('3. Extracting trace context from HTTP headers (simulated)...');
-  final getter = MapTextMapGetter(carrier);
-  final extractedContext = propagator.extract(OTel.context(), carrier, getter);
-
-  final extractedSpanContext = extractedContext.spanContext;
-  final extractedBaggage = extractedContext.baggage;
-
-  print('   Extracted:');
-  print('     TraceId: ${extractedSpanContext?.traceId.hexString}');
-  print('     SpanId: ${extractedSpanContext?.spanId.hexString}');
-  print('     IsRemote: ${extractedSpanContext?.isRemote}');
-  print('     Sampled: ${extractedSpanContext?.traceFlags.isSampled}');
-  print('     Baggage: user.id=${extractedBaggage?.getValue('user.id')}\n');
-
-  // === Verify Round-Trip ===
-  print('4. Verifying round-trip...');
-  final sameTraceId = context.spanContext?.traceId.hexString ==
-      extractedSpanContext?.traceId.hexString;
-  final sameSpanId = context.spanContext?.spanId.hexString ==
-      extractedSpanContext?.spanId.hexString;
-  final sameBaggage =
-      baggage.getValue('user.id') == extractedBaggage?.getValue('user.id');
-
-  print('   ✓ TraceId preserved: $sameTraceId');
-  print('   ✓ SpanId preserved: $sameSpanId');
-  print('   ✓ Baggage preserved: $sameBaggage');
-  print(
-    '   ✓ IsRemote set correctly: ${extractedSpanContext?.isRemote == true}\n',
-  );
-
-  // === Create Child Span in Extracted Context ===
-  print('5. Creating child span in extracted context...');
-  await extractedContext.run(() async {
-    final childSpan = OTel.tracer().startSpan('child-operation');
-    final childContext = Context.current;
-
-    print('   Child TraceId: ${childContext.spanContext?.traceId.hexString}');
-    print('   Child SpanId: ${childContext.spanContext?.spanId.hexString}');
+    print('   TraceId: ${span.spanContext.traceId.hexString}');
+    print('   SpanId: ${span.spanContext.spanId.hexString}');
     print(
-      '   Child Baggage: user.id=${childContext.baggage?.getValue('user.id')}',
-    );
+        '   Baggage: user.id=${baggage.getValue(UserSemantics.userId.key)}\n');
+
+    // === INJECT: Outgoing Request ===
+    print('2. Injecting trace context into HTTP headers (simulated)...');
+    final carrier = <String, String>{};
+    final setter = MapTextMapSetter(carrier);
+
+    propagator.inject(contextWithBaggage, carrier, setter);
+
+    print('   Injected headers:');
+    carrier.forEach((key, value) {
+      print('     $key: $value');
+    });
+
+    // === EXTRACT: Incoming Request ===
+    print('3. Extracting trace context from HTTP headers (simulated)...');
+    final getter = MapTextMapGetter(carrier);
+    final extractedContext =
+        propagator.extract(OTel.context(), carrier, getter);
+
+    final extractedSpanContext = extractedContext.spanContext;
+    final extractedBaggage = extractedContext.baggage;
+
+    print('   Extracted:');
+    print('     TraceId: ${extractedSpanContext?.traceId.hexString}');
+    print('     SpanId: ${extractedSpanContext?.spanId.hexString}');
+    print('     IsRemote: ${extractedSpanContext?.isRemote}');
+    print('     Sampled: ${extractedSpanContext?.traceFlags.isSampled}');
     print(
-      '   → Same TraceId as parent: ${childContext.spanContext?.traceId.hexString == extractedSpanContext?.traceId.hexString}\n',
+        '     Baggage: user.id=${extractedBaggage?.getValue(UserSemantics.userId.key)}\n');
+
+    // === Verify Round-Trip ===
+    print('4. Verifying round-trip...');
+    final sameTraceId = span.spanContext.traceId.hexString ==
+        extractedSpanContext?.traceId.hexString;
+    final sameSpanId = span.spanContext.spanId.hexString ==
+        extractedSpanContext?.spanId.hexString;
+    final sameBaggage = baggage.getValue(UserSemantics.userId.key) ==
+        extractedBaggage?.getValue(UserSemantics.userId.key);
+
+    print('   ✓ TraceId preserved: $sameTraceId');
+    print('   ✓ SpanId preserved: $sameSpanId');
+    print('   ✓ Baggage preserved: $sameBaggage');
+    print(
+      '   ✓ IsRemote set correctly: ${extractedSpanContext?.isRemote == true}\n',
     );
 
-    childSpan.end();
-  });
+    // === Create Child Span in Extracted Context ===
+    print('5. Creating child span in extracted context...');
+    await extractedContext.run(() async {
+      // run() activates extractedContext via Zone, so the new span is
+      // parented to the extracted SpanContext.
+      final childSpan = OTel.tracer().startSpan('child-operation');
+      try {
+        print(
+            '   Child TraceId:        ${childSpan.spanContext.traceId.hexString}');
+        print(
+            '   Child SpanId:         ${childSpan.spanContext.spanId.hexString}');
+        print(
+          '   Child parentSpanId:   ${childSpan.spanContext.parentSpanId?.hexString}',
+        );
+        print(
+          '   Child Baggage:        ${UserSemantics.userId.key}=${Context.current.baggage?.getValue(UserSemantics.userId.key)}',
+        );
+        print(
+          '   → Same TraceId as parent: ${childSpan.spanContext.traceId.hexString == extractedSpanContext?.traceId.hexString}',
+        );
+        print(
+          '   → ParentSpanId matches:   ${childSpan.spanContext.parentSpanId?.hexString == extractedSpanContext?.spanId.hexString}\n',
+        );
+      } catch (e, stackTrace) {
+        // The span has a status of SpanStatus.Ok on creation, set it to
+        // Error when an error occurs in the span.
+        childSpan.recordException(e, stackTrace: stackTrace);
+        childSpan.setStatus(SpanStatusCode.Error, e.toString());
+        rethrow;
+      } finally {
+        childSpan.end();
+      }
+    });
 
-  span.end();
+    // === Show Fields ===
+    print('6. Propagator fields:');
+    propagator.fields().forEach((field) {
+      print('   - $field');
+    });
 
-  // === Show Fields ===
-  print('6. Propagator fields:');
-  propagator.fields().forEach((field) {
-    print('   - $field');
-  });
-
-  print('\n=== Example Complete ===');
-  print('This demonstrates how trace context flows between services!');
-
-  await OTel.shutdown();
+    print('\n=== Example Complete ===');
+    print('This demonstrates how trace context flows between services!');
+  } catch (e, stackTrace) {
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
+    span.recordException(e, stackTrace: stackTrace);
+    span.setStatus(SpanStatusCode.Error, e.toString());
+  } finally {
+    span.end();
+    await OTel.shutdown();
+  }
 }
 
 /// Helper class for setting values in a Map carrier

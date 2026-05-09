@@ -1,83 +1,126 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'package:dartastic_opentelemetry/src/otel.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
 Future<void> main() async {
   await OTel.initialize();
-  final tracerProvider = OTel.tracerProvider();
-  final tracer = tracerProvider.getTracer('isolate-context-example');
-  // Create a span in the main isolate
+  final tracer = OTel.tracerProvider().getTracer('isolate-context-example');
   final mainSpan = tracer.startSpan('main-operation');
+  final parentTraceId = mainSpan.spanContext.traceId.hexString;
+  final parentSpanId = mainSpan.spanContext.spanId.hexString;
 
   try {
-    // Run a computation in a new isolate while preserving context
-    final result = await Context.current.runIsolate(() async {
-      // The context is automatically restored in the new isolate
-      final isolateSpan = tracer.startSpan(
-        'isolate-operation',
-        // The parent span context is preserved across the isolate boundary
-      );
+    // Activate mainSpan for the scope so its SpanContext is in Context.current
+    // and gets serialized into the new isolate (built-in span keys always
+    // transfer across isolate boundaries).
+    await tracer.withSpanAsync(mainSpan, () async {
+      final isolateChild = await Context.current.runIsolate(() async {
+        // The closure runs in a fresh isolate. Do NOT capture non-sendable
+        // objects from the parent isolate (tracers, processors, etc.) —
+        // re-acquire them here. The parent's SpanContext arrives via
+        // Context.current and is marked isRemote=true on the receiving
+        // side, so tracer.startSpan parents the new span to it.
+        final isolateTracer =
+            OTel.tracerProvider().getTracer('isolate-context-example');
+        final isolateSpan = isolateTracer.startSpan('isolate-operation');
+        try {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+          return {
+            'traceId': isolateSpan.spanContext.traceId.hexString,
+            'spanId': isolateSpan.spanContext.spanId.hexString,
+            'parentSpanId': isolateSpan.spanContext.parentSpanId?.hexString,
+          };
+        } catch (e, stackTrace) {
+          isolateSpan.recordException(e, stackTrace: stackTrace);
+          isolateSpan.setStatus(SpanStatusCode.Error, e.toString());
+          rethrow;
+        } finally {
+          isolateSpan.end();
+        }
+      });
 
-      try {
-        // Do some work
-        await Future<void>.delayed(const Duration(milliseconds: 100));
-        return 'Success';
-      } finally {
-        isolateSpan.end();
-      }
+      print('Parent  traceId:        $parentTraceId');
+      print('Isolate traceId:        ${isolateChild['traceId']}');
+      print('Parent  spanId:         $parentSpanId');
+      print('Isolate parentSpanId:   ${isolateChild['parentSpanId']}');
+      print('Isolate spanId:         ${isolateChild['spanId']}');
+      print('Same trace:    ${isolateChild['traceId'] == parentTraceId}');
+      print('Child of main: ${isolateChild['parentSpanId'] == parentSpanId}');
     });
-
-    print('Isolate returned: $result');
+  } catch (e, stackTrace) {
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
+    mainSpan.recordException(e, stackTrace: stackTrace);
+    mainSpan.setStatus(SpanStatusCode.Error, e.toString());
   } finally {
     mainSpan.end();
     await OTel.shutdown();
   }
 }
 
-/// Example async function demonstrating zone-based context propagation
+/// Demonstrates Zone-based context propagation across async boundaries.
 Future<void> zoneExample() async {
   final tracerProvider = OTel.tracerProvider();
   final tracer = tracerProvider.getTracer('isolate-context-example');
 
   final parentSpan = tracer.startSpan('parent-operation');
-
   try {
-    // The context is automatically propagated through the async chain
-    await Context.current.run(() async {
+    // withSpanAsync attaches parentSpan via Zone for the entire async chain.
+    await tracer.withSpanAsync(parentSpan, () async {
       await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      // Child span automatically gets the parent from the zone
+      // Child span automatically gets parentSpan via Context.current.
       final childSpan = tracer.startSpan('child-operation');
       try {
         await Future<void>.delayed(const Duration(milliseconds: 50));
+      } catch (e, stackTrace) {
+        // The span has a status of SpanStatus.Ok on creation, set it to
+        // Error when an error occurs in the span.
+        childSpan.recordException(e, stackTrace: stackTrace);
+        childSpan.setStatus(SpanStatusCode.Error, e.toString());
+        rethrow;
       } finally {
         childSpan.end();
       }
     });
+  } catch (e, stackTrace) {
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
+    parentSpan.recordException(e, stackTrace: stackTrace);
+    parentSpan.setStatus(SpanStatusCode.Error, e.toString());
+    rethrow;
   } finally {
     parentSpan.end();
   }
 }
 
-/// Example showing sync context propagation
-Future<void> syncExample() async {
+/// Demonstrates synchronous context propagation via withSpan.
+void syncExample() {
   final tracerProvider = OTel.tracerProvider();
   final tracer = tracerProvider.getTracer('isolate-context-example');
   final parentSpan = tracer.startSpan('parent-operation');
-
   try {
-    // Run synchronous code with context
-    await Context.current.run(() async {
-      // Child span gets parent from context
+    tracer.withSpan(parentSpan, () {
       final childSpan = tracer.startSpan('child-operation');
       try {
-        // Do some work
+        // Do some work.
+      } catch (e, stackTrace) {
+        // The span has a status of SpanStatus.Ok on creation, set it to
+        // Error when an error occurs in the span.
+        childSpan.recordException(e, stackTrace: stackTrace);
+        childSpan.setStatus(SpanStatusCode.Error, e.toString());
+        rethrow;
       } finally {
         childSpan.end();
       }
     });
+  } catch (e, stackTrace) {
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
+    parentSpan.recordException(e, stackTrace: stackTrace);
+    parentSpan.setStatus(SpanStatusCode.Error, e.toString());
+    rethrow;
   } finally {
     parentSpan.end();
   }

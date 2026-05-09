@@ -91,36 +91,40 @@ class Tracer implements APITracer {
         'Tracer: withSpan called with span ${span.name}, spanId: ${span.spanContext.spanId}',
       );
     }
-    final originalContext = Context.current;
+    // Activate the span in a new Zone via Context.runSync so the active span
+    // propagates correctly across async boundaries inside fn. Wrap fn to
+    // record exceptions on SDK spans.
     try {
-      Context.current = originalContext.setCurrentSpan(span);
-      if (OTelLog.isDebug()) {
-        OTelLog.debug('Tracer: Context set with span ${span.name}');
-      }
-      final result = fn();
-      if (OTelLog.isDebug()) {
-        OTelLog.debug(
-          'Tracer: Function completed in withSpan for ${span.name}',
-        );
-      }
-      return result;
-    } catch (e, stackTrace) {
-      if (OTelLog.isError()) {
-        OTelLog.error('Tracer: Exception in withSpan for ${span.name}: $e');
-      }
-      if (span is Span) {
-        span.recordException(e, stackTrace: stackTrace);
-        span.setStatus(SpanStatusCode.Error, e.toString());
-      }
-      rethrow;
+      return Context.current.withSpan(span).runSync(() {
+        if (OTelLog.isDebug()) {
+          OTelLog.debug('Tracer: Context set with span ${span.name}');
+        }
+        try {
+          final result = fn();
+          if (OTelLog.isDebug()) {
+            OTelLog.debug(
+              'Tracer: Function completed in withSpan for ${span.name}',
+            );
+          }
+          return result;
+        } catch (e, stackTrace) {
+          if (OTelLog.isError()) {
+            OTelLog.error('Tracer: Exception in withSpan for ${span.name}: $e');
+          }
+          // SDK-specific exception recording only when the span is one
+          // of ours. Foreign / no-op APISpans skip this branch — we
+          // still activate them and rethrow.
+          if (span is Span) {
+            span.recordException(e, stackTrace: stackTrace);
+            span.setStatus(SpanStatusCode.Error, e.toString());
+          }
+          rethrow;
+        }
+      });
     } finally {
-      Context.current = originalContext;
       if (OTelLog.isDebug()) {
         OTelLog.debug('Tracer: withSpan completed for span ${span.name}');
-      }
-      // Check span validity but don't automatically end it
-      if (!span.isValid) {
-        if (OTelLog.isDebug()) {
+        if (!span.isValid) {
           OTelLog.debug(
             'Tracer: Warning - span ${span.name} is invalid after withSpan operation',
           );
@@ -136,34 +140,35 @@ class Tracer implements APITracer {
         'Tracer: withSpanAsync called with span ${span.name}, spanId: ${span.spanContext.spanId}',
       );
     }
-    final originalContext = Context.current;
     try {
-      Context.current = originalContext.setCurrentSpan(span);
-      if (OTelLog.isDebug()) {
-        OTelLog.debug(
-          'Tracer: Context set with span ${span.name} for async operation',
-        );
-      }
-      return await fn();
-    } catch (e, stackTrace) {
-      if (OTelLog.isError()) {
-        OTelLog.error(
-          'Tracer: Exception in withSpanAsync for ${span.name}: $e',
-        );
-      }
-      if (span is Span) {
-        span.recordException(e, stackTrace: stackTrace);
-        span.setStatus(SpanStatusCode.Error, e.toString());
-      }
-      rethrow;
+      return await Context.current.withSpan(span).run(() async {
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+            'Tracer: Context set with span ${span.name} for async operation',
+          );
+        }
+        try {
+          return await fn();
+        } catch (e, stackTrace) {
+          if (OTelLog.isError()) {
+            OTelLog.error(
+              'Tracer: Exception in withSpanAsync for ${span.name}: $e',
+            );
+          }
+          // SDK-specific exception recording only when the span is one
+          // of ours. Foreign / no-op APISpans skip this branch — we
+          // still activate them and rethrow.
+          if (span is Span) {
+            span.recordException(e, stackTrace: stackTrace);
+            span.setStatus(SpanStatusCode.Error, e.toString());
+          }
+          rethrow;
+        }
+      });
     } finally {
-      Context.current = originalContext;
       if (OTelLog.isDebug()) {
         OTelLog.debug('Tracer: withSpanAsync completed for span ${span.name}');
-      }
-      // Check span validity but don't automatically end it
-      if (!span.isValid) {
-        if (OTelLog.isDebug()) {
+        if (!span.isValid) {
           OTelLog.debug(
             'Tracer: Warning - span ${span.name} is invalid after withSpanAsync operation',
           );
@@ -172,30 +177,25 @@ class Tracer implements APITracer {
     }
   }
 
-  /// Starts a span with the given context instead of the current context
-  /// Sets the current span in the given context
+  /// Starts a span using the provided context to determine the parent.
+  ///
+  /// This is now a thin wrapper around [startSpan] with the `context`
+  /// parameter set; it no longer mutates `Context.current`. To make the
+  /// returned span active for a scope, call [withSpan] / [withSpanAsync].
+  @Deprecated(
+      'Use startSpan(name, context: ctx) and tracer.withSpan/withSpanAsync to activate the returned span.')
   APISpan startSpanWithContext({
     required String name,
     required Context context,
     SpanKind kind = SpanKind.internal,
     Attributes? attributes,
   }) {
-    final span = startSpan(
+    return startSpan(
       name,
       context: context,
       kind: kind,
       attributes: attributes,
     );
-
-    // Set the span in the context we were given
-    final updatedContext = context.setCurrentSpan(span);
-
-    // Also update the current global context if needed
-    if (Context.current == context) {
-      Context.current = updatedContext;
-    }
-
-    return span;
   }
 
   @override
@@ -246,20 +246,20 @@ class Tracer implements APITracer {
       OTelLog.debug('Tracer: Starting span with name: $name, kind: $kind');
     }
 
-    // Get parent context from either the passed context or parent span
+    // Get parent context from either the passed context or parent span.
+    // Use a content-based check rather than `effectiveContext != Context.root`
+    // — Context.root can carry the propagated context inside an isolate
+    // spawned via Context.runIsolate (the API treats the receiving isolate's
+    // root as the propagated starting context), so an identity-style check
+    // would incorrectly skip parent inheritance there.
     SpanContext? parentContext;
     APISpan? effectiveParentSpan = parentSpan;
     final effectiveContext = context ?? Context.current;
 
-    if (effectiveContext != Context.root) {
-      // If an explicit context was provided, check for a span
-      if (effectiveContext.span != null) {
-        // Use the span from the context as parent (if no explicit parent span)
-        effectiveParentSpan ??= effectiveContext.span;
-      }
-      // Always check for span context in the context
-      parentContext = effectiveContext.spanContext;
+    if (effectiveContext.span != null) {
+      effectiveParentSpan ??= effectiveContext.span;
     }
+    parentContext = effectiveContext.spanContext;
 
     // If no parentContext from context but we have a parentSpan, use its context
     if (parentContext == null && effectiveParentSpan != null) {
@@ -282,6 +282,12 @@ class Tracer implements APITracer {
           );
         }
       }
+    } else if (parentSpan != null && parentSpan.spanContext.isValid) {
+      // An explicit parentSpan takes precedence over the context's span when
+      // both are provided (the parent span ID and trace ID must come from the
+      // same span — using context's traceId with parentSpan's spanId would
+      // produce an invalid parent reference).
+      traceId = parentSpan.spanContext.traceId;
     } else if (parentContext != null && parentContext.isValid) {
       // Inherit from parent if available
       traceId = parentContext.traceId;
@@ -301,9 +307,12 @@ class Tracer implements APITracer {
       parentSpanId = parentContext.spanId;
     }
 
-    // Inherit trace flags from parent if available
+    // Inherit trace flags from parent — explicit parentSpan wins over context
+    // for consistency with traceId resolution above.
     TraceFlags? traceFlags;
-    if (parentContext != null && parentContext.isValid) {
+    if (parentSpan != null && parentSpan.spanContext.isValid) {
+      traceFlags = parentSpan.spanContext.traceFlags;
+    } else if (parentContext != null && parentContext.isValid) {
       traceFlags = parentContext.traceFlags;
     }
 
@@ -399,50 +408,11 @@ class Tracer implements APITracer {
     return sdkSpan;
   }
 
-  /// Convenience method that starts a span and runs function fn
-  /// on error, records the exception and sets status to SpanStatusCode.Error
-  /// ends the span, always
-  T recordSpan<T>({
-    required String name,
-    required T Function() fn,
-    SpanKind kind = SpanKind.internal,
-    Attributes? attributes,
-  }) {
-    final span = startSpan(name, kind: kind, attributes: attributes);
-    try {
-      return fn();
-    } catch (e, stackTrace) {
-      span.recordException(e, stackTrace: stackTrace);
-      span.setStatus(SpanStatusCode.Error, e.toString());
-      rethrow;
-    } finally {
-      span.end();
-    }
-  }
-
-  /// Convenience method thatstarts a span and runs function fn and
-  /// awaits its future
-  /// on error, records the exception and sets status to SpanStatusCode.Error
-  /// ends the span, always
-  Future<T> recordSpanAsync<T>({
-    required String name,
-    required Future<T> Function() fn,
-    SpanKind kind = SpanKind.internal,
-    Attributes? attributes,
-  }) async {
-    final span = startSpan(name, kind: kind, attributes: attributes);
-    try {
-      return await fn();
-    } catch (e, stackTrace) {
-      span.recordException(e, stackTrace: stackTrace);
-      span.setStatus(SpanStatusCode.Error, e.toString());
-      rethrow;
-    } finally {
-      span.end();
-    }
-  }
-
-  /// TODO - needs better doc.  Is recordSpan superfluous?
+  /// Like [startSpan] + [withSpan] but passes the started span to [fn]
+  /// as an argument and ends the span when [fn] returns,
+  /// so callers can attach attributes / events without going through
+  /// `Context.current`. Routes through [withSpan] for activation;
+  /// [withSpan] handles `recordException` / `setStatus(Error)` on throw.
   T startActiveSpan<T>({
     required String name,
     required T Function(APISpan span) fn,
@@ -451,14 +421,15 @@ class Tracer implements APITracer {
   }) {
     final span = startSpan(name, kind: kind, attributes: attributes);
     try {
-      // Use our own withSpan to ensure proper context propagation
       return withSpan(span, () => fn(span));
     } finally {
       span.end();
     }
   }
 
-  /// Same as startActiveSpan but awaits the future
+  /// Async variant of [startActiveSpan]. Routes through [withSpanAsync]
+  /// for activation; [withSpanAsync] handles `recordException` /
+  /// `setStatus(Error)` on throw.
   Future<T> startActiveSpanAsync<T>({
     required String name,
     required Future<T> Function(APISpan span) fn,
@@ -467,7 +438,6 @@ class Tracer implements APITracer {
   }) async {
     final span = startSpan(name, kind: kind, attributes: attributes);
     try {
-      // Use our own withSpanAsync to ensure proper context propagation
       return await withSpanAsync(span, () => fn(span));
     } finally {
       span.end();

@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.1.0-beta] - 2026-05-07
+
+### Changed
+- Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.2` (Zone-based context propagation, contributed to the API by Kevin Moore [@kevmoo](https://github.com/kevmoo); the cross-isolate `isRemote` fix in beta.1; new `DatabaseResource.dbCollectionName`, `DatabaseResource.dbResponseReturnedRows`, and `UserSemantics.userRoles` semconv enums in beta.2; and the breaking removal of the singular `UserSemantics.userRole` in beta.2).
+- **Breaking:** `Tracer.withSpan` and `Tracer.withSpanAsync` now propagate context via Zones (`Context.runSync` / `Context.run`) instead of mutating the static `Context.current`. Async callbacks within a spanned scope now correctly observe the active span across `await` boundaries; concurrent `withSpanAsync` calls no longer race on the global static.
+- **Breaking:** `Tracer.startSpan` no longer auto-activates the returned span (matching the new API contract and the OpenTelemetry specification). Use `OTel.withSpan` / `OTel.withSpanAsync` (or the equivalent on `Tracer`, or the `startActiveSpan` / `startActiveSpanAsync` convenience methods) to make a span active for a scope.
+- **Breaking:** removed `Tracer.recordSpan` and `Tracer.recordSpanAsync`. They were redundant with `startActiveSpan`/`Async` (which expose the span to `fn`) and the name was unclear ("record what?"). Migration: a one-liner `tracer.recordSpan(name: x, fn: f)` becomes `OTel.tracer().startActiveSpan(name: x, fn: (_) => f())`. For the explicit lifecycle, use `tracer.startSpan(...)` + `OTel.withSpan(span, fn)` + `try/catch/finally` with `span.end()` in `finally`.
+- Added `OTel.withSpan(span, fn)` and `OTel.withSpanAsync(span, fn)` static convenience methods that delegate to the default tracer — saves callers from threading a `Tracer` reference for the common activation case. Both accept `APISpan` (matching the API contract for cross-implementation interop).
+- **Breaking:** renamed the SDK `Logger` class to `OTelLogger` to avoid clashing with `package:logging`'s `Logger`. Migration: replace `Logger` (the SDK type) with `OTelLogger` in your code. `OTel.logger(...)` and `OTel.loggerProvider().getLogger(...)` continue to return the same instances, only the type name changed. `LoggerProvider`, `APILogger`, and other `Logger*`-prefixed symbols are unchanged.
+- **Breaking:** `Tracer.startSpanWithContext` no longer mutates `Context.current`. It is now a thin wrapper around `startSpan(name, context: ctx)` and is `@Deprecated`. Activate the returned span explicitly with `Tracer.withSpan` / `withSpanAsync`.
+- `Tracer.startSpan`: when both `context` and `parentSpan` are provided with different traces, the explicit `parentSpan` now wins for `traceId` and `traceFlags` resolution. Previously the SDK would build an internally inconsistent SpanContext (context's traceId + parentSpan's spanId) which the new API validation correctly rejects.
+- `Tracer.startSpan`: replaced the stale `effectiveContext != Context.root` identity-style check with a content-based check (`effectiveContext.span != null` + always read `effectiveContext.spanContext`). The old check skipped parent inheritance whenever `Context.current == Context.root`, which is the case inside an isolate spawned via `Context.runIsolate()` (the API attaches the propagated context as both the isolate's current and root). Combined with the API beta.1 `isRemote` fix, trace continuity now works end-to-end across `runIsolate`.
+
+### Added
+- `OTel.contextKey<T>(name)` now accepts an optional `isTransferable` flag (default `false`) which is forwarded to the API. Custom context keys must opt in to cross-isolate transfer; built-in `Baggage` and `SpanContext` always transfer.
+- Re-exported `ServerResource` and `UrlResource` semantic enums from the API.
+- New regression test (`tracer_methods_test.dart`) verifying that concurrent `withSpanAsync` operations isolate their active span — would catch any future regression of the Zone migration.
+
+### Fixed
+- `test/web/util/zip/gzip_web_test.dart`: replaced a corrupt hardcoded base64 gzip blob (CRC mismatch — the browser's `DecompressionStream`, Python's `gzip`, and Node all reject it) with a freshly-generated one (`mtime=0` for a deterministic header). Pre-existing bug; the test had never passed under a strict gzip decoder.
+- Tooling: `Makefile` `test-safe` and `test-web` targets pointed at `tool/run_tests.sh` and `tool/web_tests.sh`, neither of which existed. Repointed `test-safe` at the existing `tool/test.sh` (used by CI). Added `tool/web_tests.sh` running `dart test -p chrome ./test/web`.
+- CI: added a `test-web` job to `.github/workflows/dart.yml` that runs `tool/web_tests.sh` in Chrome on every push and PR — web tests previously only ran locally on demand.
+- Documentation: every example file (and every code snippet in the SDK and API READMEs) now uses typed enum keys for span/log/baggage attributes — never raw strings. Examples without a matching OTel-semconv enum define a small local `ExampleAttribute` / `ExampleBaggage` / `DemoAttribute` enum at the top of the file to demonstrate the recommended pattern (the placeholder name is `ExampleAttribute`/`ExampleBaggage` rather than `AppAttribute` so readers rename it for their domain instead of copying it verbatim; the redundant `app.` prefix was also dropped from invented demo keys). Replaces deprecated `net.peer.*`, `client.ip`, `http.url`, `http.response_content_length` with their modern semconv equivalents (`ServerResource.serverAddress/Port`, `ClientResource.clientAddress`, `UrlResource.urlFull`, `HttpResource.responseBodySize`).
+- Examples updated for spec-aligned behavior:
+  - `example.dart`, `grafana_cloud_env_example.dart`, `grafana/grafana_cloud_env_example.dart`: replaced `'url.full'` / `'url.path'` / `'net.peer.name'` / `'net.peer.port'` string literals with the new `UrlResource` and `ServerResource` enums.
+  - `isolate_context_example.dart`: rewritten to use `tracer.withSpanAsync` so the parent SpanContext propagates into `runIsolate`, and to avoid capturing non-sendable SDK objects in the isolate closure. Also dropped a private `src/` import.
+  - `propagator_example.dart`: built the inject Context from `span.spanContext` directly instead of relying on the deprecated auto-activation; Step 5 now reports the child span's own ids (and parent linkage) rather than the active context's.
+
 ## [1.0.2-alpha] - 2026-04-19
 ### Fixed
 - Fixed `OTel.defaultEndpoint` to use the OTLP/HTTP port `4318` instead of the gRPC port `4317`,

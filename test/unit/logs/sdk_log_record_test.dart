@@ -203,20 +203,24 @@ void main() {
     });
 
     test('SDKLogRecord extracts trace context from Context', () async {
-      // Create a span to get trace context
+      // Create a span to get trace context.
       final tracer = OTel.tracer();
       final span = tracer.startSpan('test-span');
 
       try {
-        final logRecord = SDKLogRecord(
-          instrumentationScope: scope,
-          context: Context.current,
-        );
+        // Per the OTel spec, startSpan does not activate the span. Use
+        // withSpan so Context.current carries the span when SDKLogRecord
+        // reads from it.
+        tracer.withSpan(span, () {
+          final logRecord = SDKLogRecord(
+            instrumentationScope: scope,
+            context: Context.current,
+          );
 
-        // Should have trace context from the active span
-        expect(logRecord.traceId, isNotNull);
-        expect(logRecord.spanId, isNotNull);
-        expect(logRecord.traceFlags, isNotNull);
+          expect(logRecord.traceId, isNotNull);
+          expect(logRecord.spanId, isNotNull);
+          expect(logRecord.traceFlags, isNotNull);
+        });
       } finally {
         span.end();
       }

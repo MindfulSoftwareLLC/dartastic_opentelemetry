@@ -238,7 +238,7 @@ void main() {
 
     group('Context serialization', () {
       test('serializes and deserializes basic context values', () {
-        final key = OTel.contextKey<String>('test-key');
+        final key = OTel.contextKey<String>('test-key', isTransferable: true);
         final value = 'test-value';
         final originalContext = OTel.context().copyWith(key, value);
 
@@ -322,8 +322,8 @@ void main() {
 
       test('serializes and deserializes multiple keys with the same name', () {
         // Create two keys with the same name but different uniqueIds
-        final key1 = OTel.contextKey<String>('same-name');
-        final key2 = OTel.contextKey<String>('same-name');
+        final key1 = OTel.contextKey<String>('same-name', isTransferable: true);
+        final key2 = OTel.contextKey<String>('same-name', isTransferable: true);
 
         // Verify they are different keys despite same name
         expect(
@@ -353,7 +353,8 @@ void main() {
 
     group('Isolate context propagation', () {
       test('propagates context to new isolate', () async {
-        final key = OTel.contextKey<String>('test-key');
+        // Custom keys must opt in to cross-isolate transfer.
+        final key = OTel.contextKey<String>('test-key', isTransferable: true);
         final baggage = OTel.baggage({
           'baggage-key': OTel.baggageEntry('baggage-value'),
         });
@@ -386,7 +387,7 @@ void main() {
       });
 
       test('maintains isolation between different isolates', () async {
-        final key = OTel.contextKey<String>('key');
+        final key = OTel.contextKey<String>('key', isTransferable: true);
         final context1 = OTel.context().copyWith(key, 'value1');
         final context2 = OTel.context().copyWith(key, 'value2');
 

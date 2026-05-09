@@ -1,65 +1,66 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'package:dartastic_opentelemetry/src/otel.dart';
-import 'package:dartastic_opentelemetry/src/trace/export/otlp/otlp_grpc_span_exporter.dart';
-import 'package:dartastic_opentelemetry/src/trace/export/otlp/otlp_grpc_span_exporter_config.dart';
-import 'package:dartastic_opentelemetry/src/trace/export/simple_span_processor.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+
+/// App-specific attribute keys as a typed enum. Prefer enums over raw
+/// strings; for any attribute that exists in the OTel semantic
+/// conventions, use the corresponding API enum instead.
+enum ExampleAttribute implements OTelSemantic {
+  isSync('example.sync');
+
+  @override
+  final String key;
+
+  @override
+  String toString() => key;
+
+  const ExampleAttribute(this.key);
+}
 
 void main() async {
-  // Initialize with automatic resource detection
-
-  // Configure the OTLP exporter
-  final endpoint = 'http://my-otel-endpoint:4317';
+  // Configure an OTLP/gRPC exporter pointed at your collector.
   final exporter = OtlpGrpcSpanExporter(
     OtlpGrpcExporterConfig(
-      endpoint: endpoint,
-      insecure: true, // Match Python's insecure=True
+      endpoint: 'http://my-otel-endpoint:4317',
+      insecure: true,
     ),
   );
 
-  // Create a span processor that exports spans
-  // Create a batch processor that exports spans
+  // SimpleSpanProcessor exports each span synchronously as it ends.
+  // Use BatchSpanProcessor in production for better throughput.
   final spanProcessor = SimpleSpanProcessor(exporter);
 
   await OTel.initialize(
     serviceName: 'example-service',
-    endpoint: 'http://localhost:4317',
     spanProcessor: spanProcessor,
   );
 
-  // Configure provider with detected resource
-  final tracerProvider = OTel.tracerProvider();
+  final tracer = OTel.tracerProvider().getTracer('example-sync-tracer');
 
-  final tracer = tracerProvider.getTracer('example-sync-tracer');
-
-  // Create and end a simple span
+  // Create a span and run work inside try/catch/finally so the span is
+  // always ended and any thrown exception is recorded with
+  // SpanStatusCode.Error per the OTel spec.
   final span = tracer.startSpan(
     'sync-operation',
-    attributes: OTel.attributesFromMap({'example.sync': true}),
-  )..end();
-
+    attributes: OTel.attributesFromMap({ExampleAttribute.isSync.key: true}),
+  );
   try {
-    // Add an event to match Python example
     span.addEventNow('Event within span.');
-
     print('Trace with a span sent to OpenTelemetry.');
 
-    // Simulate some work
+    // Simulate some work.
     await Future<void>.delayed(const Duration(milliseconds: 100));
-  } catch (e) {
-    // Record any errors
-    span.recordException(e as Exception);
-    span.setStatus(SpanStatusCode.Error);
+  } catch (e, stackTrace) {
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
+    span.recordException(e, stackTrace: stackTrace);
+    span.setStatus(SpanStatusCode.Error, e.toString());
+    rethrow;
   } finally {
-    // End the span
     span.end();
   }
 
-  // Wait a bit to ensure export completes
-  await Future<void>.delayed(const Duration(seconds: 1));
-
-  // Shutdown
-  await tracerProvider.shutdown();
+  // Shutdown flushes any pending exports.
+  await OTel.shutdown();
 }

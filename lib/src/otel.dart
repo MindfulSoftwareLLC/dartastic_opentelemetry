@@ -43,7 +43,7 @@ class OTel {
   /// Whether print interception is enabled (set via initialize).
   static bool _logPrintEnabled = false;
 
-  /// Logger name for print interception (set via initialize).
+  /// OTelLogger name for print interception (set via initialize).
   static String _logPrintLoggerName = 'dart.print';
 
   /// Lazily initialized DartLogBridge for print interception.
@@ -112,7 +112,7 @@ class OTel {
   /// @param logPrint Whether to intercept print() calls and route them to OTel logs (default: false).
   ///   When enabled, all print() calls within [runWithPrintInterception] will be captured
   ///   as INFO level logs. Set to true to automatically bridge print statements to OpenTelemetry.
-  /// @param logPrintLoggerName Logger name for print-intercepted logs (default: 'dart.print')
+  /// @param logPrintLoggerName OTelLogger name for print-intercepted logs (default: 'dart.print')
   /// @param oTelFactoryCreationFunction Factory function for creating OTelSDKFactory instances
   /// @return A Future that completes when initialization is done
   /// @throws StateError if called more than once
@@ -501,10 +501,19 @@ class OTel {
   /// The name is for debugging purposes only.
   ///
   /// @param name The name of the context key (for debugging only)
+  /// @param isTransferable When `true`, values stored under this key transfer
+  ///   across isolate boundaries via `Context.runIsolate()`. Defaults to `false`
+  ///   (custom keys are local to their isolate). Built-in `Baggage` and
+  ///   `SpanContext` always transfer regardless of this flag.
   /// @return A new ContextKey instance
-  static ContextKey<T> contextKey<T>(String name) {
+  static ContextKey<T> contextKey<T>(String name,
+      {bool isTransferable = false}) {
     _getAndCacheOtelFactory();
-    return _otelFactory!.contextKey(name, ContextKey.generateContextKeyId());
+    return _otelFactory!.contextKey<T>(
+      name,
+      ContextKey.generateContextKeyId(),
+      isTransferable: isTransferable,
+    );
   }
 
   /// Creates a new Context with optional Baggage and SpanContext.
@@ -618,6 +627,24 @@ class OTel {
     );
   }
 
+  /// Activates [span] for the duration of [fn] (so `Context.current.span`
+  /// returns it inside `fn`) and records any thrown exception with
+  /// `SpanStatusCode.Error`. The caller is still responsible for
+  /// `span.end()` — typically in a `finally` block.
+  ///
+  /// Convenience over `OTel.tracer().withSpan(span, fn)` for callers
+  /// that don't already have a [Tracer] reference.
+  static T withSpan<T>(APISpan span, T Function() fn) =>
+      tracer().withSpan(span, fn);
+
+  /// Async variant of [withSpan]. Propagates the active span across
+  /// `await` boundaries via Zone-based context.
+  static Future<T> withSpanAsync<T>(
+    APISpan span,
+    Future<T> Function() fn,
+  ) =>
+      tracer().withSpanAsync(span, fn);
+
   /// Adds or replaces a named MeterProvider.
   ///
   /// This allows for creating multiple MeterProviders with different configurations,
@@ -711,15 +738,15 @@ class OTel {
     return lp;
   }
 
-  /// Gets the default Logger from the default LoggerProvider.
+  /// Gets the default OTelLogger from the default LoggerProvider.
   ///
-  /// This is a convenience method for getting a Logger with the default configuration.
+  /// This is a convenience method for getting a OTelLogger with the default configuration.
   /// The endpoint, serviceName, serviceVersion and resource all flow down from
   /// the OTel defaults set during initialization.
   ///
   /// @param name Optional custom name for the logger (defaults to defaultTracerName)
-  /// @return The default Logger instance
-  static Logger logger([String? name]) {
+  /// @return The default OTelLogger instance
+  static OTelLogger logger([String? name]) {
     return loggerProvider().getLogger(
       name ?? defaultTracerName,
       version: defaultTracerVersion,

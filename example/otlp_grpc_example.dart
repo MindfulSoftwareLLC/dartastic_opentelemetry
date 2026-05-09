@@ -3,6 +3,21 @@
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
+/// App-specific attribute keys as a typed enum. Prefer enums over raw
+/// strings; for any attribute that exists in the OTel semantic
+/// conventions, use the corresponding API enum instead.
+enum ExampleAttribute implements OTelSemantic {
+  exampleKey('example.key');
+
+  @override
+  final String key;
+
+  @override
+  String toString() => key;
+
+  const ExampleAttribute(this.key);
+}
+
 void main() async {
   // Initialize OTel first with the endpoint
   // String endpoint = 'https://otel.dartastic.io:443';
@@ -36,24 +51,24 @@ void main() async {
     SourceCodeResource.codeFunctionName.key: 'main',
   });
 
-  // Create a new root span
+  // Create a new root span. Prefer typed enum keys over raw strings.
   final rootSpan = tracer.startSpan(
     'root-operation-dartastic',
     attributes: OTel.attributesFromMap({
-      'example-dartastic.key': 'example-value-dartastic',
+      ExampleAttribute.exampleKey.key: 'example-value-dartastic',
     }),
   );
 
   try {
-    // Add an event to match Python example
+    // Add an event to match Python example.
     rootSpan.addEventNow('Event within span-dartastic');
 
     print('Dartastic Trace with a span sent to OpenTelemetry.');
 
-    // Simulate some work
+    // Simulate some work.
     await Future<void>.delayed(const Duration(milliseconds: 100));
 
-    // Create a child span
+    // Create a child span.
     final childSpan = tracer.startSpan(
       'child-operation-dartastic',
       parentSpan: rootSpan,
@@ -62,15 +77,20 @@ void main() async {
     try {
       print('Doing some more work...');
       await Future<void>.delayed(const Duration(milliseconds: 50));
-    } catch (e) {
-      childSpan.recordException(e);
-      childSpan.setStatus(SpanStatusCode.Error);
+    } catch (e, stackTrace) {
+      // The span has a status of SpanStatus.Ok on creation, set it to
+      // Error when an error occurs in the span.
+      childSpan.recordException(e, stackTrace: stackTrace);
+      childSpan.setStatus(SpanStatusCode.Error, e.toString());
+      rethrow;
     } finally {
       childSpan.end();
     }
-  } catch (e) {
-    rootSpan.recordException(e);
-    rootSpan.setStatus(SpanStatusCode.Error);
+  } catch (e, stackTrace) {
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
+    rootSpan.recordException(e, stackTrace: stackTrace);
+    rootSpan.setStatus(SpanStatusCode.Error, e.toString());
   } finally {
     rootSpan.end();
   }

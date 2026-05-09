@@ -83,17 +83,17 @@ void main() {
     });
 
     test('decompresses pre-compressed data correctly', () async {
-      // This is a gzip-compressed version of "OpenTelemetry test data"
+      // gzip-compressed "OpenTelemetry test data", produced with mtime=0 for
+      // a deterministic header. Verifies decompression of bytes that were
+      // *not* produced by our own compress() — i.e. round-trip independence.
       final preCompressed = base64Decode(
-        'H4sIAAAAAAAAA/NIzcnJVyjPL8pJUUjMS1FIKC1OLcpLzE1VyE3MzlQAAAbXZLQcAAAA',
+        'H4sIAAAAAAAC//MvSM0LSc1JzU0tKapUKEktLlFISSxJBAAeXw3YFwAAAA==',
       );
 
-      // Decompress the data
       final decompressed = await gzip.decompress(
         Uint8List.fromList(preCompressed),
       );
 
-      // Verify the decompressed content
       final resultString = utf8.decode(decompressed);
       expect(resultString, equals('OpenTelemetry test data'));
     });

@@ -4,9 +4,8 @@
 /// Test file covering remaining small coverage gaps across multiple files.
 library;
 
-///   - tracer.dart (19 missed lines: getters, withSpan/withSpanAsync invalid
-///     span paths, startSpanWithContext context update, sampling attributes merge,
-///     parentSpan without context path)
+///   - tracer.dart (getters, withSpan/withSpanAsync invalid span paths,
+///     sampling attributes merge, parentSpan without context path)
 ///   - span.dart (8 missed lines: list attribute setters, end() error paths)
 ///   - meter.dart (9 missed lines: version/schemaUrl/attributes getters,
 ///     NoopObservable collect)
@@ -368,34 +367,6 @@ void main() {
 
       realSpan.end();
     });
-  });
-
-  // =========================================================================
-  // tracer.dart - startSpanWithContext updates Context.current
-  // =========================================================================
-  group('Tracer startSpanWithContext', () {
-    test(
-      'startSpanWithContext updates Context.current when context matches',
-      () {
-        final tracer = OTel.tracer();
-
-        // Set the current context to a known context
-        final ctx = Context.current;
-
-        // Call startSpanWithContext with Context.current so that
-        // Context.current == context is true, so Context.current gets updated
-        final span = tracer.startSpanWithContext(
-          name: 'context-update-span',
-          context: ctx,
-        );
-
-        // Context.current should now have the span set
-        expect(span, isNotNull);
-        expect(span.name, equals('context-update-span'));
-
-        span.end();
-      },
-    );
   });
 
   // =========================================================================
@@ -959,20 +930,6 @@ void main() {
     final proto = MetricTransformer.transformResource(resource);
     expect(proto.attributes, isNotEmpty);
   });
-
-  // trace/tracer.dart: Context.current update in startSpanWithContext
-  test(
-    'startSpanWithContext updates global context when matching (final_3)',
-    () {
-      final tracer = OTel.tracer();
-      final currentCtx = Context.current;
-      final span = tracer.startSpanWithContext(
-        name: 'ctx-span',
-        context: currentCtx,
-      );
-      span.end();
-    },
-  );
 
   // metrics/instruments/histogram.dart: double type path in getValue
   test('Histogram<double> getValue returns double', () {

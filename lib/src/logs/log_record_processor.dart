@@ -29,7 +29,7 @@ abstract class LogRecordProcessor {
 
   /// Called to determine if the logger is enabled for a given configuration.
   ///
-  /// This method supports filtering via Logger.enabled. It helps optimize
+  /// This method supports filtering via OTelLogger.enabled. It helps optimize
   /// performance by allowing early filtering of log records.
   ///
   /// @param context The context (explicit or current)

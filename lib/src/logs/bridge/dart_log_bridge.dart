@@ -65,7 +65,7 @@ class DartLogBridge {
         _defaultLoggerName = defaultLoggerName,
         _minimumSeverity = minimumSeverity;
 
-  /// Installs the bridge using a specific Logger.
+  /// Installs the bridge using a specific OTelLogger.
   ///
   /// This is a convenience method for simple use cases where you want
   /// all dart:developer logs to go to a single logger.
@@ -74,7 +74,7 @@ class DartLogBridge {
   /// @param minimumSeverity Minimum severity level to capture
   /// @return The installed DartLogBridge instance
   static DartLogBridge install(
-    Logger logger, {
+    OTelLogger logger, {
     Severity minimumSeverity = Severity.DEBUG,
   }) {
     _instance = DartLogBridge(

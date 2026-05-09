@@ -141,35 +141,36 @@ void main() {
       }
     });
 
-    test('recordSpan creates a span that gets exported', () async {
-      print('=== Starting recordSpan test ===');
+    test('OTel.withSpan creates a span that gets exported', () async {
+      print('=== Starting OTel.withSpan test ===');
 
       // Clear the file first for this test
       File(outputPath).writeAsStringSync('');
 
-      // Create a span using recordSpan
       final tracer = tracerProvider.getTracer('direct-file-test');
+      final span = tracer.startSpan('record-span-test');
 
-      print('Calling recordSpan...');
-      final result = tracer.recordSpan(
-        name: 'record-span-test',
-        fn: () {
-          print('Inside recordSpan function...');
-          // Do some work
+      print('Calling OTel.withSpan...');
+      var result = 0;
+      try {
+        OTel.withSpan(span, () {
+          print('Inside OTel.withSpan function...');
           var sum = 0;
           for (var i = 0; i < 1000; i++) {
             sum += i;
           }
-          return sum;
-        },
-      );
-      print('recordSpan completed with result: $result');
+          result = sum;
+        });
+      } finally {
+        span.end();
+      }
+      print('OTel.withSpan completed with result: $result');
 
       // Verify function executed correctly
       expect(result, 499500);
 
       // Force flush to ensure it's exported
-      print('Flushing after recordSpan...');
+      print('Flushing after OTel.withSpan...');
       await tracerProvider.forceFlush();
       await processor.forceFlush();
 
@@ -179,7 +180,7 @@ void main() {
       // Verify span was exported
       final fileContent = await File(outputPath).readAsString();
       print(
-        'recordSpan file content (length=${fileContent.length}): $fileContent',
+        'OTel.withSpan file content (length=${fileContent.length}): $fileContent',
       );
 
       expect(fileContent.contains('record-span-test'), isTrue);

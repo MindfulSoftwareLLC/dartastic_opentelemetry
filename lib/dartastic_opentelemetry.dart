@@ -52,6 +52,7 @@ export 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
         PerformanceSemantics,
         ProcessResource,
         RPCResource,
+        ServerResource,
         ServiceResource,
         SessionViewSemantics,
         Severity,
@@ -69,6 +70,7 @@ export 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
         TraceId,
         TraceFlags,
         TraceState,
+        UrlResource,
         UserSemantics,
         VersionResource;
 
