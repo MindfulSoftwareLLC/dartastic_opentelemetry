@@ -23,7 +23,7 @@ part 'logger_provider_create.dart';
 /// https://opentelemetry.io/docs/specs/otel/logs/sdk/
 class LoggerProvider implements APILoggerProvider {
   /// Registry of loggers managed by this provider.
-  final Map<String, Logger> _loggers = {};
+  final Map<String, OTelLogger> _loggers = {};
 
   /// Log record processors registered with this provider.
   final List<LogRecordProcessor> _logRecordProcessors = [];
@@ -115,7 +115,7 @@ class LoggerProvider implements APILoggerProvider {
   }
 
   @override
-  Logger getLogger(
+  OTelLogger getLogger(
     String name, {
     String? version,
     String? schemaUrl,

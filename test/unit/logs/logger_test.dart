@@ -7,7 +7,7 @@ import 'package:test/test.dart';
 import '../../testing_utils/memory_log_record_exporter.dart';
 
 void main() {
-  group('Logger Tests', () {
+  group('OTelLogger Tests', () {
     late MemoryLogRecordExporter memoryExporter;
     late SimpleLogRecordProcessor processor;
 
@@ -32,7 +32,7 @@ void main() {
       await OTel.reset();
     });
 
-    test('Logger has correct name and attributes', () {
+    test('OTelLogger has correct name and attributes', () {
       final logger = OTel.loggerProvider().getLogger(
         'test-logger',
         version: '1.0.0',
@@ -42,7 +42,7 @@ void main() {
       expect(logger.version, equals('1.0.0'));
     });
 
-    test('Logger emits log record with all fields', () {
+    test('OTelLogger emits log record with all fields', () {
       final logger = OTel.logger('test-logger');
       final timestamp = DateTime.now();
       final attributes = OTel.attributesFromMap({
@@ -70,7 +70,7 @@ void main() {
       expect(logRecord.observedTimestamp, isNotNull);
     });
 
-    test('Logger trace() emits TRACE severity', () {
+    test('OTelLogger trace() emits TRACE severity', () {
       final logger = OTel.logger('test-logger');
 
       logger.trace('Trace message');
@@ -81,7 +81,7 @@ void main() {
       expect(logRecord.body, equals('Trace message'));
     });
 
-    test('Logger debug() emits DEBUG severity', () {
+    test('OTelLogger debug() emits DEBUG severity', () {
       final logger = OTel.logger('test-logger');
 
       logger.debug('Debug message');
@@ -92,7 +92,7 @@ void main() {
       expect(logRecord.body, equals('Debug message'));
     });
 
-    test('Logger info() emits INFO severity', () {
+    test('OTelLogger info() emits INFO severity', () {
       final logger = OTel.logger('test-logger');
 
       logger.info('Info message');
@@ -103,7 +103,7 @@ void main() {
       expect(logRecord.body, equals('Info message'));
     });
 
-    test('Logger warn() emits WARN severity', () {
+    test('OTelLogger warn() emits WARN severity', () {
       final logger = OTel.logger('test-logger');
 
       logger.warn('Warning message');
@@ -114,7 +114,7 @@ void main() {
       expect(logRecord.body, equals('Warning message'));
     });
 
-    test('Logger error() emits ERROR severity', () {
+    test('OTelLogger error() emits ERROR severity', () {
       final logger = OTel.logger('test-logger');
 
       logger.error('Error message');
@@ -125,7 +125,7 @@ void main() {
       expect(logRecord.body, equals('Error message'));
     });
 
-    test('Logger fatal() emits FATAL severity', () {
+    test('OTelLogger fatal() emits FATAL severity', () {
       final logger = OTel.logger('test-logger');
 
       logger.fatal('Fatal message');
@@ -136,7 +136,7 @@ void main() {
       expect(logRecord.body, equals('Fatal message'));
     });
 
-    test('Logger convenience methods accept attributes', () {
+    test('OTelLogger convenience methods accept attributes', () {
       final logger = OTel.logger('test-logger');
       final attributes = OTel.attributesFromMap({'error.code': 500});
 
@@ -149,7 +149,7 @@ void main() {
       expect(attrs.any((a) => a.key == 'error.code'), isTrue);
     });
 
-    test('Logger convenience methods accept event name', () {
+    test('OTelLogger convenience methods accept event name', () {
       final logger = OTel.logger('test-logger');
 
       logger.info('Event log', eventName: 'user.login');
@@ -159,7 +159,7 @@ void main() {
       expect(logRecord.eventName, equals('user.login'));
     });
 
-    test('Logger is disabled when provider has no processors', () async {
+    test('OTelLogger is disabled when provider has no processors', () async {
       await OTel.reset();
       await OTel.initialize(
         serviceName: 'no-processor-test',
@@ -170,17 +170,17 @@ void main() {
 
       final logger = OTel.logger('test-logger');
 
-      // Logger should be disabled without processors
+      // OTelLogger should be disabled without processors
       expect(logger.enabled, isFalse);
     });
 
-    test('Logger is enabled with processors', () {
+    test('OTelLogger is enabled with processors', () {
       final logger = OTel.logger('test-logger');
 
       expect(logger.enabled, isTrue);
     });
 
-    test('Logger does not emit when disabled', () async {
+    test('OTelLogger does not emit when disabled', () async {
       await OTel.reset();
       await OTel.initialize(
         serviceName: 'disabled-test',
@@ -198,7 +198,7 @@ void main() {
       expect(logger.enabled, isFalse);
     });
 
-    test('Logger captures trace context from current span', () async {
+    test('OTelLogger captures trace context from current span', () async {
       await OTel.reset();
 
       memoryExporter = MemoryLogRecordExporter();
@@ -235,14 +235,14 @@ void main() {
       expect(logRecord.spanId, equals(span.spanContext.spanId));
     });
 
-    test('Logger provider reference is accessible', () {
+    test('OTelLogger provider reference is accessible', () {
       final logger = OTel.logger('test-logger');
 
       expect(logger.provider, isNotNull);
       expect(logger.provider, equals(OTel.loggerProvider()));
     });
 
-    test('Logger resource reference is accessible', () {
+    test('OTelLogger resource reference is accessible', () {
       final logger = OTel.logger('test-logger');
 
       expect(logger.resource, isNotNull);

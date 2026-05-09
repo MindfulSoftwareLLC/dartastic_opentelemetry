@@ -99,7 +99,7 @@ OTel API and SDK objects.  `OTel` needs to be initialized first to point to an O
 backend.  Initialization does a lot of work under the hood including gathering a rich set of
 standard resources for any OS that Dart runs in.  It prepares for the creation of the global
 default `TracerProvider`, `MeterProvider`, and `LoggerProvider`, with the serviceName and 
-a default `Tracer`, `Meter`, and `Logger`, all created on first use.
+a default `Tracer`, `Meter`, and `OTelLogger`, all created on first use.
 
 All configuration, including Trace, Metric and Log exporter configuration, can be made in code
 via `OTel.initialize()`.  Codeless configuration can be done with standard OpenTelemetry
@@ -606,7 +606,7 @@ and can be correlated with the span that was active when the log was emitted.
 ### Concepts
 
 - **LoggerProvider**: Entry point to the logs API, responsible for creating Loggers
-- **Logger**: Used to emit log records
+- **OTelLogger**: Used to emit log records
 - **LogRecord**: Represents a single log event with body, severity, attributes, timestamps, and trace context
 - **LogRecordProcessor**: Processes log records before export
 - **LogRecordExporter**: Exports log records to backends

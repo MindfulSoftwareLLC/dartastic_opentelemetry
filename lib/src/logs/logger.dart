@@ -12,32 +12,32 @@ part 'logger_create.dart';
 
 /// SDK implementation of the APILogger interface.
 ///
-/// The Logger is responsible for emitting log records. It holds a reference
+/// The OTelLogger is responsible for emitting log records. It holds a reference
 /// to the LoggerProvider to access resource, processors, and other configuration.
 ///
-/// This implementation delegates some functionality to the API Logger
+/// This implementation delegates some functionality to the API OTelLogger
 /// implementation while adding SDK-specific behaviors like processor notification.
 ///
 /// More information:
 /// https://opentelemetry.io/docs/specs/otel/logs/sdk/#logger
-class Logger implements APILogger {
-  /// The underlying API Logger implementation.
+class OTelLogger implements APILogger {
+  /// The underlying API OTelLogger implementation.
   final APILogger _delegate;
 
   /// The LoggerProvider that created this logger.
   final LoggerProvider _provider;
 
-  /// Private constructor for creating Logger instances.
+  /// Private constructor for creating OTelLogger instances.
   ///
-  /// @param delegate The API Logger implementation to delegate to
+  /// @param delegate The API OTelLogger implementation to delegate to
   /// @param provider The LoggerProvider that created this logger
-  Logger._({
+  OTelLogger._({
     required APILogger delegate,
     required LoggerProvider provider,
   })  : _delegate = delegate,
         _provider = provider {
     if (OTelLog.isDebug()) {
-      OTelLog.debug('Logger: Created with name: ${delegate.name}');
+      OTelLog.debug('OTelLogger: Created with name: ${delegate.name}');
     }
   }
 
@@ -99,7 +99,7 @@ class Logger implements APILogger {
   }) {
     if (!enabled) {
       if (OTelLog.isDebug()) {
-        OTelLog.debug('Logger: emit called but logger is disabled');
+        OTelLog.debug('OTelLogger: emit called but logger is disabled');
       }
       return;
     }
@@ -140,7 +140,7 @@ class Logger implements APILogger {
     );
 
     if (OTelLog.isDebug()) {
-      OTelLog.debug('Logger: Emitting log record: $logRecord');
+      OTelLog.debug('OTelLogger: Emitting log record: $logRecord');
     }
 
     // Notify all processors
@@ -150,7 +150,7 @@ class Logger implements APILogger {
       } catch (e) {
         if (OTelLog.isError()) {
           OTelLog.error(
-              'Logger: Error in processor ${processor.runtimeType}: $e');
+              'OTelLogger: Error in processor ${processor.runtimeType}: $e');
         }
       }
     }

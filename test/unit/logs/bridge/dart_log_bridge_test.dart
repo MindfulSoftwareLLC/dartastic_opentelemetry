@@ -33,7 +33,7 @@ void main() {
       await OTel.reset();
     });
 
-    test('DartLogBridge can be installed with Logger', () {
+    test('DartLogBridge can be installed with OTelLogger', () {
       final logger = OTel.logger('test-logger');
       final bridge = DartLogBridge.install(logger);
 

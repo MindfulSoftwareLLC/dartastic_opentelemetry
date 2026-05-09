@@ -254,7 +254,7 @@ void main() {
     });
   });
 
-  group('Logger', () {
+  group('OTelLogger', () {
     test('catches and logs processor error during emit', () async {
       await OTel.reset();
       await OTel.initialize(

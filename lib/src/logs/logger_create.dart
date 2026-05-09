@@ -3,22 +3,22 @@
 
 part of 'logger.dart';
 
-/// Factory for creating Logger instances.
+/// Factory for creating OTelLogger instances.
 ///
 /// This factory class provides a static create method for constructing
-/// properly configured Logger instances. It follows the factory
-/// pattern to separate the construction logic from the Logger
+/// properly configured OTelLogger instances. It follows the factory
+/// pattern to separate the construction logic from the OTelLogger
 /// class itself.
 class SDKLoggerCreate {
-  /// Creates a new Logger with the specified delegate and provider.
+  /// Creates a new OTelLogger with the specified delegate and provider.
   ///
-  /// @param delegate The API Logger implementation to delegate to
+  /// @param delegate The API OTelLogger implementation to delegate to
   /// @param provider The LoggerProvider that created this logger
-  /// @return A new Logger instance
-  static Logger create({
+  /// @return A new OTelLogger instance
+  static OTelLogger create({
     required APILogger delegate,
     required LoggerProvider provider,
   }) {
-    return Logger._(delegate: delegate, provider: provider);
+    return OTelLogger._(delegate: delegate, provider: provider);
   }
 }
