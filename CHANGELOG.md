@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Net effect on web: tracer/metrics/logs API works, OTLP/HTTP exporters work via the browser's fetch (browser owns TLS — custom CA / mTLS settings are ignored with a warning), `PlatformResourceDetector.create()` returns the env-var + web detector composite. `OtlpGrpcSpanExporter` and friends remain native-only — gRPC over HTTP/2 trailers isn't a thing in browsers regardless of dart:io.
 
   New regression test: `test/web/web_compile_smoke_test.dart` runs in Chrome, imports the main library, initializes the SDK, constructs all three HTTP exporters, and runs the platform resource detector.
+- **dart2wasm:** `tool/web_tests.sh` (and CI) now runs the web suite under both dart2js (default) and dart2wasm. Caught and fixed a JS-interop bug in `gzip_web.dart` — the `ReadableStream` reader yielded a `JSUint8Array` that was being cast directly to `Uint8List`, which works on dart2js but fails with `TypeError: 'JSValue' is not a subtype of type 'Uint8List'` on dart2wasm. Now goes through `JSUint8Array.toDart` so it works on both compilers.
 
 ## [1.1.0-beta] - 2026-05-07
 
