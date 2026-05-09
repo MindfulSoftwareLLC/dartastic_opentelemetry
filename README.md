@@ -341,10 +341,9 @@ Future<void> main() async {
   final span = tracer.startSpan('my-operation');
   try {
     await tracer.withSpanAsync(span, doWork);
-    // Set Ok on success so the span is not left Unset.
-    span.setStatus(SpanStatusCode.Ok);
   } catch (e, stackTrace) {
-    // Record the exception as a span event and mark the span as Error.
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
     span.recordException(e, stackTrace: stackTrace);
     span.setStatus(SpanStatusCode.Error, e.toString());
     rethrow;
@@ -413,8 +412,9 @@ Future<void> main() async {
 
   try {
     await tracer.withSpanAsync(span, doWork);
-    span.setStatus(SpanStatusCode.Ok);
   } catch (e, stackTrace) {
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
     span.recordException(e, stackTrace: stackTrace);
     span.setStatus(SpanStatusCode.Error, e.toString());
     rethrow;
@@ -447,16 +447,18 @@ try {
   );
   try {
     await queryDatabase();
-    childSpan.setStatus(SpanStatusCode.Ok);
   } catch (e, stackTrace) {
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
     childSpan.recordException(e, stackTrace: stackTrace);
     childSpan.setStatus(SpanStatusCode.Error, e.toString());
     rethrow;
   } finally {
     childSpan.end();
   }
-  parentSpan.setStatus(SpanStatusCode.Ok);
 } catch (e, stackTrace) {
+  // The span has a status of SpanStatus.Ok on creation, set it to
+  // Error when an error occurs in the span.
   parentSpan.recordException(e, stackTrace: stackTrace);
   parentSpan.setStatus(SpanStatusCode.Error, e.toString());
   rethrow;

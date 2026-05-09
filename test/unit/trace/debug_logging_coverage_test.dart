@@ -838,42 +838,43 @@ void main() {
   // Tracer startActiveSpan / startActiveSpanAsync with debug
   // ---------------------------------------------------------------------------
 
-  test('tracer startActiveSpan with debug', () {
+  test('tracer startActiveSpan activates the span for the duration of fn',
+      () {
     final tracer = OTel.tracer();
-    logOutput.clear();
 
+    APISpan? observedActiveSpan;
     final result = tracer.startActiveSpan(
       name: 'active-span-test',
-      fn: (span) => 'active-result',
+      fn: (span) {
+        // Inside fn, Context.current.span should be the started span.
+        observedActiveSpan = Context.current.span;
+        return 'active-result';
+      },
     );
     expect(result, equals('active-result'));
-
-    expect(
-      logOutput.any(
-        (msg) => msg.contains('Tracer') && msg.contains('withSpan called'),
-      ),
-      isTrue,
-      reason: 'Expected withSpan debug log from startActiveSpan',
-    );
+    expect(observedActiveSpan, isNotNull);
+    expect(observedActiveSpan!.name, equals('active-span-test'));
   });
 
-  test('tracer startActiveSpanAsync with debug', () async {
+  test(
+      'tracer startActiveSpanAsync activates the span across awaits',
+      () async {
     final tracer = OTel.tracer();
-    logOutput.clear();
 
+    APISpan? observedActiveSpan;
     final result = await tracer.startActiveSpanAsync(
       name: 'active-span-async-test',
-      fn: (span) async => 'async-active-result',
+      fn: (span) async {
+        // Across an await, Context.current.span must still be the
+        // started span — verifies Zone-based propagation.
+        await Future<void>.delayed(Duration.zero);
+        observedActiveSpan = Context.current.span;
+        return 'async-active-result';
+      },
     );
     expect(result, equals('async-active-result'));
-
-    expect(
-      logOutput.any(
-        (msg) => msg.contains('Tracer') && msg.contains('withSpanAsync called'),
-      ),
-      isTrue,
-      reason: 'Expected withSpanAsync debug log from startActiveSpanAsync',
-    );
+    expect(observedActiveSpan, isNotNull);
+    expect(observedActiveSpan!.name, equals('active-span-async-test'));
   });
 
   // ---------------------------------------------------------------------------

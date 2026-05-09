@@ -77,17 +77,18 @@ void main() async {
     try {
       print('Doing some more work...');
       await Future<void>.delayed(const Duration(milliseconds: 50));
-      childSpan.setStatus(SpanStatusCode.Ok);
     } catch (e, stackTrace) {
-      // Per the OTel spec: recordException first, then setStatus(Error).
+      // The span has a status of SpanStatus.Ok on creation, set it to
+      // Error when an error occurs in the span.
       childSpan.recordException(e, stackTrace: stackTrace);
       childSpan.setStatus(SpanStatusCode.Error, e.toString());
       rethrow;
     } finally {
       childSpan.end();
     }
-    rootSpan.setStatus(SpanStatusCode.Ok);
   } catch (e, stackTrace) {
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
     rootSpan.recordException(e, stackTrace: stackTrace);
     rootSpan.setStatus(SpanStatusCode.Error, e.toString());
   } finally {

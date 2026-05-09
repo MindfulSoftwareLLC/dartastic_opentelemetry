@@ -114,8 +114,9 @@ void main() async {
         print(
           '   → ParentSpanId matches:   ${childSpan.spanContext.parentSpanId?.hexString == extractedSpanContext?.spanId.hexString}\n',
         );
-        childSpan.setStatus(SpanStatusCode.Ok);
       } catch (e, stackTrace) {
+        // The span has a status of SpanStatus.Ok on creation, set it to
+        // Error when an error occurs in the span.
         childSpan.recordException(e, stackTrace: stackTrace);
         childSpan.setStatus(SpanStatusCode.Error, e.toString());
         rethrow;
@@ -132,8 +133,9 @@ void main() async {
 
     print('\n=== Example Complete ===');
     print('This demonstrates how trace context flows between services!');
-    span.setStatus(SpanStatusCode.Ok);
   } catch (e, stackTrace) {
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
     span.recordException(e, stackTrace: stackTrace);
     span.setStatus(SpanStatusCode.Error, e.toString());
   } finally {

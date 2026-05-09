@@ -68,11 +68,9 @@ Future<void> main() async {
         OTel.attributesFromMap({ExampleSemantics.itemsProcessed.key: 42}),
       ),
     );
-
-    // Set status to OK
-    parentSpan.setStatus(SpanStatusCode.Ok);
   } catch (e, stackTrace) {
-    // Record the exception on the span
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
     parentSpan.recordException(e, stackTrace: stackTrace);
     parentSpan.setStatus(SpanStatusCode.Error, e.toString());
   } finally {
@@ -101,8 +99,9 @@ Future<void> performDatabaseQuery(Tracer tracer, Span parentSpan) async {
   try {
     // Simulate database query.
     await Future<void>.delayed(const Duration(milliseconds: 50));
-    span.setStatus(SpanStatusCode.Ok);
   } catch (e, stackTrace) {
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
     span.recordException(e, stackTrace: stackTrace);
     span.setStatus(SpanStatusCode.Error, e.toString());
     rethrow;
@@ -135,9 +134,9 @@ Future<void> callExternalService(Tracer tracer, Span parentSpan) async {
         HttpResource.responseBodySize.key: 1024,
       }),
     );
-
-    span.setStatus(SpanStatusCode.Ok);
   } catch (e, stackTrace) {
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
     span.recordException(e, stackTrace: stackTrace);
     span.setStatus(SpanStatusCode.Error, e.toString());
     rethrow;

@@ -48,8 +48,9 @@ Future<void> main() async {
       print('Same trace:    ${isolateChild['traceId'] == parentTraceId}');
       print('Child of main: ${isolateChild['parentSpanId'] == parentSpanId}');
     });
-    mainSpan.setStatus(SpanStatusCode.Ok);
   } catch (e, stackTrace) {
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
     mainSpan.recordException(e, stackTrace: stackTrace);
     mainSpan.setStatus(SpanStatusCode.Error, e.toString());
   } finally {
@@ -73,8 +74,9 @@ Future<void> zoneExample() async {
       final childSpan = tracer.startSpan('child-operation');
       try {
         await Future<void>.delayed(const Duration(milliseconds: 50));
-        childSpan.setStatus(SpanStatusCode.Ok);
       } catch (e, stackTrace) {
+        // The span has a status of SpanStatus.Ok on creation, set it to
+        // Error when an error occurs in the span.
         childSpan.recordException(e, stackTrace: stackTrace);
         childSpan.setStatus(SpanStatusCode.Error, e.toString());
         rethrow;
@@ -82,8 +84,9 @@ Future<void> zoneExample() async {
         childSpan.end();
       }
     });
-    parentSpan.setStatus(SpanStatusCode.Ok);
   } catch (e, stackTrace) {
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
     parentSpan.recordException(e, stackTrace: stackTrace);
     parentSpan.setStatus(SpanStatusCode.Error, e.toString());
     rethrow;
@@ -102,8 +105,9 @@ void syncExample() {
       final childSpan = tracer.startSpan('child-operation');
       try {
         // Do some work.
-        childSpan.setStatus(SpanStatusCode.Ok);
       } catch (e, stackTrace) {
+        // The span has a status of SpanStatus.Ok on creation, set it to
+        // Error when an error occurs in the span.
         childSpan.recordException(e, stackTrace: stackTrace);
         childSpan.setStatus(SpanStatusCode.Error, e.toString());
         rethrow;
@@ -111,8 +115,9 @@ void syncExample() {
         childSpan.end();
       }
     });
-    parentSpan.setStatus(SpanStatusCode.Ok);
   } catch (e, stackTrace) {
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
     parentSpan.recordException(e, stackTrace: stackTrace);
     parentSpan.setStatus(SpanStatusCode.Error, e.toString());
     rethrow;

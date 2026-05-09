@@ -107,10 +107,9 @@ Future<void> traceUserLogin(Tracer tracer, String userId) async {
         }),
       ),
     );
-
-    span.setStatus(SpanStatusCode.Ok);
   } catch (e, stackTrace) {
-    // Per the OTel spec: recordException first, then setStatus(Error).
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
     span.recordException(e, stackTrace: stackTrace);
     span.setStatus(SpanStatusCode.Error, e.toString());
     rethrow;
@@ -144,12 +143,11 @@ Future<void> traceHttpRequest(Tracer tracer) async {
         HttpResource.responseBodySize.key: 1234,
       }),
     );
-
-    span.setStatus(SpanStatusCode.Ok);
   } catch (e, stackTrace) {
     span.addAttributes(
         OTel.attributesFromMap({HttpResource.responseStatusCode.key: 500}));
-    // Per the OTel spec: recordException first, then setStatus(Error).
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
     span.recordException(e, stackTrace: stackTrace);
     span.setStatus(SpanStatusCode.Error, 'HTTP request failed: $e');
     rethrow;
@@ -184,9 +182,9 @@ Future<void> traceDatabaseOperation(Tracer tracer) async {
     // Add result metadata.
     span.addAttributes(
         Attributes.of({DatabaseResource.dbResponseReturnedRows.key: 42}));
-    span.setStatus(SpanStatusCode.Ok);
   } catch (e, stackTrace) {
-    // Per the OTel spec: recordException first, then setStatus(Error).
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
     span.recordException(e, stackTrace: stackTrace);
     span.setStatus(SpanStatusCode.Error, 'Database query failed: $e');
     rethrow;

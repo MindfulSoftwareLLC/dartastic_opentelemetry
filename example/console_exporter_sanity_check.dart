@@ -61,12 +61,10 @@ Future<void> main(List<String> arguments) async {
         OTel.attributeBool(DemoAttribute.eventBaz.key, true),
       ]),
     );
-    // Application code may set Ok explicitly on success
-    // (see https://opentelemetry.io/docs/specs/otel/trace/api/#set-status).
-    rootSpan.setStatus(SpanStatusCode.Ok);
   } catch (e, stackTrace) {
     print('\nHandling exception...');
-    // Per the OTel spec: recordException first, then setStatus(Error).
+    // The span has a status of SpanStatus.Ok on creation, set it to
+    // Error when an error occurs in the span.
     rootSpan.recordException(e, stackTrace: stackTrace);
     rootSpan.setStatus(
       SpanStatusCode.Error,
@@ -75,9 +73,6 @@ Future<void> main(List<String> arguments) async {
     rethrow;
   } finally {
     print('\nEnding span (this should trigger ConsoleExporter export)...');
-    // Ending a span sets the span status to SpanStatusCode.Ok, unless
-    // the span status has already been set, per the OpenTelemetry Specification
-    // See https://opentelemetry.io/docs/specs/otel/trace/api/#set-status
     rootSpan.end();
   }
 

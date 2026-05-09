@@ -226,11 +226,13 @@ void main() {
       expect(memoryExporter.count, equals(1));
       final logRecord = memoryExporter.exportedLogRecords.first;
 
-      // Log record should have trace context from the active span
-      expect(logRecord.traceId, isNotNull);
-      expect(logRecord.spanId, isNotNull);
-      expect(logRecord.traceId!.isValid, isTrue);
-      expect(logRecord.spanId!.isValid, isTrue);
+      // Body of the exported log matches what was emitted.
+      expect(logRecord.body, equals('Log within span'));
+
+      // Log record's trace context matches the active span's exactly —
+      // not just "valid", but the same ids.
+      expect(logRecord.traceId, equals(span.spanContext.traceId));
+      expect(logRecord.spanId, equals(span.spanContext.spanId));
     });
 
     test('Logger provider reference is accessible', () {
