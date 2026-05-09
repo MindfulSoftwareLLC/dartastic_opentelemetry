@@ -89,7 +89,7 @@ There are many ways to contribute to this project:
 ## Pull Request Process
 
 1. Update the README.md or other documentation with details of changes if appropriate
-2. Add a CHANGELOG entry for your change under the `## [X.Y.Z-wip]` section at the top of `CHANGELOG.md`. The version stamp ends in `-wip` during development; `tool/release.sh` strips it and dates the section at release time. **Do not edit `pubspec.yaml`'s version line in your PR** — release tooling owns it.
+2. Add a CHANGELOG entry for your change under the `## [X.Y.Z-wip]` section at the top of `CHANGELOG.md`. The version stamp ends in `-wip` during development; `dart tool/release.dart` strips it and dates the section at release time. **Do not edit `pubspec.yaml`'s version line in your PR** — release tooling owns it.
 3. The PR should work with the latest version of Dart and be compatible with all supported platforms
 4. The PR will be merged once it receives approval from project maintainers
 
@@ -164,15 +164,15 @@ Feature requests are welcome. Please provide:
 ## Release Process
 
 The release process is handled by project maintainers via
-`tool/release.sh`, which implements the Flutter / Dart team's `-wip`
+`dart tool/release.dart`, which implements the Flutter / Dart team's `-wip`
 convention. The working `pubspec.yaml` version always ends in `-wip`
 and CHANGELOG entries during development land under
 `## [X.Y.Z-wip]`. To cut a release:
 
 ```bash
-tool/release.sh                       # auto-bump trailing number
-tool/release.sh --next 1.2.0-beta     # override the next dev version
-tool/release.sh --yes                 # non-interactive (CI)
+dart tool/release.dart                       # auto-bump trailing number
+dart tool/release.dart --next 1.2.0-beta     # override the next dev version
+dart tool/release.dart --yes                 # non-interactive (CI)
 ```
 
 The script strips `-wip` from `pubspec.yaml` and the CHANGELOG header,

@@ -33,14 +33,14 @@ This document outlines the steps to follow when publishing a new version of the 
 This repo follows the Flutter / Dart team's `-wip` convention. The
 working `pubspec.yaml` version always ends in `-wip` and CHANGELOG
 entries land under a `## [X.Y.Z-wip]` section header during
-development. `tool/release.sh` performs the release.
+development. `dart tool/release.dart` performs the release.
 
 1. **Prepare Release**
    - [ ] Working tree is clean and on `main` (or the release branch).
    - [ ] CHANGELOG `## [X.Y.Z-wip]` section reflects everything in this release.
    - [ ] `dart pub publish --dry-run` is clean.
 
-2. **Cut the release** — run `tool/release.sh`. The script:
+2. **Cut the release** — run `dart tool/release.dart`. The script:
    - Strips `-wip` from `pubspec.yaml` and the CHANGELOG header, dates
      the section.
    - Runs `dart pub get`, `dart analyze`, `dart test`.
@@ -71,7 +71,7 @@ If an emergency fix is required for a released version:
 2. Set `pubspec.yaml` version to the patch-bump form ending in `-wip`
    (e.g. for a `v1.0.0` hotfix, use `1.0.1-wip`).
 3. Add the fix and a `## [1.0.1-wip]` CHANGELOG section.
-4. Run `tool/release.sh` to cut `1.0.1`.
+4. Run `dart tool/release.dart` to cut `1.0.1`.
 5. Cherry-pick the fix back to `main` if applicable. If main was on a
    newer wip already, just keep that wip number — don't downgrade.
 
