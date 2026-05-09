@@ -453,7 +453,8 @@ class Tracer implements APITracer {
 
   /// Like [recordSpan] but passes the started span to [fn] as an argument,
   /// so callers can attach attributes / events without going through
-  /// `Context.current`.
+  /// `Context.current`. Routes through [withSpan] for activation;
+  /// [withSpan] handles `recordException` / `setStatus(Error)` on throw.
   T startActiveSpan<T>({
     required String name,
     required T Function(APISpan span) fn,
@@ -462,19 +463,15 @@ class Tracer implements APITracer {
   }) {
     final span = startSpan(name, kind: kind, attributes: attributes);
     try {
-      return Context.current.withSpan(span).runSync(() => fn(span));
-    } catch (e, stackTrace) {
-      // The span has a status of SpanStatus.Ok on creation, set it to
-      // Error when an error occurs in the span.
-      span.recordException(e, stackTrace: stackTrace);
-      span.setStatus(SpanStatusCode.Error, e.toString());
-      rethrow;
+      return withSpan(span, () => fn(span));
     } finally {
       span.end();
     }
   }
 
-  /// Async variant of [startActiveSpan].
+  /// Async variant of [startActiveSpan]. Routes through [withSpanAsync]
+  /// for activation; [withSpanAsync] handles `recordException` /
+  /// `setStatus(Error)` on throw.
   Future<T> startActiveSpanAsync<T>({
     required String name,
     required Future<T> Function(APISpan span) fn,
@@ -483,13 +480,7 @@ class Tracer implements APITracer {
   }) async {
     final span = startSpan(name, kind: kind, attributes: attributes);
     try {
-      return await Context.current.withSpan(span).run(() => fn(span));
-    } catch (e, stackTrace) {
-      // The span has a status of SpanStatus.Ok on creation, set it to
-      // Error when an error occurs in the span.
-      span.recordException(e, stackTrace: stackTrace);
-      span.setStatus(SpanStatusCode.Error, e.toString());
-      rethrow;
+      return await withSpanAsync(span, () => fn(span));
     } finally {
       span.end();
     }
