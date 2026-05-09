@@ -7,6 +7,8 @@
 Dartastic is an [OpenTelemetry](https://opentelemetry.io/) SDK to add standard observability to Dart applications.
 Dartastic can be used with any OTel backend since it's standards-compliant.
 
+Dartastic supports all Dart and Flutter targets including, mobile, desktop, web and wasm.
+
 The Dartastic OTel SDK is in the process of being [Donation to the CNCF](https://github.com/open-telemetry/community/issues/2718)
 to become the official standard for Dart OpenTelemetry.
 
@@ -21,16 +23,16 @@ and an Observability backend customized for Flutter apps, Dart backends, and any
 OpenTelemetry data.
 
 - Dartastic Cloud - your Observability platform of choice integrated with your Dart and Flutter builds. 
-  See source stack trace from production errors in your observability platform for Dart and Flutter without revealing your source code (debug symbols, source maps) to your Observability vendors.
+  See source stack traces from production errors in your observability platform for Dart and Flutter without revealing your source code (debug symbols, source maps) to your Observability vendors.
 - Dartastic Pub Dev 
   - Use a private pub dev server to share package with your team or partners, managed access with a familiar pub.dev feel.
   - Store debug symbols and source maps with Dartastic Cloud and turn your production errors into source code lines right in your Observability platform. See source code in the UI, send source code lines with tickets or alerts.  Squash bugs fast. 
-  - Access Pro Dartastic libraries
-      - access the Dartastic Pro package that is professionally maintained and has fixes and features not available in the open source library which will be maintained by the CNCF.
-      - access to packages with advanced features not available in the open source offering such PII protection.
-      - access instrumented versions of Dart and Flutter libraries, such as Dio
-- Various levels of free, paid, and enterprise support.
-- Training on OTel for Dart and Flutter apps.
+- Pro Dartastic OTel libraries
+    - access the Dartastic Pro professionally maintained package that is has features and fixes not available in the open source library.
+    - access to packages with advanced features, such PII protection, not available in the open source offering.
+    - access instrumented versions of Dart and Flutter libraries, such as dio and go_router.
+- Paid support to deliver with confidence.
+- Training on OTel for Dart, Flutter on GCP and other platforms.
 - Professional consulting in Dart, Flutter, Observability and AI development.
 
 ## Features
@@ -67,7 +69,10 @@ OpenTelemetry data.
   - Logs with log record processors and exporters
   - Context propagation
   - Baggage management and optional `BaggageSpanProcessor` to automatically copy baggage entries as span attributes
-  - Logging is not available yet
+
+[Dartastic.io](https://dartastic.io) offers a Pro OTel libraries, a private pub.dev server for your team and partners integrated with your OTel backend - get source code lines for production errors immediately.
+
+[Flutterrific OTel](https://pub.dev/packages/flutterrific_opentelemetry) adds Dartastic OTel to Flutter apps with ease.
 
 [Dartastic OTel](https://pub.dev/packages/dartastic_opentelemetry) is suitable for Dart backends, CLIs or any
 Dart application.
@@ -75,11 +80,9 @@ Dart application.
 [Dartastic OTel API](https://pub.dev/packages/dartastic_opentelemetry_api) is the API for the Dartastic OTel SDK.
 The `dartastic_opentelemetry_api` exists as a standalone library to strictly adhere to the
 OpenTelemetry specification which separates API and the SDK.  All OpenTelemetry API classes on in
-`dartastic_opentelemetry_api`.
+`dartastic_opentelemetry_api`.  Developers should use this SDK.
 
-[Flutterrific OTel](https://pub.dev/packages/flutterrific_opentelemetry) adds Dartastic OTel to Flutter apps with ease.
 
-[Dartastic.io](https://dartastic.io) is an OpenTelemetry backend based on Elastic with a generous free tier.
 
 ## Getting started
 
@@ -89,238 +92,19 @@ dependencies:
   dartastic_opentelemetry: ^1.1.0-beta
 ```
 
+## Usage
+
 The entrypoint to the SDK is the `OTel` class.  `OTel` has static "factory" methods for all
 OTel API and SDK objects.  `OTel` needs to be initialized first to point to an OpenTelemetry
 backend.  Initialization does a lot of work under the hood including gathering a rich set of
 standard resources for any OS that Dart runs in.  It prepares for the creation of the global
-default `TracerProvider` with the serviceName and a default `Tracer`, both created on first use.
+default `TracerProvider`, `MeterProvider`, and `LoggerProvider`, with the serviceName and 
+a default `Tracer`, `Meter`, and `Logger`, all created on first use.
 
-All configuration, include Trace and Metric exporters, can be made in code via `OTel.initialize()`.  
-Codeless configuration can be done with standard OpenTelemetry environmental variables either 
-through POSIX variable or `-D` or `--define` for Dart or with `--dart-define` for Flutter apps.
-
-## Environment Variables
-
-Dartastic OpenTelemetry supports for all standard OpenTelemetry environment variables as defined in the [OpenTelemetry Specification](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/).
-
-Environment variables provide a convenient way to configure OpenTelemetry without hardcoding values. 
-All environment variable names are available as strongly-typed constants in the SDK for compile-time 
-safety and IDE autocomplete. See `lib/src/environment/env_constants.dart` for a complete list.
-
-### How It Works
-
-Dart environment variables can be set in two ways:
-
-1. **System Environment Variables** (Non-web only): Traditional POSIX environment variables
-   ```bash
-   export OTEL_SERVICE_NAME=my-service
-   dart run
-   ```
-
-2. **Compile-time Constants** (All platforms including Flutter web): Passed during compilation/execution
-
-   **For Dart commands** (`dart run`, `dart compile`, `dart test`):
-   ```bash
-   # Using --define (or -D shorthand)
-   dart run --define=OTEL_SERVICE_NAME=my-service
-   dart compile exe -D=OTEL_SERVICE_NAME=my-service -o myapp
-   dart test -DOTEL_SERVICE_NAME=my-service
-   ```
-
-   **For Flutter commands**:
-   ```bash
-   # Flutter uses --dart-define (note the different flag name)
-   flutter run --dart-define=OTEL_SERVICE_NAME=my-service
-   flutter build apk --dart-define=OTEL_SERVICE_NAME=my-service
-   ```
-
-**Priority**: Compile-time constants (`--define` or `--dart-define`) take precedence over system environment variables. 
-Explicit parameters to `OTel.initialize()` override both.  Thus, POSIX env vars cannot override `--dart-define`s and
-neither POSIX env vars nor `--dart-define`s can override code.  This is sensible and reduces security vectors.
-
-**Web Support**: Flutter web and Dart web only support compile-time constants (`--define` or `--dart-define`), as browser environments don't have access to system environment variables.
-
-### Using Environment Variable Constants
-
-All OpenTelemetry environment variable names are available as typed constants:
-
-```dart
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-
-void main() {
-  // Reference constants instead of strings
-  final serviceName = EnvironmentService.instance.getValue(otelServiceName);
-  final endpoint = EnvironmentService.instance.getValue(otelExporterOtlpEndpoint);
-  
-  print('Service: $serviceName');
-  print('Endpoint: $endpoint');
-}
-```
-
-Constants are defined for all 74 OpenTelemetry environment variables. See `lib/src/environment/env_constants.dart` for the complete list.
-
-### Supported Environmental Variables
-
-#### Service Configuration
-
-| Constant                   | Environment Variable        | Description                       | Example                                 |
-|----------------------------|-----------------------------|-----------------------------------|-----------------------------------------|
-| `otelServiceName`          | `OTEL_SERVICE_NAME`         | Sets the service name             | `my-dart-app`                           |
-| `otelResourceAttributes`   | `OTEL_RESOURCE_ATTRIBUTES`  | Additional resource attributes    | `environment=prod,region=us-west`       |
-| `otelLogLevel`             | `OTEL_LOG_LEVEL`            | SDK internal log level            | `INFO`, `DEBUG`, `WARN`, `ERROR`        |
-
-#### OTLP Exporter Configuration
-
-| Constant                      | Environment Variable           | Description              | Default                | Example                          |
-|-------------------------------|--------------------------------|--------------------------|------------------------|----------------------------------|
-| `otelExporterOtlpEndpoint`    | `OTEL_EXPORTER_OTLP_ENDPOINT`  | OTLP endpoint URL        | `http://localhost:4318` | `https://otel-collector:4317`    |
-| `otelExporterOtlpProtocol`    | `OTEL_EXPORTER_OTLP_PROTOCOL`  | Transport protocol       | `http/protobuf`        | `grpc`, `http/protobuf`, `http/json` |
-| `otelExporterOtlpHeaders`     | `OTEL_EXPORTER_OTLP_HEADERS`   | Headers (key=value,...)  | None                   | `api-key=secret,tenant=acme`     |
-| `otelExporterOtlpTimeout`     | `OTEL_EXPORTER_OTLP_TIMEOUT`   | Timeout in milliseconds  | `10000`                | `5000`                           |
-| `otelExporterOtlpCompression` | `OTEL_EXPORTER_OTLP_COMPRESSION` | Compression algorithm  | None                   | `gzip`                           |
-
-#### Signal-Specific Configuration
-
-##### Traces
-
-| Constant                              | Environment Variable                    | Description               |
-|---------------------------------------|-----------------------------------------|---------------------------|
-| `otelTracesExporter`                  | `OTEL_TRACES_EXPORTER`                  | Trace exporter type       |
-| `otelExporterOtlpTracesEndpoint`      | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`    | Traces-specific endpoint  |
-| `otelExporterOtlpTracesProtocol`      | `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`    | Traces-specific protocol  |
-| `otelExporterOtlpTracesHeaders`       | `OTEL_EXPORTER_OTLP_TRACES_HEADERS`     | Traces-specific headers   |
-
-##### Metrics
-
-| Constant                              | Environment Variable                    | Description               |
-|---------------------------------------|-----------------------------------------|---------------------------|
-| `otelMetricsExporter`                 | `OTEL_METRICS_EXPORTER`                 | Metrics exporter type     |
-| `otelExporterOtlpMetricsEndpoint`     | `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`   | Metrics-specific endpoint |
-| `otelExporterOtlpMetricsProtocol`     | `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL`   | Metrics-specific protocol |
-| `otelExporterOtlpMetricsHeaders`      | `OTEL_EXPORTER_OTLP_METRICS_HEADERS`    | Metrics-specific headers  |
-
-##### Logs
-
-| Constant                              | Environment Variable                    | Description               |
-|---------------------------------------|-----------------------------------------|---------------------------|
-| `otelLogsExporter`                    | `OTEL_LOGS_EXPORTER`                    | Logs exporter type (`otlp`, `console`, `none`) |
-| `otelExporterOtlpLogsEndpoint`        | `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`      | Logs-specific endpoint    |
-| `otelExporterOtlpLogsProtocol`        | `OTEL_EXPORTER_OTLP_LOGS_PROTOCOL`      | Logs-specific protocol    |
-| `otelExporterOtlpLogsHeaders`         | `OTEL_EXPORTER_OTLP_LOGS_HEADERS`       | Logs-specific headers     |
-
-##### Batch LogRecord Processor (BLRP)
-
-| Constant                         | Environment Variable              | Default  | Description                          |
-|----------------------------------|-----------------------------------|----------|--------------------------------------|
-| `otelBlrpScheduleDelay`          | `OTEL_BLRP_SCHEDULE_DELAY`        | `1000`   | Delay between exports (milliseconds) |
-| `otelBlrpExportTimeout`          | `OTEL_BLRP_EXPORT_TIMEOUT`        | `30000`  | Export timeout (milliseconds)        |
-| `otelBlrpMaxQueueSize`           | `OTEL_BLRP_MAX_QUEUE_SIZE`        | `2048`   | Maximum queue size                   |
-| `otelBlrpMaxExportBatchSize`     | `OTEL_BLRP_MAX_EXPORT_BATCH_SIZE` | `512`    | Maximum batch size per export        |
-
-##### LogRecord Limits
-
-| Constant                                  | Environment Variable                        | Default  | Description                        |
-|-------------------------------------------|---------------------------------------------|----------|------------------------------------|
-| `otelLogrecordAttributeValueLengthLimit`  | `OTEL_LOGRECORD_ATTRIBUTE_VALUE_LENGTH_LIMIT` | No limit | Maximum length of attribute values |
-| `otelLogrecordAttributeCountLimit`        | `OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT`       | `128`    | Maximum number of attributes       |
-
-For the complete list of all supported environment variables with full documentation, see [`lib/src/environment/env_constants.dart`](lib/src/environment/env_constants.dart).
-
-### Usage Examples
-
-#### Dart Application with Environment Variables
-
-Note the ',' in OTEL_RESOURCE_ATTRIBUTES for POSIX env vars but a ';' for --dart-define.  This is due to a Dart quirk.
-
-```bash
-# Set environment variables
-export OTEL_SERVICE_NAME=my-backend-service
-export OTEL_RESOURCE_ATTRIBUTES="service.version=1.2.3,deployment.environment=prod"
-export OTEL_EXPORTER_OTLP_ENDPOINT=https://otel-collector:4318
-export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-export OTEL_EXPORTER_OTLP_HEADERS=api-key=your-key
-export OTEL_LOG_LEVEL=DEBUG
-
-# Run your application
-dart run bin/my_app.dart
-```
-
-#### Flutter Application with --dart-define
-
-```bash
-flutter run \
-  --dart-define=OTEL_SERVICE_NAME=my-flutter-app \
-  --dart-define=OTEL_RESOURCE_ATTRIBUTES="service.version=1.2.3;deployment.environment=prod"
-  --dart-define=OTEL_EXPORTER_OTLP_ENDPOINT=https://otel-collector:4317 \
-  --dart-define=OTEL_EXPORTER_OTLP_PROTOCOL=grpc \
-  --dart-define=OTEL_EXPORTER_OTLP_HEADERS=api-key=your-key
-```
-
-#### Flutter Web (requires --dart-define)
-
-```bash
-# Web MUST use --dart-define (environment variables don't work in browsers)
-flutter run -d chrome \
-  --dart-define=OTEL_SERVICE_NAME=my-web-app \
-  --dart-define=OTEL_EXPORTER_OTLP_ENDPOINT=https://collector:4318
-```
-
-#### Combining Both (--dart-define wins)
-
-```bash
-# Environment variable
-export OTEL_SERVICE_NAME=from-environment
-
-# --dart-define takes precedence
-dart run --dart-define=OTEL_SERVICE_NAME=from-dart-define
-
-# Result: Uses "from-dart-define"
-```
-
-#### In Code
-
-```dart
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-
-void main() async {
-  // OTel.initialize() automatically reads environment variables
-  // when parameters are not explicitly provided
-  await OTel.initialize();
-  
-  // Environment variables are read automatically:
-  // - OTEL_SERVICE_NAME
-  // - OTEL_EXPORTER_OTLP_ENDPOINT
-  // - OTEL_EXPORTER_OTLP_PROTOCOL
-  // - And 90+ others...
-  
-  // Explicit parameters override environment variables
-  await OTel.initialize(
-    serviceName: 'explicit-service',  // Overrides OTEL_SERVICE_NAME
-    endpoint: 'https://override:4318', // Overrides OTEL_EXPORTER_OTLP_ENDPOINT
-  );
-  
-  // You can also read environment variables directly
-  final endpoint = EnvironmentService.instance.getValue(otelExporterOtlpEndpoint);
-  print('Using endpoint: $endpoint');
-}
-```
-
-### Testing with Environment Variables
-
-Integration tests can use real environment variables:
-
-```bash
-# Run tests with environment variables
-OTEL_SERVICE_NAME=test-service dart test
-
-# Run tests with --dart-define
-dart test --dart-define=OTEL_SERVICE_NAME=test-service
-
-# Run the provided integration test script
-./tool/test_env_vars.sh
-```
-
-The SDK includes an integration test suite (`test/integration/environment_variables_test.dart`) and a test script (`tool/test_env_vars.sh`) that demonstrates proper environment variable usage.
+All configuration, including Trace, Metric and Log exporter configuration, can be made in code
+via `OTel.initialize()`.  Codeless configuration can be done with standard OpenTelemetry
+environmental variables either through POSIX variable or `-D` or `--define` for Dart or
+with `--dart-define` for Flutter apps.  See [Running with Environment Variables] below
 
 ### Minimal Code Example
 
@@ -611,8 +395,8 @@ final span = tracer.startSpan('batch-process', links: [link]);
 
 Classifies the relationship between a span and its remote counterpart:
 
-| SpanKind   | Description                                    | Example                           |
-|------------|------------------------------------------------|-----------------------------------|
+| SpanKind   | Description                                     | Example                           |
+|------------|-------------------------------------------------|-----------------------------------|
 | `internal` | Default; internal operation with no remote side | Business logic, local computation |
 | `server`   | Server handling an incoming request             | HTTP server endpoint              |
 | `client`   | Client making an outgoing request               | HTTP client call, DB query        |
@@ -623,16 +407,16 @@ Classifies the relationship between a span and its remote counterpart:
 
 Samplers control which spans are recorded and exported. Configure via `OTel.initialize()` or per-`Tracer`.
 
-| Sampler                | Description                                      | Use Case                          |
-|------------------------|--------------------------------------------------|-----------------------------------|
-| `AlwaysOnSampler`      | Samples every span (default)                     | Development, debugging            |
-| `AlwaysOffSampler`     | Never samples                                    | Disable tracing without code changes |
-| `TraceIdRatioSampler`  | Samples by trace ID ratio (consistent per trace) | Production with consistent sampling |
-| `ProbabilitySampler`   | Samples by random probability                    | Testing, non-critical sampling    |
-| `ParentBasedSampler`   | Respects parent span's sampling decision         | Distributed tracing across services |
-| `RateLimitingSampler`  | Limits sampled traces per second (token bucket)  | Controlling overhead              |
-| `CountingSampler`      | Samples every Nth request                        | Periodic sampling                 |
-| `CompositeSampler`     | Combines samplers with AND/OR logic              | Complex sampling policies         |
+| Sampler               | Description                                      | Use Case                             |
+|-----------------------|--------------------------------------------------|--------------------------------------|
+| `AlwaysOnSampler`     | Samples every span (default)                     | Development, debugging               |
+| `AlwaysOffSampler`    | Never samples                                    | Disable tracing without code changes |
+| `TraceIdRatioSampler` | Samples by trace ID ratio (consistent per trace) | Production with consistent sampling  |
+| `ProbabilitySampler`  | Samples by random probability                    | Testing, non-critical sampling       |
+| `ParentBasedSampler`  | Respects parent span's sampling decision         | Distributed tracing across services  |
+| `RateLimitingSampler` | Limits sampled traces per second (token bucket)  | Controlling overhead                 |
+| `CountingSampler`     | Samples every Nth request                        | Periodic sampling                    |
+| `CompositeSampler`    | Combines samplers with AND/OR logic              | Complex sampling policies            |
 
 ```dart
 // Sample 10% of traces consistently
@@ -679,11 +463,11 @@ await OTel.initialize(
 
 ### Span Exporters
 
-| Exporter               | Protocol       | Description                              |
-|------------------------|----------------|------------------------------------------|
-| `ConsoleExporter`      | stdout         | Prints spans to console for debugging    |
-| `OtlpGrpcSpanExporter` | gRPC           | Exports via OTLP/gRPC (production)      |
-| `OtlpHttpSpanExporter` | HTTP/protobuf  | Exports via OTLP/HTTP (web-compatible)  |
+| Exporter               | Protocol      | Description                            |
+|------------------------|---------------|----------------------------------------|
+| `ConsoleExporter`      | stdout        | Prints spans to console for debugging  |
+| `OtlpGrpcSpanExporter` | gRPC          | Exports via OTLP/gRPC (production)     |
+| `OtlpHttpSpanExporter` | HTTP/protobuf | Exports via OTLP/HTTP (web-compatible) |
 
 ```dart
 // Console (development)
@@ -900,14 +684,14 @@ await OTel.runWithPrintInterceptionAsync(() async {
 
 ### Log Severity Levels
 
-| Severity | Use Case |
-|----------|----------|
+| Severity                               | Use Case               |
+|----------------------------------------|------------------------|
 | `Severity.TRACE` / `Severity.TRACE2-4` | Fine-grained debugging |
-| `Severity.DEBUG` / `Severity.DEBUG2-4` | Debug information |
-| `Severity.INFO` / `Severity.INFO2-4` | General information |
-| `Severity.WARN` / `Severity.WARN2-4` | Warning conditions |
-| `Severity.ERROR` / `Severity.ERROR2-4` | Error conditions |
-| `Severity.FATAL` / `Severity.FATAL2-4` | Critical failures |
+| `Severity.DEBUG` / `Severity.DEBUG2-4` | Debug information      |
+| `Severity.INFO` / `Severity.INFO2-4`   | General information    |
+| `Severity.WARN` / `Severity.WARN2-4`   | Warning conditions     |
+| `Severity.ERROR` / `Severity.ERROR2-4` | Error conditions       |
+| `Severity.FATAL` / `Severity.FATAL2-4` | Critical failures      |
 
 ### Basic Logging
 
@@ -1017,14 +801,14 @@ export OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT=128
 
 OpenTelemetry defines a fine-grained 24-level severity scale, grouped into standard levels:
 
-| Level   | Severities                      | Use Case                              |
-|---------|---------------------------------|---------------------------------------|
-| TRACE   | `TRACE`, `TRACE2-4`            | Finest-grained debugging information  |
-| DEBUG   | `DEBUG`, `DEBUG2-4`            | Debugging information                 |
-| INFO    | `INFO`, `INFO2-4`             | Normal operational messages           |
-| WARN    | `WARN`, `WARN2-4`             | Warning conditions                    |
-| ERROR   | `ERROR`, `ERROR2-4`           | Error conditions                      |
-| FATAL   | `FATAL`, `FATAL2-4`           | System is unusable                    |
+| Level | Severities          | Use Case                             |
+|-------|---------------------|--------------------------------------|
+| TRACE | `TRACE`, `TRACE2-4` | Finest-grained debugging information |
+| DEBUG | `DEBUG`, `DEBUG2-4` | Debugging information                |
+| INFO  | `INFO`, `INFO2-4`   | Normal operational messages          |
+| WARN  | `WARN`, `WARN2-4`   | Warning conditions                   |
+| ERROR | `ERROR`, `ERROR2-4` | Error conditions                     |
+| FATAL | `FATAL`, `FATAL2-4` | System is unusable                   |
 
 Severity levels support comparison operators for filtering:
 
@@ -1067,6 +851,231 @@ logger.emit(
   }),
 );
 ```
+
+## Running with Environment Variables
+
+Dartastic OpenTelemetry supports for all standard OpenTelemetry environment variables as defined
+in the [OpenTelemetry Specification](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/).
+
+Environment variables provide a convenient way to configure OpenTelemetry without hardcoding values.
+All environment variable names are available as strongly-typed constants in the SDK for compile-time
+safety and IDE autocomplete. See `lib/src/environment/env_constants.dart` for a complete list.
+
+### How It Works
+
+Dart environment variables can be set in two ways:
+
+1. **System Environment Variables** (Non-web only): Traditional POSIX environment variables
+   ```bash
+   export OTEL_SERVICE_NAME=my-service
+   dart run
+   ```
+
+2. **Compile-time Constants** (All platforms including Flutter web): Passed during compilation/execution
+
+   **For Dart commands** (`dart run`, `dart compile`, `dart test`):
+   ```bash
+   # Using --define (or -D shorthand)
+   dart run --define=OTEL_SERVICE_NAME=my-service
+   dart compile exe -D=OTEL_SERVICE_NAME=my-service -o myapp
+   dart test -DOTEL_SERVICE_NAME=my-service
+   ```
+
+   **For Flutter commands**:
+   ```bash
+   # Flutter uses --dart-define (note the different flag name)
+   flutter run --dart-define=OTEL_SERVICE_NAME=my-service
+   flutter build apk --dart-define=OTEL_SERVICE_NAME=my-service
+   ```
+
+**Priority**: Compile-time constants (`--define` or `--dart-define`) take precedence over system environment variables.
+Explicit parameters to `OTel.initialize()` override both.  Thus, POSIX env vars cannot override `--dart-define`s and
+neither POSIX env vars nor `--dart-define`s can override code.  This is sensible and reduces security vectors.
+
+**Web Support**: Flutter web and Dart web only support compile-time constants (`--define` or `--dart-define`),
+as browser environments don't have access to system environment variables.
+
+### Using Environment Variable Constants
+
+All OpenTelemetry environment variable names are available as typed constants:
+
+```dart
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+
+void main() {
+  // Reference constants instead of strings
+  final serviceName = EnvironmentService.instance.getValue(otelServiceName);
+  final endpoint = EnvironmentService.instance.getValue(otelExporterOtlpEndpoint);
+  
+  print('Service: $serviceName');
+  print('Endpoint: $endpoint');
+}
+```
+
+Constants are defined for all 74 OpenTelemetry environment variables. See `lib/src/environment/env_constants.dart` for the complete list.
+
+### Supported Environmental Variables
+
+#### Service Configuration
+
+| Constant                   | Environment Variable        | Description                       | Example                                 |
+|----------------------------|-----------------------------|-----------------------------------|-----------------------------------------|
+| `otelServiceName`          | `OTEL_SERVICE_NAME`         | Sets the service name             | `my-dart-app`                           |
+| `otelResourceAttributes`   | `OTEL_RESOURCE_ATTRIBUTES`  | Additional resource attributes    | `environment=prod,region=us-west`       |
+| `otelLogLevel`             | `OTEL_LOG_LEVEL`            | SDK internal log level            | `INFO`, `DEBUG`, `WARN`, `ERROR`        |
+
+#### OTLP Exporter Configuration
+
+| Constant                      | Environment Variable           | Description              | Default                | Example                          |
+|-------------------------------|--------------------------------|--------------------------|------------------------|----------------------------------|
+| `otelExporterOtlpEndpoint`    | `OTEL_EXPORTER_OTLP_ENDPOINT`  | OTLP endpoint URL        | `http://localhost:4318` | `https://otel-collector:4317`    |
+| `otelExporterOtlpProtocol`    | `OTEL_EXPORTER_OTLP_PROTOCOL`  | Transport protocol       | `http/protobuf`        | `grpc`, `http/protobuf`, `http/json` |
+| `otelExporterOtlpHeaders`     | `OTEL_EXPORTER_OTLP_HEADERS`   | Headers (key=value,...)  | None                   | `api-key=secret,tenant=acme`     |
+| `otelExporterOtlpTimeout`     | `OTEL_EXPORTER_OTLP_TIMEOUT`   | Timeout in milliseconds  | `10000`                | `5000`                           |
+| `otelExporterOtlpCompression` | `OTEL_EXPORTER_OTLP_COMPRESSION` | Compression algorithm  | None                   | `gzip`                           |
+
+#### Signal-Specific Configuration
+
+##### Traces
+
+| Constant                              | Environment Variable                    | Description               |
+|---------------------------------------|-----------------------------------------|---------------------------|
+| `otelTracesExporter`                  | `OTEL_TRACES_EXPORTER`                  | Trace exporter type       |
+| `otelExporterOtlpTracesEndpoint`      | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`    | Traces-specific endpoint  |
+| `otelExporterOtlpTracesProtocol`      | `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`    | Traces-specific protocol  |
+| `otelExporterOtlpTracesHeaders`       | `OTEL_EXPORTER_OTLP_TRACES_HEADERS`     | Traces-specific headers   |
+
+##### Metrics
+
+| Constant                              | Environment Variable                    | Description               |
+|---------------------------------------|-----------------------------------------|---------------------------|
+| `otelMetricsExporter`                 | `OTEL_METRICS_EXPORTER`                 | Metrics exporter type     |
+| `otelExporterOtlpMetricsEndpoint`     | `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`   | Metrics-specific endpoint |
+| `otelExporterOtlpMetricsProtocol`     | `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL`   | Metrics-specific protocol |
+| `otelExporterOtlpMetricsHeaders`      | `OTEL_EXPORTER_OTLP_METRICS_HEADERS`    | Metrics-specific headers  |
+
+##### Logs
+
+| Constant                              | Environment Variable                    | Description               |
+|---------------------------------------|-----------------------------------------|---------------------------|
+| `otelLogsExporter`                    | `OTEL_LOGS_EXPORTER`                    | Logs exporter type (`otlp`, `console`, `none`) |
+| `otelExporterOtlpLogsEndpoint`        | `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`      | Logs-specific endpoint    |
+| `otelExporterOtlpLogsProtocol`        | `OTEL_EXPORTER_OTLP_LOGS_PROTOCOL`      | Logs-specific protocol    |
+| `otelExporterOtlpLogsHeaders`         | `OTEL_EXPORTER_OTLP_LOGS_HEADERS`       | Logs-specific headers     |
+
+##### Batch LogRecord Processor (BLRP)
+
+| Constant                         | Environment Variable              | Default  | Description                          |
+|----------------------------------|-----------------------------------|----------|--------------------------------------|
+| `otelBlrpScheduleDelay`          | `OTEL_BLRP_SCHEDULE_DELAY`        | `1000`   | Delay between exports (milliseconds) |
+| `otelBlrpExportTimeout`          | `OTEL_BLRP_EXPORT_TIMEOUT`        | `30000`  | Export timeout (milliseconds)        |
+| `otelBlrpMaxQueueSize`           | `OTEL_BLRP_MAX_QUEUE_SIZE`        | `2048`   | Maximum queue size                   |
+| `otelBlrpMaxExportBatchSize`     | `OTEL_BLRP_MAX_EXPORT_BATCH_SIZE` | `512`    | Maximum batch size per export        |
+
+##### LogRecord Limits
+
+| Constant                                  | Environment Variable                        | Default  | Description                        |
+|-------------------------------------------|---------------------------------------------|----------|------------------------------------|
+| `otelLogrecordAttributeValueLengthLimit`  | `OTEL_LOGRECORD_ATTRIBUTE_VALUE_LENGTH_LIMIT` | No limit | Maximum length of attribute values |
+| `otelLogrecordAttributeCountLimit`        | `OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT`       | `128`    | Maximum number of attributes       |
+
+For the complete list of all supported environment variables with full documentation, see [`lib/src/environment/env_constants.dart`](lib/src/environment/env_constants.dart).
+
+### Environment Usage Examples
+
+#### Dart Application with Environment Variables
+
+Note the ',' in OTEL_RESOURCE_ATTRIBUTES for POSIX env vars but a ';' for --dart-define.  This is due to a Dart quirk.
+
+```bash
+# Set environment variables
+export OTEL_SERVICE_NAME=my-backend-service
+export OTEL_RESOURCE_ATTRIBUTES="service.version=1.2.3,deployment.environment=prod"
+export OTEL_EXPORTER_OTLP_ENDPOINT=https://otel-collector:4318
+export OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+export OTEL_EXPORTER_OTLP_HEADERS=api-key=your-key
+export OTEL_LOG_LEVEL=DEBUG
+
+# Run your application
+dart run bin/my_app.dart
+```
+
+#### Flutter Application with --dart-define
+
+```bash
+flutter run \
+  --dart-define=OTEL_SERVICE_NAME=my-flutter-app \
+  --dart-define=OTEL_RESOURCE_ATTRIBUTES="service.version=1.2.3;deployment.environment=prod"
+  --dart-define=OTEL_EXPORTER_OTLP_ENDPOINT=https://otel-collector:4317 \
+  --dart-define=OTEL_EXPORTER_OTLP_PROTOCOL=grpc \
+  --dart-define=OTEL_EXPORTER_OTLP_HEADERS=api-key=your-key
+```
+
+#### Flutter Web (requires --dart-define)
+
+```bash
+# Web MUST use --dart-define (environment variables don't work in browsers)
+flutter run -d chrome \
+  --dart-define=OTEL_SERVICE_NAME=my-web-app \
+  --dart-define=OTEL_EXPORTER_OTLP_ENDPOINT=https://collector:4318
+```
+
+#### Combining Both (--dart-define wins)
+
+```bash
+# Environment variable
+export OTEL_SERVICE_NAME=from-environment
+
+# --dart-define takes precedence
+dart run --dart-define=OTEL_SERVICE_NAME=from-dart-define
+
+# Result: Uses "from-dart-define"
+```
+
+#### In Code
+
+```dart
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+
+void main() async {
+  // OTel.initialize() automatically reads environment variables
+  // when parameters are not explicitly provided
+  await OTel.initialize();
+  
+  // Environment variables are read automatically:
+  // - OTEL_SERVICE_NAME
+  // - OTEL_EXPORTER_OTLP_ENDPOINT
+  // - OTEL_EXPORTER_OTLP_PROTOCOL
+  // - And 90+ others...
+  
+  // Explicit parameters override environment variables
+  await OTel.initialize(
+    serviceName: 'explicit-service',  // Overrides OTEL_SERVICE_NAME
+    endpoint: 'https://override:4318', // Overrides OTEL_EXPORTER_OTLP_ENDPOINT
+  );
+  
+  // You can also read environment variables directly
+  final endpoint = EnvironmentService.instance.getValue(otelExporterOtlpEndpoint);
+  print('Using endpoint: $endpoint');
+}
+```
+
+### Testing with Environment Variables
+
+Integration tests can use real environment variables:
+
+```bash
+# Run tests with environment variables
+OTEL_SERVICE_NAME=test-service dart test
+
+# Run tests with --dart-define
+dart test --dart-define=OTEL_SERVICE_NAME=test-service
+
+# Run the provided integration test script
+./tool/test_env_vars.sh
+```
+
+The SDK includes an integration test suite (`test/integration/environment_variables_test.dart`) and a test script (`tool/test_env_vars.sh`) that demonstrates proper environment variable usage.
 
 
 ## Integration with Dartastic/Flutterrific
