@@ -65,6 +65,7 @@ Future<void> main(List<String> arguments) async {
     print('\nHandling exception...');
     // The span has a status of SpanStatus.Ok on creation, set it to
     // Error when an error occurs in the span.
+    // Per the OTel spec: recordException first, then setStatus(Error).
     rootSpan.recordException(e, stackTrace: stackTrace);
     rootSpan.setStatus(
       SpanStatusCode.Error,

@@ -188,55 +188,31 @@ void main() {
     );
   });
 
-  group('recordSpan', () {
-    test('creates span, runs function, and ends span', () async {
-      final tracer = OTel.tracer();
-
-      tracer.recordSpan(name: 'record-span', fn: () => 'done');
-
-      await OTel.tracerProvider().forceFlush();
-
-      expect(exporter.hasSpanWithName('record-span'), isTrue);
-      final exportedSpan = exporter.findSpanByName('record-span')!;
-      expect(exportedSpan.isEnded, isTrue);
-    });
-
-    test('returns function result', () {
-      final tracer = OTel.tracer();
-
-      final result = tracer.recordSpan(
-        name: 'record-span-result',
-        fn: () => 99,
-      );
-
-      expect(result, equals(99));
-    });
-
+  group('OTel.withSpan', () {
     test(
-      'on error: records exception, sets error, ends span, rethrows',
+      'on error: records exception, sets error, rethrows; caller ends span',
       () async {
         final tracer = OTel.tracer();
+        final span = tracer.startSpan('with-span-error');
 
         expect(
-          () => tracer.recordSpan(
-            name: 'record-span-error',
-            fn: () {
-              throw StateError('recordSpan test error');
-            },
-          ),
+          () => OTel.withSpan(span, () {
+            throw StateError('OTel.withSpan test error');
+          }),
           throwsA(
             isA<StateError>().having(
               (e) => e.message,
               'message',
-              equals('recordSpan test error'),
+              equals('OTel.withSpan test error'),
             ),
           ),
         );
+        span.end();
 
         await OTel.tracerProvider().forceFlush();
 
-        expect(exporter.hasSpanWithName('record-span-error'), isTrue);
-        final exportedSpan = exporter.findSpanByName('record-span-error')!;
+        expect(exporter.hasSpanWithName('with-span-error'), isTrue);
+        final exportedSpan = exporter.findSpanByName('with-span-error')!;
         expect(exportedSpan.isEnded, isTrue);
         expect(exportedSpan.status, equals(SpanStatusCode.Error));
         expect(exportedSpan.spanEvents, isNotNull);
@@ -248,53 +224,48 @@ void main() {
     );
   });
 
-  group('recordSpanAsync', () {
-    test('creates span, runs async fn, and ends span', () async {
+  group('OTel.withSpanAsync', () {
+    test('returns the future result on success', () async {
       final tracer = OTel.tracer();
+      final span = tracer.startSpan('with-span-async-ok');
 
-      final result = await tracer.recordSpanAsync(
-        name: 'record-async-span',
-        fn: () async {
-          await Future<void>.delayed(const Duration(milliseconds: 5));
-          return 'async-done';
-        },
-      );
+      final result = await OTel.withSpanAsync(span, () async {
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+        return 'async-done';
+      });
+      span.end();
 
       expect(result, equals('async-done'));
 
       await OTel.tracerProvider().forceFlush();
-
-      expect(exporter.hasSpanWithName('record-async-span'), isTrue);
-      final exportedSpan = exporter.findSpanByName('record-async-span')!;
-      expect(exportedSpan.isEnded, isTrue);
+      expect(exporter.hasSpanWithName('with-span-async-ok'), isTrue);
     });
 
     test(
-      'on error: records exception, sets error, ends span, rethrows',
+      'on error: records exception, sets error, rethrows; caller ends span',
       () async {
         final tracer = OTel.tracer();
+        final span = tracer.startSpan('with-span-async-error');
 
         await expectLater(
-          () => tracer.recordSpanAsync(
-            name: 'record-async-error',
-            fn: () async {
-              await Future<void>.delayed(const Duration(milliseconds: 5));
-              throw ArgumentError('recordSpanAsync test error');
-            },
-          ),
+          () => OTel.withSpanAsync(span, () async {
+            await Future<void>.delayed(const Duration(milliseconds: 5));
+            throw ArgumentError('OTel.withSpanAsync test error');
+          }),
           throwsA(
             isA<ArgumentError>().having(
               (e) => e.message,
               'message',
-              equals('recordSpanAsync test error'),
+              equals('OTel.withSpanAsync test error'),
             ),
           ),
         );
+        span.end();
 
         await OTel.tracerProvider().forceFlush();
 
-        expect(exporter.hasSpanWithName('record-async-error'), isTrue);
-        final exportedSpan = exporter.findSpanByName('record-async-error')!;
+        expect(exporter.hasSpanWithName('with-span-async-error'), isTrue);
+        final exportedSpan = exporter.findSpanByName('with-span-async-error')!;
         expect(exportedSpan.isEnded, isTrue);
         expect(exportedSpan.status, equals(SpanStatusCode.Error));
         expect(exportedSpan.spanEvents, isNotNull);

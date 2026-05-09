@@ -126,65 +126,53 @@ void main() {
       },
     );
 
-    test('recordSpan automatically handles span creation and ending', () {
-      // Use recordSpan to execute code with a new span
-      final result = tracer.recordSpan(
-        name: 'record-span',
-        fn: () {
-          // Code inside this function is executed with a span
+    test('OTel.withSpan activates the span for fn', () {
+      final span = tracer.startSpan('with-span-active');
+      try {
+        OTel.withSpan(span, () {
           final currentSpan = tracer.currentSpan;
           expect(currentSpan, isNotNull);
-          expect(currentSpan!.name, equals('record-span'));
-
-          // Return a value to test that return values work properly
-          return 'record-success';
-        },
-      );
-
-      // Verify return value
-      expect(result, equals('record-success'));
+          expect(currentSpan!.name, equals('with-span-active'));
+        });
+      } finally {
+        span.end();
+      }
     });
 
     test(
-      'recordSpanAsync automatically handles async span creation and ending',
+      'OTel.withSpanAsync activates the span across awaits',
       () async {
-        // Use recordSpanAsync to execute async code with a new span
-        final result = await tracer.recordSpanAsync(
-          name: 'record-async-span',
-          fn: () async {
-            // Simulate async work
+        final span = tracer.startSpan('with-span-async-active');
+        try {
+          final result = await OTel.withSpanAsync(span, () async {
             await Future<void>.delayed(const Duration(milliseconds: 10));
-
-            // Code inside this function is executed with a span
             final currentSpan = tracer.currentSpan;
             expect(currentSpan, isNotNull);
-            expect(currentSpan!.name, equals('record-async-span'));
-
-            // Return a value to test that return values work properly
-            return 'record-async-success';
-          },
-        );
-
-        // Verify return value
-        expect(result, equals('record-async-success'));
+            expect(currentSpan!.name, equals('with-span-async-active'));
+            return 'async-success';
+          });
+          expect(result, equals('async-success'));
+        } finally {
+          span.end();
+        }
       },
     );
 
-    test('recordSpan sets error status on exception', () {
-      // Try to use recordSpan with code that throws an exception
+    test('OTel.withSpan propagates exceptions out of fn', () {
+      final span = tracer.startSpan('error-span');
       try {
-        tracer.recordSpan(
-          name: 'error-span',
-          fn: () {
+        try {
+          OTel.withSpan(span, () {
             throw Exception('Test error');
-          },
-        );
-        // ignore: dead_code
-        fail('Expected exception to be propagated');
-      } catch (e) {
-        // Exception should propagate out
-        expect(e, isA<Exception>());
-        expect(e.toString(), contains('Test error'));
+          });
+          // ignore: dead_code
+          fail('Expected exception to be propagated');
+        } catch (e) {
+          expect(e, isA<Exception>());
+          expect(e.toString(), contains('Test error'));
+        }
+      } finally {
+        span.end();
       }
     });
   });

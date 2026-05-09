@@ -240,18 +240,19 @@ void main() {
       }
     });
 
-    test('recordSpan creates and automatically ends a span', () async {
-      print('Starting test: recordSpan creates and automatically ends a span');
+    test('OTel.withSpan + caller-side end exports the span', () async {
+      print('Starting test: OTel.withSpan + caller-side end exports the span');
 
-      // Act
-      final result = tracer.recordSpan(
-        name: 'auto-record-span',
-        fn: () {
-          return 'success';
-        },
-      );
+      final span = tracer.startSpan('auto-record-span');
+      String? result;
+      try {
+        OTel.withSpan(span, () {
+          result = 'success';
+        });
+      } finally {
+        span.end();
+      }
 
-      // Assert
       expect(result, equals('success'));
 
       // Force flush to ensure span is exported

@@ -627,6 +627,24 @@ class OTel {
     );
   }
 
+  /// Activates [span] for the duration of [fn] (so `Context.current.span`
+  /// returns it inside `fn`) and records any thrown exception with
+  /// `SpanStatusCode.Error`. The caller is still responsible for
+  /// `span.end()` — typically in a `finally` block.
+  ///
+  /// Convenience over `OTel.tracer().withSpan(span, fn)` for callers
+  /// that don't already have a [Tracer] reference.
+  static T withSpan<T>(Span span, T Function() fn) =>
+      tracer().withSpan(span, fn);
+
+  /// Async variant of [withSpan]. Propagates the active span across
+  /// `await` boundaries via Zone-based context.
+  static Future<T> withSpanAsync<T>(
+    Span span,
+    Future<T> Function() fn,
+  ) =>
+      tracer().withSpanAsync(span, fn);
+
   /// Adds or replaces a named MeterProvider.
   ///
   /// This allows for creating multiple MeterProviders with different configurations,

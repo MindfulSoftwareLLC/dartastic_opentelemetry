@@ -467,29 +467,53 @@ try {
 }
 ```
 
-### Automatic Span Management
+### Activating a span — `OTel.withSpan` / `OTel.withSpanAsync`
 
-The Tracer provides convenience methods that automatically end spans and capture exceptions:
+`OTel.withSpan` and `OTel.withSpanAsync` activate a span for the
+duration of `fn` (so `Context.current.span` returns it inside `fn`)
+and record any thrown exception with `SpanStatusCode.Error` before
+rethrowing. The caller still owns `span.end()` — the canonical OTel
+lifecycle is `try / catch / finally`:
 
 ```dart
-// Synchronous — span is ended and exceptions recorded automatically
-final result = tracer.recordSpan(
-  name: 'compute-result',
-  fn: () => computeExpensiveValue(),
-);
+final span = OTel.tracer().startSpan('compute-result');
+try {
+  final result = OTel.withSpan(span, () => computeExpensiveValue());
+} catch (e, stackTrace) {
+  // The span has a status of SpanStatus.Ok on creation, set it to
+  // Error when an error occurs in the span.
+  span.recordException(e, stackTrace: stackTrace);
+  span.setStatus(SpanStatusCode.Error, e.toString());
+  rethrow;
+} finally {
+  span.end();
+}
 
 // Async version
-final data = await tracer.recordSpanAsync(
-  name: 'fetch-data',
-  kind: SpanKind.client,
-  fn: () => httpClient.get('/api/data'),
-);
+final fetchSpan = OTel.tracer().startSpan('fetch-data', kind: SpanKind.client);
+try {
+  final data = await OTel.withSpanAsync(
+    fetchSpan,
+    () => httpClient.get('/api/data'),
+  );
+} catch (e, stackTrace) {
+  fetchSpan.recordException(e, stackTrace: stackTrace);
+  fetchSpan.setStatus(SpanStatusCode.Error, e.toString());
+  rethrow;
+} finally {
+  fetchSpan.end();
+}
+```
 
-// Active span — sets the span in Context automatically.
-tracer.startActiveSpan(
+If you also want the span as a callback argument and want the span
+ended for you, use `tracer.startActiveSpan` / `startActiveSpanAsync`:
+
+```dart
+// Active span — span is in Context.current AND passed to fn,
+// and ended automatically when fn returns.
+OTel.tracer().startActiveSpan(
   name: 'process-request',
   fn: (span) {
-    // span is active in Context.current.
     span.setStringAttribute(ExampleAttribute.requestId.key, 'abc-123');
     return processRequest();
   },

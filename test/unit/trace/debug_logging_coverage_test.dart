@@ -446,7 +446,7 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
-  // Tracer withSpan / withSpanAsync / recordSpan
+  // Tracer withSpan / withSpanAsync
   // ---------------------------------------------------------------------------
 
   test('tracer withSpan logs debug', () {
@@ -498,45 +498,6 @@ void main() {
       reason: 'Expected Tracer withSpanAsync completed debug log',
     );
     span.end();
-  });
-
-  test('tracer recordSpan with debug', () {
-    final tracer = OTel.tracer();
-    logOutput.clear();
-
-    final result = tracer.recordSpan(
-      name: 'record-span-test',
-      fn: () => 'done',
-    );
-    expect(result, equals('done'));
-
-    // recordSpan starts a span, runs fn, then ends the span. All with debug.
-    expect(
-      logOutput.any(
-        (msg) => msg.contains('Tracer') && msg.contains('Starting span'),
-      ),
-      isTrue,
-      reason: 'Expected Tracer startSpan debug log from recordSpan',
-    );
-  });
-
-  test('tracer recordSpanAsync with debug', () async {
-    final tracer = OTel.tracer();
-    logOutput.clear();
-
-    final result = await tracer.recordSpanAsync(
-      name: 'record-span-async-test',
-      fn: () async => 'async-done',
-    );
-    expect(result, equals('async-done'));
-
-    expect(
-      logOutput.any(
-        (msg) => msg.contains('Tracer') && msg.contains('Starting span'),
-      ),
-      isTrue,
-      reason: 'Expected Tracer startSpan debug log from recordSpanAsync',
-    );
   });
 
   // ---------------------------------------------------------------------------
