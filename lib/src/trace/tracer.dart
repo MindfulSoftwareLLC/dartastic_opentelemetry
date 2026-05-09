@@ -85,7 +85,7 @@ class Tracer implements APITracer {
   Resource? get resource => _provider.resource;
 
   @override
-  T withSpan<T>(covariant Span span, T Function() fn) {
+  T withSpan<T>(APISpan span, T Function() fn) {
     if (OTelLog.isDebug()) {
       OTelLog.debug(
         'Tracer: withSpan called with span ${span.name}, spanId: ${span.spanContext.spanId}',
@@ -111,8 +111,13 @@ class Tracer implements APITracer {
           if (OTelLog.isError()) {
             OTelLog.error('Tracer: Exception in withSpan for ${span.name}: $e');
           }
-          span.recordException(e, stackTrace: stackTrace);
-          span.setStatus(SpanStatusCode.Error, e.toString());
+          // SDK-specific exception recording only when the span is one
+          // of ours. Foreign / no-op APISpans skip this branch — we
+          // still activate them and rethrow.
+          if (span is Span) {
+            span.recordException(e, stackTrace: stackTrace);
+            span.setStatus(SpanStatusCode.Error, e.toString());
+          }
           rethrow;
         }
       });
@@ -129,10 +134,7 @@ class Tracer implements APITracer {
   }
 
   @override
-  Future<T> withSpanAsync<T>(
-    covariant Span span,
-    Future<T> Function() fn,
-  ) async {
+  Future<T> withSpanAsync<T>(APISpan span, Future<T> Function() fn) async {
     if (OTelLog.isDebug()) {
       OTelLog.debug(
         'Tracer: withSpanAsync called with span ${span.name}, spanId: ${span.spanContext.spanId}',
@@ -153,8 +155,13 @@ class Tracer implements APITracer {
               'Tracer: Exception in withSpanAsync for ${span.name}: $e',
             );
           }
-          span.recordException(e, stackTrace: stackTrace);
-          span.setStatus(SpanStatusCode.Error, e.toString());
+          // SDK-specific exception recording only when the span is one
+          // of ours. Foreign / no-op APISpans skip this branch — we
+          // still activate them and rethrow.
+          if (span is Span) {
+            span.recordException(e, stackTrace: stackTrace);
+            span.setStatus(SpanStatusCode.Error, e.toString());
+          }
           rethrow;
         }
       });
@@ -408,7 +415,7 @@ class Tracer implements APITracer {
   /// [withSpan] handles `recordException` / `setStatus(Error)` on throw.
   T startActiveSpan<T>({
     required String name,
-    required T Function(Span span) fn,
+    required T Function(APISpan span) fn,
     SpanKind kind = SpanKind.internal,
     Attributes? attributes,
   }) {
@@ -425,7 +432,7 @@ class Tracer implements APITracer {
   /// `setStatus(Error)` on throw.
   Future<T> startActiveSpanAsync<T>({
     required String name,
-    required Future<T> Function(Span span) fn,
+    required Future<T> Function(APISpan span) fn,
     SpanKind kind = SpanKind.internal,
     Attributes? attributes,
   }) async {

@@ -634,13 +634,13 @@ class OTel {
   ///
   /// Convenience over `OTel.tracer().withSpan(span, fn)` for callers
   /// that don't already have a [Tracer] reference.
-  static T withSpan<T>(Span span, T Function() fn) =>
+  static T withSpan<T>(APISpan span, T Function() fn) =>
       tracer().withSpan(span, fn);
 
   /// Async variant of [withSpan]. Propagates the active span across
   /// `await` boundaries via Zone-based context.
   static Future<T> withSpanAsync<T>(
-    Span span,
+    APISpan span,
     Future<T> Function() fn,
   ) =>
       tracer().withSpanAsync(span, fn);

@@ -135,6 +135,120 @@ class _TimerFailExporter implements SpanExporter {
 }
 
 // ---------------------------------------------------------------------------
+// Wrapper span that overrides isValid to return false
+// ---------------------------------------------------------------------------
+
+class _InvalidSpanWrapper implements APISpan {
+  final APISpan _delegate;
+
+  _InvalidSpanWrapper(this._delegate);
+
+  @override
+  bool get isValid => false; // Always invalid
+
+  @override
+  String get name => _delegate.name;
+  @override
+  SpanContext get spanContext => _delegate.spanContext;
+  @override
+  SpanKind get kind => _delegate.kind;
+  @override
+  Attributes get attributes => _delegate.attributes;
+  @override
+  set attributes(Attributes newAttributes) =>
+      _delegate.attributes = newAttributes;
+  @override
+  DateTime get startTime => _delegate.startTime;
+  @override
+  DateTime? get endTime => _delegate.endTime;
+  @override
+  bool get isEnded => _delegate.isEnded;
+  @override
+  bool get isRecording => _delegate.isRecording;
+  @override
+  SpanStatusCode get status => _delegate.status;
+  @override
+  String? get statusDescription => _delegate.statusDescription;
+  @override
+  APISpan? get parentSpan => _delegate.parentSpan;
+  @override
+  SpanContext? get parentSpanContext => _delegate.parentSpanContext;
+  @override
+  List<SpanEvent>? get spanEvents => _delegate.spanEvents;
+  @override
+  List<SpanLink>? get spanLinks => _delegate.spanLinks;
+  @override
+  SpanId get spanId => _delegate.spanId;
+  @override
+  InstrumentationScope get instrumentationScope =>
+      _delegate.instrumentationScope;
+  @override
+  void end({DateTime? endTime, SpanStatusCode? spanStatus}) =>
+      _delegate.end(endTime: endTime, spanStatus: spanStatus);
+  @override
+  void setStatus(SpanStatusCode code, [String? description]) =>
+      _delegate.setStatus(code, description);
+  @override
+  void addAttributes(Attributes attributes) =>
+      _delegate.addAttributes(attributes);
+  @override
+  void addEvent(SpanEvent spanEvent) => _delegate.addEvent(spanEvent);
+  @override
+  void addEventNow(String name, [Attributes? attributes]) =>
+      _delegate.addEventNow(name, attributes);
+  @override
+  void addEvents(Map<String, Attributes?> spanEvents) =>
+      _delegate.addEvents(spanEvents);
+  @override
+  void addLink(SpanContext spanContext, [Attributes? attributes]) =>
+      _delegate.addLink(spanContext, attributes);
+  @override
+  void addSpanLink(SpanLink spanLink) => _delegate.addSpanLink(spanLink);
+  @override
+  void recordException(
+    Object exception, {
+    StackTrace? stackTrace,
+    Attributes? attributes,
+    bool? escaped,
+  }) =>
+      _delegate.recordException(
+        exception,
+        stackTrace: stackTrace,
+        attributes: attributes,
+        escaped: escaped,
+      );
+  @override
+  void setBoolAttribute(String name, bool value) =>
+      _delegate.setBoolAttribute(name, value);
+  @override
+  void setBoolListAttribute(String name, List<bool> value) =>
+      _delegate.setBoolListAttribute(name, value);
+  @override
+  void setDoubleAttribute(String name, double value) =>
+      _delegate.setDoubleAttribute(name, value);
+  @override
+  void setDoubleListAttribute(String name, List<double> value) =>
+      _delegate.setDoubleListAttribute(name, value);
+  @override
+  void setIntAttribute(String name, int value) =>
+      _delegate.setIntAttribute(name, value);
+  @override
+  void setIntListAttribute(String name, List<int> value) =>
+      _delegate.setIntListAttribute(name, value);
+  @override
+  void setStringAttribute<T>(String name, String value) =>
+      _delegate.setStringAttribute<T>(name, value);
+  @override
+  void setStringListAttribute<T>(String name, List<String> value) =>
+      _delegate.setStringListAttribute<T>(name, value);
+  @override
+  void setDateTimeAsStringAttribute(String name, DateTime value) =>
+      _delegate.setDateTimeAsStringAttribute(name, value);
+  @override
+  void updateName(String name) => _delegate.updateName(name);
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -207,12 +321,53 @@ void main() {
     });
   });
 
-  // The "invalid span warning" tests for withSpan/withSpanAsync were
-  // removed when those overrides narrowed their parameter to
-  // `covariant Span` — there is no longer a way to pass a span whose
-  // isValid returns false through normal SDK construction, so the
-  // defensive log is unreachable. The log itself is left in place but
-  // intentionally untested.
+  // =========================================================================
+  // tracer.dart - withSpan invalid span warning path
+  // =========================================================================
+  group('Tracer withSpan/withSpanAsync invalid span paths', () {
+    test('withSpan logs warning for invalid span', () {
+      final tracer = OTel.tracer();
+
+      // Create a valid span, then wrap it in an invalid wrapper
+      final realSpan = tracer.startSpan('will-be-invalid');
+      final invalidSpan = _InvalidSpanWrapper(realSpan);
+
+      // withSpan should complete but log the invalid-span warning
+      final result = tracer.withSpan(invalidSpan, () => 42);
+      expect(result, equals(42));
+
+      expect(
+        logOutput.any((msg) => msg.contains('invalid after withSpan')),
+        isTrue,
+        reason: 'Expected invalid span warning in withSpan',
+      );
+
+      realSpan.end();
+    });
+
+    test('withSpanAsync logs warning for invalid span', () async {
+      final tracer = OTel.tracer();
+
+      // Create a valid span, then wrap it in an invalid wrapper
+      final realSpan = tracer.startSpan('will-be-invalid-async');
+      final invalidSpan = _InvalidSpanWrapper(realSpan);
+
+      // Exercises the invalid span warning path in withSpanAsync
+      final result = await tracer.withSpanAsync(
+        invalidSpan,
+        () async => 'hello',
+      );
+      expect(result, equals('hello'));
+
+      expect(
+        logOutput.any((msg) => msg.contains('invalid after withSpanAsync')),
+        isTrue,
+        reason: 'Expected invalid span warning in withSpanAsync',
+      );
+
+      realSpan.end();
+    });
+  });
 
   // =========================================================================
   // tracer.dart - parentSpan without context spanContext
