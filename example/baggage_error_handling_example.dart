@@ -1,8 +1,27 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'package:dartastic_opentelemetry/src/otel.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+
+/// Example-only baggage keys for things not in the OTel semantic
+/// conventions. Always check the conventions first before inventing keys
+/// (e.g. `UserSemantics.userId` covers `user.id`). Rename this in your
+/// own code (e.g. `CheckoutBaggage`) so the names reflect your domain.
+enum ExampleBaggage implements OTelSemantic {
+  userRegion('user.region'),
+  userLanguage('user.language'),
+  userTheme('user.theme'),
+  serviceLogLevel('service.log_level'),
+  requestId('request.id');
+
+  @override
+  final String key;
+
+  @override
+  String toString() => key;
+
+  const ExampleBaggage(this.key);
+}
 
 /// Custom exception for baggage-related errors
 class BaggageException implements Exception {
@@ -24,19 +43,21 @@ class UserPreferenceService {
       if (baggage == null) {
         throw StateError('Baggage expected but non-existent.');
       }
-      // Validate required baggage entries exist
-      final userId = _getRequiredBaggageValue(baggage, 'user.id');
-      final region = _getRequiredBaggageValue(baggage, 'user.region');
+      // Validate required baggage entries exist.
+      final userId =
+          _getRequiredBaggageValue(baggage, UserSemantics.userId.key);
+      final region =
+          _getRequiredBaggageValue(baggage, ExampleBaggage.userRegion.key);
 
-      // Optional preferences with defaults
+      // Optional preferences with defaults.
       final language = _getOptionalBaggageValue(
         baggage,
-        'user.language',
+        ExampleBaggage.userLanguage.key,
         defaultValue: 'en-US',
       );
       final theme = _getOptionalBaggageValue(
         baggage,
-        'user.theme',
+        ExampleBaggage.userTheme.key,
         defaultValue: 'light',
       );
       return {
@@ -86,8 +107,10 @@ class ConfigurationService {
     try {
       final baggage = Context.currentWithBaggage().baggage;
 
-      // Validate environment
-      final env = baggage!.getEntry('service.environment')?.value;
+      // Validate environment.
+      final env = baggage!
+          .getEntry(DeploymentResource.deploymentEnvironmentName.key)
+          ?.value;
       if (env != null && !_validEnvironments.contains(env)) {
         throw BaggageException(
           'Invalid environment value',
@@ -95,8 +118,9 @@ class ConfigurationService {
         );
       }
 
-      // Validate log level
-      final logLevel = baggage.getEntry('service.log_level')?.value;
+      // Validate log level.
+      final logLevel =
+          baggage.getEntry(ExampleBaggage.serviceLogLevel.key)?.value;
       if (logLevel != null && !_validLogLevels.contains(logLevel)) {
         throw BaggageException(
           'Invalid log level',
@@ -122,10 +146,10 @@ Future<void> safeBaggageExample() async {
       // Get current baggage safely
       var baggage = Context.currentWithBaggage().baggage;
 
-      // Add entries with validation
+      // Add entries with validation.
       baggage = _safelyAddBaggageEntry(
         baggage!,
-        'request.id',
+        ExampleBaggage.requestId.key,
         'req_123',
         validator: (value) => value.startsWith('req_'),
         errorMessage: 'Invalid request ID format',
@@ -179,10 +203,10 @@ bool _isValidBaggageKey(String key) {
 }
 
 Future<void> main() async {
-  // Example with missing required value
+  // Example with missing required value.
   final invalidContext = OTel.context().withBaggage(
-    OTel.baggage().copyWith('user.language', 'fr-FR'),
-    // Note: missing required user.id
+    OTel.baggage().copyWith(ExampleBaggage.userLanguage.key, 'fr-FR'),
+    // Note: missing required user.id (UserSemantics.userId).
   );
 
   await invalidContext.run(() async {
@@ -191,9 +215,10 @@ Future<void> main() async {
     print('Preferences with missing required value: $prefs');
   });
 
-  // Example with invalid value
+  // Example with invalid value.
   final invalidValueContext = OTel.context().withBaggage(
-    OTel.baggage().copyWith('service.environment', 'invalid_env'),
+    OTel.baggage().copyWith(
+        DeploymentResource.deploymentEnvironmentName.key, 'invalid_env'),
   );
 
   await invalidValueContext.run(() async {

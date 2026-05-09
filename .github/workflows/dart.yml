@@ -53,6 +53,21 @@ jobs:
           chmod +x tool/test_all_env_vars.sh
           ./tool/test_all_env_vars.sh
 
+  test-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: 'stable'
+      - uses: browser-actions/setup-chrome@v1
+      - name: Install dependencies
+        run: dart pub get
+      - name: Run web tests in Chrome
+        run: |
+          chmod +x tool/web_tests.sh
+          ./tool/web_tests.sh
+
   pana:
     runs-on: ubuntu-latest
     steps:

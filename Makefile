@@ -1,6 +1,6 @@
 # Makefile for Dartastic OpenTelemetry SDK
 
-.PHONY: clean test test-safe coverage analyze format
+.PHONY: clean test test-safe test-web coverage analyze format check
 
 default: test-safe
 
@@ -21,10 +21,12 @@ test-web:
 	chmod +x tool/web_tests.sh
 	./tool/web_tests.sh
 
-# Run tests safely in sequence for problematic tests
+# Run unit + integration + performance tests with managed concurrency
+# (avoids memory issues seen with plain `dart test`).
+# Same script CI uses.
 test-safe:
-	chmod +x tool/run_tests.sh
-	./tool/run_tests.sh
+	chmod +x tool/test.sh
+	./tool/test.sh
 
 # Run tests with coverage
 coverage:

@@ -215,7 +215,11 @@ void main() {
       final span = tracer.startSpan('test-span');
 
       final logger = OTel.logger('test-logger');
-      logger.info('Log within span');
+      // Per the OTel spec, startSpan does not activate the span. Use
+      // withSpan so logger.info captures the span via Context.current.
+      tracer.withSpan(span, () {
+        logger.info('Log within span');
+      });
 
       span.end();
 

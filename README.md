@@ -7,15 +7,31 @@
 Dartastic is an [OpenTelemetry](https://opentelemetry.io/) SDK to add standard observability to Dart applications.
 Dartastic can be used with any OTel backend since it's standards-compliant.
 
+The Dartastic OTel SDK is in the process of being [Donation to the CNCF](https://github.com/open-telemetry/community/issues/2718)
+to become the official standard for Dart OpenTelemetry.
+
 Flutter developers should use the [Flutterific OpenTelemetry SDK](https://pub.dev/packages/flutterrific_opentelemetry/) which builds on top of Dartastic OTel.
 
-The Dartastic OTel SDK is in the process of being [Donation to the CNCF](https://github.com/open-telemetry/community/issues/2718) 
-to become the offical standard for Dart and Flutter OpenTelemetry.
+Dartastic and Flutterrific OTel are made with 💙 by Michael Bushe at [Mindful Software](https://mindfulsoftware.com)
+
+## Commercial Support
 
 [Dartastic.io](https://dartastic.io) provides an OpenTelemetry support, training, consulting
 and an Observability backend customized for Flutter apps, Dart backends, and any other service or process that produces
 OpenTelemetry data.
 
+- Dartastic Cloud - your Observability platform of choice integrated with your Dart and Flutter builds. 
+  See source stack trace from production errors in your observability platform for Dart and Flutter without revealing your source code (debug symbols, source maps) to your Observability vendors.
+- Dartastic Pub Dev 
+  - Use a private pub dev server to share package with your team or partners, managed access with a familiar pub.dev feel.
+  - Store debug symbols and source maps with Dartastic Cloud and turn your production errors into source code lines right in your Observability platform. See source code in the UI, send source code lines with tickets or alerts.  Squash bugs fast. 
+  - Access Pro Dartastic libraries
+      - access the Dartastic Pro package that is professionally maintained and has fixes and features not available in the open source library which will be maintained by the CNCF.
+      - access to packages with advanced features not available in the open source offering such PII protection.
+      - access instrumented versions of Dart and Flutter libraries, such as Dio
+- Various levels of free, paid, and enterprise support.
+- Training on OTel for Dart and Flutter apps.
+- Professional consulting in Dart, Flutter, Observability and AI development.
 
 ## Features
 
@@ -65,24 +81,12 @@ OpenTelemetry specification which separates API and the SDK.  All OpenTelemetry 
 
 [Dartastic.io](https://dartastic.io) is an OpenTelemetry backend based on Elastic with a generous free tier.
 
-Dartastic and Flutterrific OTel are made with 💙 by Michael Bushe at [Mindful Software](https://mindfulsoftware.com) with support from:
-* [SEMPlicity, Inc.](https://semplicityinc.com), the Elastic experts, who provided the initial funding.
-* [The Anspar Foundation](https://anspar.org) and [CureHHT](https://curehht.org) for support of Michael Bushe's OTel work and early adopter status in [software used in FDA clinical trials](https://github.com/Cure-HHT/).
-
-Michael is eternally grateful for the individual developers and small companies for their contributions. 
-
-Michael explicitly expresses his disthanks for the massive commercial companies in telcom, healthcare, point of sale, and more 
-who took time and provided nothing but requests for free software to support their 
-billions of customers.  Don't forget:
-
-[Mindful Software](https://mindfulsoftware.com) offers paid support, consulting and developing on Flutter, OpenTelemetry and AI-driven Product Development.
-
 ## Getting started
 
 Include this in your pubspec.yaml:
 ```
 dependencies:
-  dartastic_opentelemetry: ^1.0.2-alpha
+  dartastic_opentelemetry: ^1.1.0-beta
 ```
 
 The entrypoint to the SDK is the `OTel` class.  `OTel` has static "factory" methods for all
@@ -323,25 +327,37 @@ The SDK includes an integration test suite (`test/integration/environment_variab
 ```dart
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
-void main() async {
-  // Initialize - automatically reads environment variables
+Future<void> main() async {
+  // Initialize - automatically reads environment variables.
   await OTel.initialize();
 
-  // Get the default tracer
+  // Get the default tracer.
   final tracer = OTel.tracer();
 
-  // Create a span
+  // Per the OpenTelemetry spec, tracer.startSpan() does NOT activate the
+  // span. Use tracer.withSpanAsync to make the span active for the
+  // duration of doWork() so that any spans started inside are parented
+  // to it via Context.current.
   final span = tracer.startSpan('my-operation');
-  
   try {
-    // Your code here
-    await doWork();
+    await tracer.withSpanAsync(span, doWork);
+    // Set Ok on success so the span is not left Unset.
+    span.setStatus(SpanStatusCode.Ok);
   } catch (e, stackTrace) {
+    // Record the exception as a span event and mark the span as Error.
     span.recordException(e, stackTrace: stackTrace);
-    span.setStatus(SpanStatusCode.error, 'Operation failed');
+    span.setStatus(SpanStatusCode.Error, e.toString());
+    rethrow;
   } finally {
+    // Always end the span — even on error.
     span.end();
   }
+
+  await OTel.shutdown();
+}
+
+Future<void> doWork() async {
+  // Your business logic here.
 }
 ```
 
@@ -377,22 +393,31 @@ Future<void> main() async {
   // Get the default tracer
   final tracer = OTel.tracer();
 
-  // Create a span
+  // Create a span and make it active for the duration of doWork() via
+  // withSpanAsync. Per the OpenTelemetry spec, startSpan does NOT activate
+  // the span — child spans started inside the closure are parented to
+  // `span` via Context.current.
+  // Prefer typed enum keys over raw strings — UserSemantics.userId is
+  // the OTel semantic-convention key. For app-specific attributes that
+  // don't have a semantic convention, define your own typed enum (see
+  // the Span Attributes section below).
   final span = tracer.startSpan(
     'main-operation',
     kind: SpanKind.server,
     attributes: OTel.attributesFromMap({
-      'user.id': 'user-123',
+      UserSemantics.userId.key: 'user-123',
+      // app-specific key — would normally come from your own typed enum:
       'request.type': 'example',
     }),
   );
 
   try {
-    await doWork();
+    await tracer.withSpanAsync(span, doWork);
     span.setStatus(SpanStatusCode.Ok);
   } catch (e, stackTrace) {
     span.recordException(e, stackTrace: stackTrace);
     span.setStatus(SpanStatusCode.Error, e.toString());
+    rethrow;
   } finally {
     span.end();
   }
@@ -407,25 +432,37 @@ Spans form a tree by linking child spans to parent spans via context:
 
 ```dart
 final parentSpan = tracer.startSpan('parent-operation');
-
-// Create a child span linked to the parent
-final childSpan = tracer.startSpan(
-  'database.query',
-  kind: SpanKind.client,
-  context: OTel.context(spanContext: parentSpan.spanContext),
-  attributes: OTel.attributesFromMap({
-    'db.system': 'postgresql',
-    'db.operation': 'SELECT',
-  }),
-);
-
 try {
-  await queryDatabase();
-  childSpan.setStatus(SpanStatusCode.Ok);
+  // Create a child span linked to the parent. Passing the parent's
+  // SpanContext via `context:` parents this span without requiring the
+  // parent to be active in Context.current.
+  final childSpan = tracer.startSpan(
+    'database.query',
+    kind: SpanKind.client,
+    context: OTel.context(spanContext: parentSpan.spanContext),
+    attributes: OTel.attributesFromMap({
+      DatabaseResource.dbSystem.key: 'postgresql',
+      DatabaseResource.dbOperation.key: 'SELECT',
+    }),
+  );
+  try {
+    await queryDatabase();
+    childSpan.setStatus(SpanStatusCode.Ok);
+  } catch (e, stackTrace) {
+    childSpan.recordException(e, stackTrace: stackTrace);
+    childSpan.setStatus(SpanStatusCode.Error, e.toString());
+    rethrow;
+  } finally {
+    childSpan.end();
+  }
+  parentSpan.setStatus(SpanStatusCode.Ok);
+} catch (e, stackTrace) {
+  parentSpan.recordException(e, stackTrace: stackTrace);
+  parentSpan.setStatus(SpanStatusCode.Error, e.toString());
+  rethrow;
 } finally {
-  childSpan.end();
+  parentSpan.end();
 }
-parentSpan.end();
 ```
 
 ### Automatic Span Management
@@ -446,12 +483,12 @@ final data = await tracer.recordSpanAsync(
   fn: () => httpClient.get('/api/data'),
 );
 
-// Active span — sets the span in Context automatically
+// Active span — sets the span in Context automatically.
 tracer.startActiveSpan(
   name: 'process-request',
   fn: (span) {
-    // span is active in Context.current
-    span.setStringAttribute('request.id', 'abc-123');
+    // span is active in Context.current.
+    span.setStringAttribute(ExampleAttribute.requestId.key, 'abc-123');
     return processRequest();
   },
 );
@@ -462,38 +499,70 @@ tracer.startActiveSpan(
 Attributes are typed key-value pairs on spans. OTel restricts values to `String`, `bool`, `int`, `double`,
 and `List`s of those types.
 
+**Prefer typed enum keys over raw strings.** The API ships enums for every namespace in the
+[OTel semantic conventions](https://opentelemetry.io/docs/specs/semconv/) — `HttpResource`,
+`UrlResource`, `ServerResource`, `ClientResource`, `DatabaseResource`, `UserSemantics`,
+`SessionViewSemantics`, etc. Using them prevents typos, gives you autocomplete, and tracks the
+spec as it evolves. For app-specific attributes that aren't in a convention, define your own
+enum implementing `OTelSemantic`:
+
 ```dart
-// Type-safe individual attributes
+// In your own app, name this for your domain (e.g. `CheckoutAttribute`).
+enum ExampleAttribute implements OTelSemantic {
+  requestType('request.type'),
+  processingStage('processing.stage'),
+  durationMs('duration_ms'),
+  tags('tags'),
+  cacheKey('cache.key'),
+  cacheRegion('cache.region'),
+  linkType('link.type'),
+  authMethod('auth.method'),
+  orderId('order.id'),
+  requestId('request.id');
+
+  @override
+  final String key;
+  @override
+  String toString() => key;
+  const ExampleAttribute(this.key);
+}
+```
+
+```dart
+// Type-safe individual attributes — mix API convention enums with your
+// own ExampleAttribute for non-convention keys.
 final span = tracer.startSpan('operation', attributes: OTel.attributes([
-  OTel.attributeString('http.method', 'GET'),
-  OTel.attributeInt('http.status_code', 200),
-  OTel.attributeBool('http.is_error', false),
-  OTel.attributeDouble('http.duration_ms', 123.45),
-  OTel.attributeStringList('http.headers', ['Accept', 'Content-Type']),
+  OTel.attributeString(HttpResource.requestMethod.key, 'GET'),
+  OTel.attributeInt(HttpResource.responseStatusCode.key, 200),
+  OTel.attributeDouble(ExampleAttribute.durationMs.key, 123.45),
+  OTel.attributeStringList(ExampleAttribute.tags.key, ['payment', 'critical']),
 ]));
 
-// Or from a map (types are inferred automatically)
+// Or from a map (types are inferred automatically).
 final span = tracer.startSpan('operation',
   attributes: OTel.attributesFromMap({
-    'http.method': 'GET',
-    'http.status_code': 200,
+    HttpResource.requestMethod.key: 'GET',
+    HttpResource.responseStatusCode.key: 200,
   }),
 );
 
-// Add attributes after creation
-span.setStringAttribute('http.url', 'https://api.example.com/data');
-span.setIntAttribute('http.response_content_length', 1024);
-span.addAttributes(OTel.attributesFromMap({'processing.stage': 'complete'}));
+// Add attributes after creation.
+span.setStringAttribute(UrlResource.urlFull.key, 'https://api.example.com/data');
+span.setIntAttribute(HttpResource.responseBodySize.key, 1024);
+span.addAttributes(OTel.attributesFromMap({
+  ExampleAttribute.processingStage.key: 'complete',
+}));
 ```
 
 ### Span Events
 
-Events are time-stamped annotations on a span:
+Events are time-stamped annotations on a span. Event names themselves are user-defined,
+but event attributes still benefit from typed enum keys:
 
 ```dart
 span.addEvent(OTel.spanEventNow(
   'cache.hit',
-  OTel.attributesFromMap({'cache.key': 'user:123'}),
+  OTel.attributesFromMap({ExampleAttribute.cacheKey.key: 'user:123'}),
 ));
 
 span.addEventNow('validation.passed');
@@ -506,7 +575,7 @@ Links connect spans across traces — useful for batch processing or fan-out pat
 ```dart
 final link = OTel.spanLink(
   otherSpan.spanContext,
-  attributes: OTel.attributesFromMap({'link.type': 'triggers'}),
+  attributes: OTel.attributesFromMap({ExampleAttribute.linkType.key: 'triggers'}),
 );
 
 final span = tracer.startSpan('batch-process', links: [link]);
@@ -753,17 +822,17 @@ void main() async {
     severityNumber: Severity.INFO,
   );
 
-  // Log with attributes
+  // Log with attributes — prefer typed enum keys.
   logger.emit(
     body: 'User logged in',
     severityNumber: Severity.INFO,
     attributes: OTel.attributesFromMap({
-      'user.id': 'user123',
-      'user.role': 'admin',
+      UserSemantics.userId.key: 'user123',
+      UserSemantics.userRole.key: 'admin',
     }),
   );
 
-  // Log an error with exception
+  // Log an error with exception.
   try {
     throw Exception('Something went wrong');
   } catch (e, stackTrace) {
@@ -771,8 +840,8 @@ void main() async {
       body: 'Operation failed: $e',
       severityNumber: Severity.ERROR,
       attributes: OTel.attributesFromMap({
-        'exception.type': e.runtimeType.toString(),
-        'exception.stacktrace': stackTrace.toString(),
+        ExceptionResource.exceptionType.key: e.runtimeType.toString(),
+        ExceptionResource.exceptionStacktrace.key: stackTrace.toString(),
       }),
     );
   }
@@ -820,33 +889,34 @@ await OTel.runWithPrintInterceptionAsync(() async {
 // Get a logger from the default provider
 final logger = OTel.loggerProvider().getLogger('my-service');
 
-// Emit a simple log
+// Emit a simple log. Prefer typed enum keys (UserSemantics, ExampleAttribute,
+// HttpResource, etc.) over raw strings.
 logger.emit(
   severityNumber: Severity.INFO,
   body: 'User successfully logged in.',
   attributes: OTel.attributesFromMap({
-    'user.id': 'user-123',
-    'auth.method': 'oauth',
+    UserSemantics.userId.key: 'user-123',
+    ExampleAttribute.authMethod.key: 'oauth',
   }),
 );
 
-// Warning log
+// Warning log.
 logger.emit(
   severityNumber: Severity.WARN,
   body: 'Cache miss for requested key.',
   attributes: OTel.attributesFromMap({
-    'cache.key': 'profile_42',
-    'cache.region': 'us-east-1',
+    ExampleAttribute.cacheKey.key: 'profile_42',
+    ExampleAttribute.cacheRegion.key: 'us-east-1',
   }),
 );
 
-// Error log
+// Error log.
 logger.emit(
   severityNumber: Severity.ERROR,
   body: 'Failed to connect to database.',
   attributes: OTel.attributesFromMap({
-    'db.system': 'postgresql',
-    'error.type': 'ConnectionTimeout',
+    DatabaseResource.dbSystem.key: 'postgresql',
+    ErrorSemantics.errorType.key: 'ConnectionTimeout',
   }),
 );
 ```
@@ -862,7 +932,7 @@ try {
     severityNumber: Severity.INFO,
     body: 'Processing order.',
     context: Context.current, // Links this log to the active span
-    attributes: OTel.attributesFromMap({'order.id': 'order-789'}),
+    attributes: OTel.attributesFromMap({ExampleAttribute.orderId.key: 'order-789'}),
   );
   await processOrder();
 } finally {
@@ -1000,22 +1070,6 @@ This project aims to align with Cloud Native Computing Foundation (CNCF) best pr
 ## License
 
 Apache 2.0 - See the [LICENSE](LICENSE) file for details.
-
-## Commercial Support
-
-[Mindful Software](https://mindfulsoftware.com) offers paid Dartastic support, and consulting and developing on Flutter, OpenTelemetry and UI Architecture.
-
-[Dartastic.io](https://dartastic.io) provides an OpenTelemetry support, training, consulting, enhanced private packages
-and an Observability backend customized for Flutter apps, Dart backends, and any other service or process that produces
-OpenTelemetry data.
-Dartastic.io is built on open standards, specifically catering to Flutter and Dart applications with the ability to show
-Dart source code lines and function calls from production errors and logs.
-
-Dartastic.io offers:
-- Free, paid, and enterprise support
-- Packages with advanced features not available in the open source offering
-- Native code integration and Real-Time User Monitoring for Flutter apps
-- Multiple backends (Elastic, Grafana) customized for Flutter apps.
 
 ## AI Usage
 Practically all code in Dartastic was generated via Claude. EVERY character 

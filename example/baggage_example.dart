@@ -1,9 +1,30 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'package:dartastic_opentelemetry/src/otel.dart';
-import 'package:dartastic_opentelemetry/src/trace/export/baggage_span_processor.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+
+/// Example-only baggage keys for things not in the OTel semantic
+/// conventions. For any key that *is* in the conventions, use the API
+/// enum instead (e.g. `DeploymentResource.deploymentEnvironmentName`
+/// for `deployment.environment.name`). Rename this in your own code
+/// (e.g. `CheckoutBaggage`) so the names reflect your domain.
+enum ExampleBaggage implements OTelSemantic {
+  customerId('customer.id'),
+  userRegion('user.region'),
+  serverId('server.id'),
+  transactionId('transaction.id'),
+  requestOrigin('request.origin'),
+  deploymentRegion('deployment.region'),
+  userTenant('user.tenant');
+
+  @override
+  final String key;
+
+  @override
+  String toString() => key;
+
+  const ExampleBaggage(this.key);
+}
 
 Future<void> main() async {
   await OTel.initialize(
@@ -16,30 +37,33 @@ Future<void> main() async {
   // Make baggage automatically appear in span attributes
   tracerProvider.addSpanProcessor(const BaggageSpanProcessor());
 
-  final baggage = OTel.baggage(
-      {'customer.id': OTel.baggageEntry('123', 'source=mobile app')});
+  final baggage = OTel.baggage({
+    ExampleBaggage.customerId.key:
+        OTel.baggageEntry('123', 'source=mobile app'),
+  });
 
-  // Since baggage is immutable, each operation returns a new instance
-  // Chain operations to build up the baggage you need
-  // Best practice: Use dot notation for key namespacing to avoid conflicts
+  // Since baggage is immutable, each operation returns a new instance.
+  // Chain operations to build up the baggage you need. Use typed enum
+  // keys (ExampleBaggage above, or DeploymentResource for the standard
+  // OTel-semconv keys) instead of raw strings.
   final enrichedBaggage = baggage
-      .copyWith('deployment.environment', 'staging')
-      .copyWith('user.region', 'us-west', 'source=user profile')
-      .copyWith('client.session.id', 'session-123');
+      .copyWith(DeploymentResource.deploymentEnvironmentName.key, 'staging')
+      .copyWith(ExampleBaggage.userRegion.key, 'us-west', 'source=user profile')
+      .copyWith(SessionViewSemantics.sessionId.key, 'session-123');
 
-  // Baggage is always associated with a Context
-  // This allows it to automatically propagate through your application
+  // Baggage is always associated with a Context.
+  // This allows it to automatically propagate through your application.
   final context = OTel.context().withBaggage(enrichedBaggage);
 
-  // Run your code within the context to have access to the baggage
+  // Run your code within the context to have access to the baggage.
   await context.run(() async {
-    // You can always access the current baggage from the current context
-    // If no baggage exists, you get an empty baggage (never null)
+    // You can always access the current baggage from the current context.
+    // If no baggage exists, you get an empty baggage (never null).
     final currentBaggage = Context.currentWithBaggage().baggage;
 
-    // Baggage entries can be accessed individually
+    // Baggage entries can be accessed individually.
     print(
-      'Current customer ID: ${currentBaggage!.getEntry('customer.id')?.value}',
+      'Current customer ID: ${currentBaggage!.getEntry(ExampleBaggage.customerId.key)?.value}',
     );
 
     // Or you can get all entries at once
@@ -69,11 +93,12 @@ Future<void> main() async {
         }
       });
 
-      // Each isolate can modify its own copy of the baggage
-      // Changes don't affect the parent isolate
-      // Best practice: Document any baggage modifications for debugging
-      final updatedBaggage = isolateBaggage.copyWith('server.id', 'worker-1')
-        ..copyWithout('deployment.environment');
+      // Each isolate can modify its own copy of the baggage.
+      // Changes don't affect the parent isolate.
+      // Best practice: Document any baggage modifications for debugging.
+      final updatedBaggage = isolateBaggage.copyWith(
+          ExampleBaggage.serverId.key, 'worker-1')
+        ..copyWithout(DeploymentResource.deploymentEnvironmentName.key);
 
       return isolateContext.withBaggage(updatedBaggage);
     });
@@ -85,8 +110,8 @@ Future<void> distributedTracingExample() async {
   // Baggage is particularly useful in distributed systems
   // It carries context across service boundaries
   final incomingBaggage = OTel.baggage()
-      .copyWith('transaction.id', 'abc123')
-      .copyWith('request.origin', 'mobile-app');
+      .copyWith(ExampleBaggage.transactionId.key, 'abc123')
+      .copyWith(ExampleBaggage.requestOrigin.key, 'mobile-app');
 
   // Best practice: Always preserve incoming baggage
   // Add to it rather than replacing it
@@ -97,7 +122,7 @@ Future<void> distributedTracingExample() async {
     // This helps with debugging and monitoring
     final serviceBaggage = Context.currentWithBaggage()
         .baggage!
-        .copyWith('service.instance', 'backend-01')
+        .copyWith(ServiceResource.serviceInstanceId.key, 'backend-01')
         .copyWith(ServiceResource.serviceVersion.key, '2.1.0');
 
     // Best practice: Update context when baggage changes
@@ -124,7 +149,7 @@ Future<void> monitoringExample() async {
   final baseContext = OTel.context().withBaggage(
     OTel.baggage()
         .copyWith(ServiceResource.serviceName.key, 'payment-processor')
-        .copyWith('deployment.region', 'us-west-2'),
+        .copyWith(ExampleBaggage.deploymentRegion.key, 'us-west-2'),
   );
 
   await baseContext.run(() async {
@@ -134,13 +159,13 @@ Future<void> monitoringExample() async {
     final processingBaggage = Context.currentWithBaggage()
         .baggage!
         .copyWith(
-          'transaction.id',
+          ExampleBaggage.transactionId.key,
           'tx_789012',
-        ) // High cardinality: Many possible values
+        ) // High cardinality: many possible values.
         .copyWith(
-          'user.tenant',
+          ExampleBaggage.userTenant.key,
           'tenant_456',
-        ); // High cardinality: Many possible values
+        ); // High cardinality: many possible values.
 
     // Best practice: Scope high-cardinality baggage
     // Only use it where the detailed information is needed

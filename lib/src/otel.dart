@@ -501,10 +501,19 @@ class OTel {
   /// The name is for debugging purposes only.
   ///
   /// @param name The name of the context key (for debugging only)
+  /// @param isTransferable When `true`, values stored under this key transfer
+  ///   across isolate boundaries via `Context.runIsolate()`. Defaults to `false`
+  ///   (custom keys are local to their isolate). Built-in `Baggage` and
+  ///   `SpanContext` always transfer regardless of this flag.
   /// @return A new ContextKey instance
-  static ContextKey<T> contextKey<T>(String name) {
+  static ContextKey<T> contextKey<T>(String name,
+      {bool isTransferable = false}) {
     _getAndCacheOtelFactory();
-    return _otelFactory!.contextKey(name, ContextKey.generateContextKeyId());
+    return _otelFactory!.contextKey<T>(
+      name,
+      ContextKey.generateContextKeyId(),
+      isTransferable: isTransferable,
+    );
   }
 
   /// Creates a new Context with optional Baggage and SpanContext.

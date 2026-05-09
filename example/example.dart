@@ -6,11 +6,30 @@
 /// This example shows how to:
 /// - Initialize the SDK with basic configuration
 /// - Create and use a tracer
-/// - Create spans with attributes and events
+/// - Create spans with attributes and events using typed enum keys
 /// - Properly shut down the SDK
 library;
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+
+/// Define your own typed enum for application-specific attribute keys that
+/// aren't covered by the OTel semantic conventions. This keeps attribute
+/// keys typo-free and discoverable. Always check the OTel semantic
+/// conventions first (https://opentelemetry.io/docs/specs/semconv/) — if
+/// a convention exists, use the corresponding enum (e.g. UserSemantics,
+/// HttpResource) instead of inventing your own.
+enum ExampleSemantics implements OTelSemantic {
+  requestType('request.type'),
+  itemsProcessed('items.processed');
+
+  @override
+  final String key;
+
+  @override
+  String toString() => key;
+
+  const ExampleSemantics(this.key);
+}
 
 Future<void> main() async {
   // Initialize the OpenTelemetry SDK
@@ -25,13 +44,15 @@ Future<void> main() async {
   // Get the default tracer
   final tracer = OTel.tracer();
 
-  // Create a parent span for the main operation
+  // Create a parent span for the main operation. Prefer enum keys over
+  // raw strings — UserSemantics.userId is the OTel-spec key, ExampleSemantics
+  // is our app-specific enum defined above.
   final parentSpan = tracer.startSpan(
     'main-operation',
     kind: SpanKind.server,
     attributes: OTel.attributesFromMap({
-      'user.id': 'user-123',
-      'request.type': 'example',
+      UserSemantics.userId.key: 'user-123',
+      ExampleSemantics.requestType.key: 'example',
     }),
   );
 
@@ -40,11 +61,11 @@ Future<void> main() async {
     await performDatabaseQuery(tracer, parentSpan);
     await callExternalService(tracer, parentSpan);
 
-    // Add an event to the span
+    // Add an event to the span. Event names are user-defined (no semconv).
     parentSpan.addEvent(
       OTel.spanEventNow(
         'operation.completed',
-        OTel.attributesFromMap({'items.processed': 42}),
+        OTel.attributesFromMap({ExampleSemantics.itemsProcessed.key: 42}),
       ),
     );
 
@@ -78,9 +99,13 @@ Future<void> performDatabaseQuery(Tracer tracer, Span parentSpan) async {
   );
 
   try {
-    // Simulate database query
+    // Simulate database query.
     await Future<void>.delayed(const Duration(milliseconds: 50));
     span.setStatus(SpanStatusCode.Ok);
+  } catch (e, stackTrace) {
+    span.recordException(e, stackTrace: stackTrace);
+    span.setStatus(SpanStatusCode.Error, e.toString());
+    rethrow;
   } finally {
     span.end();
   }
@@ -94,26 +119,28 @@ Future<void> callExternalService(Tracer tracer, Span parentSpan) async {
     context: OTel.context(spanContext: parentSpan.spanContext),
     attributes: OTel.attributesFromMap({
       HttpResource.requestMethod.key: 'GET',
-      // TODO: Replace with UrlResource.urlFull.key once added to the API
-      // semantics (OTel renamed http.url → url.full).
-      'url.full': 'https://api.example.com/data',
-      'url.path': '/data',
+      UrlResource.urlFull.key: 'https://api.example.com/data',
+      UrlResource.urlPath.key: '/data',
     }),
   );
 
   try {
-    // Simulate HTTP request
+    // Simulate HTTP request.
     await Future<void>.delayed(const Duration(milliseconds: 100));
 
-    // Add response attributes
+    // Add response attributes.
     span.addAttributes(
       OTel.attributesFromMap({
         HttpResource.responseStatusCode.key: 200,
-        'http.response_content_length': 1024,
+        HttpResource.responseBodySize.key: 1024,
       }),
     );
 
     span.setStatus(SpanStatusCode.Ok);
+  } catch (e, stackTrace) {
+    span.recordException(e, stackTrace: stackTrace);
+    span.setStatus(SpanStatusCode.Error, e.toString());
+    rethrow;
   } finally {
     span.end();
   }

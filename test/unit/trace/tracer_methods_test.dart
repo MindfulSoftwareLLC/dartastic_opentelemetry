@@ -157,6 +157,35 @@ void main() {
         span.end();
       },
     );
+
+    test(
+      'isolates active span across concurrent async operations',
+      () async {
+        // Regression test for the Zone-based context migration. With the old
+        // `Context.current = ...` pattern, concurrent withSpanAsync calls
+        // would race on the global static and one operation would observe
+        // the other's active span after an await. Zones make each operation
+        // independent.
+        final tracer = OTel.tracer();
+        final spanA = tracer.startSpan('A');
+        final spanB = tracer.startSpan('B');
+
+        final futureA = tracer.withSpanAsync(spanA, () async {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+          return tracer.currentSpan;
+        });
+        final futureB = tracer.withSpanAsync(spanB, () async {
+          await Future<void>.delayed(const Duration(milliseconds: 5));
+          return tracer.currentSpan;
+        });
+
+        final results = await Future.wait([futureA, futureB]);
+        expect(results[0], same(spanA));
+        expect(results[1], same(spanB));
+        spanA.end();
+        spanB.end();
+      },
+    );
   });
 
   group('recordSpan', () {
