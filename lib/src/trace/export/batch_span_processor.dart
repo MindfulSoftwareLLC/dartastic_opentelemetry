@@ -130,25 +130,28 @@ class BatchSpanProcessor implements SpanProcessor {
     // Nothing to do on name update
   }
 
-  /// Exports a batch of spans from the queue to the configured exporter.
-  ///
-  /// This method acquires a lock on the queue, extracts spans up to the maximum batch size,
-  /// and then sends them to the exporter. If an error occurs during export, it is logged
-  /// but not propagated (no retry mechanism is implemented by default).
-  ///
-  /// @return A future that completes when the export is finished
+  /// Periodic export path: called by the timer. Exports up to one batch
+  /// of [BatchSpanProcessorConfig.maxExportBatchSize] spans and returns.
+  /// No-op once [_isShutdown] is set.
   Future<void> _exportBatch() async {
     if (_isShutdown) {
       return;
     }
+    await _exportSingleBatch();
+  }
 
+  /// Pulls up to [BatchSpanProcessorConfig.maxExportBatchSize] spans
+  /// off the queue and hands them to the exporter. Bypasses the
+  /// [_isShutdown] check so it remains usable from inside [shutdown]
+  /// (which sets the flag last). Returns true if any spans were
+  /// exported, false if the queue was empty or the exporter threw.
+  Future<bool> _exportSingleBatch() async {
     final List<Span> spansToExport = [];
 
     await _lock.synchronized(() {
       final batchSize = _spanQueue.length > _config.maxExportBatchSize
           ? _config.maxExportBatchSize
           : _spanQueue.length;
-
       for (var i = 0; i < batchSize; i++) {
         if (_spanQueue.isEmpty) break;
         spansToExport.add(_spanQueue.removeFirst());
@@ -156,16 +159,28 @@ class BatchSpanProcessor implements SpanProcessor {
     });
 
     if (spansToExport.isEmpty) {
-      return;
+      return false;
     }
 
     try {
       await exporter.export(spansToExport);
+      return true;
     } catch (e) {
       if (OTelLog.isError()) {
         OTelLog.error('Error exporting batch of spans: $e');
       }
-      // Consider implementing retry logic here
+      // Bail out — don't loop forever on a broken exporter.
+      return false;
+    }
+  }
+
+  /// Drains the queue completely, in batches. Used by [forceFlush] and
+  /// [shutdown]. Stops on the first export failure (so a broken
+  /// exporter can't wedge shutdown forever).
+  Future<void> _drainQueue() async {
+    while (_spanQueue.isNotEmpty) {
+      final exported = await _exportSingleBatch();
+      if (!exported) break;
     }
   }
 
@@ -174,8 +189,7 @@ class BatchSpanProcessor implements SpanProcessor {
     if (_isShutdown) {
       return;
     }
-
-    await _exportBatch();
+    await _drainQueue();
   }
 
   @override
@@ -184,11 +198,17 @@ class BatchSpanProcessor implements SpanProcessor {
       return;
     }
 
-    _isShutdown = true;
+    // Stop the periodic timer first so it can't race with our drain.
     _timer?.cancel();
 
-    // Export any remaining spans
-    await forceFlush();
+    // Drain queued spans BEFORE setting `_isShutdown` — otherwise the
+    // `_isShutdown` early-return inside `_exportBatch` would skip them.
+    // `_drainQueue` calls `_exportSingleBatch` directly so it's
+    // unaffected by the flag in any case, but the ordering keeps the
+    // behavior obvious.
+    await _drainQueue();
+
+    _isShutdown = true;
 
     // Shutdown the exporter
     await exporter.shutdown();
