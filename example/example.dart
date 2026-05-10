@@ -50,9 +50,9 @@ Future<void> main() async {
   final parentSpan = tracer.startSpan(
     'main-operation',
     kind: SpanKind.server,
-    attributes: OTel.attributesFromMap({
-      UserSemantics.userId.key: 'user-123',
-      ExampleSemantics.requestType.key: 'example',
+    attributes: OTel.attributesFromSemanticMap({
+      UserSemantics.userId: 'user-123',
+      ExampleSemantics.requestType: 'example',
     }),
   );
 
@@ -65,7 +65,7 @@ Future<void> main() async {
     parentSpan.addEvent(
       OTel.spanEventNow(
         'operation.completed',
-        OTel.attributesFromMap({ExampleSemantics.itemsProcessed.key: 42}),
+        OTel.attributesFromSemanticMap({ExampleSemantics.itemsProcessed: 42}),
       ),
     );
   } catch (e, stackTrace) {
@@ -89,10 +89,10 @@ Future<void> performDatabaseQuery(Tracer tracer, Span parentSpan) async {
     kind: SpanKind.client,
     // Link to parent span via context
     context: OTel.context(spanContext: parentSpan.spanContext),
-    attributes: OTel.attributesFromMap({
-      DatabaseResource.dbSystem.key: 'postgresql',
-      DatabaseResource.dbOperation.key: 'SELECT',
-      DatabaseResource.dbName.key: 'users',
+    attributes: OTel.attributesFromSemanticMap({
+      DatabaseResource.dbSystem: 'postgresql',
+      DatabaseResource.dbOperation: 'SELECT',
+      DatabaseResource.dbName: 'users',
     }),
   );
 
@@ -116,10 +116,10 @@ Future<void> callExternalService(Tracer tracer, Span parentSpan) async {
     'http.request',
     kind: SpanKind.client,
     context: OTel.context(spanContext: parentSpan.spanContext),
-    attributes: OTel.attributesFromMap({
-      HttpResource.requestMethod.key: 'GET',
-      UrlResource.urlFull.key: 'https://api.example.com/data',
-      UrlResource.urlPath.key: '/data',
+    attributes: OTel.attributesFromSemanticMap({
+      HttpResource.requestMethod: 'GET',
+      UrlResource.urlFull: 'https://api.example.com/data',
+      UrlResource.urlPath: '/data',
     }),
   );
 
@@ -129,9 +129,9 @@ Future<void> callExternalService(Tracer tracer, Span parentSpan) async {
 
     // Add response attributes.
     span.addAttributes(
-      OTel.attributesFromMap({
-        HttpResource.responseStatusCode.key: 200,
-        HttpResource.responseBodySize.key: 1024,
+      OTel.attributesFromSemanticMap({
+        HttpResource.responseStatusCode: 200,
+        HttpResource.responseBodySize: 1024,
       }),
     );
   } catch (e, stackTrace) {
