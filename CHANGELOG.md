@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.2-wip]
 
+### Changed
+- Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.4`. Beta.4 adds `OTelAPI.loggerProviders()` parallel to the existing `tracerProviders()` / `meterProviders()`.
+
+### Fixed
+- **Named `LoggerProvider`s now shut down with `OTel.shutdown()`.** Closes the documented gap from beta.1's fix for issue #33. Beta.1 only shut down the default `LoggerProvider`; any provider created via `OTel.addLoggerProvider(name)` still kept its `BatchLogRecordProcessor.Timer.periodic` alive, parking the Dart isolate after `main()` returned for any consumer with multiple LoggerProviders. With API beta.4's new `loggerProviders()` enumerator, `OTel.shutdown()` now iterates all of them the same way it already does for tracer / meter providers.
+
 ## [1.1.0-beta.1] - 2026-05-10
 
 ### Changed

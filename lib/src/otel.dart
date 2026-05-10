@@ -1266,25 +1266,36 @@ class OTel {
       }
     }
 
-    // Shut down the default LoggerProvider. Without this, the
-    // BatchLogRecordProcessor's Timer.periodic keeps the Dart isolate
-    // alive after main() returns, so short-lived CLI binaries hang
-    // indefinitely after `await OTel.shutdown()` (issue #33). The API
-    // doesn't expose a `loggerProviders()` enumerator yet, so named
-    // LoggerProviders (created via `OTel.addLoggerProvider`) must be
-    // shut down by the caller.
+    // Shut down all LoggerProviders — default plus any named ones added
+    // via `OTel.addLoggerProvider(name)`. Without this, each provider's
+    // BatchLogRecordProcessor `Timer.periodic` keeps the Dart isolate
+    // alive after `main()` returns, so short-lived CLI binaries hang
+    // indefinitely after `await OTel.shutdown()` (issue #33).
+    //
+    // Note: enumeration relies on `OTelAPI.loggerProviders()`, added in
+    // API `1.0.0-beta.4`. Earlier versions only had access to the default
+    // provider, which is why beta.1 of this SDK left this as a documented
+    // gap — closed here.
     try {
-      final defaultLoggerProvider = OTel.loggerProvider();
-      if (OTelLog.isDebug()) {
-        OTelLog.debug('OTel: Shutting down default logger provider');
-      }
-      await defaultLoggerProvider.shutdown();
-      if (OTelLog.isDebug()) {
-        OTelLog.debug('OTel: Default logger provider shutdown complete');
+      final loggerProviders = OTelAPI.loggerProviders();
+      for (final loggerProvider in loggerProviders) {
+        try {
+          if (OTelLog.isDebug()) {
+            OTelLog.debug('OTel: Shutting down logger provider');
+          }
+          await loggerProvider.shutdown();
+          if (OTelLog.isDebug()) {
+            OTelLog.debug('OTel: Logger provider shutdown complete');
+          }
+        } catch (e) {
+          if (OTelLog.isDebug()) {
+            OTelLog.debug('OTel: Error during logger provider shutdown: $e');
+          }
+        }
       }
     } catch (e) {
       if (OTelLog.isDebug()) {
-        OTelLog.debug('OTel: Error during logger provider shutdown: $e');
+        OTelLog.debug('OTel: Error accessing logger providers: $e');
       }
     }
   }
