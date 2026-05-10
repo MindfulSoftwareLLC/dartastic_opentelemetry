@@ -47,8 +47,12 @@ if [ -n "$LOG_LEVEL" ]; then
   echo "Setting log level to: $LOG_LEVEL"
 fi
 
-# Build dart test command
-TEST_CMD="dart test ./test/unit ./test/integration ./test/performance"
+# Build dart test command. Use the whole `./test` tree so any new
+# top-level test file gets picked up automatically (e.g. `test/basic_test.dart`
+# was being silently skipped before this change). Browser-only tests under
+# `test/web/` are tagged with `@TestOn('browser')` and are skipped on the VM
+# target; the dedicated browser run lives in `tool/web_tests.sh`.
+TEST_CMD="dart test ./test"
 
 if [ -n "$CONCURRENCY" ]; then
   TEST_CMD="$TEST_CMD --concurrency=$CONCURRENCY"
