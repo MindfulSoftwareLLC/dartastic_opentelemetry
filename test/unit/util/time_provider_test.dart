@@ -35,7 +35,8 @@ void main() {
       final before = DateTime.now();
       final from = provider.nowDateTime();
       final after = DateTime.now();
-      expect(from.isBefore(before.subtract(const Duration(seconds: 1))), isFalse);
+      expect(
+          from.isBefore(before.subtract(const Duration(seconds: 1))), isFalse);
       expect(from.isAfter(after.add(const Duration(seconds: 1))), isFalse);
     });
   });
@@ -55,8 +56,7 @@ void main() {
       expect(tp.timeProvider, isA<SystemTimeProvider>());
     });
 
-    test(
-        'OTel.initialize(timeProvider: ...) wires the custom provider through',
+    test('OTel.initialize(timeProvider: ...) wires the custom provider through',
         () async {
       final frozen = _FrozenTimeProvider(
         DateTime.utc(2026, 5, 10, 12, 0, 0),
