@@ -77,11 +77,13 @@ Future<void> main(List<String> args) async {
     ..writeln()
     ..writeln('  Releasing: $release   (was: $current)')
     ..writeln('  Next dev:  $nextWip')
-    ..writeln('  Publish:   ${flags.publish ? "yes (auto)" : "no"}')
+    ..writeln(
+      '  Publish:   ${flags.publish ? "yes — pub.dev will prompt before uploading" : "no — local commits + tag only"}',
+    )
     ..writeln();
 
   if (!flags.assumeYes) {
-    stdout.write('Continue? [y/N] ');
+    stdout.write('Continue with the local release steps? [y/N] ');
     final reply = stdin.readLineSync()?.trim();
     if (reply != 'y' && reply != 'Y') {
       stdout.writeln('aborted.');
@@ -128,7 +130,11 @@ Future<void> main(List<String> args) async {
   if (flags.publish) {
     stdout
       ..writeln()
-      ..writeln('Checking out v$release for publish '
+      ..writeln('Local release steps complete. About to invoke '
+          '`dart pub publish` —')
+      ..writeln('pub.dev will print the file list and prompt for a '
+          'final y/N before uploading.')
+      ..writeln('Checking out v$release first '
           '(pub publish reads the working tree, not the tag)...');
     _runOrThrow('git', ['checkout', 'v$release']);
     var publishOk = false;
