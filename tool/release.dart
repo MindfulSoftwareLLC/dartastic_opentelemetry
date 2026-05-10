@@ -17,15 +17,20 @@
 ///      released version, not the wip bump) and runs `dart pub publish`.
 ///      pub.dev's own confirmation prompt is the publish gate.
 ///   9. Returns the working tree to the original branch.
-///
-/// After success, push:
-///     git push origin BRANCH vX.Y.Z
+///  10. (If `gh` CLI is installed and authenticated and
+///      `--no-github-release` was not passed) pushes the branch + tag
+///      to origin and creates a GitHub release via `gh release create`,
+///      using the matching CHANGELOG section as the release notes and
+///      marking the release as a prerelease when the version contains
+///      `-` (e.g. `1.0.0-beta.4`). Skipped silently with instructions
+///      if `gh` is missing or unauthenticated.
 ///
 /// Usage:
-///     dart tool/release.dart                       # auto-bump + publish
+///     dart tool/release.dart                       # auto-bump + publish + gh release
 ///     dart tool/release.dart --next 1.2.0-beta     # override next dev
 ///     dart tool/release.dart --no-publish          # cut release locally only
 ///     dart tool/release.dart --skip-tests          # skip `dart test`
+///     dart tool/release.dart --no-github-release   # skip the gh release step
 ///     dart tool/release.dart --yes                 # non-interactive confirm
 ///
 /// Design notes:
@@ -79,6 +84,9 @@ Future<void> main(List<String> args) async {
     ..writeln('  Next dev:  $nextWip')
     ..writeln(
       '  Publish:   ${flags.publish ? "yes — pub.dev will prompt before uploading" : "no — local commits + tag only"}',
+    )
+    ..writeln(
+      '  GH rel:    ${flags.publish && flags.githubRelease ? "yes — push branch+tag, create release from CHANGELOG section (needs gh CLI)" : "no"}',
     )
     ..writeln();
 
@@ -164,24 +172,152 @@ Future<void> main(List<String> args) async {
     }
   }
 
+  // ---- GitHub release ----
+  // Only if we successfully published (publishOk implied by reaching here
+  // when flags.publish is true) AND the user hasn't opted out AND the
+  // `gh` CLI is on PATH AND we're inside a GitHub-hosted repo.
+  var ghReleaseCreated = false;
+  if (flags.publish && flags.githubRelease) {
+    if (!_hasGhCli()) {
+      stdout
+        ..writeln()
+        ..writeln('(skipping GitHub release — `gh` CLI not found on PATH; '
+            'pass --no-github-release to silence this)');
+    } else {
+      try {
+        _runOrThrow('git', ['push', 'origin', originalRef, 'v$release']);
+        final notes = _extractChangelogSection(release);
+        ghReleaseCreated = await _createGitHubRelease(
+          tag: 'v$release',
+          notes: notes,
+          prerelease: release.contains('-'),
+        );
+        if (!ghReleaseCreated) {
+          stderr.writeln(
+            'warning: `gh release create` did not succeed. '
+            'The tag and commits are pushed; create the release manually '
+            'or rerun the gh command shown above.',
+          );
+        }
+      } catch (e) {
+        stderr.writeln(
+          'warning: GitHub release step failed ($e). '
+          'pub.dev publish succeeded — push and create the release manually '
+          'if you want one.',
+        );
+      }
+    }
+  }
+
   stdout
     ..writeln()
     ..writeln('✓ done.')
-    ..writeln()
-    ..writeln('Next steps:')
-    ..writeln('  git push origin $originalRef v$release');
-  if (!flags.publish) {
+    ..writeln();
+  if (ghReleaseCreated) {
     stdout
-      ..writeln('  git checkout v$release')
-      ..writeln('  dart pub publish')
-      ..writeln('  git checkout $originalRef');
+      ..writeln('Released $release on pub.dev and GitHub.')
+      ..writeln();
+  } else {
+    stdout
+      ..writeln('Next steps:')
+      ..writeln('  git push origin $originalRef v$release');
+    if (!flags.publish) {
+      stdout
+        ..writeln('  git checkout v$release')
+        ..writeln('  dart pub publish')
+        ..writeln('  git checkout $originalRef');
+    }
+    if (flags.publish && !flags.githubRelease) {
+      stdout.writeln(
+        '  # GitHub release skipped (--no-github-release). '
+        'Create one in the web UI if you want it.',
+      );
+    }
+    stdout.writeln();
   }
   stdout
-    ..writeln()
     ..writeln('To roll back the local commits and tag (before push):')
     ..writeln('  git tag -d v$release')
     ..writeln('  git reset --hard HEAD~2')
     ..writeln();
+}
+
+// ---------------------------------------------------------------------------
+// GitHub release helpers
+// ---------------------------------------------------------------------------
+
+/// Checks that the `gh` CLI is on PATH and authenticated. Returns false
+/// if either is missing — the caller falls back to instructions.
+bool _hasGhCli() {
+  try {
+    final v = Process.runSync('gh', ['--version']);
+    if (v.exitCode != 0) return false;
+  } catch (_) {
+    return false;
+  }
+  // `gh auth status` exits non-zero when not logged in.
+  final auth = Process.runSync('gh', ['auth', 'status']);
+  return auth.exitCode == 0;
+}
+
+/// Pulls the section between `## [<version>]` and the next `## [` from
+/// CHANGELOG.md, trimmed. Used as the GitHub release body.
+String _extractChangelogSection(String version) {
+  final text = File(_changelogPath).readAsStringSync();
+  final lines = text.split('\n');
+  final headerRe = RegExp(
+    r'^##[ \t]*\[?' + RegExp.escape(version) + r'\]?',
+  );
+  final start = lines.indexWhere(headerRe.hasMatch);
+  if (start < 0) return '';
+  // Find next ## section after this one.
+  var end = lines.length;
+  for (var i = start + 1; i < lines.length; i++) {
+    if (lines[i].startsWith('## ')) {
+      end = i;
+      break;
+    }
+  }
+  return lines.sublist(start + 1, end).join('\n').trim();
+}
+
+/// Creates a GitHub release via `gh release create`. Pipes [notes] in
+/// via stdin (`--notes-file -`) so multi-line/markdown content arrives
+/// intact regardless of shell quoting.
+Future<bool> _createGitHubRelease({
+  required String tag,
+  required String notes,
+  required bool prerelease,
+}) async {
+  stdout
+      .writeln('\$ gh release create $tag${prerelease ? ' --prerelease' : ''} '
+          '--title $tag --notes-file - <<< (CHANGELOG section)');
+  final p = await Process.start(
+    'gh',
+    [
+      'release',
+      'create',
+      tag,
+      '--title',
+      tag,
+      '--notes-file',
+      '-',
+      if (prerelease) '--prerelease',
+    ],
+    mode: ProcessStartMode.normal,
+  );
+  p.stdin.write(notes);
+  await p.stdin.close();
+  final stdoutFuture =
+      p.stdout.transform(const SystemEncoding().decoder).join();
+  final stderrFuture =
+      p.stderr.transform(const SystemEncoding().decoder).join();
+  final code = await p.exitCode;
+  final out = await stdoutFuture;
+  final err = await stderrFuture;
+  if (out.isNotEmpty) stdout.write(out);
+  if (err.isNotEmpty) stderr.write(err);
+  return code == 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -194,18 +330,21 @@ class _Flags {
     required this.assumeYes,
     required this.publish,
     required this.skipTests,
+    required this.githubRelease,
   });
 
   final String? nextOverride;
   final bool assumeYes;
   final bool publish;
   final bool skipTests;
+  final bool githubRelease;
 
   static _Flags parse(List<String> args) {
     String? nextOverride;
     var assumeYes = false;
     var publish = true;
     var skipTests = false;
+    var githubRelease = true;
     for (var i = 0; i < args.length; i++) {
       final a = args[i];
       switch (a) {
@@ -219,6 +358,8 @@ class _Flags {
           publish = false;
         case '--skip-tests':
           skipTests = true;
+        case '--no-github-release':
+          githubRelease = false;
         case '-h':
         case '--help':
           _printUsage();
@@ -232,13 +373,15 @@ class _Flags {
       assumeYes: assumeYes,
       publish: publish,
       skipTests: skipTests,
+      githubRelease: githubRelease,
     );
   }
 }
 
 void _printUsage() {
   stdout.writeln('Usage: dart tool/release.dart '
-      '[--next <version>] [--yes] [--no-publish] [--skip-tests]');
+      '[--next <version>] [--yes] [--no-publish] [--skip-tests] '
+      '[--no-github-release]');
   stdout.writeln();
   stdout.writeln('See the file header for full docs.');
 }
