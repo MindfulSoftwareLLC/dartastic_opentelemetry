@@ -40,20 +40,28 @@ development. `dart tool/release.dart` performs the release.
    - [ ] CHANGELOG `## [X.Y.Z-wip]` section reflects everything in this release.
    - [ ] `dart pub publish --dry-run` is clean.
 
-2. **Cut the release** — run `dart tool/release.dart`. The script:
+2. **Cut and publish the release** — run `dart tool/release.dart`. The script:
    - Strips `-wip` from `pubspec.yaml` and the CHANGELOG header, dates
      the section.
-   - Runs `dart pub get`, `dart analyze`, `dart test`.
+   - Runs `dart pub get`, `dart analyze`, `dart test`. Note: SDK tests
+     normally rely on a live OTel collector via `tool/test.sh`. Run
+     that beforehand to verify, then pass `--skip-tests` to the release
+     script if the collectorless `dart test` fails.
    - Commits as `Release X.Y.Z` and tags `vX.Y.Z`.
    - Bumps `pubspec.yaml` to next `-wip` (auto-bumps the rightmost
      numeric component, or pass `--next X.Y.Z` to override).
    - Inserts a fresh `## [X.Y.Z-wip]` CHANGELOG section.
    - Commits as `Bump to X.Y.Z-wip`.
-   - Pass `--yes` for non-interactive runs.
+   - Checks out the `vX.Y.Z` tag and runs `dart pub publish` so the
+     working tree being published actually matches the release version.
+     pub.dev's own `Do you want to publish ...?` prompt is the gate.
+   - Returns the working tree to your branch on success.
+   - Flags: `--yes` for non-interactive confirm, `--no-publish` to
+     stop after the local commits, `--skip-tests` to skip `dart test`,
+     `--next X.Y.Z` to override the bumped dev version.
 
-3. **Push and publish**
+3. **Push**
    - [ ] `git push origin HEAD vX.Y.Z`
-   - [ ] `dart pub publish`
    - [ ] Verify package appears correctly on pub.dev
 
 4. **Post-Release**

@@ -13,15 +13,20 @@
 ///      + 1 by default; `--next X.Y.Z` to override).
 ///   6. Inserts a fresh `## [next-wip]` CHANGELOG section.
 ///   7. Commits as `Bump to <next-wip>`.
+///   8. Checks out the `vX.Y.Z` tag (so the working tree shows the
+///      released version, not the wip bump) and runs `dart pub publish`.
+///      pub.dev's own confirmation prompt is the publish gate.
+///   9. Returns the working tree to the original branch.
 ///
-/// After success, push and publish manually:
-///     git push origin HEAD vX.Y.Z
-///     dart pub publish
+/// After success, push:
+///     git push origin BRANCH vX.Y.Z
 ///
 /// Usage:
-///     dart tool/release.dart                       # auto-bump
-///     dart tool/release.dart --next 1.2.0-beta     # override next
-///     dart tool/release.dart --yes                 # non-interactive
+///     dart tool/release.dart                       # auto-bump + publish
+///     dart tool/release.dart --next 1.2.0-beta     # override next dev
+///     dart tool/release.dart --no-publish          # cut release locally only
+///     dart tool/release.dart --skip-tests          # skip `dart test`
+///     dart tool/release.dart --yes                 # non-interactive confirm
 ///
 /// Design notes:
 /// - Reading is done via `package:pubspec_parse`, which produces a typed
@@ -30,12 +35,18 @@
 /// - Writing is line-precise: we never round-trip the YAML through a
 ///   parser-printer, so comments and formatting in `pubspec.yaml` are
 ///   preserved bit-for-bit. Only the single `version:` line changes.
+/// - Auto-publishing avoids a known footgun: `dart pub publish` reads
+///   the working tree, so if you ran the release script and then ran
+///   `dart pub publish` manually from HEAD, you would end up offering
+///   the `-wip` bump version to pub.dev. Step 8 checks out the release
+///   tag first so the working tree reflects the version being published.
 /// - The previous `tool/release.sh` used a perl substitution whose
 ///   `\s*$` greedily ate the trailing `\n` and joined the version line
 ///   with the next line. Doing this in Dart with a typed reader and
 ///   line-based writer makes that whole class of bug impossible.
 library;
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:pub_semver/pub_semver.dart';
@@ -45,13 +56,14 @@ const _wipSuffix = '-wip';
 const _pubspecPath = 'pubspec.yaml';
 const _changelogPath = 'CHANGELOG.md';
 
-void main(List<String> args) {
+Future<void> main(List<String> args) async {
   final flags = _Flags.parse(args);
 
   if (!_isWorkingTreeClean()) {
     _die('working tree is dirty. commit or stash first.');
   }
 
+  final originalRef = _currentRef();
   final current = _readWipVersion();
   final release = _stripWip(current);
   final nextWip = _computeNextWip(release, override: flags.nextOverride);
@@ -65,6 +77,7 @@ void main(List<String> args) {
     ..writeln()
     ..writeln('  Releasing: $release   (was: $current)')
     ..writeln('  Next dev:  $nextWip')
+    ..writeln('  Publish:   ${flags.publish ? "yes (auto)" : "no"}')
     ..writeln();
 
   if (!flags.assumeYes) {
@@ -85,7 +98,11 @@ void main(List<String> args) {
     );
     _runOrThrow('dart', ['pub', 'get'], silent: true);
     _runOrThrow('dart', ['analyze']);
-    _runOrThrow('dart', ['test']);
+    if (!flags.skipTests) {
+      _runOrThrow('dart', ['test']);
+    } else {
+      stdout.writeln('(skipping `dart test` — --skip-tests)');
+    }
     _runOrThrow('git', ['add', _pubspecPath, _changelogPath]);
     _runOrThrow('git', ['commit', '-m', 'Release $release']);
     _runOrThrow('git', ['tag', 'v$release']);
@@ -107,13 +124,46 @@ void main(List<String> args) {
     exit(1);
   }
 
+  // ---- publish ----
+  if (flags.publish) {
+    stdout
+      ..writeln()
+      ..writeln('Checking out v$release for publish '
+          '(pub publish reads the working tree, not the tag)...');
+    _runOrThrow('git', ['checkout', 'v$release']);
+    var publishOk = false;
+    try {
+      publishOk = await _runInteractive('dart', ['pub', 'publish']);
+    } finally {
+      stdout.writeln('Returning working tree to $originalRef...');
+      _runOrThrow('git', ['checkout', originalRef]);
+    }
+    if (!publishOk) {
+      stderr
+        ..writeln()
+        ..writeln('error: `dart pub publish` did not succeed.')
+        ..writeln('The local commits and the v$release tag are still in '
+            'place — you can re-publish with:')
+        ..writeln('  git checkout v$release && dart pub publish && '
+            'git checkout $originalRef')
+        ..writeln();
+      exit(1);
+    }
+  }
+
   stdout
     ..writeln()
     ..writeln('✓ done.')
     ..writeln()
     ..writeln('Next steps:')
-    ..writeln('  git push origin HEAD v$release')
-    ..writeln('  dart pub publish')
+    ..writeln('  git push origin $originalRef v$release');
+  if (!flags.publish) {
+    stdout
+      ..writeln('  git checkout v$release')
+      ..writeln('  dart pub publish')
+      ..writeln('  git checkout $originalRef');
+  }
+  stdout
     ..writeln()
     ..writeln('To roll back the local commits and tag (before push):')
     ..writeln('  git tag -d v$release')
@@ -126,14 +176,23 @@ void main(List<String> args) {
 // ---------------------------------------------------------------------------
 
 class _Flags {
-  _Flags({this.nextOverride, required this.assumeYes});
+  _Flags({
+    this.nextOverride,
+    required this.assumeYes,
+    required this.publish,
+    required this.skipTests,
+  });
 
   final String? nextOverride;
   final bool assumeYes;
+  final bool publish;
+  final bool skipTests;
 
   static _Flags parse(List<String> args) {
     String? nextOverride;
     var assumeYes = false;
+    var publish = true;
+    var skipTests = false;
     for (var i = 0; i < args.length; i++) {
       final a = args[i];
       switch (a) {
@@ -143,6 +202,10 @@ class _Flags {
         case '--yes':
         case '-y':
           assumeYes = true;
+        case '--no-publish':
+          publish = false;
+        case '--skip-tests':
+          skipTests = true;
         case '-h':
         case '--help':
           _printUsage();
@@ -151,12 +214,18 @@ class _Flags {
           _die('unknown arg: $a');
       }
     }
-    return _Flags(nextOverride: nextOverride, assumeYes: assumeYes);
+    return _Flags(
+      nextOverride: nextOverride,
+      assumeYes: assumeYes,
+      publish: publish,
+      skipTests: skipTests,
+    );
   }
 }
 
 void _printUsage() {
-  stdout.writeln('Usage: dart tool/release.dart [--next <version>] [--yes]');
+  stdout.writeln('Usage: dart tool/release.dart '
+      '[--next <version>] [--yes] [--no-publish] [--skip-tests]');
   stdout.writeln();
   stdout.writeln('See the file header for full docs.');
 }
@@ -315,6 +384,26 @@ bool _isWorkingTreeClean() {
   return (r.stdout as String).trim().isEmpty;
 }
 
+/// Returns the current symbolic ref (branch name) or, if HEAD is
+/// detached, the abbreviated commit SHA. Used as the "return to"
+/// target after the publish step.
+String _currentRef() {
+  final symbolic = Process.runSync('git', ['symbolic-ref', '--quiet', 'HEAD']);
+  if (symbolic.exitCode == 0) {
+    final ref = (symbolic.stdout as String).trim();
+    if (ref.startsWith('refs/heads/')) {
+      return ref.substring('refs/heads/'.length);
+    }
+    return ref;
+  }
+  // Detached HEAD — fall back to the commit SHA.
+  final sha = Process.runSync('git', ['rev-parse', 'HEAD']);
+  if (sha.exitCode != 0) {
+    _die('cannot resolve HEAD');
+  }
+  return (sha.stdout as String).trim();
+}
+
 String _today() {
   final n = DateTime.now();
   String pad(int v, [int w = 2]) => v.toString().padLeft(w, '0');
@@ -333,6 +422,21 @@ void _runOrThrow(String exe, List<String> args, {bool silent = false}) {
       '$exe ${args.join(' ')} failed (exit ${r.exitCode})',
     );
   }
+}
+
+/// Runs [exe] [args] with stdio inherited from this process so the
+/// child's prompts (e.g. `dart pub publish`'s y/N confirmation) and
+/// streaming output reach the user's terminal directly. Returns true
+/// on exit code 0.
+Future<bool> _runInteractive(String exe, List<String> args) async {
+  stdout.writeln('\$ $exe ${args.join(' ')}');
+  final p = await Process.start(
+    exe,
+    args,
+    mode: ProcessStartMode.inheritStdio,
+  );
+  final code = await p.exitCode;
+  return code == 0;
 }
 
 Never _die(String msg) {

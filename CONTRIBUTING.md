@@ -172,19 +172,30 @@ and CHANGELOG entries during development land under
 ```bash
 dart tool/release.dart                       # auto-bump trailing number
 dart tool/release.dart --next 1.2.0-beta     # override the next dev version
-dart tool/release.dart --yes                 # non-interactive (CI)
+dart tool/release.dart --no-publish          # cut release locally only
+dart tool/release.dart --skip-tests          # skip `dart test` (run tool/test.sh separately)
+dart tool/release.dart --yes                 # non-interactive confirm
 ```
 
 The script strips `-wip` from `pubspec.yaml` and the CHANGELOG header,
 dates the section, runs `dart pub get` / `analyze` / `test`, commits
 as `Release X.Y.Z`, tags `vX.Y.Z`, then bumps `pubspec.yaml` to the
 next `-wip` version with a fresh `## [X.Y.Z-wip]` CHANGELOG section
-and commits as `Bump to X.Y.Z-wip`. After it succeeds, push and
-publish manually:
+and commits as `Bump to X.Y.Z-wip`. It then checks out the `vX.Y.Z`
+tag and runs `dart pub publish` from there — pub publish reads the
+working tree, so this guarantees the published version matches the
+tag instead of the (still-`-wip`) bump commit. pub.dev's own
+confirmation prompt is the publish gate. On success the script
+returns the working tree to your branch.
+
+SDK tests normally rely on a live OTel collector via `tool/test.sh`.
+Run that beforehand to verify, then pass `--skip-tests` if the
+collectorless `dart test` fails.
+
+After it succeeds, push:
 
 ```bash
 git push origin HEAD vX.Y.Z
-dart pub publish
 ```
 
 See `PUBLICATION_CHECKLIST.md` for the full pre-release checklist.
