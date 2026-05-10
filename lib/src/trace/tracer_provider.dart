@@ -40,6 +40,16 @@ class TracerProvider implements APITracerProvider {
   /// The default sampler to use for new tracers.
   Sampler? sampler;
 
+  /// Clock used for span start, end, and event timestamps. Delegates to the
+  /// underlying [APITracerProvider] so the SDK and API share a single
+  /// source of truth. Defaults are platform-aware (native:
+  /// `SystemTimeProvider`; web: `WebTimeProvider`); override via
+  /// `OTel.initialize(timeProvider: ...)` or by assigning here.
+  @override
+  TimeProvider get timeProvider => _delegate.timeProvider;
+  @override
+  set timeProvider(TimeProvider value) => _delegate.timeProvider = value;
+
   @override
   bool get isShutdown => _delegate.isShutdown;
 

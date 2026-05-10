@@ -64,15 +64,19 @@ export 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
         SpanKind,
         SpanLink,
         SpanStatusCode,
+        SystemTimeProvider,
         TelemetryDistroResource,
         TelemetrySDKResource,
+        TimeProvider,
         Timestamp,
         TraceFlags,
         TraceId,
         TraceState,
         UrlResource,
         UserSemantics,
-        VersionResource;
+        VersionResource,
+        WebTimeProvider,
+        defaultTimeProvider;
 
 export 'src/context/propagation/w3c_baggage_propagator.dart';
 export 'src/environment/env_constants.dart';

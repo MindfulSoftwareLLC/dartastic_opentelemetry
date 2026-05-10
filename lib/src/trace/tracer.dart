@@ -85,6 +85,9 @@ class Tracer implements APITracer {
   Resource? get resource => _provider.resource;
 
   @override
+  TimeProvider get timeProvider => _delegate.timeProvider;
+
+  @override
   T withSpan<T>(APISpan span, T Function() fn) {
     if (OTelLog.isDebug()) {
       OTelLog.debug(
