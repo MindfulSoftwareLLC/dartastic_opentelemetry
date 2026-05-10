@@ -380,9 +380,8 @@ class OTel {
             // http/protobuf (default) or http/json (opt-in via env-var).
             // Anything else falls back to http/protobuf — the spec-
             // recommended default per `specification/protocol/exporter.md`.
-            final httpProtocol =
-                otlpHttpProtocolFromString(protocol) ??
-                    OtlpHttpProtocol.httpProtobuf;
+            final httpProtocol = otlpHttpProtocolFromString(protocol) ??
+                OtlpHttpProtocol.httpProtobuf;
             exporter = OtlpHttpSpanExporter(
               OtlpHttpExporterConfig(
                 endpoint: endpoint,

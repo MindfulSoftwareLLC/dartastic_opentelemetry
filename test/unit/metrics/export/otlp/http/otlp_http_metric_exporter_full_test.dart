@@ -82,7 +82,8 @@ void main() {
       await exporter.shutdown();
     });
 
-    test('export with httpJson protocol sends application/json + proto3-JSON body',
+    test(
+        'export with httpJson protocol sends application/json + proto3-JSON body',
         () async {
       // Rebind the server so we can capture the request body for this test.
       await server.close(force: true);

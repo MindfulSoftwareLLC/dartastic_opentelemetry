@@ -79,7 +79,8 @@ void main() {
       await exporter.shutdown();
     });
 
-    test('export with httpJson protocol sends application/json + proto3-JSON body',
+    test(
+        'export with httpJson protocol sends application/json + proto3-JSON body',
         () async {
       final exporter = OtlpHttpSpanExporter(
         OtlpHttpExporterConfig(
