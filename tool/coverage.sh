@@ -55,9 +55,12 @@ echo "Starting test coverage collection..."
 
 mkdir -p coverage
 
-# Run tests with coverage
+# Run tests with coverage. Use the whole `./test` tree so any new
+# top-level test file is covered automatically. Browser-only tests under
+# `test/web/` are tagged `@TestOn('browser')` and are skipped on the VM
+# target.
 echo "Running tests with coverage..."
-dart test --chain-stack-traces --coverage=coverage --concurrency="$CONCURRENCY" --exclude-tags="fail" ./test/unit ./test/integration ./test/performance
+dart test --chain-stack-traces --coverage=coverage --concurrency="$CONCURRENCY" --exclude-tags="fail" ./test
 
 # Generate LCOV coverage report, excluding certain directories
 dart run coverage:format_coverage  --in=./coverage --package=./lib --report-on=lib/ --lcov --out=coverage/lcov.info --check-ignore

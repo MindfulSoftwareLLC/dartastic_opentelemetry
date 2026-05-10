@@ -1265,6 +1265,28 @@ class OTel {
         }
       }
     }
+
+    // Shut down the default LoggerProvider. Without this, the
+    // BatchLogRecordProcessor's Timer.periodic keeps the Dart isolate
+    // alive after main() returns, so short-lived CLI binaries hang
+    // indefinitely after `await OTel.shutdown()` (issue #33). The API
+    // doesn't expose a `loggerProviders()` enumerator yet, so named
+    // LoggerProviders (created via `OTel.addLoggerProvider`) must be
+    // shut down by the caller.
+    try {
+      final defaultLoggerProvider = OTel.loggerProvider();
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('OTel: Shutting down default logger provider');
+      }
+      await defaultLoggerProvider.shutdown();
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('OTel: Default logger provider shutdown complete');
+      }
+    } catch (e) {
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('OTel: Error during logger provider shutdown: $e');
+      }
+    }
   }
 
   /// Resets the OTel state for testing purposes.
