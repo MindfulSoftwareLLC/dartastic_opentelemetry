@@ -1,13 +1,20 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+import '../../../../export/otlp_http_protocol.dart';
 import '../../../../trace/export/otlp/certificate_utils.dart';
 
-/// Configuration for the OpenTelemetry log record exporter that exports logs using OTLP over HTTP/protobuf.
+/// Configuration for the OpenTelemetry log record exporter that exports
+/// logs using OTLP/HTTP. Wire format defaults to `application/x-protobuf`
+/// and can be switched to `application/json` via [protocol].
 class OtlpHttpLogRecordExporterConfig {
   /// The endpoint to export logs to (e.g., 'http://localhost:4318/v1/logs')
   /// Default: 'http://localhost:4318'
   final String endpoint;
+
+  /// Wire-format protocol — `httpProtobuf` (default) or `httpJson`.
+  /// Controls `Content-Type` and how OTLP messages are serialized.
+  final OtlpHttpProtocol protocol;
 
   /// Additional HTTP headers to include in the export requests.
   final Map<String, String> headers;
@@ -56,6 +63,7 @@ class OtlpHttpLogRecordExporterConfig {
     this.certificate,
     this.clientKey,
     this.clientCertificate,
+    this.protocol = OtlpHttpProtocol.httpProtobuf,
   })  : endpoint = _validateEndpoint(endpoint),
         headers = _validateHeaders(headers ?? {}),
         timeout = _validateTimeout(timeout),

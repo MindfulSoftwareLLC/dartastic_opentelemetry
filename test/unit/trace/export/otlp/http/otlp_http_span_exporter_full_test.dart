@@ -1,6 +1,7 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
@@ -75,6 +76,48 @@ void main() {
         receivedRequests.first.headers.contentType.toString(),
         contains('application/x-protobuf'),
       );
+      await exporter.shutdown();
+    });
+
+    test('export with httpJson protocol sends application/json + proto3-JSON body',
+        () async {
+      final exporter = OtlpHttpSpanExporter(
+        OtlpHttpExporterConfig(
+          endpoint: 'http://localhost:$port',
+          protocol: OtlpHttpProtocol.httpJson,
+        ),
+      );
+
+      // Capture the request body for shape validation.
+      var capturedBody = <int>[];
+      receivedRequests.clear();
+      await server.close(force: true);
+      server = await HttpServer.bind('localhost', port);
+      server.listen((request) async {
+        receivedRequests.add(request);
+        capturedBody = await request
+            .fold<List<int>>([], (bytes, chunk) => bytes..addAll(chunk));
+        request.response.statusCode = 200;
+        await request.response.close();
+      });
+
+      final spans = createTestSpans();
+      await exporter.export(spans);
+
+      expect(receivedRequests, hasLength(1));
+      expect(
+        receivedRequests.first.headers.contentType.toString(),
+        contains('application/json'),
+      );
+
+      // The body must be valid JSON that decodes to a Map shaped like a
+      // proto3-JSON `ExportTraceServiceRequest` — the top-level key
+      // `resourceSpans` is the spec-defined field name.
+      final decoded = jsonDecode(utf8.decode(capturedBody));
+      expect(decoded, isA<Map<String, dynamic>>());
+      expect((decoded as Map).containsKey('resourceSpans'), isTrue);
+      expect(decoded['resourceSpans'], isA<List>());
+
       await exporter.shutdown();
     });
 
