@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.2-wip]
 
+### Added
+- **Pluggable `TimeProvider` for span timestamps.** Web targets (Dart-on-JS, Wasm) automatically get `WebTimeProvider` (sub-millisecond via `window.performance.now()` + `timeOrigin`); native targets keep `SystemTimeProvider` (`DateTime.now`, unchanged behaviour). No code change required to pick up the web precision — auto-selected via the API package's platform-aware `defaultTimeProvider`. Override via `OTel.initialize(timeProvider: customProvider)` for cases like a fake clock in tests.
+
+  The abstraction lives in `dartastic_opentelemetry_api` (see API beta.5 changelog). The SDK's `TracerProvider.timeProvider` is now a delegate getter/setter that reads through to the underlying `APITracerProvider`, so SDK and API share a single source of truth.
+
 ### Changed
 - Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.4`. Beta.4 adds `OTelAPI.loggerProviders()` parallel to the existing `tracerProviders()` / `meterProviders()`.
 

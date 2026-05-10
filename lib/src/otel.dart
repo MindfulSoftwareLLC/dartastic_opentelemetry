@@ -39,6 +39,7 @@ import 'package:meta/meta.dart';
 class OTel {
   static OTelSDKFactory? _otelFactory;
   static Sampler? _defaultSampler;
+  static TimeProvider? _defaultTimeProvider;
 
   /// Whether print interception is enabled (set via initialize).
   static bool _logPrintEnabled = false;
@@ -113,6 +114,13 @@ class OTel {
   ///   When enabled, all print() calls within [runWithPrintInterception] will be captured
   ///   as INFO level logs. Set to true to automatically bridge print statements to OpenTelemetry.
   /// @param logPrintLoggerName OTelLogger name for print-intercepted logs (default: 'dart.print')
+  /// @param timeProvider Clock used for span start, end, and event timestamps.
+  ///   When omitted, defaults to the platform-aware `defaultTimeProvider`:
+  ///   `SystemTimeProvider` (`DateTime.now`, microsecond floor) on native;
+  ///   `WebTimeProvider` (`window.performance.now()` + `timeOrigin`, sub-
+  ///   millisecond) on Dart-on-JS web and Wasm — so web users pick up sub-
+  ///   ms span timing automatically with no opt-in. Pass a custom provider
+  ///   only to override the platform default, e.g. a fake clock in tests.
   /// @param oTelFactoryCreationFunction Factory function for creating OTelSDKFactory instances
   /// @return A Future that completes when initialization is done
   /// @throws StateError if called more than once
@@ -139,6 +147,7 @@ class OTel {
     bool detectPlatformResources = true,
     bool logPrint = false,
     String logPrintLoggerName = 'dart.print',
+    TimeProvider? timeProvider,
     OTelFactoryCreationFunction? oTelFactoryCreationFunction =
         otelSDKFactoryFactoryFunction,
   }) async {
@@ -231,6 +240,7 @@ class OTel {
         oTelFactoryCreationFunction ?? otelSDKFactoryFactoryFunction;
     // Initialize with default sampler
     _defaultSampler = sampler;
+    _defaultTimeProvider = timeProvider;
     OTel.defaultTracerName = tracerName ?? _defaultTracerName;
     OTel.defaultTracerVersion = tracerVersion ?? defaultTracerVersion;
     OTel.dartasticApiKey = dartasticApiKey;
@@ -563,6 +573,9 @@ class OTel {
     }
 
     tracerProvider.sampler ??= _defaultSampler;
+    if (_defaultTimeProvider != null) {
+      tracerProvider.timeProvider = _defaultTimeProvider!;
+    }
     return tracerProvider;
   }
 
@@ -605,6 +618,9 @@ class OTel {
     final sdkTracerProvider = OTelAPI.addTracerProvider(name) as TracerProvider;
     sdkTracerProvider.resource = resource ?? defaultResource;
     sdkTracerProvider.sampler = sampler ?? _defaultSampler;
+    if (_defaultTimeProvider != null) {
+      sdkTracerProvider.timeProvider = _defaultTimeProvider!;
+    }
     return sdkTracerProvider;
   }
 
@@ -1315,6 +1331,7 @@ class OTel {
     // Reset all static fields
     _otelFactory = null;
     _defaultSampler = null;
+    _defaultTimeProvider = null;
     defaultResource = null;
     dartasticApiKey = null;
 

@@ -85,6 +85,9 @@ class Tracer implements APITracer {
   Resource? get resource => _provider.resource;
 
   @override
+  TimeProvider get timeProvider => _delegate.timeProvider;
+
+  @override
   T withSpan<T>(APISpan span, T Function() fn) {
     if (OTelLog.isDebug()) {
       OTelLog.debug(
@@ -382,7 +385,11 @@ class Tracer implements APITracer {
       traceFlags: traceFlags,
     );
 
-    // Create the delegate span with our newly created span context
+    // Create the delegate span with our newly created span context. The API
+    // tracer pulls its TimeProvider (platform-aware: SystemTimeProvider on
+    // native, WebTimeProvider on web) from its provider, so span start
+    // timestamps come from the right clock without the SDK threading them
+    // through here.
     final APISpan delegateSpan = _delegate.startSpan(
       name,
       context: effectiveContext,
