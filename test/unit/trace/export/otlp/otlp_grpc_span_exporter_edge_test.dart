@@ -416,7 +416,12 @@ void main() {
         await exporter.shutdown();
         await rawServer.close();
       },
-      timeout: const Timeout(Duration(seconds: 30)),
+      // 90s, not 30s: the test passes locally in ~5s but has flaked
+      // multiple times on Linux GitHub Actions runners under load
+      // (PR #36, PR #41). The gRPC client's connect-error propagation
+      // is the slow path; bumping the test ceiling well above the
+      // 5s exporter timeout absorbs CI scheduling jitter.
+      timeout: const Timeout(Duration(seconds: 90)),
     );
 
     // -----------------------------------------------------------------------
