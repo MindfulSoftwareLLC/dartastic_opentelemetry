@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.1.0-beta.2-wip]
+## [1.1.0-beta.2] - 2026-05-10
 
 ### Added
 - **Pluggable `TimeProvider` for span timestamps.** Web targets (Dart-on-JS, Wasm) automatically get `WebTimeProvider` (sub-millisecond via `window.performance.now()` + `timeOrigin`); native targets keep `SystemTimeProvider` (`DateTime.now`, unchanged behaviour). No code change required to pick up the web precision — auto-selected via the API package's platform-aware `defaultTimeProvider`. Override via `OTel.initialize(timeProvider: customProvider)` for cases like a fake clock in tests.
