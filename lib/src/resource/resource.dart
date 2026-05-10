@@ -3,9 +3,10 @@
 
 library;
 
-import 'package:dartastic_opentelemetry/src/otel.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:meta/meta.dart';
+
+import '../otel.dart';
 
 part 'resource_create.dart';
 

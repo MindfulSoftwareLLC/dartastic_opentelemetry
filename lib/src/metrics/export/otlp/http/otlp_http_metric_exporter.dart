@@ -5,15 +5,15 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry/src/metrics/export/otlp/metric_transformer.dart';
 import 'package:http/http.dart' as http;
 
+import '../../../../../dartastic_opentelemetry.dart';
 import '../../../../../proto/collector/metrics/v1/metrics_service.pb.dart';
 import '../../../../../proto/common/v1/common.pb.dart' as common_pb;
 import '../../../../../proto/metrics/v1/metrics.pb.dart' as metrics_pb;
 import '../../../../trace/export/otlp/http/http_client_factory.dart';
 import '../../../../util/zip/gzip.dart';
+import '../metric_transformer.dart';
 
 /// An OpenTelemetry metric exporter that exports metrics using OTLP over HTTP/protobuf
 class OtlpHttpMetricExporter implements MetricExporter {
@@ -57,7 +57,7 @@ class OtlpHttpMetricExporter implements MetricExporter {
 
   String _getEndpointUrl() {
     // Ensure the endpoint ends with /v1/metrics
-    String endpoint = _config.endpoint;
+    var endpoint = _config.endpoint;
     if (!endpoint.endsWith('/v1/metrics')) {
       // Ensure there's no trailing slash before adding path
       if (endpoint.endsWith('/')) {
@@ -164,7 +164,7 @@ class OtlpHttpMetricExporter implements MetricExporter {
         }
 
         // Handle status code-based retries
-        bool shouldRetry = false;
+        var shouldRetry = false;
         if (e.message.contains('status code')) {
           for (final code in _retryableStatusCodes) {
             if (e.message.contains('status code $code')) {
@@ -238,7 +238,7 @@ class OtlpHttpMetricExporter implements MetricExporter {
 
     if (OTelLog.isLogMetrics()) {
       OTelLog.logMetric(
-        "Exporting metrics via HTTP: ${metrics.metrics.length} metrics",
+        'Exporting metrics via HTTP: ${metrics.metrics.length} metrics',
       );
     }
 
@@ -301,8 +301,8 @@ class OtlpHttpMetricExporter implements MetricExporter {
     }
 
     // Convert protobuf to bytes
-    final Uint8List messageBytes = request.writeToBuffer();
-    Uint8List bodyBytes = messageBytes;
+    final messageBytes = request.writeToBuffer();
+    var bodyBytes = messageBytes;
 
     // Apply gzip compression if configured
     if (_config.compression) {
@@ -320,7 +320,7 @@ class OtlpHttpMetricExporter implements MetricExporter {
     }
 
     try {
-      final http.Response response = await _client
+      final response = await _client
           .post(Uri.parse(endpointUrl), headers: headers, body: bodyBytes)
           .timeout(_config.timeout);
 
@@ -332,7 +332,7 @@ class OtlpHttpMetricExporter implements MetricExporter {
         }
         return true;
       } else {
-        final String errorMessage =
+        final errorMessage =
             'OtlpHttpMetricExporter: Export request failed with status code ${response.statusCode}';
         if (OTelLog.isError()) OTelLog.error(errorMessage);
         throw http.ClientException(errorMessage);

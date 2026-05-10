@@ -10,10 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Pluggable `TimeProvider` for span timestamps.** Web targets (Dart-on-JS, Wasm) automatically get `WebTimeProvider` (sub-millisecond via `window.performance.now()` + `timeOrigin`); native targets keep `SystemTimeProvider` (`DateTime.now`, unchanged behaviour). No code change required to pick up the web precision — auto-selected via the API package's platform-aware `defaultTimeProvider`. Override via `OTel.initialize(timeProvider: customProvider)` for cases like a fake clock in tests.
-
   The abstraction lives in `dartastic_opentelemetry_api` (see API beta.5 changelog). The SDK's `TracerProvider.timeProvider` is now a delegate getter/setter that reads through to the underlying `APITracerProvider`, so SDK and API share a single source of truth.
+- `OTel.attributesFromSemanticMap(Map<OTelSemantic, Object>)` — convenience passthrough to `OTelAPI.attributesFromSemanticMap`. Lets call sites that build attribute maps from typed semconv enums skip the `.key` accessor on every entry: `OTel.attributesFromSemanticMap({HttpResource.requestMethod: 'GET'})` instead of `OTel.attributesFromMap({HttpResource.requestMethod.key: 'GET'})`. Mixing different semconv enum types in one map is fine — the param type is the `OTelSemantic` interface that every semconv enum implements.
 
 ### Changed
+- README and every example under `example/` now use `attributesFromSemanticMap` for typed-enum-keyed maps. The longer `attributesFromMap` form remains for raw-string-keyed maps (`{'foo.bar': value}`) and shows up in the README only as a counter-example for app-specific keys without a typed enum.
 - Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.4`. Beta.4 adds `OTelAPI.loggerProviders()` parallel to the existing `tracerProviders()` / `meterProviders()`.
 
 ### Fixed

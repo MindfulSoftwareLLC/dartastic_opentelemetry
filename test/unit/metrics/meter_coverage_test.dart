@@ -3,7 +3,7 @@
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
-    show LogFunction, OTelAPI, LogLevel;
+    show LogFunction, LogLevel, OTelAPI;
 import 'package:test/test.dart';
 import '../../testing_utils/memory_metric_exporter.dart';
 
@@ -288,7 +288,7 @@ void main() {
       expect(meterProvider.isShutdown, isFalse);
 
       // Should succeed initially
-      bool flushResult = await meterProvider.forceFlush();
+      var flushResult = await meterProvider.forceFlush();
       expect(flushResult, isTrue);
 
       // Shutdown the provider
@@ -300,15 +300,15 @@ void main() {
       expect(flushResult, isFalse);
 
       // Calling shutdown again should just return success
-      final bool secondShutdown = await meterProvider.shutdown();
+      final secondShutdown = await meterProvider.shutdown();
       expect(secondShutdown, isTrue);
     });
   });
 
   group('OTelLog Control Tests', () {
     // Temporary log capture for testing
-    List<String> capturedLogs = [];
-    bool wasLoggingEnabled = false;
+    var capturedLogs = <String>[];
+    var wasLoggingEnabled = false;
     LogFunction? originalLogFunction;
     LogFunction? originalMetricLogFunction;
 
@@ -357,7 +357,7 @@ void main() {
 
     test('OTelLog controls metrics logging', () {
       // Set up metrics log capture
-      final List<String> metricLogs = [];
+      final metricLogs = <String>[];
       OTelLog.metricLogFunction = metricLogs.add;
 
       // Log a metric message
@@ -380,7 +380,7 @@ void main() {
 
     test('Meter creation logs when metrics logging is enabled', () async {
       // Set up metrics log capture
-      final List<String> metricLogs = [];
+      final metricLogs = <String>[];
       OTelLog.currentLevel = LogLevel.debug;
       OTelLog.metricLogFunction = metricLogs.add;
 

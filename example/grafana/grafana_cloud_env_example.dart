@@ -1,6 +1,10 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+// Helper functions below `main()` show alternate initialization paths;
+// they aren't all reachable from this file's `main()`.
+// ignore_for_file: unreachable_from_main
+
 import 'dart:convert';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
@@ -84,11 +88,11 @@ Future<void> traceUserLogin(Tracer tracer, String userId) async {
   final span = tracer.startSpan(
     'user.login',
     kind: SpanKind.server,
-    attributes: OTel.attributesFromMap({
-      UserSemantics.userId.key: userId,
-      ExampleAttribute.authMethod.key: 'oauth2',
+    attributes: OTel.attributesFromSemanticMap({
+      UserSemantics.userId: userId,
+      ExampleAttribute.authMethod: 'oauth2',
       // client.address replaces the deprecated client.ip per OTel semconv.
-      ClientResource.clientAddress.key: '192.168.1.100',
+      ClientResource.clientAddress: '192.168.1.100',
     }),
   );
 
@@ -100,10 +104,10 @@ Future<void> traceUserLogin(Tracer tracer, String userId) async {
     span.addEvent(
       OTel.spanEventNow(
         'authentication.success',
-        OTel.attributesFromMap({
-          SessionViewSemantics.sessionId.key:
+        OTel.attributesFromSemanticMap({
+          SessionViewSemantics.sessionId:
               'sess_${DateTime.now().millisecondsSinceEpoch}',
-          ExampleAttribute.permissions.key: 'read,write',
+          ExampleAttribute.permissions: 'read,write',
         }),
       ),
     );
@@ -123,12 +127,12 @@ Future<void> traceHttpRequest(Tracer tracer) async {
   final span = tracer.startSpan(
     'http.request',
     kind: SpanKind.client,
-    attributes: OTel.attributesFromMap({
-      HttpResource.requestMethod.key: 'GET',
-      UrlResource.urlFull.key: 'https://api.example.com/users/123',
-      UrlResource.urlPath.key: '/users/123',
-      ServerResource.serverAddress.key: 'api.example.com',
-      ServerResource.serverPort.key: 443,
+    attributes: OTel.attributesFromSemanticMap({
+      HttpResource.requestMethod: 'GET',
+      UrlResource.urlFull: 'https://api.example.com/users/123',
+      UrlResource.urlPath: '/users/123',
+      ServerResource.serverAddress: 'api.example.com',
+      ServerResource.serverPort: 443,
     }),
   );
 
@@ -138,14 +142,14 @@ Future<void> traceHttpRequest(Tracer tracer) async {
 
     // Set response attributes.
     span.addAttributes(
-      OTel.attributesFromMap({
-        HttpResource.responseStatusCode.key: 200,
-        HttpResource.responseBodySize.key: 1234,
+      OTel.attributesFromSemanticMap({
+        HttpResource.responseStatusCode: 200,
+        HttpResource.responseBodySize: 1234,
       }),
     );
   } catch (e, stackTrace) {
     span.addAttributes(
-        OTel.attributesFromMap({HttpResource.responseStatusCode.key: 500}));
+        OTel.attributesFromSemanticMap({HttpResource.responseStatusCode: 500}));
     // The span has a status of SpanStatus.Ok on creation, set it to
     // Error when an error occurs in the span.
     span.recordException(e, stackTrace: stackTrace);
@@ -161,17 +165,17 @@ Future<void> traceDatabaseOperation(Tracer tracer) async {
   final span = tracer.startSpan(
     'db.query',
     kind: SpanKind.client,
-    attributes: OTel.attributesFromMap({
-      DatabaseResource.dbSystem.key: 'postgresql',
-      DatabaseResource.dbName.key: 'users_db',
-      DatabaseResource.dbOperation.key: 'SELECT',
-      DatabaseResource.dbStatement.key:
+    attributes: OTel.attributesFromSemanticMap({
+      DatabaseResource.dbSystem: 'postgresql',
+      DatabaseResource.dbName: 'users_db',
+      DatabaseResource.dbOperation: 'SELECT',
+      DatabaseResource.dbStatement:
           'SELECT * FROM users WHERE active = true LIMIT 100',
-      DatabaseResource.dbUser.key: 'app_user',
+      DatabaseResource.dbUser: 'app_user',
       // server.address / server.port replace the deprecated net.peer.*
       // per OTel semconv.
-      ServerResource.serverAddress.key: 'postgres.example.com',
-      ServerResource.serverPort.key: 5432,
+      ServerResource.serverAddress: 'postgres.example.com',
+      ServerResource.serverPort: 5432,
     }),
   );
 

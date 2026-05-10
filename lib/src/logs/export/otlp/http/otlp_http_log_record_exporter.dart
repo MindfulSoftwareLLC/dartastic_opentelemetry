@@ -71,7 +71,7 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
 
   String _getEndpointUrl() {
     // Ensure the endpoint ends with /v1/logs
-    String endpoint = _config.endpoint;
+    var endpoint = _config.endpoint;
     if (!endpoint.endsWith('/v1/logs')) {
       if (endpoint.endsWith('/')) {
         endpoint = endpoint.substring(0, endpoint.length - 1);
@@ -106,8 +106,8 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
     }
 
     // Convert protobuf to bytes
-    final Uint8List messageBytes = request.writeToBuffer();
-    Uint8List bodyBytes = messageBytes;
+    final messageBytes = request.writeToBuffer();
+    var bodyBytes = messageBytes;
 
     // Apply gzip compression if configured
     if (_config.compression) {
@@ -132,7 +132,7 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
     }
 
     try {
-      final http.Response response = await _client
+      final response = await _client
           .post(
             Uri.parse(endpointUrl),
             headers: headers,
@@ -147,7 +147,7 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
         }
         return ExportResult.success;
       } else {
-        final String errorMessage =
+        final errorMessage =
             'OtlpHttpLogRecordExporter: Export request failed with status code ${response.statusCode}';
         if (OTelLog.isError()) OTelLog.error(errorMessage);
         throw http.ClientException(errorMessage);
@@ -242,7 +242,7 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
           return ExportResult.failure;
         }
 
-        bool shouldRetry = false;
+        var shouldRetry = false;
         if (e.message.contains('status code')) {
           for (final code in _retryableStatusCodes) {
             if (e.message.contains('status code $code')) {

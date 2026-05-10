@@ -253,7 +253,7 @@ class _InvalidSpanWrapper implements APISpan {
 // ---------------------------------------------------------------------------
 
 void main() {
-  final List<String> logOutput = [];
+  final logOutput = <String>[];
 
   setUp(() async {
     await OTel.reset();
@@ -676,7 +676,7 @@ void main() {
       final tracer = OTel.tracer();
 
       // Create and end more spans than the queue can hold
-      for (int i = 0; i < 5; i++) {
+      for (var i = 0; i < 5; i++) {
         final span = tracer.startSpan('span-$i');
         span.end(); // this calls processor.onEnd
       }

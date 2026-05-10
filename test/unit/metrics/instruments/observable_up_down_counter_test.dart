@@ -32,8 +32,8 @@ void main() {
 
     test('Simple ObservableUpDownCounter with single callback', () {
       // Value that can go up and down
-      int counterValue = 100;
-      bool shouldIncrease = true;
+      var counterValue = 100;
+      var shouldIncrease = true;
 
       // Create an ObservableUpDownCounter with int type
       final counter = meter.createObservableUpDownCounter<int>(
@@ -99,7 +99,7 @@ void main() {
       final attributes2 = {'region': 'west'}.toAttributes();
 
       // Create value maps to simulate values that can go up or down
-      final Map<String, int> regionValues = {'east': 50, 'west': 75};
+      final regionValues = <String, int>{'east': 50, 'west': 75};
 
       // Create an ObservableUpDownCounter
       final counter = meter.createObservableUpDownCounter<int>(
@@ -168,7 +168,7 @@ void main() {
       ) as ObservableUpDownCounter<int>;
 
       // First callback
-      int serverProcesses = 42;
+      var serverProcesses = 42;
       final attributes1 = {'server': 'app'}.toAttributes();
       final registration1 = counter.addCallback((
         APIObservableResult<int> result,
@@ -179,7 +179,7 @@ void main() {
       });
 
       // Second callback
-      int dbProcesses = 15;
+      var dbProcesses = 15;
       final attributes2 = {'server': 'db'}.toAttributes();
       final registration2 = counter.addCallback((
         APIObservableResult<int> result,
@@ -237,8 +237,8 @@ void main() {
 
     test('ObservableUpDownCounter collectMetrics', () {
       // Create a counter with value that oscillates
-      int value = 1000;
-      bool goingUp = false;
+      var value = 1000;
+      var goingUp = false;
 
       final counter = meter.createObservableUpDownCounter<int>(
         name: 'metrics-updown-counter',
@@ -289,7 +289,7 @@ void main() {
 
     test('ObservableUpDownCounter with disabled meter', () {
       // Create a counter
-      int callCount = 0;
+      var callCount = 0;
 
       final counter = meter.createObservableUpDownCounter<int>(
         name: 'disabled-updown-counter',
@@ -360,7 +360,7 @@ void main() {
 
     test('ObservableUpDownCounter state clearing', () async {
       // Create a counter
-      int value = 100;
+      var value = 100;
 
       final counter = meter.createObservableUpDownCounter<int>(
         name: 'clear-updown-counter',
@@ -416,7 +416,7 @@ void main() {
 
     test('ObservableUpDownCounter with exceptions in callbacks', () {
       // Create a counter with a callback that throws an exception
-      bool callbackThrows = true;
+      var callbackThrows = true;
 
       final counter = meter.createObservableUpDownCounter<int>(
         name: 'exception-counter',
@@ -446,8 +446,8 @@ void main() {
     test('ObservableUpDownCounter with value changes', () {
       // Track how a counter behaves with different types of value changes
       // Set the same value multiple times
-      int fixedValue = 42;
-      bool valueChanged = false;
+      var fixedValue = 42;
+      var valueChanged = false;
 
       final counter = meter.createObservableUpDownCounter<int>(
         name: 'change-test-counter',

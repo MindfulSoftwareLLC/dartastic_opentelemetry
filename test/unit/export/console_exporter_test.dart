@@ -2,6 +2,10 @@
 // Tests the fix for: SimpleSpanProcessor.onEnd() is never called because Span.end()
 // doesn't notify span processors
 
+// Helper class methods are deliberately exhaustive even when a particular
+// test doesn't call every accessor.
+// ignore_for_file: unreachable_from_main
+
 import 'dart:async';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
@@ -183,7 +187,7 @@ void main() {
     tearDown(() async {
       console.stopCapture();
       await OTel.shutdown();
-      OTel.reset();
+      await OTel.reset();
     });
 
     test('span processor lifecycle events are called correctly', () async {

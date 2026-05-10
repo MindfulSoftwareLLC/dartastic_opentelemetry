@@ -52,7 +52,7 @@ class CompositeMetricExporter implements MetricExporter {
       return false;
     }
 
-    bool success = true;
+    var success = true;
     for (final exporter in _exporters) {
       try {
         final result = await exporter.export(data);
@@ -83,7 +83,7 @@ class CompositeMetricExporter implements MetricExporter {
       return false;
     }
 
-    bool success = true;
+    var success = true;
     for (final exporter in _exporters) {
       try {
         final result = await exporter.forceFlush();
@@ -109,7 +109,7 @@ class CompositeMetricExporter implements MetricExporter {
     }
 
     _shutdown = true;
-    bool success = true;
+    var success = true;
     for (final exporter in _exporters) {
       try {
         final result = await exporter.shutdown();

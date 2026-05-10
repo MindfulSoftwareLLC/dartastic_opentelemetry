@@ -41,7 +41,7 @@ class ConsoleMetricExporter implements MetricExporter {
       print(
           '  - ${metric.name} (${metric.unit ?? "no unit"}): ${metric.description ?? ""}');
       for (final point in metric.points) {
-        final String value = point.valueAsString;
+        final value = point.valueAsString;
         print('    - Value: $value, Attributes: ${point.attributes}');
         if (point.hasExemplars) {
           print('      Exemplars: ${point.exemplars?.length}');

@@ -189,7 +189,7 @@ void main() {
 
     group('ObservableCounter monotonicity', () {
       test('counter reset detection - value decreased', () {
-        int callCount = 0;
+        var callCount = 0;
 
         final counter = meter.createObservableCounter<int>(
           name: 'reset_counter',

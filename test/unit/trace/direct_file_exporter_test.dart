@@ -1,7 +1,9 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-// ignore_for_file: strict_raw_type
+// This test parses JSON-encoded span output from disk, where the natural
+// structure is `dynamic`/`Map<String, dynamic>`.
+// ignore_for_file: avoid_dynamic_calls
 
 import 'dart:convert';
 import 'dart:io';
@@ -211,7 +213,7 @@ void main() {
 
       // Create multiple spans
       print('Creating 3 spans...');
-      for (int i = 0; i < 3; i++) {
+      for (var i = 0; i < 3; i++) {
         final span = tracer.startSpan(
           'multi-span-$i',
           attributes: Attributes.of({'span.index': i}),
@@ -263,7 +265,7 @@ void main() {
         expect(allSpans, hasLength(3));
 
         // Verify each span exists (order might vary)
-        for (int i = 0; i < 3; i++) {
+        for (var i = 0; i < 3; i++) {
           final expectedSpanName = 'multi-span-$i';
           final matchingSpan = allSpans.firstWhere(
             (span) => span['name'] == expectedSpanName,

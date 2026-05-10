@@ -1004,14 +1004,13 @@ void main() {
       final logRecord = _createTestLogRecord();
 
       // Start export (it will block in slow service)
-      // ignore: unawaited_futures
       final exportFuture = exporter.export([logRecord]);
 
       // Wait until the service has received the export call
       await service.exportStarted.future;
 
       // Start forceFlush - it should wait for the pending export
-      bool flushCompleted = false;
+      var flushCompleted = false;
       final flushFuture = exporter.forceFlush().then((_) {
         flushCompleted = true;
       });
@@ -1044,7 +1043,6 @@ void main() {
       final logRecord = _createTestLogRecord();
 
       // Start export (it will fail)
-      // ignore: unawaited_futures
       final exportFuture = exporter.export([logRecord]);
 
       // Give a small delay for the export to start
@@ -1073,16 +1071,16 @@ void main() {
       final logRecord = _createTestLogRecord();
 
       // Start export that will block
-      // ignore: unawaited_futures
       final exportFuture = exporter.export([logRecord]);
 
       // Wait until the service has received the request
       await service.exportStarted.future;
 
       // Complete the slow service so export finishes before shutdown timeout
-      Future<void>.delayed(const Duration(milliseconds: 100)).then((_) {
+      unawaited(
+          Future<void>.delayed(const Duration(milliseconds: 100)).then((_) {
         service.shouldComplete.complete();
-      });
+      }));
 
       await exporter.shutdown();
 
@@ -1110,7 +1108,6 @@ void main() {
         final logRecord = _createTestLogRecord();
 
         // Start an export that will never complete
-        // ignore: unawaited_futures
         final exportFuture = exporter.export([logRecord]).catchError(
           (Object e) => ExportResult.failure,
         );
@@ -1255,16 +1252,16 @@ void main() {
       final logRecord = _createTestLogRecord();
 
       // Start an export that will block
-      // ignore: unawaited_futures
       final exportFuture = exporter.export([logRecord]);
 
       // Wait for it to start
       await service.exportStarted.future;
 
       // Call forceFlush to exercise the pending exports path
-      Future<void>.delayed(const Duration(milliseconds: 50)).then((_) {
+      unawaited(
+          Future<void>.delayed(const Duration(milliseconds: 50)).then((_) {
         service.shouldComplete.complete();
-      });
+      }));
 
       await exporter.forceFlush();
       await exportFuture;

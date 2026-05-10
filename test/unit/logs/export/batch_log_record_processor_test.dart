@@ -37,7 +37,7 @@ void main() {
 
       try {
         // Add 3 logs (less than batch size)
-        for (int i = 0; i < 3; i++) {
+        for (var i = 0; i < 3; i++) {
           final logRecord = SDKLogRecord(
             instrumentationScope: scope,
             severityNumber: Severity.INFO,
@@ -64,7 +64,7 @@ void main() {
 
       try {
         // Add logs to the queue
-        for (int i = 0; i < 3; i++) {
+        for (var i = 0; i < 3; i++) {
           final logRecord = SDKLogRecord(
             instrumentationScope: scope,
             severityNumber: Severity.INFO,
@@ -119,7 +119,7 @@ void main() {
 
       try {
         // Add more logs than queue size
-        for (int i = 0; i < 10; i++) {
+        for (var i = 0; i < 10; i++) {
           final logRecord = SDKLogRecord(
             instrumentationScope: scope,
             severityNumber: Severity.INFO,
@@ -145,7 +145,7 @@ void main() {
       final processor = BatchLogRecordProcessor(exporter, config);
 
       // Add some logs
-      for (int i = 0; i < 3; i++) {
+      for (var i = 0; i < 3; i++) {
         final logRecord = SDKLogRecord(
           instrumentationScope: scope,
           severityNumber: Severity.INFO,
@@ -200,7 +200,7 @@ void main() {
 
       try {
         // Add some logs
-        for (int i = 0; i < 5; i++) {
+        for (var i = 0; i < 5; i++) {
           final logRecord = SDKLogRecord(
             instrumentationScope: scope,
             severityNumber: Severity.INFO,
@@ -228,7 +228,7 @@ void main() {
       try {
         // Emit concurrently
         final futures = <Future<void>>[];
-        for (int i = 0; i < 20; i++) {
+        for (var i = 0; i < 20; i++) {
           final logRecord = SDKLogRecord(
             instrumentationScope: scope,
             severityNumber: Severity.INFO,
@@ -275,7 +275,7 @@ void main() {
 
       try {
         // This should not throw even when export fails
-        for (int i = 0; i < 3; i++) {
+        for (var i = 0; i < 3; i++) {
           final logRecord = SDKLogRecord(
             instrumentationScope: scope,
             severityNumber: Severity.INFO,

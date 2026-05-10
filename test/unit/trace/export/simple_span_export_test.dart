@@ -74,7 +74,7 @@ void main() {
       final tracer = tracerProvider.getTracer('test-tracer');
 
       // Create multiple spans
-      for (int i = 0; i < 5; i++) {
+      for (var i = 0; i < 5; i++) {
         final span = tracer.startSpan('span-$i');
         span.setIntAttribute('index', i);
         span.end();
@@ -87,7 +87,7 @@ void main() {
       expect(exporter.spans, hasLength(5));
 
       // Verify each span
-      for (int i = 0; i < 5; i++) {
+      for (var i = 0; i < 5; i++) {
         expect(exporter.hasSpanWithName('span-$i'), isTrue);
         final span = exporter.findSpanByName('span-$i')!;
         expect(span.attributes.getInt('index'), equals(i));

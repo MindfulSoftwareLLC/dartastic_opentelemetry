@@ -30,7 +30,7 @@ void main() {
 
     test('Simple ObservableCounter with single callback', () {
       // Initial value
-      int observedValue = 0;
+      var observedValue = 0;
 
       // Create an ObservableCounter with int type
       final counter = meter.createObservableCounter<int>(
@@ -83,7 +83,7 @@ void main() {
       final attributes2 = {'service': 'db'}.toAttributes();
 
       // Create value maps to simulate increasing values
-      final Map<Attributes, int> observedValues = {};
+      final observedValues = <Attributes, int>{};
 
       // Create an ObservableCounter
       final counter = meter.createObservableCounter<int>(
@@ -151,7 +151,7 @@ void main() {
       ) as ObservableCounter<int>;
 
       // First callback
-      int callback1Value = 100;
+      var callback1Value = 100;
       final attributes1 = {'source': 'callback1'}.toAttributes();
       final registration1 = counter.addCallback((
         APIObservableResult<int> result,
@@ -161,7 +161,7 @@ void main() {
       });
 
       // Second callback
-      int callback2Value = 200;
+      var callback2Value = 200;
       final attributes2 = {'source': 'callback2'}.toAttributes();
       final registration2 = counter.addCallback((
         APIObservableResult<int> result,
@@ -218,8 +218,8 @@ void main() {
 
     test('ObservableCounter with monotonicity', () {
       // Create a counter with a decreasing value to test monotonicity handling
-      int counterValue = 100;
-      bool decreaseValue = false;
+      var counterValue = 100;
+      var decreaseValue = false;
 
       final counter = meter.createObservableCounter<int>(
         name: 'monotonic-test-counter',
@@ -286,7 +286,7 @@ void main() {
 
     test('ObservableCounter collectMetrics', () {
       // Create a counter
-      int value = 0;
+      var value = 0;
 
       final counter = meter.createObservableCounter<int>(
         name: 'metrics-counter',
@@ -329,7 +329,7 @@ void main() {
 
     test('ObservableCounter with disabled meter', () {
       // Create a counter
-      int callCount = 0;
+      var callCount = 0;
 
       final counter = meter.createObservableCounter<int>(
         name: 'disabled-counter',
@@ -363,7 +363,7 @@ void main() {
 
     test('ObservableCounter state clearing', () async {
       // Create a counter
-      int value = 100;
+      var value = 100;
 
       final counter = meter.createObservableCounter<int>(
         name: 'clear-counter',

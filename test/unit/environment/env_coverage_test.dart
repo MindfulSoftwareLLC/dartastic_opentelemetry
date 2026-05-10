@@ -53,6 +53,8 @@ Future<String> runWithEnv(
 class _StringThrowingDetector implements ResourceDetector {
   @override
   Future<Resource> detect() async {
+    // Intentionally throws a String to exercise the non-Exception catch path.
+    // ignore: only_throw_errors
     throw 'non-exception error string';
   }
 }

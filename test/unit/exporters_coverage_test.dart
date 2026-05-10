@@ -78,7 +78,7 @@ class _MapGetter implements TextMapGetter<String> {
 // Main
 // ---------------------------------------------------------------------------
 void main() {
-  final List<String> logOutput = [];
+  final logOutput = <String>[];
 
   setUp(() async {
     await OTel.reset();

@@ -101,7 +101,7 @@ class _SlowLogRecordExporter implements LogRecordExporter {
 // Main
 // ---------------------------------------------------------------------------
 void main() {
-  final List<String> logOutput = [];
+  final logOutput = <String>[];
 
   setUp(() async {
     await OTel.reset();
@@ -501,7 +501,7 @@ void main() {
 
       try {
         // Fill the queue
-        for (int i = 0; i < 5; i++) {
+        for (var i = 0; i < 5; i++) {
           final logRecord = SDKLogRecord(
             instrumentationScope: scope,
             severityNumber: Severity.INFO,
@@ -674,7 +674,7 @@ void main() {
       );
       final processor = BatchLogRecordProcessor(exporter, config);
 
-      for (int i = 0; i < 5; i++) {
+      for (var i = 0; i < 5; i++) {
         final logRecord = SDKLogRecord(
           instrumentationScope: scope,
           severityNumber: Severity.INFO,

@@ -3,13 +3,13 @@
 
 library;
 
-import 'package:dartastic_opentelemetry/src/trace/sampling/sampler.dart';
-import 'package:dartastic_opentelemetry/src/trace/tracer_provider.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import '../otel.dart';
 import '../resource/resource.dart';
+import 'sampling/sampler.dart';
 import 'span.dart';
+import 'tracer_provider.dart';
 
 part 'tracer_create.dart';
 
@@ -218,7 +218,7 @@ class Tracer implements APITracer {
       OTelLog.debug('Tracer: Creating span with name: $name, kind: $kind');
     }
 
-    final APISpan delegateSpan = _delegate.createSpan(
+    final delegateSpan = _delegate.createSpan(
       name: name,
       spanContext: spanContext,
       parentSpan: parentSpan,
@@ -256,7 +256,7 @@ class Tracer implements APITracer {
     // root as the propagated starting context), so an identity-style check
     // would incorrectly skip parent inheritance there.
     SpanContext? parentContext;
-    APISpan? effectiveParentSpan = parentSpan;
+    var effectiveParentSpan = parentSpan;
     final effectiveContext = context ?? Context.current;
 
     if (effectiveContext.span != null) {
@@ -330,7 +330,7 @@ class Tracer implements APITracer {
     }
 
     // Apply sampling decision if we have a sampler
-    bool shouldRecord = true;
+    var shouldRecord = true;
     if (sampler != null) {
       final samplingResult = sampler!.shouldSample(
         parentContext: effectiveContext,
@@ -385,12 +385,8 @@ class Tracer implements APITracer {
       traceFlags: traceFlags,
     );
 
-    // Create the delegate span with our newly created span context. The API
-    // tracer pulls its TimeProvider (platform-aware: SystemTimeProvider on
-    // native, WebTimeProvider on web) from its provider, so span start
-    // timestamps come from the right clock without the SDK threading them
-    // through here.
-    final APISpan delegateSpan = _delegate.startSpan(
+    // Create the delegate span with our newly created span context
+    final delegateSpan = _delegate.startSpan(
       name,
       context: effectiveContext,
       spanContext: newSpanContext,

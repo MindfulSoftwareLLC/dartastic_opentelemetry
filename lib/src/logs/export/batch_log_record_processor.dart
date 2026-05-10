@@ -127,7 +127,7 @@ class BatchLogRecordProcessor implements LogRecordProcessor {
       return;
     }
 
-    final List<ReadableLogRecord> logsToExport = [];
+    final logsToExport = <ReadableLogRecord>[];
 
     await _lock.synchronized(() {
       final batchSize = _logQueue.length > _config.maxExportBatchSize
@@ -209,7 +209,7 @@ class BatchLogRecordProcessor implements LogRecordProcessor {
 
   /// Internal export batch method for shutdown that doesn't check _isShutdown.
   Future<void> _exportBatchForShutdown() async {
-    final List<ReadableLogRecord> logsToExport = [];
+    final logsToExport = <ReadableLogRecord>[];
 
     await _lock.synchronized(() {
       final batchSize = _logQueue.length > _config.maxExportBatchSize

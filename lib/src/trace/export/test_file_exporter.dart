@@ -3,9 +3,8 @@
 
 import 'dart:convert';
 import 'dart:io';
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart'
-    show OTelLog;
-import 'package:dartastic_opentelemetry/src/trace/span.dart';
+import '../../../dartastic_opentelemetry.dart' show OTelLog;
+import '../span.dart';
 import 'span_exporter.dart';
 
 /// A simple file-based SpanExporter for debugging purposes.

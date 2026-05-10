@@ -78,10 +78,9 @@ class OtlpGrpcMetricExporter implements MetricExporter {
     );
 
     // Parse host and port from endpoint
-    final Uri uri = Uri.parse(config.endpoint);
-    final String host = uri.host;
-    final int port =
-        uri.port > 0 ? uri.port : (uri.scheme == 'https' ? 443 : 80);
+    final uri = Uri.parse(config.endpoint);
+    final host = uri.host;
+    final port = uri.port > 0 ? uri.port : (uri.scheme == 'https' ? 443 : 80);
 
     if (OTelLog.isLogExport()) {
       OTelLog.logExport(
@@ -98,7 +97,7 @@ class OtlpGrpcMetricExporter implements MetricExporter {
     );
 
     // Add custom headers if provided
-    final Map<String, String> metadata = {};
+    final metadata = <String, String>{};
     if (config.headers != null) {
       metadata.addAll(config.headers!);
     }

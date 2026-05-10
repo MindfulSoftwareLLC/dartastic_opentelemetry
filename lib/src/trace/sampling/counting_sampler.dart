@@ -138,8 +138,8 @@ class ErrorSamplingCondition extends SamplingCondition {
     final statusCode = attributes.getString('otel.status_code');
     final statusMessage = attributes.getString('otel.status_description');
 
-    return (statusCode == 'ERROR' ||
-        (statusMessage != null && statusMessage.isNotEmpty));
+    return statusCode == 'ERROR' ||
+        (statusMessage != null && statusMessage.isNotEmpty);
   }
 }
 
@@ -226,7 +226,7 @@ class AttributeSamplingCondition extends SamplingCondition {
     this.intValue,
     this.doubleValue,
   }) {
-    int nonNullCount = 0;
+    var nonNullCount = 0;
     if (stringValue != null) {
       nonNullCount++;
     }
