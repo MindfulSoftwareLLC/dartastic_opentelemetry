@@ -34,7 +34,7 @@ void main() {
       final parentContext = OTelAPI.context();
 
       // Try with 10 different trace IDs
-      for (int i = 0; i < 10; i++) {
+      for (var i = 0; i < 10; i++) {
         final traceId =
             '000000000000000000000000000000${i.toRadixString(16).padLeft(2, '0')}';
 
@@ -56,7 +56,7 @@ void main() {
       final parentContext = OTelAPI.context();
 
       // Try with 10 different trace IDs
-      for (int i = 0; i < 10; i++) {
+      for (var i = 0; i < 10; i++) {
         final traceId =
             '000000000000000000000000000000${i.toRadixString(16).padLeft(2, '0')}';
 
@@ -110,15 +110,15 @@ void main() {
       final sampler = TraceIdRatioSampler(0.3);
       final parentContext = OTelAPI.context();
 
-      int sampledCount = 0;
+      var sampledCount = 0;
       const totalRuns = 1000;
       final random = Random();
 
       // Generate truly random trace IDs for accurate sampling distribution
-      for (int i = 0; i < totalRuns; i++) {
+      for (var i = 0; i < totalRuns; i++) {
         // Create a random trace ID using random bytes
         final buffer = StringBuffer();
-        for (int j = 0; j < 32; j++) {
+        for (var j = 0; j < 32; j++) {
           buffer.write(
             random.nextInt(16).toRadixString(16),
           ); // Random hex digit

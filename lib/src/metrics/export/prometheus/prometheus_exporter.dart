@@ -142,7 +142,7 @@ class PrometheusExporter implements MetricExporter {
       buffer.writeln('${metricName}_count$labels ${histogram.count}');
 
       // Write buckets
-      for (int i = 0; i < histogram.boundaries.length; i++) {
+      for (var i = 0; i < histogram.boundaries.length; i++) {
         final boundary = histogram.boundaries[i];
         final count = histogram.bucketCounts[i];
         buffer.writeln(

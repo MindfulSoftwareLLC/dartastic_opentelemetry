@@ -106,8 +106,8 @@ void main() {
       // The test is checking that the filtered attributes contain the expected attributes
       // but we can't directly access them by key, so we'll check through the list
       final filteredAttrs = exemplar.filteredAttributes.toList();
-      bool foundInstanceId = false;
-      bool foundCustomerId = false;
+      var foundInstanceId = false;
+      var foundCustomerId = false;
 
       for (var attr in filteredAttrs) {
         if (attr.key == 'instance.id' && attr.value == '12345') {
@@ -121,12 +121,12 @@ void main() {
       expect(
         foundInstanceId,
         isTrue,
-        reason: "instance.id attribute missing or wrong value",
+        reason: 'instance.id attribute missing or wrong value',
       );
       expect(
         foundCustomerId,
         isTrue,
-        reason: "customer.id attribute missing or wrong value",
+        reason: 'customer.id attribute missing or wrong value',
       );
 
       // End the span
@@ -162,8 +162,8 @@ void main() {
 
       // Check filtered attributes through the list
       final filteredAttrs = exemplar.filteredAttributes.toList();
-      bool foundExtra1 = false;
-      bool foundExtra2 = false;
+      var foundExtra1 = false;
+      var foundExtra2 = false;
 
       for (var attr in filteredAttrs) {
         if (attr.key == 'extra1' && attr.value == 'extraValue1') {
@@ -177,18 +177,18 @@ void main() {
       expect(
         foundExtra1,
         isTrue,
-        reason: "extra1 attribute missing or wrong value",
+        reason: 'extra1 attribute missing or wrong value',
       );
       expect(
         foundExtra2,
         isTrue,
-        reason: "extra2 attribute missing or wrong value",
+        reason: 'extra2 attribute missing or wrong value',
       );
 
       // Verify excluded attributes - check they're not in the list
-      bool hasCommon1 = false;
-      bool hasCommon2 = false;
-      bool hasOther = false;
+      var hasCommon1 = false;
+      var hasCommon2 = false;
+      var hasOther = false;
 
       for (var attr in filteredAttrs) {
         if (attr.key == 'common1') hasCommon1 = true;
@@ -248,8 +248,8 @@ void main() {
       expect(exemplar2.filteredAttributes.toList().length, equals(2));
 
       final filteredAttrs = exemplar2.filteredAttributes.toList();
-      bool foundKey1 = false;
-      bool foundKey2 = false;
+      var foundKey1 = false;
+      var foundKey2 = false;
 
       for (var attr in filteredAttrs) {
         if (attr.key == 'key1' && attr.value == 'value1') {
@@ -312,12 +312,12 @@ void main() {
 
       // Check for attributes by type
       final filteredAttrs = exemplar.filteredAttributes.toList();
-      bool foundDouble = false;
-      bool foundBool = false;
-      bool foundStringArray = false;
-      bool foundIntArray = false;
-      bool foundDoubleArray = false;
-      bool foundBoolArray = false;
+      var foundDouble = false;
+      var foundBool = false;
+      var foundStringArray = false;
+      var foundIntArray = false;
+      var foundDoubleArray = false;
+      var foundBoolArray = false;
 
       for (var attr in filteredAttrs) {
         if (attr.key == 'double' && attr.value == 123.45) {
@@ -395,7 +395,7 @@ class MockMeasurement implements Measurement {
 // Helper for comparing lists
 bool listEquals<T>(List<T> a, List<T> b) {
   if (a.length != b.length) return false;
-  for (int i = 0; i < a.length; i++) {
+  for (var i = 0; i < a.length; i++) {
     if (a[i] != b[i]) return false;
   }
   return true;

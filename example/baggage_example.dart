@@ -1,6 +1,10 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+// Example helpers below `main()` are illustrative entry points for other
+// scenarios — readers can call them in their own `main()`.
+// ignore_for_file: unreachable_from_main
+
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
 /// Example-only baggage keys for things not in the OTel semantic

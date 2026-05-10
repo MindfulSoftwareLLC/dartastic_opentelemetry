@@ -33,7 +33,7 @@ void main() {
 
     group('ObservableCounter', () {
       test('callback is invoked during collection', () {
-        bool callbackInvoked = false;
+        var callbackInvoked = false;
 
         final counter = meter.createObservableCounter<int>(
           name: 'obs_counter_invoked',
@@ -68,7 +68,7 @@ void main() {
 
     group('ObservableUpDownCounter', () {
       test('callback invoked during collection', () {
-        bool callbackInvoked = false;
+        var callbackInvoked = false;
 
         final counter = meter.createObservableUpDownCounter<int>(
           name: 'obs_updown_invoked',
@@ -84,7 +84,7 @@ void main() {
       });
 
       test('records positive and negative values', () {
-        int callCount = 0;
+        var callCount = 0;
 
         final counter = meter.createObservableUpDownCounter<int>(
           name: 'obs_updown_values',
@@ -114,7 +114,7 @@ void main() {
 
     group('ObservableGauge', () {
       test('callback invoked during collection', () {
-        bool callbackInvoked = false;
+        var callbackInvoked = false;
 
         final gauge = meter.createObservableGauge<double>(
           name: 'obs_gauge_invoked',
@@ -130,7 +130,7 @@ void main() {
       });
 
       test('records latest value', () {
-        int callCount = 0;
+        var callCount = 0;
 
         final gauge = meter.createObservableGauge<double>(
           name: 'obs_gauge_latest',

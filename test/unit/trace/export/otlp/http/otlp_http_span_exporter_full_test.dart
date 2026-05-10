@@ -156,7 +156,7 @@ void main() {
       // Close the default server and create one that returns 503 first
       await server.close(force: true);
 
-      int requestCount = 0;
+      var requestCount = 0;
       server = await HttpServer.bind('localhost', 0);
       port = server.port;
       server.listen((request) async {
@@ -193,7 +193,7 @@ void main() {
     test('export retries on 429', () async {
       await server.close(force: true);
 
-      int requestCount = 0;
+      var requestCount = 0;
       server = await HttpServer.bind('localhost', 0);
       port = server.port;
       server.listen((request) async {
@@ -229,7 +229,7 @@ void main() {
     test('export does not retry on 400', () async {
       await server.close(force: true);
 
-      int requestCount = 0;
+      var requestCount = 0;
       server = await HttpServer.bind('localhost', 0);
       port = server.port;
       server.listen((request) async {

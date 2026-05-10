@@ -1,8 +1,6 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-// ignore_for_file: public_member_api_docs
-
 // Implementation file for web platforms
 // This file won't be directly imported on non-web platforms
 import 'dart:js_interop';
@@ -64,11 +62,11 @@ class WebResourceDetector implements ResourceDetector {
   @override
   Future<Resource> detect() async {
     if (OTelFactory.otelFactory == null) {
-      throw 'OTel initialize must be called first.';
+      throw StateError('OTel initialize must be called first.');
     }
 
     // Use JS interop to safely get navigator properties
-    final Map<String, Object> attributes = {};
+    final attributes = <String, Object>{};
 
     try {
       final nav = _navigator;

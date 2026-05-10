@@ -56,7 +56,7 @@ void main() {
       // Create a large binary payload with a pattern
       final largeData = Uint8List(10000);
       for (var i = 0; i < largeData.length; i++) {
-        largeData[i] = (i % 256);
+        largeData[i] = i % 256;
       }
 
       // Compress the data

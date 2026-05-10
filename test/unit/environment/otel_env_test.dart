@@ -43,7 +43,7 @@ void main() {
     LogFunction? savedMetricLogFunction;
     LogFunction? savedSpanLogFunction;
     LogFunction? savedExportLogFunction;
-    LogLevel savedLogLevel = OTelLog.currentLevel;
+    var savedLogLevel = OTelLog.currentLevel;
 
     setUp(() {
       savedLogFunction = OTelLog.logFunction;

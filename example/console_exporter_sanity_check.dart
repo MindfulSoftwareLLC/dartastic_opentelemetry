@@ -87,7 +87,7 @@ Future<void> main(List<String> arguments) async {
 void importantFunction() {
   print('Hello from important function!');
   // Simulate some work
-  for (int i = 0; i < 1000000; i++) {
+  for (var i = 0; i < 1000000; i++) {
     // Busy work to create some measurable duration
   }
 }

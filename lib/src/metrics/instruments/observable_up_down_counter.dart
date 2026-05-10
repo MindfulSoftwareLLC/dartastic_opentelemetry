@@ -130,7 +130,7 @@ class ObservableUpDownCounter<T extends num>
         for (final measurement in observableResult.measurements) {
           // Type checking for the generic parameter
           final dynamic rawValue = measurement.value;
-          final num value = (rawValue is num)
+          final value = (rawValue is num)
               ? rawValue
               : num.tryParse(rawValue.toString()) ?? 0;
           final attributes =

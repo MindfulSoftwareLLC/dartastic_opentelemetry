@@ -62,7 +62,7 @@ void main() {
       group('span context serialization', () {
         test('serializes span context fields correctly', () {
           final spanContext = OTel.spanContext(
-            traceId: OTel.traceIdFrom(('a' * 32)),
+            traceId: OTel.traceIdFrom('a' * 32),
             spanId: OTel.spanIdFrom('b' * 16),
             traceFlags: OTel.traceFlags(1),
             traceState: OTel.traceState({'key': 'value'}),

@@ -4,9 +4,10 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:meta/meta.dart';
+
+import '../dartastic_opentelemetry.dart';
 
 /// Main entry point for the OpenTelemetry SDK.
 ///
@@ -62,14 +63,14 @@ class OTel {
   static String? dartasticApiKey;
 
   /// Default service name used if none is provided.
-  static const defaultServiceName = "@dart/dartastic_opentelemetry";
+  static const defaultServiceName = '@dart/dartastic_opentelemetry';
 
   /// Default OTEL endpoint.
   ///
   /// Defaults to the OTLP/HTTP port (4318) since http/protobuf is the default
   /// protocol per the OpenTelemetry specification. When using gRPC, override
   /// this with port 4317.
-  static const defaultEndpoint = "http://localhost:4318";
+  static const defaultEndpoint = 'http://localhost:4318';
 
   /// Default tracer name used if none is provided.
   static const String _defaultTracerName = 'dartastic';
@@ -78,7 +79,7 @@ class OTel {
   static String defaultTracerName = _defaultTracerName;
 
   /// Default tracer version.
-  static String defaultTracerVersion = "1.0.0";
+  static String defaultTracerVersion = '1.0.0';
 
   /// Initializes the OpenTelemetry SDK with the specified configuration.
   ///
@@ -309,7 +310,7 @@ class OTel {
     if (OTelLog.isDebug()) {
       // Final check to ensure tenant_id is preserved
       if (tenantId != null && OTel.defaultResource != null) {
-        bool hasTenantId = false;
+        var hasTenantId = false;
         OTel.defaultResource!.attributes.toList().forEach((attr) {
           if (attr.key == 'tenant_id') {
             hasTenantId = true;

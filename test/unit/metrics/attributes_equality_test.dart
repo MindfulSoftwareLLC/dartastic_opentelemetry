@@ -34,12 +34,12 @@ void main() {
       expect(
         map.containsKey(attrs1),
         isTrue,
-        reason: "Map should contain the exact same key instance",
+        reason: 'Map should contain the exact same key instance',
       );
       expect(
         map.containsKey(attrs2),
         isTrue,
-        reason: "Map should recognize equivalent keys",
+        reason: 'Map should recognize equivalent keys',
       );
       expect(map[attrs1], equals(10));
       expect(map[attrs2], equals(10));

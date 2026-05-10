@@ -1,8 +1,9 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'package:dartastic_opentelemetry/src/otel.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+
+import '../../otel.dart';
 
 /// Implementation of the W3C Baggage specification for context propagation.
 ///

@@ -263,7 +263,7 @@ void main() {
 
       // Create baggage with many entries
       var baggage = OTel.baggage();
-      for (int i = 0; i < 20; i++) {
+      for (var i = 0; i < 20; i++) {
         baggage = baggage.copyWith('key$i', 'value$i');
       }
 
@@ -281,7 +281,7 @@ void main() {
       expect(exporter.spans, hasLength(1));
       final exportedSpan = exporter.spans.first;
 
-      for (int i = 0; i < 20; i++) {
+      for (var i = 0; i < 20; i++) {
         expect(exportedSpan.attributes.getString('key$i'), equals('value$i'));
       }
     });

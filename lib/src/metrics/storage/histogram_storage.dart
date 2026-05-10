@@ -70,22 +70,22 @@ class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
   HistogramValue getValue([Attributes? attributes]) {
     if (attributes == null) {
       // Combine across all attribute sets
-      final num totalSum = _points.values.fold<num>(
+      final totalSum = _points.values.fold<num>(
         0,
         (sum, data) => sum + data.sum,
       );
-      final int totalCount = _points.values.fold<int>(
+      final totalCount = _points.values.fold<int>(
         0,
         (count, data) => count + data.count,
       );
 
       // Combine bucket counts
-      final List<int> combinedCounts = List<int>.filled(
+      final combinedCounts = List<int>.filled(
         boundaries.length + 1,
         0,
       );
       for (final data in _points.values) {
-        for (int i = 0; i < data.counts.length; i++) {
+        for (var i = 0; i < data.counts.length; i++) {
           combinedCounts[i] += data.counts[i];
         }
       }
@@ -246,8 +246,8 @@ class _HistogramPointData<T extends num> {
     }
 
     // Find the right bucket
-    int bucketIndex = boundaries.length; // Default to the +Inf bucket
-    for (int i = 0; i < boundaries.length; i++) {
+    var bucketIndex = boundaries.length; // Default to the +Inf bucket
+    for (var i = 0; i < boundaries.length; i++) {
       if (value <= boundaries[i]) {
         bucketIndex = i;
         break;

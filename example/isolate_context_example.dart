@@ -1,6 +1,10 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+// Alternate Zone-based examples below `main()` are illustrative entry points
+// readers can call from their own `main()`.
+// ignore_for_file: unreachable_from_main
+
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
 Future<void> main() async {

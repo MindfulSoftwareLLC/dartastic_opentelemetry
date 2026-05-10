@@ -24,7 +24,7 @@ class ProcessResourceDetector implements ResourceDetector {
   @override
   Future<Resource> detect() async {
     if (OTelFactory.otelFactory == null) {
-      throw 'OTel initialize must be called first.';
+      throw StateError('OTel initialize must be called first.');
     }
     return ResourceCreate.create(
       OTelFactory.otelFactory!.attributesFromMap({
@@ -50,9 +50,9 @@ class HostResourceDetector implements ResourceDetector {
   @override
   Future<Resource> detect() async {
     if (OTelFactory.otelFactory == null) {
-      throw 'OTel initialize must be called first.';
+      throw StateError('OTel initialize must be called first.');
     }
-    final Map<String, Object> attributes = {
+    final attributes = <String, Object>{
       'host.name': io.Platform.localHostname,
       'host.arch': io.Platform.localHostname,
       'host.processors': io.Platform.numberOfProcessors,

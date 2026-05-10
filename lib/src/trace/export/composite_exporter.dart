@@ -1,8 +1,8 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'package:dartastic_opentelemetry/src/trace/export/span_exporter.dart';
-import 'package:dartastic_opentelemetry/src/trace/span.dart';
+import '../span.dart';
+import 'span_exporter.dart';
 
 /// A composite exporter that delegates export operations to multiple exporters.
 ///

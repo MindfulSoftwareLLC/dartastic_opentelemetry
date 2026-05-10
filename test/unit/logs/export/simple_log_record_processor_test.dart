@@ -44,7 +44,7 @@ void main() {
     });
 
     test('SimpleLogRecordProcessor exports multiple log records', () async {
-      for (int i = 0; i < 5; i++) {
+      for (var i = 0; i < 5; i++) {
         final logRecord = SDKLogRecord(
           instrumentationScope: scope,
           severityNumber: Severity.INFO,

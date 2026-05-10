@@ -47,7 +47,7 @@ void main() {
       exporter.clear();
 
       // Arrange
-      String result = '';
+      var result = '';
       final span = tracer.startSpan('test-with-span');
 
       // Act
@@ -73,7 +73,7 @@ void main() {
       exporter.clear();
 
       // Arrange
-      String result = '';
+      var result = '';
       final span = tracer.startSpan('test-with-span-async');
 
       // Act

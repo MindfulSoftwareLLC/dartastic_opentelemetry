@@ -1,10 +1,10 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'package:dartastic_opentelemetry/src/trace/span.dart';
-import 'package:dartastic_opentelemetry/src/trace/span_processor.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
+import '../span.dart';
+import '../span_processor.dart';
 import 'span_exporter.dart';
 
 /// A simple SpanProcessor that exports spans synchronously when they end.
@@ -68,7 +68,7 @@ class SimpleSpanProcessor implements SpanProcessor {
         OTelLog.debug('SimpleSpanProcessor: Created list of spans to export');
       }
 
-      final Future<void> pendingExport = _spanExporter.export(spanToExport);
+      final pendingExport = _spanExporter.export(spanToExport);
       _pendingExports.add(pendingExport);
       if (OTelLog.isDebug()) {
         OTelLog.debug(

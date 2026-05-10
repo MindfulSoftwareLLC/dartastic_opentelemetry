@@ -5,12 +5,12 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:dartastic_opentelemetry/src/trace/span.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
     show OTelLog;
 import 'package:http/http.dart' as http;
 
 import '../../../../util/zip/gzip.dart';
+import '../../../span.dart';
 import '../../../span_logger.dart';
 import '../../span_exporter.dart';
 import '../span_transformer.dart';
@@ -75,7 +75,7 @@ class OtlpHttpSpanExporter implements SpanExporter {
 
   String _getEndpointUrl() {
     // Ensure the endpoint ends with /v1/traces
-    String endpoint = _config.endpoint;
+    var endpoint = _config.endpoint;
     if (!endpoint.endsWith('/v1/traces')) {
       // Ensure there's no trailing slash before adding path
       if (endpoint.endsWith('/')) {
@@ -92,7 +92,7 @@ class OtlpHttpSpanExporter implements SpanExporter {
     }
 
     if (OTelLog.isLogSpans()) {
-      logSpans(spans, "Exporting spans via HTTP.");
+      logSpans(spans, 'Exporting spans via HTTP.');
     }
 
     if (OTelLog.isDebug()) {
@@ -123,8 +123,8 @@ class OtlpHttpSpanExporter implements SpanExporter {
     }
 
     // Convert protobuf to bytes
-    final Uint8List messageBytes = request.writeToBuffer();
-    Uint8List bodyBytes = messageBytes;
+    final messageBytes = request.writeToBuffer();
+    var bodyBytes = messageBytes;
 
     // Apply gzip compression if configured
     if (_config.compression) {
@@ -151,7 +151,7 @@ class OtlpHttpSpanExporter implements SpanExporter {
     }
 
     try {
-      final http.Response response = await _client
+      final response = await _client
           .post(Uri.parse(endpointUrl), headers: headers, body: bodyBytes)
           .timeout(_config.timeout);
 
@@ -162,7 +162,7 @@ class OtlpHttpSpanExporter implements SpanExporter {
           );
         }
       } else {
-        final String errorMessage =
+        final errorMessage =
             'OtlpHttpSpanExporter: Export request failed with status code ${response.statusCode}';
         if (OTelLog.isError()) OTelLog.error(errorMessage);
         throw http.ClientException(errorMessage);
@@ -273,7 +273,7 @@ class OtlpHttpSpanExporter implements SpanExporter {
         }
 
         // Handle status code-based retries
-        bool shouldRetry = false;
+        var shouldRetry = false;
         if (e.message.contains('status code')) {
           for (final code in _retryableStatusCodes) {
             if (e.message.contains('status code $code')) {

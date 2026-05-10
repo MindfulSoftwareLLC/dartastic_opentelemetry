@@ -537,14 +537,13 @@ void main() {
 
       // Start export (it will block in slow service)
       // We must NOT await this - it is intentionally left pending
-      // ignore: unawaited_futures
       final exportFuture = exporter.export([span]);
 
       // Wait until the service has received the export call
       await service.exportStarted.future;
 
       // Start forceFlush - it should wait for the pending export
-      bool flushCompleted = false;
+      var flushCompleted = false;
       final flushFuture = exporter.forceFlush().then((_) {
         flushCompleted = true;
       });
@@ -579,7 +578,6 @@ void main() {
 
       // Start export (it will fail but that takes a moment for channel setup)
       Object? exportError;
-      // ignore: unawaited_futures
       final exportFuture = exporter.export([span]).catchError((Object e) {
         exportError = e;
       });
@@ -613,7 +611,6 @@ void main() {
       final span = _createTestSpan(name: 'shutdown-pending-span');
 
       // Start export that will block
-      // ignore: unawaited_futures
       final exportFuture = exporter.export([span]);
 
       // Wait until the service has received the request
@@ -622,9 +619,10 @@ void main() {
       // Shutdown will set _isShutdown and wait for pending exports with a 10s timeout.
       // We complete the slow service so it finishes before the timeout.
       // This exercises the pendingExportsCopy.isNotEmpty path.
-      Future<void>.delayed(const Duration(milliseconds: 100)).then((_) {
+      unawaited(
+          Future<void>.delayed(const Duration(milliseconds: 100)).then((_) {
         service.shouldComplete.complete();
-      });
+      }));
 
       await exporter.shutdown();
 
@@ -958,16 +956,16 @@ void main() {
         final span = _createTestSpan(name: 'concurrent-pending-span');
 
         // Start an export that will block
-        // ignore: unawaited_futures
         final exportFuture = exporter.export([span]);
 
         // Wait for it to start
         await service.exportStarted.future;
 
         // Call forceFlush to exercise the pending exports path
-        Future<void>.delayed(const Duration(milliseconds: 50)).then((_) {
+        unawaited(
+            Future<void>.delayed(const Duration(milliseconds: 50)).then((_) {
           service.shouldComplete.complete();
-        });
+        }));
 
         await exporter.forceFlush();
         await exportFuture;
@@ -993,7 +991,6 @@ void main() {
         final span = _createTestSpan(name: 'hanging-export-span');
 
         // Start an export that will never complete (we won't call shouldComplete)
-        // ignore: unawaited_futures
         final exportFuture = exporter.export([span]).catchError((Object e) {
           // Errors expected during shutdown timeout
         });

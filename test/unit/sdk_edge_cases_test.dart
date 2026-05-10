@@ -74,7 +74,7 @@ class _ThrowingExporter implements LogRecordExporter {
 }
 
 void main() {
-  final List<String> logOutput = [];
+  final logOutput = <String>[];
 
   setUp(() async {
     await OTel.reset();

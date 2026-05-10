@@ -4,12 +4,12 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:dartastic_opentelemetry/src/trace/span.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
     show OTelLog;
 import 'package:grpc/grpc.dart';
 
 import '../../../../proto/opentelemetry_proto_dart.dart' as proto;
+import '../../span.dart';
 import '../../span_logger.dart';
 import '../span_exporter.dart';
 import 'certificate_utils_io.dart';
@@ -120,7 +120,7 @@ class OtlpGrpcSpanExporter implements SpanExporter {
           if (OTelLog.isDebug()) {
             OTelLog.debug('OtlpGrpcSpanExporter: Terminating channel');
           }
-          _channel!.terminate();
+          unawaited(_channel!.terminate());
           await Future<void>.delayed(
             const Duration(milliseconds: 100),
           ); // Brief delay for termination to complete
@@ -148,8 +148,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         // In Dart, we can't directly force garbage collection,
         // but we can suggest it by setting variables to null and
         // creating some memory pressure
-        final List<int> temp = [];
-        for (int i = 0; i < 1000; i++) {
+        final temp = <int>[];
+        for (var i = 0; i < 1000; i++) {
           temp.add(i);
         }
         temp.clear();
@@ -239,7 +239,7 @@ class OtlpGrpcSpanExporter implements SpanExporter {
     } catch (e, stackTrace) {
       if (OTelLog.isError()) {
         OTelLog.error(
-          ('OtlpGrpcSpanExporter: Failed to setup gRPC channel: $e'),
+          'OtlpGrpcSpanExporter: Failed to setup gRPC channel: $e',
         );
       }
       if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
@@ -280,7 +280,7 @@ class OtlpGrpcSpanExporter implements SpanExporter {
       throw StateError('Exporter is shutdown');
     }
     if (OTelLog.isLogSpans()) {
-      logSpans(spans, "Exporting spans.");
+      logSpans(spans, 'Exporting spans.');
     }
 
     if (OTelLog.isDebug()) {
@@ -328,7 +328,7 @@ class OtlpGrpcSpanExporter implements SpanExporter {
       headers['grpc-encoding'] = 'gzip';
     }
 
-    final CallOptions options = CallOptions(
+    final options = CallOptions(
       timeout: _config.timeout,
       metadata: headers,
     );

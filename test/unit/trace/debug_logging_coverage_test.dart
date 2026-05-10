@@ -16,7 +16,7 @@ import '../../testing_utils/in_memory_span_exporter.dart';
 void main() {
   late InMemorySpanExporter exporter;
   late SimpleSpanProcessor processor;
-  final List<String> logOutput = [];
+  final logOutput = <String>[];
 
   setUp(() async {
     await OTel.reset();
@@ -392,11 +392,9 @@ void main() {
       expect(span.statusDescription, isNull);
       expect(span.instrumentationScope, isNotNull);
       // parentSpanContext may be null for a root span - just access it for coverage.
-      // ignore: unnecessary_statements
       span.parentSpanContext;
       expect(span.isValid, isTrue);
       // parentSpan may be null for a root span - just access it for coverage.
-      // ignore: unnecessary_statements
       span.parentSpan;
       // resource comes from the tracer
       expect(span.resource, isNotNull);

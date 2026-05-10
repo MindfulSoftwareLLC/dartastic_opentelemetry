@@ -1,8 +1,9 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'package:dartastic_opentelemetry/src/otel.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+
+import '../otel.dart';
 
 /// Implementation of the W3C Trace Context specification for context propagation.
 ///
@@ -61,7 +62,7 @@ class W3CTraceContextPropagator
 
     // Extract tracestate if present
     final tracestate = getter.get(_tracestateHeader);
-    SpanContext finalSpanContext = spanContext;
+    var finalSpanContext = spanContext;
 
     if (tracestate != null && tracestate.isNotEmpty) {
       final tracestateMap = _parseTracestate(tracestate);

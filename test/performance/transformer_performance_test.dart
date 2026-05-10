@@ -1,8 +1,6 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-// ignore_for_file: invalid_use_of_visible_for_testing_member
-
 import 'package:dartastic_opentelemetry/src/otel.dart';
 import 'package:dartastic_opentelemetry/src/trace/export/otlp/span_transformer.dart';
 import 'package:dartastic_opentelemetry/src/trace/span.dart';
@@ -43,7 +41,7 @@ void main() {
           attributes: OTel.attributesFromMap({
             'attr1': 'value1',
             'attr2': i,
-            'attr3': i % 2 == 0,
+            'attr3': i.isEven,
             'attr4': List.generate(5, (j) => 'value$j'),
           }),
         ),

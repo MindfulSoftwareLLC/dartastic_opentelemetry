@@ -270,7 +270,7 @@ class MeterProvider implements APIMeterProvider {
       );
     }
 
-    bool success = true;
+    var success = true;
     for (final reader in _metricReaders) {
       final result = await reader.forceFlush();
       success = success && result;
@@ -294,7 +294,7 @@ class MeterProvider implements APIMeterProvider {
     // Mark as shut down immediately to prevent new interactions
     isShutdown = true;
 
-    bool success = true;
+    var success = true;
 
     // Shutdown all metric readers
     for (final reader in _metricReaders) {

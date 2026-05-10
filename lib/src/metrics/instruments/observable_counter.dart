@@ -132,14 +132,14 @@ class ObservableCounter<T extends num>
         for (final measurement in observableResult.measurements) {
           // Type checking for the generic parameter
           final dynamic rawValue = measurement.value;
-          final num value = (rawValue is num)
+          final value = (rawValue is num)
               ? rawValue
               : num.tryParse(rawValue.toString()) ?? 0;
           final attributes =
               measurement.attributes ?? OTelFactory.otelFactory!.attributes();
 
           // Check for monotonicity - current value should be >= last value
-          final T lastValue =
+          final lastValue =
               (_lastValues[attributes] ?? (T == int ? 0 : 0.0)) as T;
 
           // If value decreased, it indicates a counter reset

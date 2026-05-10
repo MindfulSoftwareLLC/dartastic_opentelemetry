@@ -1,8 +1,6 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-// ignore_for_file: strict_raw_type
-
 import 'dart:convert';
 import 'dart:io';
 
@@ -59,7 +57,7 @@ void main() {
       print('Starting test: withSpan executes code with an active span');
 
       // Arrange
-      String result = '';
+      var result = '';
       final span = tracer.startSpan('test-with-span');
 
       // Act
@@ -82,7 +80,7 @@ void main() {
       await Future<void>.delayed(const Duration(seconds: 1));
 
       // Verify the span was written to file
-      final File file = File(outputPath);
+      final file = File(outputPath);
       if (!file.existsSync()) {
         fail('Expected output file does not exist');
       }
@@ -113,7 +111,7 @@ void main() {
           reason: 'Expected at least one batch of spans',
         );
 
-        bool found = false;
+        var found = false;
         // Iterate through batches
         for (final batchData in batches) {
           expect(
@@ -156,7 +154,7 @@ void main() {
       );
 
       // Arrange
-      String result = '';
+      var result = '';
       final span = tracer.startSpan('test-with-span-async');
 
       // Act
@@ -203,7 +201,7 @@ void main() {
           reason: 'Expected at least one batch of spans',
         );
 
-        bool found = false;
+        var found = false;
         // Iterate through batches
         for (final batchData in batches) {
           expect(
@@ -283,7 +281,7 @@ void main() {
           reason: 'Expected at least one batch of spans',
         );
 
-        bool found = false;
+        var found = false;
         // Iterate through batches
         for (final batchData in batches) {
           expect(
