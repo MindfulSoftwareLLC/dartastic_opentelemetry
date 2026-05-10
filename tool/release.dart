@@ -100,10 +100,17 @@ Future<void> main(List<String> args) async {
     );
     _runOrThrow('dart', ['pub', 'get'], silent: true);
     _runOrThrow('dart', ['analyze']);
-    if (!flags.skipTests) {
-      _runOrThrow('dart', ['test']);
+    if (flags.skipTests) {
+      stdout.writeln('(skipping tests — --skip-tests)');
+    } else if (File('tool/test.sh').existsSync() &&
+        (Platform.isMacOS || Platform.isLinux)) {
+      // Repos that ship a `tool/test.sh` wrapper (e.g. the SDK, which
+      // needs an OTLP collector running for integration tests) own
+      // collector setup inside the script. Plain `dart test` would
+      // hang on those tests.
+      _runOrThrow('bash', ['tool/test.sh']);
     } else {
-      stdout.writeln('(skipping `dart test` — --skip-tests)');
+      _runOrThrow('dart', ['test']);
     }
     _runOrThrow('git', ['add', _pubspecPath, _changelogPath]);
     _runOrThrow('git', ['commit', '-m', 'Release $release']);
