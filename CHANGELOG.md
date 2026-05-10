@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.1-wip]
 
+### Changed
+- Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.3`. Beta.3 fixes a `ServiceResource` semconv key that was mangled by an over-broad find/replace: the entry called `ServiceResource.serviceResourcepace` (with key `service.Resourcepace`) is restored to `ServiceResource.serviceNamespace` / `service.namespace`. If you used the misspelled name in your own code, replace it with `ServiceResource.serviceNamespace`.
+
 ## [1.1.0-beta] - 2026-05-07
 
 ### Changed
