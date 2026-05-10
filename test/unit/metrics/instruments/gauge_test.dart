@@ -59,7 +59,7 @@ void main() {
 
       // Get the collected metrics
       final metrics = memoryExporter.exportedMetrics;
-      expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
+      expect(metrics.isNotEmpty, isTrue, reason: 'No metrics were exported');
 
       // Find our gauge
       final metric = metrics.firstWhere(
@@ -78,7 +78,7 @@ void main() {
       expect(
         points.length,
         equals(3),
-        reason: "Expected 3 points, got ${points.length}",
+        reason: 'Expected 3 points, got ${points.length}',
       );
 
       // Find each data point by attributes
@@ -107,7 +107,7 @@ void main() {
       expect(
         noAttrPoints.isNotEmpty,
         isTrue,
-        reason: "No points without attributes found",
+        reason: 'No points without attributes found',
       );
 
       // Verify each point's value
@@ -132,7 +132,7 @@ void main() {
 
       // Get the collected metrics
       final metrics = memoryExporter.exportedMetrics;
-      expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
+      expect(metrics.isNotEmpty, isTrue, reason: 'No metrics were exported');
 
       final metric = metrics.firstWhere(
         (m) => m.name == 'int_gauge',
@@ -145,7 +145,7 @@ void main() {
       expect(
         metric.points.length,
         equals(2),
-        reason: "Expected 2 points, got ${metric.points.length}",
+        reason: 'Expected 2 points, got ${metric.points.length}',
       );
 
       // Find each point
@@ -160,7 +160,7 @@ void main() {
       expect(
         noAttrsPoints.isNotEmpty,
         isTrue,
-        reason: "No points without attributes found",
+        reason: 'No points without attributes found',
       );
       expect(
         withAttrsPoints.isNotEmpty,
@@ -190,7 +190,7 @@ void main() {
       expect(
         metrics.isNotEmpty,
         isTrue,
-        reason: "No metrics were exported in first collection",
+        reason: 'No metrics were exported in first collection',
       );
 
       // Clear the exporter to make verification clearer
@@ -207,7 +207,7 @@ void main() {
       expect(
         metrics.isNotEmpty,
         isTrue,
-        reason: "No metrics were exported in second collection",
+        reason: 'No metrics were exported in second collection',
       );
 
       final metric = metrics.firstWhere(
@@ -221,7 +221,7 @@ void main() {
       expect(
         metric.points.isNotEmpty,
         isTrue,
-        reason: "No points found in metric",
+        reason: 'No points found in metric',
       );
 
       // Find the point with our attributes
@@ -254,7 +254,7 @@ void main() {
 
       // Get metrics
       final metrics = memoryExporter.exportedMetrics;
-      expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
+      expect(metrics.isNotEmpty, isTrue, reason: 'No metrics were exported');
 
       final intMetric = metrics.firstWhere(
         (m) => m.name == 'int_gauge_type',
@@ -274,12 +274,12 @@ void main() {
       expect(
         intMetric.points.isNotEmpty,
         isTrue,
-        reason: "No points found in int_gauge_type metric",
+        reason: 'No points found in int_gauge_type metric',
       );
       expect(
         doubleMetric.points.isNotEmpty,
         isTrue,
-        reason: "No points found in double_gauge_type metric",
+        reason: 'No points found in double_gauge_type metric',
       );
 
       // Verify values and types

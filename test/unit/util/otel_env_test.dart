@@ -14,7 +14,7 @@ void main() {
     LogFunction? originalMetricLogFunction;
     LogFunction? originalSpanLogFunction;
     LogFunction? originalExportLogFunction;
-    LogLevel originalLogLevel = OTelLog.currentLevel;
+    var originalLogLevel = OTelLog.currentLevel;
 
     setUp(() {
       // Save original logging state
@@ -42,10 +42,10 @@ void main() {
 
     test('OTelLog can configure logging programmatically', () {
       // Capture logs
-      final List<String> logs = [];
-      final List<String> metricLogs = [];
-      final List<String> spanLogs = [];
-      final List<String> exportLogs = [];
+      final logs = <String>[];
+      final metricLogs = <String>[];
+      final spanLogs = <String>[];
+      final exportLogs = <String>[];
 
       // Set log capture functions
       OTelLog.logFunction = logs.add;
@@ -100,7 +100,7 @@ void main() {
 
       for (final level in logLevels) {
         // Reset logs for each level
-        final List<String> logs = [];
+        final logs = <String>[];
         OTelLog.logFunction = logs.add;
 
         // Set current level
@@ -150,7 +150,7 @@ void main() {
 
     test('OTelLog can disable logging by setting null functions', () {
       // Set logging function first
-      bool logFunctionCalled = false;
+      var logFunctionCalled = false;
       OTelLog.logFunction = (String message) {
         logFunctionCalled = true;
       };

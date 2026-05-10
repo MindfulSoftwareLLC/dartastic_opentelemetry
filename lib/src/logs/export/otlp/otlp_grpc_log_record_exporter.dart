@@ -102,7 +102,7 @@ class OtlpGrpcLogRecordExporter implements LogRecordExporter {
         }
 
         try {
-          _channel!.terminate();
+          unawaited(_channel!.terminate());
           await Future<void>.delayed(const Duration(milliseconds: 100));
         } catch (e) {
           if (OTelLog.isDebug()) {
@@ -236,7 +236,7 @@ class OtlpGrpcLogRecordExporter implements LogRecordExporter {
       headers['grpc-encoding'] = 'gzip';
     }
 
-    final CallOptions options = CallOptions(
+    final options = CallOptions(
       timeout: _config.timeout,
       metadata: headers,
     );

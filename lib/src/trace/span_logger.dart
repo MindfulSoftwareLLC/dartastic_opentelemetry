@@ -1,7 +1,7 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import '../../dartastic_opentelemetry.dart' show Span, OTelLog;
+import '../../dartastic_opentelemetry.dart' show OTelLog, Span;
 
 /// Logs a single span with an optional message.
 ///
@@ -16,7 +16,7 @@ import '../../dartastic_opentelemetry.dart' show Span, OTelLog;
 void logSpan(Span span, [String? message]) {
   if (OTelLog.logFunction != null) {
     final timestamp = DateTime.now().toIso8601String();
-    final String msg = message ?? '';
+    final msg = message ?? '';
     OTelLog.logFunction!('[$timestamp] [message] $msg [span] $span');
   }
 }
@@ -34,7 +34,7 @@ void logSpan(Span span, [String? message]) {
 void logSpans(List<Span> spans, [String? message]) {
   if (OTelLog.isLogSpans()) {
     final timestamp = DateTime.now().toIso8601String();
-    final String msg = message ?? '';
+    final msg = message ?? '';
     OTelLog.spanLogFunction!('[$timestamp] [message] $msg [spans] $spans');
   }
 }

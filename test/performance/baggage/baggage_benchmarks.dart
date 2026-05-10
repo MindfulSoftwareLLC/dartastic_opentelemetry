@@ -51,7 +51,7 @@ class BaggageIsolateBenchmark extends DartasticBenchmark {
 
   @override
   void setup() {
-    Baggage baggage = OTel.baggage();
+    var baggage = OTel.baggage();
     for (var i = 0; i < numEntries; i++) {
       baggage = baggage.copyWith('key.$i', 'value.$i', 'metadata.$i');
     }

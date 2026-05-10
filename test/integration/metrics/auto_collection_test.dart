@@ -1,7 +1,7 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-// ignore_for_file: unused_field, unused_local_variable, strict_raw_type
+// ignore_for_file: unused_field, unused_local_variable, unreachable_from_main
 
 import 'dart:async';
 import 'dart:math';

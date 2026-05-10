@@ -1,6 +1,10 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+// Helper functions below `main()` show alternate initialization paths;
+// they aren't all reachable from this file's `main()`.
+// ignore_for_file: unreachable_from_main
+
 import 'dart:convert';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';

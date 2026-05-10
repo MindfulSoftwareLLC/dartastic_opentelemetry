@@ -82,7 +82,7 @@ void main() {
 
       // Get the metrics
       final metrics = memoryExporter.exportedMetrics;
-      expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
+      expect(metrics.isNotEmpty, isTrue, reason: 'No metrics were exported');
 
       final metric = metrics.firstWhere(
         (m) => m.name == 'test_counter',
@@ -147,7 +147,7 @@ void main() {
 
       // Get the metrics
       final metrics = memoryExporter.exportedMetrics;
-      expect(metrics.isNotEmpty, isTrue, reason: "No metrics were exported");
+      expect(metrics.isNotEmpty, isTrue, reason: 'No metrics were exported');
 
       final metric = metrics.firstWhere(
         (m) => m.name == 'schema_counter',

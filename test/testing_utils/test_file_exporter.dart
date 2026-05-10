@@ -83,7 +83,7 @@ class TestFileExporter implements SpanExporter {
 
       // Convert spans to simplified JSON format - handle attributes safely
       final jsonSpans = spans.map((span) {
-        Map<String, dynamic> attributesJson = {};
+        var attributesJson = <String, dynamic>{};
         try {
           // Try to get the attributes and convert to JSON
           attributesJson = span.attributes.toJson();
@@ -112,7 +112,7 @@ class TestFileExporter implements SpanExporter {
       _allBatches.add(jsonSpans);
 
       // Write all batches to file (overwriting previous content)
-      final String newContent = jsonEncode(_allBatches);
+      final newContent = jsonEncode(_allBatches);
 
       // Use synchronous operations to guarantee it gets written immediately
       file.writeAsStringSync(newContent, flush: true);

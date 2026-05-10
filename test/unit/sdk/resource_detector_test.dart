@@ -371,7 +371,7 @@ void main() {
         await OTel.reset();
 
         final composite = CompositeResourceDetector([]);
-        expect(composite.detect, throwsA(isA<String>()));
+        expect(composite.detect, throwsA(isA<StateError>()));
       });
 
       test(
@@ -381,7 +381,7 @@ void main() {
           await OTel.reset();
 
           final detector = ProcessResourceDetector();
-          expect(detector.detect, throwsA(isA<String>()));
+          expect(detector.detect, throwsA(isA<StateError>()));
         },
       );
 
@@ -392,7 +392,7 @@ void main() {
           await OTel.reset();
 
           final detector = HostResourceDetector();
-          expect(detector.detect, throwsA(isA<String>()));
+          expect(detector.detect, throwsA(isA<StateError>()));
         },
       );
 
@@ -404,7 +404,7 @@ void main() {
 
           final detector = EnvVarResourceDetector();
           // Even though env var is not set, the factory null check happens first.
-          expect(detector.detect, throwsA(isA<String>()));
+          expect(detector.detect, throwsA(isA<StateError>()));
         },
       );
     });

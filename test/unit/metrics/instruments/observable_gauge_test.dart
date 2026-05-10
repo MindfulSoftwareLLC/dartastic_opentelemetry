@@ -32,7 +32,7 @@ void main() {
 
     test('Simple ObservableGauge with single callback', () {
       // Variable to simulate a gauge value that changes over time
-      double gaugeValue = 25.5;
+      var gaugeValue = 25.5;
 
       // Create an ObservableGauge with double type
       final gauge = meter.createObservableGauge<double>(
@@ -83,7 +83,7 @@ void main() {
       final attributes2 = {'location': 'inside'}.toAttributes();
 
       // Create value maps to simulate changing gauge values
-      final Map<String, double> temperatures = {
+      final temperatures = <String, double>{
         'outside': 22.5,
         'inside': 24.8,
       };
@@ -169,7 +169,7 @@ void main() {
       ) as ObservableGauge<double>;
 
       // First callback
-      double cpu1Usage = 45.2;
+      var cpu1Usage = 45.2;
       final attributes1 = {'cpu': 'cpu0'}.toAttributes();
       final registration1 = gauge.addCallback((
         APIObservableResult<double> result,
@@ -179,7 +179,7 @@ void main() {
       });
 
       // Second callback
-      double cpu2Usage = 67.8;
+      var cpu2Usage = 67.8;
       final attributes2 = {'cpu': 'cpu1'}.toAttributes();
       final registration2 = gauge.addCallback((
         APIObservableResult<double> result,
@@ -236,8 +236,8 @@ void main() {
 
     test('ObservableGauge collectMetrics', () {
       // Create a gauge
-      double value = 98.6;
-      bool decreasing = false;
+      var value = 98.6;
+      var decreasing = false;
 
       final gauge = meter.createObservableGauge<double>(
         name: 'metrics-gauge',
@@ -284,8 +284,8 @@ void main() {
 
     test('ObservableGauge with disabled meter', () {
       // Create a gauge
-      int callCount = 0;
-      final double value = 42.0;
+      var callCount = 0;
+      final value = 42.0;
 
       final gauge = meter.createObservableGauge<double>(
         name: 'disabled-gauge',
@@ -356,7 +356,7 @@ void main() {
 
     test('ObservableGauge with exceptions in callbacks', () {
       // Create a gauge with a callback that throws an exception
-      bool callbackThrows = true;
+      var callbackThrows = true;
 
       final gauge = meter.createObservableGauge<double>(
         name: 'exception-gauge',
@@ -385,7 +385,7 @@ void main() {
 
     test('ObservableGauge state clearing', () async {
       // Create a gauge
-      double value = 50.0;
+      var value = 50.0;
 
       final gauge = meter.createObservableGauge<double>(
         name: 'clear-gauge',

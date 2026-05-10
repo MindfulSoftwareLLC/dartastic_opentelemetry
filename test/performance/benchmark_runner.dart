@@ -41,7 +41,7 @@ abstract class DartasticBenchmark extends BenchmarkBase {
     final memBefore = MemorySnapshot();
 
     // Run the benchmark and store result
-    final double microseconds = measure();
+    final microseconds = measure();
 
     // Measure memory after
     final memAfter = MemorySnapshot();

@@ -22,7 +22,7 @@ library;
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
-    show OTelAPI, Attributes;
+    show Attributes, OTelAPI;
 import 'package:test/test.dart';
 
 class _RecordingSpanExporter implements SpanExporter {

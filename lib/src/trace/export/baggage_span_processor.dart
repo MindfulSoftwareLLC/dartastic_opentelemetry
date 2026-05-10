@@ -1,9 +1,10 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'package:dartastic_opentelemetry/src/trace/span.dart';
-import 'package:dartastic_opentelemetry/src/trace/span_processor.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+
+import '../span.dart';
+import '../span_processor.dart';
 
 /// Automatically copies baggage entries to span attributes on span start.
 ///

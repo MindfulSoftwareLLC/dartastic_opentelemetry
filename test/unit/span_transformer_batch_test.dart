@@ -368,7 +368,7 @@ void main() {
       // Create spans with a predictable order and small delays between them
       final spans = <Span>[];
 
-      for (int i = 0; i < 5; i++) {
+      for (var i = 0; i < 5; i++) {
         final span = createMockSpan(
           name: 'span-$i',
           instrumentationName: 'order-test',
@@ -403,7 +403,7 @@ void main() {
       // Since we can't control start times precisely, just verify that
       // the transformer preserves the order we created them in
       // This is a weaker test but more realistic
-      bool namesAreInOrder = true;
+      var namesAreInOrder = true;
       for (var i = 0; i < transformedSpans.length; i++) {
         if (transformedSpans[i].name != 'span-$i') {
           namesAreInOrder = false;
@@ -413,7 +413,7 @@ void main() {
 
       // If the names aren't in order, at least check that the spans are ordered by startTime
       if (!namesAreInOrder) {
-        bool isOrdered = true;
+        var isOrdered = true;
         for (var i = 0; i < transformedSpans.length - 1; i++) {
           if (transformedSpans[i].startTimeUnixNano >
               transformedSpans[i + 1].startTimeUnixNano) {

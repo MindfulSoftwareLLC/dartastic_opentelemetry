@@ -1,6 +1,10 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+// This file walks decoded JSON payloads from the OTel Collector, where
+// the natural structure is `dynamic`-typed and `Map<String, dynamic>`.
+// ignore_for_file: avoid_dynamic_calls
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -34,7 +38,6 @@ class RealCollector {
     }
 
     // Ensure output file exists and is empty
-    // ignore: avoid_slow_async_io
     await File(_outputPath).writeAsString('');
 
     final execPath = '${Directory.current.path}/test/testing_utils/otelcol';
@@ -79,7 +82,7 @@ class RealCollector {
 
     // Create completer to signal when collector is ready
     final readyCompleter = Completer<bool>();
-    bool hasServiceStarted = false;
+    var hasServiceStarted = false;
 
     // Listen for output/errors for debugging
     _process!.stdout.transform(utf8.decoder).listen((line) {
@@ -104,7 +107,7 @@ class RealCollector {
     });
 
     // Wait for collector to be ready or timeout
-    bool started = false;
+    var started = false;
     try {
       started = await readyCompleter.future.timeout(const Duration(seconds: 5));
     } catch (e) {
@@ -147,7 +150,7 @@ class RealCollector {
         }
 
         // Check if process exited gracefully
-        bool isRunning = true;
+        var isRunning = true;
         try {
           // Check if process has already exited
           final exitCode = await _process!.exitCode.timeout(
@@ -296,7 +299,6 @@ class RealCollector {
   }
 
   /// Parse OTLP attribute format into simple key-value pairs
-  // ignore: strict_raw_type
   Map<String, dynamic> _parseAttributes(List? attrs) {
     if (attrs == null) return {};
     final result = <String, dynamic>{};
@@ -358,8 +360,6 @@ class RealCollector {
   /// Clear all exported spans
   Future<void> clear() async {
     if (File(_outputPath).existsSync()) {
-      // ignore: avoid_slow_async_io
-      // ignore: avoid_slow_async_io
       await File(_outputPath).writeAsString('');
     }
   }
@@ -389,7 +389,6 @@ class RealCollector {
       if (!exists) {
         print('Output file does not exist');
         // Create empty file
-        // ignore: avoid_slow_async_io
         await file.writeAsString('');
       } else {
         final size = await file.length();
@@ -413,7 +412,7 @@ class RealCollector {
             'Output file is empty after multiple attempts, checking collector status...',
           );
           // Check if collector is still running
-          bool isRunning = _process != null;
+          var isRunning = _process != null;
           if (isRunning) {
             try {
               // On Dart, we can't check process status directly, so we'll try to get the pid
@@ -426,7 +425,7 @@ class RealCollector {
           }
 
           // Check for fallback file
-          final String fallbackPath = '$_outputPath.fallback';
+          final fallbackPath = '$_outputPath.fallback';
           try {
             final fallbackFile = File(fallbackPath);
             print('Backup file exists at: $fallbackPath');
@@ -460,7 +459,6 @@ class RealCollector {
               ); // Wait for resources to be freed
               await start();
               // Make sure the file is cleared after restart
-              // ignore: avoid_slow_async_io
               await File(_outputPath).writeAsString('');
               // Allow collector to initialize
               await Future<void>.delayed(const Duration(milliseconds: 1000));
@@ -562,7 +560,7 @@ class RealCollector {
           );
 
           // Perform appropriate comparison based on types
-          bool match = false;
+          var match = false;
           if (expectedValue is num && actualValue is num) {
             // For numbers, compare numeric values (handles int vs double)
             match = expectedValue.toDouble() == actualValue.toDouble();

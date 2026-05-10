@@ -1,8 +1,6 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-// ignore_for_file: invalid_use_of_visible_for_testing_member
-
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry/src/otel.dart';

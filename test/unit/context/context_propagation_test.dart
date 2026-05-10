@@ -21,7 +21,7 @@ class _PortManager {
   static final Set<int> _usedPorts = {};
 
   static int getNextAvailablePort(int basePort) {
-    int port = basePort;
+    var port = basePort;
     while (_usedPorts.contains(port)) {
       port++;
     }

@@ -90,7 +90,8 @@ class View {
   ///
   /// The [instrument] parameter accepts any instrument type (APICounter,
   /// APIHistogram, APIGauge, etc.) as well as their SDK implementations.
-  /// It must have a `meter` property with a `name` getter.
+  /// All API instrument classes expose a `meter` getter, but they don't
+  /// share a common base class — hence the `dynamic` parameter.
   bool matches(String instrumentName, dynamic instrument) {
     // Check instrument name pattern
     if (!_matchesPattern(instrumentName, instrumentNamePattern)) {
@@ -121,7 +122,9 @@ class View {
       }
     }
 
-    // Check meter name if specified
+    // Check meter name if specified. All instrument classes expose a
+    // `meter` getter even without a common base type.
+    // ignore: avoid_dynamic_calls
     if (meterName != null && meterName != instrument.meter.name) {
       return false;
     }

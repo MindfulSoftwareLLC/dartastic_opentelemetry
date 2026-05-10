@@ -56,6 +56,7 @@ class _NonStandardThrowExporter implements SpanExporter {
   @override
   Future<void> export(List<Span> spans) {
     // Throw a non-Exception type to bypass the inner catch
+    // ignore: only_throw_errors
     throw 'non-standard error';
   }
 

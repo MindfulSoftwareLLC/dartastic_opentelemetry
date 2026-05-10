@@ -14,7 +14,7 @@ void main() {
   late HttpServer server;
   late int port;
   late List<int> responseCodes;
-  int requestCount = 0;
+  var requestCount = 0;
 
   MetricData makeMetrics() {
     final attrs = OTel.attributes([OTel.attributeString('k', 'v')]);

@@ -7,7 +7,6 @@ library;
 import 'dart:convert';
 import 'dart:io';
 import 'package:dartastic_opentelemetry/src/otel.dart';
-import 'package:dartastic_opentelemetry/src/resource/resource.dart';
 import 'package:dartastic_opentelemetry/src/resource/resource_detector.dart';
 import 'package:dartastic_opentelemetry/src/trace/export/batch_span_processor.dart';
 import 'package:dartastic_opentelemetry/src/trace/export/otlp/otlp_grpc_span_exporter.dart';
@@ -168,7 +167,7 @@ void main() {
     test('tenant_id is properly included in resource attributes', () async {
       // 1. Create resources similar to the example
       final tenantId = '123456789';
-      final Resource tenantIdResource = OTel.resource(
+      final tenantIdResource = OTel.resource(
         OTel.attributesFromMap({
           'tenant_id': tenantId,
           'service.name': 'test-service', // Explicitly set service.name
@@ -394,7 +393,7 @@ void main() {
       );
 
       // Create tenant resource
-      final Resource tenantIdResource = OTel.resource(
+      final tenantIdResource = OTel.resource(
         OTel.attributesFromMap({'tenant_id': '123456789'}),
       );
 

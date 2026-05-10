@@ -12,7 +12,7 @@ import 'web_detector.dart';
 // imports of `package:dartastic_opentelemetry/src/resource/resource_detector.dart`
 // continue to find `ProcessResourceDetector` and `HostResourceDetector`.
 export 'native_detectors.dart'
-    show ProcessResourceDetector, HostResourceDetector;
+    show HostResourceDetector, ProcessResourceDetector;
 
 /// Interface for resource detectors that automatically discover resource information.
 ///
@@ -49,7 +49,7 @@ class EnvVarResourceDetector implements ResourceDetector {
   @override
   Future<Resource> detect() async {
     if (OTelFactory.otelFactory == null) {
-      throw 'OTel initialize must be called first.';
+      throw StateError('OTel initialize must be called first.');
     }
 
     //TODO - OTEL_RESOURCE_ATTRIBUTES?
@@ -75,7 +75,7 @@ class EnvVarResourceDetector implements ResourceDetector {
   /// @param envValue The value of the OTEL_RESOURCE_ATTRIBUTES environment variable
   /// @return Attributes parsed from the environment variable
   Attributes _parseResourceAttributes(String envValue) {
-    final Map<String, Object> attributes = {};
+    final attributes = <String, Object>{};
 
     // Split on commas, but handle escaped commas
     final parts = envValue.split(RegExp(r'(?<!\\),'));
@@ -122,9 +122,9 @@ class CompositeResourceDetector implements ResourceDetector {
   @override
   Future<Resource> detect() async {
     if (OTelFactory.otelFactory == null) {
-      throw 'OTel initialize must be called first.';
+      throw StateError('OTel initialize must be called first.');
     }
-    Resource result = Resource.empty;
+    var result = Resource.empty;
 
     for (final detector in _detectors) {
       try {

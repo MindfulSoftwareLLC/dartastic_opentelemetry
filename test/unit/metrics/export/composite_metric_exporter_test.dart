@@ -49,7 +49,7 @@ void main() {
       final data = await metricReader.collect();
 
       // Manually export metrics through our composite exporter
-      final bool exportResult = await compositeExporter.export(data);
+      final exportResult = await compositeExporter.export(data);
       expect(exportResult, isTrue);
 
       // Verify both exporters received the metrics
@@ -114,7 +114,7 @@ void main() {
         final data = await memoryMetricReader.collect();
 
         // Manually export through our composite exporter
-        final bool result = await compositeWithFailure.export(data);
+        final result = await compositeWithFailure.export(data);
 
         // Since one exporter fails, the composite should return false
         expect(result, isFalse);
@@ -141,7 +141,7 @@ void main() {
         final emptyData = MetricData.empty();
 
         // Call export
-        final bool result = await composite.export(emptyData);
+        final result = await composite.export(emptyData);
 
         // Export should succeed
         expect(result, isTrue);
@@ -151,7 +151,7 @@ void main() {
         expect(trackedExporter2.exportCalled, isTrue);
 
         // Call forceFlush
-        final bool flushResult = await composite.forceFlush();
+        final flushResult = await composite.forceFlush();
         expect(flushResult, isTrue);
 
         // Verify both exporters had forceFlush called
@@ -159,7 +159,7 @@ void main() {
         expect(trackedExporter2.forceFlushCalled, isTrue);
 
         // Call shutdown
-        final bool shutdownResult = await composite.shutdown();
+        final shutdownResult = await composite.shutdown();
         expect(shutdownResult, isTrue);
 
         // Verify both exporters had shutdown called

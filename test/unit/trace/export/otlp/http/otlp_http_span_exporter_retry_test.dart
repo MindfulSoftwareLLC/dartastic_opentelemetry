@@ -13,7 +13,7 @@ void main() {
     late HttpServer server;
     late int port;
     late List<int> statusCodes;
-    int requestCount = 0;
+    var requestCount = 0;
 
     setUp(() async {
       await OTel.reset();

@@ -49,7 +49,7 @@ class _MapSetter implements TextMapSetter<String> {
 
 void main() {
   // Shared log capture list.
-  final List<String> logOutput = [];
+  final logOutput = <String>[];
 
   setUp(() async {
     await OTel.reset();

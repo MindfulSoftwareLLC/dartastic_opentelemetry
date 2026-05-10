@@ -4,10 +4,10 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:dartastic_opentelemetry/src/trace/span.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:synchronized/synchronized.dart';
 
+import '../span.dart';
 import '../span_processor.dart';
 import 'span_exporter.dart';
 
@@ -146,7 +146,7 @@ class BatchSpanProcessor implements SpanProcessor {
   /// (which sets the flag last). Returns true if any spans were
   /// exported, false if the queue was empty or the exporter threw.
   Future<bool> _exportSingleBatch() async {
-    final List<Span> spansToExport = [];
+    final spansToExport = <Span>[];
 
     await _lock.synchronized(() {
       final batchSize = _spanQueue.length > _config.maxExportBatchSize

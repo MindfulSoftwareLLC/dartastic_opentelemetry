@@ -20,7 +20,7 @@ void main() {
       final sampler = CountingSampler(3);
       final decisions = <SamplingDecision>[];
 
-      for (int i = 0; i < 9; i++) {
+      for (var i = 0; i < 9; i++) {
         final result = sampler.shouldSample(
           parentContext: Context.root,
           traceId: OTel.traceId().toString(),

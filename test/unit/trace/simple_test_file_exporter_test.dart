@@ -1,8 +1,6 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-// ignore_for_file: strict_raw_type
-
 import 'dart:convert';
 import 'dart:io';
 
@@ -152,7 +150,7 @@ void main() {
 
       // Create multiple spans
       final spans = <Span>[];
-      for (int i = 0; i < 3; i++) {
+      for (var i = 0; i < 3; i++) {
         final span = tracer.startSpan('test-span-$i');
         span.setIntAttribute('span.index', i);
         span.end();
@@ -176,7 +174,7 @@ void main() {
       expect(firstBatch, hasLength(3));
 
       // Verify each span
-      for (int i = 0; i < 3; i++) {
+      for (var i = 0; i < 3; i++) {
         final spanMap = firstBatch[i] as Map<String, dynamic>;
         expect(spanMap['name'], equals('test-span-$i'));
         final attributes = spanMap['attributes'] as Map<String, dynamic>;
