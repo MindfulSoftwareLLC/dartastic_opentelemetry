@@ -9,7 +9,7 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
 import 'package:grpc/grpc.dart';
 
 import '../../../../proto/opentelemetry_proto_dart.dart' as proto;
-import '../../../trace/export/otlp/certificate_utils.dart';
+import '../../../trace/export/otlp/certificate_utils_io.dart';
 import '../../readable_log_record.dart';
 import '../log_record_exporter.dart';
 import 'log_record_transformer.dart';

@@ -13,13 +13,13 @@
 //   6. otlp_grpc_span_exporter_config.dart - endpoint validation edge cases
 //   7. w3c_trace_context_propagator.dart   - invalid trace/span ID length, parse error
 //   8. prometheus_exporter.dart        - export with OTelLog.logExport level
-//   9. certificate_utils.dart          - real cert loading with test:// scheme
+//   9. certificate_utils_io.dart          - real cert loading with test:// scheme
 //  10. simple_span_processor.dart      - error paths in shutdown
 
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry/src/trace/export/otlp/certificate_utils.dart';
+import 'package:dartastic_opentelemetry/src/trace/export/otlp/certificate_utils_io.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:test/test.dart';
 

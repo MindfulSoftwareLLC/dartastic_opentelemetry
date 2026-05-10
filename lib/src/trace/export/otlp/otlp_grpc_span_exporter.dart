@@ -12,7 +12,7 @@ import 'package:grpc/grpc.dart';
 import '../../../../proto/opentelemetry_proto_dart.dart' as proto;
 import '../../span_logger.dart';
 import '../span_exporter.dart';
-import 'certificate_utils.dart';
+import 'certificate_utils_io.dart';
 import 'otlp_grpc_span_exporter_config.dart';
 import 'span_transformer.dart';
 

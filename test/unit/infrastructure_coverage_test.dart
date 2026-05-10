@@ -10,11 +10,11 @@
 //   - resource.dart (5 uncovered lines)
 //   - metrics/metric_reader.dart (7 uncovered lines)
 //   - metrics/storage/sum_storage.dart (9 uncovered lines)
-//   - trace/export/otlp/certificate_utils.dart (10 uncovered lines)
+//   - trace/export/otlp/certificate_utils_io.dart (10 uncovered lines)
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry/src/trace/export/otlp/certificate_utils.dart';
+import 'package:dartastic_opentelemetry/src/trace/export/otlp/certificate_utils_io.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:test/test.dart';
 
