@@ -43,7 +43,7 @@ void main() async {
   // SpanStatusCode.Error per the OTel spec.
   final span = tracer.startSpan(
     'sync-operation',
-    attributes: OTel.attributesFromMap({ExampleAttribute.isSync.key: true}),
+    attributes: OTel.attributesFromSemanticMap({ExampleAttribute.isSync: true}),
   );
   try {
     span.addEventNow('Event within span.');

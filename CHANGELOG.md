@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.2-wip]
 
+### Added
+- `OTel.attributesFromSemanticMap(Map<OTelSemantic, Object>)` — convenience passthrough to `OTelAPI.attributesFromSemanticMap`. Lets call sites that build attribute maps from typed semconv enums skip the `.key` accessor on every entry: `OTel.attributesFromSemanticMap({HttpResource.requestMethod: 'GET'})` instead of `OTel.attributesFromMap({HttpResource.requestMethod.key: 'GET'})`. Mixing different semconv enum types in one map is fine — the param type is the `OTelSemantic` interface that every semconv enum implements.
+
+### Changed
+- README and every example under `example/` now use `attributesFromSemanticMap` for typed-enum-keyed maps. The longer `attributesFromMap` form remains for raw-string-keyed maps (`{'foo.bar': value}`) and shows up in the README only as a counter-example for app-specific keys without a typed enum.
+
 ## [1.1.0-beta.1] - 2026-05-10
 
 ### Changed

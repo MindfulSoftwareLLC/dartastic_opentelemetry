@@ -224,9 +224,9 @@ try {
     'database.query',
     kind: SpanKind.client,
     context: OTel.context(spanContext: parentSpan.spanContext),
-    attributes: OTel.attributesFromMap({
-      DatabaseResource.dbSystem.key: 'postgresql',
-      DatabaseResource.dbOperation.key: 'SELECT',
+    attributes: OTel.attributesFromSemanticMap({
+      DatabaseResource.dbSystem: 'postgresql',
+      DatabaseResource.dbOperation: 'SELECT',
     }),
   );
   try {
@@ -350,17 +350,17 @@ final span = tracer.startSpan('operation', attributes: OTel.attributes([
 
 // Or from a map (types are inferred automatically).
 final span = tracer.startSpan('operation',
-  attributes: OTel.attributesFromMap({
-    HttpResource.requestMethod.key: 'GET',
-    HttpResource.responseStatusCode.key: 200,
+  attributes: OTel.attributesFromSemanticMap({
+    HttpResource.requestMethod: 'GET',
+    HttpResource.responseStatusCode: 200,
   }),
 );
 
 // Add attributes after creation.
 span.setStringAttribute(UrlResource.urlFull.key, 'https://api.example.com/data');
 span.setIntAttribute(HttpResource.responseBodySize.key, 1024);
-span.addAttributes(OTel.attributesFromMap({
-  ExampleAttribute.processingStage.key: 'complete',
+span.addAttributes(OTel.attributesFromSemanticMap({
+  ExampleAttribute.processingStage: 'complete',
 }));
 ```
 
@@ -372,7 +372,7 @@ but event attributes still benefit from typed enum keys:
 ```dart
 span.addEvent(OTel.spanEventNow(
   'cache.hit',
-  OTel.attributesFromMap({ExampleAttribute.cacheKey.key: 'user:123'}),
+  OTel.attributesFromSemanticMap({ExampleAttribute.cacheKey: 'user:123'}),
 ));
 
 span.addEventNow('validation.passed');
@@ -385,7 +385,7 @@ Links connect spans across traces — useful for batch processing or fan-out pat
 ```dart
 final link = OTel.spanLink(
   otherSpan.spanContext,
-  attributes: OTel.attributesFromMap({ExampleAttribute.linkType.key: 'triggers'}),
+  attributes: OTel.attributesFromSemanticMap({ExampleAttribute.linkType: 'triggers'}),
 );
 
 final span = tracer.startSpan('batch-process', links: [link]);
@@ -636,9 +636,9 @@ void main() async {
   logger.emit(
     body: 'User logged in',
     severityNumber: Severity.INFO,
-    attributes: OTel.attributesFromMap({
-      UserSemantics.userId.key: 'user123',
-      UserSemantics.userRole.key: 'admin',
+    attributes: OTel.attributesFromSemanticMap({
+      UserSemantics.userId: 'user123',
+      UserSemantics.userRole: 'admin',
     }),
   );
 
@@ -649,9 +649,9 @@ void main() async {
     logger.emit(
       body: 'Operation failed: $e',
       severityNumber: Severity.ERROR,
-      attributes: OTel.attributesFromMap({
-        ExceptionResource.exceptionType.key: e.runtimeType.toString(),
-        ExceptionResource.exceptionStacktrace.key: stackTrace.toString(),
+      attributes: OTel.attributesFromSemanticMap({
+        ExceptionResource.exceptionType: e.runtimeType.toString(),
+        ExceptionResource.exceptionStacktrace: stackTrace.toString(),
       }),
     );
   }
@@ -704,9 +704,9 @@ final logger = OTel.loggerProvider().getLogger('my-service');
 logger.emit(
   severityNumber: Severity.INFO,
   body: 'User successfully logged in.',
-  attributes: OTel.attributesFromMap({
-    UserSemantics.userId.key: 'user-123',
-    ExampleAttribute.authMethod.key: 'oauth',
+  attributes: OTel.attributesFromSemanticMap({
+    UserSemantics.userId: 'user-123',
+    ExampleAttribute.authMethod: 'oauth',
   }),
 );
 
@@ -714,9 +714,9 @@ logger.emit(
 logger.emit(
   severityNumber: Severity.WARN,
   body: 'Cache miss for requested key.',
-  attributes: OTel.attributesFromMap({
-    ExampleAttribute.cacheKey.key: 'profile_42',
-    ExampleAttribute.cacheRegion.key: 'us-east-1',
+  attributes: OTel.attributesFromSemanticMap({
+    ExampleAttribute.cacheKey: 'profile_42',
+    ExampleAttribute.cacheRegion: 'us-east-1',
   }),
 );
 
@@ -724,9 +724,9 @@ logger.emit(
 logger.emit(
   severityNumber: Severity.ERROR,
   body: 'Failed to connect to database.',
-  attributes: OTel.attributesFromMap({
-    DatabaseResource.dbSystem.key: 'postgresql',
-    ErrorSemantics.errorType.key: 'ConnectionTimeout',
+  attributes: OTel.attributesFromSemanticMap({
+    DatabaseResource.dbSystem: 'postgresql',
+    ErrorSemantics.errorType: 'ConnectionTimeout',
   }),
 );
 ```
@@ -742,7 +742,7 @@ try {
     severityNumber: Severity.INFO,
     body: 'Processing order.',
     context: Context.current, // Links this log to the active span
-    attributes: OTel.attributesFromMap({ExampleAttribute.orderId.key: 'order-789'}),
+    attributes: OTel.attributesFromSemanticMap({ExampleAttribute.orderId: 'order-789'}),
   );
   await processOrder();
 } finally {

@@ -47,15 +47,15 @@ void main() async {
   // Always consult the OTel Semantic Conventions to find an existing
   // convention name for an attribute:
   // https://opentelemetry.io/docs/specs/semconv/general/attributes/
-  tracer.attributes = OTel.attributesFromMap({
-    SourceCodeResource.codeFunctionName.key: 'main',
+  tracer.attributes = OTel.attributesFromSemanticMap({
+    SourceCodeResource.codeFunctionName: 'main',
   });
 
   // Create a new root span. Prefer typed enum keys over raw strings.
   final rootSpan = tracer.startSpan(
     'root-operation-dartastic',
-    attributes: OTel.attributesFromMap({
-      ExampleAttribute.exampleKey.key: 'example-value-dartastic',
+    attributes: OTel.attributesFromSemanticMap({
+      ExampleAttribute.exampleKey: 'example-value-dartastic',
     }),
   );
 

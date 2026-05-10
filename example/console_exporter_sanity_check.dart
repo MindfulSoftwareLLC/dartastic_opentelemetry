@@ -41,11 +41,11 @@ Future<void> main(List<String> arguments) async {
   final rootSpan = tracer.startSpan(
     'root-operation',
     kind: SpanKind.producer,
-    attributes: OTel.attributesFromMap({
-      DemoAttribute.magicNumber.key: 42,
-      DemoAttribute.canUseBoolean.key: true,
-      DemoAttribute.intList.key: [42, 143],
-      DemoAttribute.doubleList.key: [42.1, 143.4],
+    attributes: OTel.attributesFromSemanticMap({
+      DemoAttribute.magicNumber: 42,
+      DemoAttribute.canUseBoolean: true,
+      DemoAttribute.intList: [42, 143],
+      DemoAttribute.doubleList: [42.1, 143.4],
     }),
   );
 
@@ -54,8 +54,9 @@ Future<void> main(List<String> arguments) async {
     importantFunction();
     rootSpan.addEventNow(
       'importantFunction completed',
-      // attributesFromMap can throw with bad types — OTel has typesafe
-      // attribute methods (used here) which avoid that risk.
+      // attributesFromSemanticMap / attributesFromMap can throw with
+      // bad types — OTel has typesafe attribute factories (used here)
+      // which avoid that risk.
       OTel.attributes([
         OTel.attributeString(DemoAttribute.eventFoo.key, 'bar'),
         OTel.attributeBool(DemoAttribute.eventBaz.key, true),
