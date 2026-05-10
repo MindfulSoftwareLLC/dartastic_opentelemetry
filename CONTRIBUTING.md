@@ -89,7 +89,7 @@ There are many ways to contribute to this project:
 ## Pull Request Process
 
 1. Update the README.md or other documentation with details of changes if appropriate
-2. Update the CHANGELOG.md with a description of your changes
+2. Add a CHANGELOG entry for your change under the `## [X.Y.Z-wip]` section at the top of `CHANGELOG.md`. The version stamp ends in `-wip` during development; `dart tool/release.dart` strips it and dates the section at release time. **Do not edit `pubspec.yaml`'s version line in your PR** — release tooling owns it.
 3. The PR should work with the latest version of Dart and be compatible with all supported platforms
 4. The PR will be merged once it receives approval from project maintainers
 
@@ -163,17 +163,42 @@ Feature requests are welcome. Please provide:
 
 ## Release Process
 
-The release process is handled by project maintainers. If you're a maintainer, follow these steps:
+The release process is handled by project maintainers via
+`dart tool/release.dart`, which implements the Flutter / Dart team's `-wip`
+convention. The working `pubspec.yaml` version always ends in `-wip`
+and CHANGELOG entries during development land under
+`## [X.Y.Z-wip]`. To cut a release:
 
-1. Update version in `pubspec.yaml`
-2. Update CHANGELOG.md with all changes since the last release
-3. Create a release commit
-4. Tag the release commit with the version number (e.g., `v1.0.0`)
-5. Push the commit and tag to the repository
-6. Publish to pub.dev:
-   ```bash
-   dart pub publish
-   ```
+```bash
+dart tool/release.dart                       # auto-bump trailing number
+dart tool/release.dart --next 1.2.0-beta     # override the next dev version
+dart tool/release.dart --no-publish          # cut release locally only
+dart tool/release.dart --skip-tests          # skip `dart test` (run tool/test.sh separately)
+dart tool/release.dart --yes                 # non-interactive confirm
+```
+
+The script strips `-wip` from `pubspec.yaml` and the CHANGELOG header,
+dates the section, runs `dart pub get` / `analyze` / `test`, commits
+as `Release X.Y.Z`, tags `vX.Y.Z`, then bumps `pubspec.yaml` to the
+next `-wip` version with a fresh `## [X.Y.Z-wip]` CHANGELOG section
+and commits as `Bump to X.Y.Z-wip`. It then checks out the `vX.Y.Z`
+tag and runs `dart pub publish` from there — pub publish reads the
+working tree, so this guarantees the published version matches the
+tag instead of the (still-`-wip`) bump commit. pub.dev's own
+confirmation prompt is the publish gate. On success the script
+returns the working tree to your branch.
+
+SDK tests normally rely on a live OTel collector via `tool/test.sh`.
+Run that beforehand to verify, then pass `--skip-tests` if the
+collectorless `dart test` fails.
+
+After it succeeds, push:
+
+```bash
+git push origin HEAD vX.Y.Z
+```
+
+See `PUBLICATION_CHECKLIST.md` for the full pre-release checklist.
 
 ## Communication
 
