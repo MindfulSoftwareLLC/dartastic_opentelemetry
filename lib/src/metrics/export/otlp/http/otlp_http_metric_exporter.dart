@@ -2,6 +2,7 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -292,16 +293,24 @@ class OtlpHttpMetricExporter implements MetricExporter {
       OTelLog.debug('OtlpHttpMetricExporter: Successfully transformed metrics');
     }
 
-    // Prepare headers
+    // Prepare headers + body. Wire format is selected by config.protocol —
+    // protobuf (default) or JSON via proto3-JSON mapping. See
+    // `OtlpHttpProtocol` for the conformance rationale.
     final headers = Map<String, String>.from(_config.headers);
-    headers['Content-Type'] = 'application/x-protobuf';
+    Uint8List messageBytes;
+    if (_config.protocol == OtlpHttpProtocol.httpJson) {
+      headers['Content-Type'] = 'application/json';
+      final jsonValue = request.toProto3Json();
+      messageBytes = Uint8List.fromList(utf8.encode(jsonEncode(jsonValue)));
+    } else {
+      headers['Content-Type'] = 'application/x-protobuf';
+      messageBytes = request.writeToBuffer();
+    }
 
     if (_config.compression) {
       headers['Content-Encoding'] = 'gzip';
     }
 
-    // Convert protobuf to bytes
-    final messageBytes = request.writeToBuffer();
     var bodyBytes = messageBytes;
 
     // Apply gzip compression if configured

@@ -377,7 +377,11 @@ class OTel {
               ),
             );
           } else {
-            // Default to http/protobuf
+            // http/protobuf (default) or http/json (opt-in via env-var).
+            // Anything else falls back to http/protobuf — the spec-
+            // recommended default per `specification/protocol/exporter.md`.
+            final httpProtocol = otlpHttpProtocolFromString(protocol) ??
+                OtlpHttpProtocol.httpProtobuf;
             exporter = OtlpHttpSpanExporter(
               OtlpHttpExporterConfig(
                 endpoint: endpoint,
@@ -391,6 +395,7 @@ class OTel {
                 clientKey: otlpConfigForExporter['clientKey'] as String?,
                 clientCertificate:
                     otlpConfigForExporter['clientCertificate'] as String?,
+                protocol: httpProtocol,
               ),
             );
           }

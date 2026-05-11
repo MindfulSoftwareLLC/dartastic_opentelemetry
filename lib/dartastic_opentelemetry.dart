@@ -83,6 +83,7 @@ export 'src/environment/env_constants.dart';
 export 'src/environment/environment_service.dart';
 export 'src/environment/otel_env.dart';
 export 'src/export/export_result.dart';
+export 'src/export/otlp_http_protocol.dart';
 export 'src/factory/otel_sdk_factory.dart';
 export 'src/logs/bridge/dart_log_bridge.dart';
 export 'src/logs/export/batch_log_record_processor.dart';

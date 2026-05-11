@@ -1,13 +1,21 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
+import '../../../../export/otlp_http_protocol.dart';
 import '../certificate_utils.dart';
 
-/// Configuration for the OpenTelemetry span exporter that exports spans using OTLP over HTTP/protobuf
+/// Configuration for the OpenTelemetry span exporter that exports spans
+/// using OTLP/HTTP. Wire format defaults to `application/x-protobuf` and
+/// can be switched to `application/json` via [protocol] for backends that
+/// prefer JSON (e.g. local dev UIs, browser-based viewers).
 class OtlpHttpExporterConfig {
   /// The endpoint to export spans to (e.g., 'http://localhost:4318/v1/traces')
   /// Default: 'http://localhost:4318'
   final String endpoint;
+
+  /// Wire-format protocol — `httpProtobuf` (default) or `httpJson`.
+  /// Controls `Content-Type` and how OTLP messages are serialized.
+  final OtlpHttpProtocol protocol;
 
   /// Additional HTTP headers to include in the export requests
   final Map<String, String> headers;
@@ -56,6 +64,7 @@ class OtlpHttpExporterConfig {
     this.certificate,
     this.clientKey,
     this.clientCertificate,
+    this.protocol = OtlpHttpProtocol.httpProtobuf,
   })  : endpoint = _validateEndpoint(endpoint),
         headers = _validateHeaders(headers ?? {}),
         timeout = _validateTimeout(timeout),
