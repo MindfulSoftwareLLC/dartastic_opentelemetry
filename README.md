@@ -79,7 +79,7 @@ OpenTelemetry specification which separates API and the SDK.  All OpenTelemetry 
 Include this in your pubspec.yaml:
 ```
 dependencies:
-  dartastic_opentelemetry: ^1.1.0-beta.5
+  dartastic_opentelemetry: ^1.1.0-beta.3
 ```
 
 ## Usage
