@@ -3,7 +3,6 @@
 
 import 'dart:async';
 
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import '../../dartastic_opentelemetry.dart';
 
 part 'meter_provider_create.dart';

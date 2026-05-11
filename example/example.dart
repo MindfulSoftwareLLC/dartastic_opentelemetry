@@ -16,8 +16,8 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 /// aren't covered by the OTel semantic conventions. This keeps attribute
 /// keys typo-free and discoverable. Always check the OTel semantic
 /// conventions first (https://opentelemetry.io/docs/specs/semconv/) — if
-/// a convention exists, use the corresponding enum (e.g. UserSemantics,
-/// HttpResource) instead of inventing your own.
+/// a convention exists, use the corresponding enum (e.g. User,
+/// Http) instead of inventing your own.
 enum ExampleSemantics implements OTelSemantic {
   requestType('request.type'),
   itemsProcessed('items.processed');
@@ -45,13 +45,13 @@ Future<void> main() async {
   final tracer = OTel.tracer();
 
   // Create a parent span for the main operation. Prefer enum keys over
-  // raw strings — UserSemantics.userId is the OTel-spec key, ExampleSemantics
+  // raw strings — User.userId is the OTel-spec key, ExampleSemantics
   // is our app-specific enum defined above.
   final parentSpan = tracer.startSpan(
     'main-operation',
     kind: SpanKind.server,
     attributes: OTel.attributesFromSemanticMap({
-      UserSemantics.userId: 'user-123',
+      User.userId: 'user-123',
       ExampleSemantics.requestType: 'example',
     }),
   );
@@ -90,9 +90,9 @@ Future<void> performDatabaseQuery(Tracer tracer, Span parentSpan) async {
     // Link to parent span via context
     context: OTel.context(spanContext: parentSpan.spanContext),
     attributes: OTel.attributesFromSemanticMap({
-      DatabaseResource.dbSystem: 'postgresql',
-      DatabaseResource.dbOperation: 'SELECT',
-      DatabaseResource.dbName: 'users',
+      Database.dbSystem: 'postgresql',
+      Database.dbOperation: 'SELECT',
+      Database.dbName: 'users',
     }),
   );
 
@@ -117,9 +117,9 @@ Future<void> callExternalService(Tracer tracer, Span parentSpan) async {
     kind: SpanKind.client,
     context: OTel.context(spanContext: parentSpan.spanContext),
     attributes: OTel.attributesFromSemanticMap({
-      HttpResource.requestMethod: 'GET',
-      UrlResource.urlFull: 'https://api.example.com/data',
-      UrlResource.urlPath: '/data',
+      Http.requestMethod: 'GET',
+      Url.urlFull: 'https://api.example.com/data',
+      Url.urlPath: '/data',
     }),
   );
 
@@ -130,8 +130,8 @@ Future<void> callExternalService(Tracer tracer, Span parentSpan) async {
     // Add response attributes.
     span.addAttributes(
       OTel.attributesFromSemanticMap({
-        HttpResource.responseStatusCode: 200,
-        HttpResource.responseBodySize: 1024,
+        Http.responseStatusCode: 200,
+        Http.responseBodySize: 1024,
       }),
     );
   } catch (e, stackTrace) {

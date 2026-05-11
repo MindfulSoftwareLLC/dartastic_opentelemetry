@@ -9,7 +9,7 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
 /// Example-only baggage keys for things not in the OTel semantic
 /// conventions. For any key that *is* in the conventions, use the API
-/// enum instead (e.g. `DeploymentResource.deploymentEnvironmentName`
+/// enum instead (e.g. `Deployment.deploymentEnvironmentName`
 /// for `deployment.environment.name`). Rename this in your own code
 /// (e.g. `CheckoutBaggage`) so the names reflect your domain.
 enum ExampleBaggage implements OTelSemantic {
@@ -48,12 +48,12 @@ Future<void> main() async {
 
   // Since baggage is immutable, each operation returns a new instance.
   // Chain operations to build up the baggage you need. Use typed enum
-  // keys (ExampleBaggage above, or DeploymentResource for the standard
+  // keys (ExampleBaggage above, or Deployment for the standard
   // OTel-semconv keys) instead of raw strings.
   final enrichedBaggage = baggage
-      .copyWith(DeploymentResource.deploymentEnvironmentName.key, 'staging')
+      .copyWith(Deployment.deploymentEnvironmentName.key, 'staging')
       .copyWith(ExampleBaggage.userRegion.key, 'us-west', 'source=user profile')
-      .copyWith(SessionViewSemantics.sessionId.key, 'session-123');
+      .copyWith(Session.sessionId.key, 'session-123');
 
   // Baggage is always associated with a Context.
   // This allows it to automatically propagate through your application.
@@ -102,7 +102,7 @@ Future<void> main() async {
       // Best practice: Document any baggage modifications for debugging.
       final updatedBaggage = isolateBaggage.copyWith(
           ExampleBaggage.serverId.key, 'worker-1')
-        ..copyWithout(DeploymentResource.deploymentEnvironmentName.key);
+        ..copyWithout(Deployment.deploymentEnvironmentName.key);
 
       return isolateContext.withBaggage(updatedBaggage);
     });
@@ -126,8 +126,8 @@ Future<void> distributedTracingExample() async {
     // This helps with debugging and monitoring
     final serviceBaggage = Context.currentWithBaggage()
         .baggage!
-        .copyWith(ServiceResource.serviceInstanceId.key, 'backend-01')
-        .copyWith(ServiceResource.serviceVersion.key, '2.1.0');
+        .copyWith(Service.serviceInstanceId.key, 'backend-01')
+        .copyWith(Service.serviceVersion.key, '2.1.0');
 
     // Best practice: Update context when baggage changes
     // This ensures proper propagation
@@ -152,7 +152,7 @@ Future<void> monitoringExample() async {
   // Examples: service names, regions, environments
   final baseContext = OTel.context().withBaggage(
     OTel.baggage()
-        .copyWith(ServiceResource.serviceName.key, 'payment-processor')
+        .copyWith(Service.serviceName.key, 'payment-processor')
         .copyWith(ExampleBaggage.deploymentRegion.key, 'us-west-2'),
   );
 

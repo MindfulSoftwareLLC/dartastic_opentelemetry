@@ -15,7 +15,6 @@ library;
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/src/metrics/export/otlp/metric_transformer.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:test/test.dart';
 
 import '../../testing_utils/in_memory_span_exporter.dart';

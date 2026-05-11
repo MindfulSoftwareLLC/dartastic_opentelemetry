@@ -20,7 +20,6 @@ import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/src/trace/export/otlp/certificate_utils_io.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:test/test.dart';
 
 import '../testing_utils/in_memory_span_exporter.dart';

@@ -4,7 +4,6 @@
 import 'dart:async';
 import 'dart:typed_data';
 
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:meta/meta.dart';
 
 import '../dartastic_opentelemetry.dart';
@@ -1085,17 +1084,17 @@ class OTel {
   }
 
   /// Creates an [Attributes] from a map keyed by [OTelSemantic] enum values
-  /// (e.g. `HttpResource.requestMethod`). Each enum's `.key` is used as the
+  /// (e.g. `Http.requestMethod`). Each enum's `.key` is used as the
   /// attribute name. Lets you write
   ///
   /// ```dart
   /// OTel.attributesFromSemanticMap({
-  ///   HttpResource.requestMethod: 'GET',
-  ///   HttpResource.responseStatusCode: 200,
+  ///   Http.requestMethod: 'GET',
+  ///   Http.responseStatusCode: 200,
   /// })
   /// ```
   ///
-  /// instead of `attributesFromMap({HttpResource.requestMethod.key: 'GET', …})`.
+  /// instead of `attributesFromMap({Http.requestMethod.key: 'GET', …})`.
   /// Mixing enum types in one map is fine — the param is `Map<OTelSemantic, Object>`,
   /// and every semconv enum implements `OTelSemantic`.
   ///
@@ -1106,6 +1105,48 @@ class OTel {
   ) {
     return OTelAPI.attributesFromSemanticMap(semanticMap);
   }
+
+  /// Like [attributesFromSemanticMap], but parameterized on a single
+  /// concrete semconv enum [E]. The expected key type is concrete at
+  /// the call site, so Dart 3.10 static dot-shorthand can drop the
+  /// enum prefix on every entry:
+  ///
+  /// ```dart
+  /// // Today and forever:
+  /// OTel.attributesOf<Http>({
+  ///   Http.requestMethod: 'GET',
+  ///   Http.responseStatusCode: 200,
+  /// });
+  ///
+  /// // With Dart 3.10+ static dot-shorthand enabled:
+  /// OTel.attributesOf<Http>({
+  ///   .requestMethod: 'GET',
+  ///   .responseStatusCode: 200,
+  /// });
+  /// ```
+  ///
+  /// **Mix and match**: each typed-enum map can be spread into a wider
+  /// `Map<OTelSemantic, Object>` literal, which is exactly what
+  /// [attributesFromSemanticMap] takes — so combining HTTP + Database
+  /// keys with full dot-shorthand looks like:
+  ///
+  /// ```dart
+  /// OTel.attributesFromSemanticMap({
+  ///   ...<Http, Object>{
+  ///     Http.requestMethod: 'GET',
+  ///     Http.responseStatusCode: 200,
+  ///   },
+  ///   ...<Database, Object>{
+  ///     Database.dbSystemName: DbSystem.postgresql.value,
+  ///   },
+  /// });
+  /// ```
+  ///
+  /// Passthrough to [OTelAPI.attributesOf].
+  static Attributes attributesOf<E extends OTelSemantic>(
+    Map<E, Object> typedMap,
+  ) =>
+      OTelAPI.attributesOf<E>(typedMap);
 
   /// Creates an Attributes collection from a list of Attribute objects.
   ///

@@ -3,8 +3,6 @@
 
 library;
 
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
-
 import '../../dartastic_opentelemetry.dart';
 
 part 'tracer_provider_create.dart';

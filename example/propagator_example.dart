@@ -13,7 +13,6 @@
 library;
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 void main() async {
   await OTel.initialize(
@@ -37,14 +36,13 @@ void main() async {
   final span = OTel.tracer().startSpan('parent-operation');
   try {
     final baggage =
-        OTel.baggage({UserSemantics.userId.key: OTel.baggageEntry('user123')});
+        OTel.baggage({User.userId.key: OTel.baggageEntry('user123')});
     final contextWithBaggage =
         OTel.context(spanContext: span.spanContext).withBaggage(baggage);
 
     print('   TraceId: ${span.spanContext.traceId.hexString}');
     print('   SpanId: ${span.spanContext.spanId.hexString}');
-    print(
-        '   Baggage: user.id=${baggage.getValue(UserSemantics.userId.key)}\n');
+    print('   Baggage: user.id=${baggage.getValue(User.userId.key)}\n');
 
     // === INJECT: Outgoing Request ===
     print('2. Injecting trace context into HTTP headers (simulated)...');
@@ -73,7 +71,7 @@ void main() async {
     print('     IsRemote: ${extractedSpanContext?.isRemote}');
     print('     Sampled: ${extractedSpanContext?.traceFlags.isSampled}');
     print(
-        '     Baggage: user.id=${extractedBaggage?.getValue(UserSemantics.userId.key)}\n');
+        '     Baggage: user.id=${extractedBaggage?.getValue(User.userId.key)}\n');
 
     // === Verify Round-Trip ===
     print('4. Verifying round-trip...');
@@ -81,8 +79,8 @@ void main() async {
         extractedSpanContext?.traceId.hexString;
     final sameSpanId = span.spanContext.spanId.hexString ==
         extractedSpanContext?.spanId.hexString;
-    final sameBaggage = baggage.getValue(UserSemantics.userId.key) ==
-        extractedBaggage?.getValue(UserSemantics.userId.key);
+    final sameBaggage = baggage.getValue(User.userId.key) ==
+        extractedBaggage?.getValue(User.userId.key);
 
     print('   ✓ TraceId preserved: $sameTraceId');
     print('   ✓ SpanId preserved: $sameSpanId');
@@ -106,7 +104,7 @@ void main() async {
           '   Child parentSpanId:   ${childSpan.spanContext.parentSpanId?.hexString}',
         );
         print(
-          '   Child Baggage:        ${UserSemantics.userId.key}=${Context.current.baggage?.getValue(UserSemantics.userId.key)}',
+          '   Child Baggage:        ${User.userId.key}=${Context.current.baggage?.getValue(User.userId.key)}',
         );
         print(
           '   → Same TraceId as parent: ${childSpan.spanContext.traceId.hexString == extractedSpanContext?.traceId.hexString}',

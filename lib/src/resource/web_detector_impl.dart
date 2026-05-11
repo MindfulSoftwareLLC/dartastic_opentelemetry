@@ -72,7 +72,10 @@ class WebResourceDetector implements ResourceDetector {
       final nav = _navigator;
       attributes['browser.language'] = nav.language ?? '';
       attributes['browser.platform'] = nav.platform ?? '';
-      attributes['browser.user_agent'] = nav.userAgent ?? '';
+      // `user_agent.original` is the current OTel semconv key; the
+      // older `browser.user_agent` was removed from the browser
+      // namespace in favor of this top-level key.
+      attributes[UserAgent.userAgentOriginal.key] = nav.userAgent ?? '';
       attributes['browser.vendor'] = nav.vendor ?? '';
       attributes['browser.mobile'] = _isMobile();
 
@@ -83,7 +86,7 @@ class WebResourceDetector implements ResourceDetector {
       // Provide fallback values to avoid empty attributes
       attributes['browser.language'] = '';
       attributes['browser.platform'] = '';
-      attributes['browser.user_agent'] = '';
+      attributes[UserAgent.userAgentOriginal.key] = '';
       attributes['browser.vendor'] = '';
       attributes['browser.mobile'] = 'false';
       attributes['browser.languages'] = '';

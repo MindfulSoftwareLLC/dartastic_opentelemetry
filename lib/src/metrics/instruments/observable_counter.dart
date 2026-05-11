@@ -1,7 +1,6 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import '../../../dartastic_opentelemetry.dart';
 
 /// ObservableCounter is an asynchronous instrument that reports monotonically

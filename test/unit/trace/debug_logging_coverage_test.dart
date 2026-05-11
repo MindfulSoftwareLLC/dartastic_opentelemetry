@@ -8,7 +8,6 @@
 // simple_span_processor.dart that are otherwise uncovered when tests run at
 // the default (info) log level.
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:test/test.dart';
 
 import '../../testing_utils/in_memory_span_exporter.dart';
