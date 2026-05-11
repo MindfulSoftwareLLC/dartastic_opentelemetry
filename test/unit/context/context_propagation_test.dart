@@ -6,7 +6,6 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:test/test.dart';
 
 import '../../testing_utils/real_collector.dart';

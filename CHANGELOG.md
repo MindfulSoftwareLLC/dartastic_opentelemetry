@@ -9,7 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0-beta.4-wip]
 
 ### Changed
-- **Breaking (web only):** `WebResourceDetector` now emits the user-agent string under `user_agent.original` (the current OTel semconv key, via `UserAgentResource.userAgentOriginal`) instead of `browser.user_agent`. The browser semconv namespace removed `browser.user_agent` in favor of the top-level `user_agent.*` registry — see https://opentelemetry.io/docs/specs/semconv/registry/attributes/user-agent/. Backends and dashboards that filter on the old key will need to update.
+- **Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.6`.** Beta.6 is a comprehensive OTel semantic-convention update — see the API CHANGELOG. Headline-level breaking changes consumers will feel:
+  - The `Resource` suffix was dropped from ~60 attribute-key enums (`HttpResource.requestMethod` → `Http.requestMethod`, `UrlResource.urlFull` → `Url.urlFull`, etc.). Suffix is kept on six enums that conflict with common Dart / Flutter / library types: `ErrorResource`, `ExceptionResource`, `FileResource`, `ProcessResource`, `ServerResource` (`package:grpc`), `EventResource` (`package:web`).
+  - `UserSemantics` → new `User` enum; `SessionViewSemantics` is split — OTel-spec keys (`session.id`, `session.previous_id`) → `Session`, non-spec RUM-style keys → `RumSessionView`.
+  - Two new files in the API: `semantic_metrics.dart` (15 enums, ~280 metric instrument names with name + instrument kind + unit) and `semantic_events.dart` (16 spec event names). Plus a `semantic_values.dart` with typed value-set enums (`DbSystem.postgresql`, `CloudProvider.gcp`, `HttpRequestMethod.get`, etc.).
+  - New `OTelAPI.attributesOf<E extends OTelSemantic>(Map<E, Object>)` helper for Dart 3.10 static dot-shorthand.
+- **Breaking (web only):** `WebResourceDetector` now emits the user-agent string under `user_agent.original` (the current OTel semconv key, via `UserAgent.userAgentOriginal`) instead of `browser.user_agent`. The browser semconv namespace removed `browser.user_agent` in favor of the top-level `user_agent.*` registry — see https://opentelemetry.io/docs/specs/semconv/registry/attributes/user-agent/. Backends and dashboards that filter on the old key will need to update.
 
 ## [1.1.0-beta.3] - 2026-05-11
 

@@ -13,7 +13,6 @@
 library;
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 void main() async {
   await OTel.initialize(

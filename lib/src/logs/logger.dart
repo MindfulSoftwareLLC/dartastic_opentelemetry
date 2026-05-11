@@ -3,7 +3,6 @@
 
 library;
 
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:fixnum/fixnum.dart';
 
 import '../../dartastic_opentelemetry.dart';

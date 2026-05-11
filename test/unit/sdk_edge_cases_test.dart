@@ -9,7 +9,6 @@ import 'dart:async';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/src/environment/env_from_define.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:test/test.dart';
 
 import '../testing_utils/memory_log_record_exporter.dart';

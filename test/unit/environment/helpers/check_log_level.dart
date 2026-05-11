@@ -5,8 +5,6 @@
 // Run via subprocess with OTEL_LOG_LEVEL env var set.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
-    show LogLevel;
 
 void main() {
   // Start from a clean state

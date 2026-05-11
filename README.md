@@ -170,7 +170,7 @@ Future<void> main() async {
   // withSpanAsync. Per the OpenTelemetry spec, startSpan does NOT activate
   // the span — child spans started inside the closure are parented to
   // `span` via Context.current.
-  // Prefer typed enum keys over raw strings — UserSemantics.userId is
+  // Prefer typed enum keys over raw strings — User.userId is
   // the OTel semantic-convention key. For app-specific attributes that
   // don't have a semantic convention, define your own typed enum (see
   // the Span Attributes section below).
@@ -178,7 +178,7 @@ Future<void> main() async {
     'main-operation',
     kind: SpanKind.server,
     attributes: OTel.attributesFromMap({
-      UserSemantics.userId.key: 'user-123',
+      User.userId.key: 'user-123',
       // app-specific key — would normally come from your own typed enum:
       'request.type': 'example',
     }),
@@ -215,8 +215,8 @@ try {
     kind: SpanKind.client,
     context: OTel.context(spanContext: parentSpan.spanContext),
     attributes: OTel.attributesFromSemanticMap({
-      DatabaseResource.dbSystem: 'postgresql',
-      DatabaseResource.dbOperation: 'SELECT',
+      Database.dbSystem: 'postgresql',
+      Database.dbOperation: 'SELECT',
     }),
   );
   try {
@@ -300,9 +300,9 @@ Attributes are typed key-value pairs on spans. OTel restricts values to `String`
 and `List`s of those types.
 
 **Prefer typed enum keys over raw strings.** The API ships enums for every namespace in the
-[OTel semantic conventions](https://opentelemetry.io/docs/specs/semconv/) — `HttpResource`,
-`UrlResource`, `ServerResource`, `ClientResource`, `DatabaseResource`, `UserSemantics`,
-`SessionViewSemantics`, etc. Using them prevents typos, gives you autocomplete, and tracks the
+[OTel semantic conventions](https://opentelemetry.io/docs/specs/semconv/) — `Http`,
+`Url`, `ServerResource`, `Client`, `Database`, `User`,
+`Session`, etc. Using them prevents typos, gives you autocomplete, and tracks the
 spec as it evolves. For app-specific attributes that aren't in a convention, define your own
 enum implementing `OTelSemantic`:
 
@@ -332,8 +332,8 @@ enum ExampleAttribute implements OTelSemantic {
 // Type-safe individual attributes — mix API convention enums with your
 // own ExampleAttribute for non-convention keys.
 final span = tracer.startSpan('operation', attributes: OTel.attributes([
-  OTel.attributeString(HttpResource.requestMethod.key, 'GET'),
-  OTel.attributeInt(HttpResource.responseStatusCode.key, 200),
+  OTel.attributeString(Http.requestMethod.key, 'GET'),
+  OTel.attributeInt(Http.responseStatusCode.key, 200),
   OTel.attributeDouble(ExampleAttribute.durationMs.key, 123.45),
   OTel.attributeStringList(ExampleAttribute.tags.key, ['payment', 'critical']),
 ]));
@@ -341,16 +341,25 @@ final span = tracer.startSpan('operation', attributes: OTel.attributes([
 // Or from a map (types are inferred automatically).
 final span = tracer.startSpan('operation',
   attributes: OTel.attributesFromSemanticMap({
-    HttpResource.requestMethod: 'GET',
-    HttpResource.responseStatusCode: 200,
+    Http.requestMethod: 'GET',
+    Http.responseStatusCode: 200,
   }),
 );
 
-// Add attributes after creation.
-span.setStringAttribute(UrlResource.urlFull.key, 'https://api.example.com/data');
-span.setIntAttribute(HttpResource.responseBodySize.key, 1024);
+// `attributesOf<E>` is the single-enum form — every key is checked
+// against `Http` at compile time, and Dart 3.10's static dot-shorthand
+// can shorten each entry to `.requestMethod`, `.responseStatusCode`, …
+span.addAttributes(OTel.attributesOf<Http>({
+  Http.responseBodySize: 1024,
+}));
+
+// Mix-and-match: each typed-enum map spreads into a `Map<OTelSemantic, Object>`,
+// which is exactly what `attributesFromSemanticMap` accepts. Useful when one
+// span carries attributes from several namespaces.
 span.addAttributes(OTel.attributesFromSemanticMap({
-  ExampleAttribute.processingStage: 'complete',
+  ...<Http, Object>{Http.requestMethod: 'POST'},
+  ...<Url, Object>{Url.urlFull: 'https://api.example.com/data'},
+  ...<ExampleAttribute, Object>{ExampleAttribute.processingStage: 'complete'},
 }));
 ```
 
@@ -627,8 +636,8 @@ void main() async {
     body: 'User logged in',
     severityNumber: Severity.INFO,
     attributes: OTel.attributesFromSemanticMap({
-      UserSemantics.userId: 'user123',
-      UserSemantics.userRole: 'admin',
+      User.userId: 'user123',
+      User.userRole: 'admin',
     }),
   );
 
@@ -689,13 +698,13 @@ await OTel.runWithPrintInterceptionAsync(() async {
 // Get a logger from the default provider
 final logger = OTel.loggerProvider().getLogger('my-service');
 
-// Emit a simple log. Prefer typed enum keys (UserSemantics, ExampleAttribute,
-// HttpResource, etc.) over raw strings.
+// Emit a simple log. Prefer typed enum keys (User, ExampleAttribute,
+// Http, etc.) over raw strings.
 logger.emit(
   severityNumber: Severity.INFO,
   body: 'User successfully logged in.',
   attributes: OTel.attributesFromSemanticMap({
-    UserSemantics.userId: 'user-123',
+    User.userId: 'user-123',
     ExampleAttribute.authMethod: 'oauth',
   }),
 );
@@ -715,7 +724,7 @@ logger.emit(
   severityNumber: Severity.ERROR,
   body: 'Failed to connect to database.',
   attributes: OTel.attributesFromSemanticMap({
-    DatabaseResource.dbSystem: 'postgresql',
+    Database.dbSystem: 'postgresql',
     ErrorSemantics.errorType: 'ConnectionTimeout',
   }),
 );

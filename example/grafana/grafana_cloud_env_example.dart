@@ -123,15 +123,28 @@ Future<void> traceUserLogin(Tracer tracer, String userId) async {
 
 /// Example: Tracing an HTTP request
 Future<void> traceHttpRequest(Tracer tracer) async {
+  // `attributesOf<E>` is the single-enum form — every key is checked
+  // against `Http` at compile time, and Dart 3.10's static dot-shorthand
+  // can shorten each entry to `.requestMethod`, `.urlFull`, etc.
+  // `ServerResource` (which keeps its suffix because plain `Server`
+  // clashes with `package:grpc`'s `Server`) is mixed in via a map spread
+  // — Dart widens the literal's type to `Map<OTelSemantic, Object>`
+  // automatically, so `attributesFromSemanticMap` accepts it.
   final span = tracer.startSpan(
     'http.request',
     kind: SpanKind.client,
     attributes: OTel.attributesFromSemanticMap({
-      Http.requestMethod: 'GET',
-      Url.urlFull: 'https://api.example.com/users/123',
-      Url.urlPath: '/users/123',
-      ServerResource.serverAddress: 'api.example.com',
-      ServerResource.serverPort: 443,
+      ...<Http, Object>{
+        Http.requestMethod: 'GET',
+      },
+      ...<Url, Object>{
+        Url.urlFull: 'https://api.example.com/users/123',
+        Url.urlPath: '/users/123',
+      },
+      ...<ServerResource, Object>{
+        ServerResource.serverAddress: 'api.example.com',
+        ServerResource.serverPort: 443,
+      },
     }),
   );
 
@@ -139,16 +152,16 @@ Future<void> traceHttpRequest(Tracer tracer) async {
     // Simulate HTTP request.
     await Future<void>.delayed(const Duration(milliseconds: 200));
 
-    // Set response attributes.
+    // Single-namespace addition — pure `Http` so we use the shorter
+    // `attributesOf<Http>` form.
     span.addAttributes(
-      OTel.attributesFromSemanticMap({
+      OTel.attributesOf<Http>({
         Http.responseStatusCode: 200,
         Http.responseBodySize: 1234,
       }),
     );
   } catch (e, stackTrace) {
-    span.addAttributes(
-        OTel.attributesFromSemanticMap({Http.responseStatusCode: 500}));
+    span.addAttributes(OTel.attributesOf<Http>({Http.responseStatusCode: 500}));
     // The span has a status of SpanStatus.Ok on creation, set it to
     // Error when an error occurs in the span.
     span.recordException(e, stackTrace: stackTrace);

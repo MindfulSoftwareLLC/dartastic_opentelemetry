@@ -6,8 +6,6 @@ import 'dart:io';
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/src/trace/span_logger.dart'
     show logSpan, logSpans;
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
-    show LogFunction, LogLevel;
 import 'package:test/test.dart';
 
 void main() {

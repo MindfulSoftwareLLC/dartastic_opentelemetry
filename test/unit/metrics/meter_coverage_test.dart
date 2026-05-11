@@ -2,8 +2,6 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
-    show LogFunction, LogLevel, OTelAPI;
 import 'package:test/test.dart';
 import '../../testing_utils/memory_metric_exporter.dart';
 

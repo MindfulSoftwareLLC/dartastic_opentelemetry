@@ -1,82 +1,15 @@
 // Licensed under the Apache License, Version 2.0
 // Copyright 2025, Michael Bushe, All rights reserved.
 
-/// Re-export key OpenTelemetry API components for convenience
+/// Re-exports the full OpenTelemetry API surface. The previous
+/// curated `show` list was dropped because the OTel semconv registry
+/// keeps growing — every new attribute / metric / event enum the API
+/// adds would otherwise need a parallel listing here. Re-exporting
+/// the whole package keeps the SDK shipping the entire spec surface
+/// for free.
 library;
 
-export 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
-    show
-        AppInfoSemantics,
-        AppLifecycleSemantics,
-        Attributes,
-        AttributesExtension,
-        Baggage,
-        BaggageEntry,
-        Client,
-        Cloud,
-        ComputeInstance,
-        ComputeUnit,
-        Context,
-        ContextKey,
-        Database,
-        Deployment,
-        Device,
-        DeviceSemantics,
-        Environment,
-        ErrorResource,
-        ErrorSemantics,
-        ExceptionResource,
-        FeatureFlag,
-        FileResource,
-        GenAI,
-        General,
-        GraphQL,
-        Host,
-        Http,
-        IdGenerator,
-        InstrumentationScope,
-        InteractionSemantics,
-        Kubernetes,
-        LifecycleState,
-        LogRecord,
-        Measurement,
-        Messaging,
-        NavigationAction,
-        NavigationSemantics,
-        Network,
-        NetworkSemantics,
-        OTelLog,
-        OTelSemantic,
-        OTelSemanticExtension,
-        OperatingSystem,
-        PerformanceSemantics,
-        ProcessResource,
-        RPC,
-        ServerResource,
-        Service,
-        Session,
-        Severity,
-        SeverityLevel,
-        SourceCode,
-        SpanContext,
-        SpanEvent,
-        SpanId,
-        SpanKind,
-        SpanLink,
-        SpanStatusCode,
-        SystemTimeProvider,
-        TelemetryDistro,
-        TelemetrySDK,
-        TimeProvider,
-        Timestamp,
-        TraceFlags,
-        TraceId,
-        TraceState,
-        Url,
-        User,
-        Version,
-        WebTimeProvider,
-        defaultTimeProvider;
+export 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 export 'src/context/propagation/w3c_baggage_propagator.dart';
 export 'src/environment/env_constants.dart';
