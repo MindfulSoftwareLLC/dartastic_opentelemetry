@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.1.0-beta.4-wip]
+## [1.1.0-beta.4] - 2026-05-11
 
 ### Changed
 - **Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.6`.** Beta.6 is a comprehensive OTel semantic-convention update — see the API CHANGELOG. Headline-level breaking changes consumers will feel:
