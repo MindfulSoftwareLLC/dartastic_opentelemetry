@@ -18,22 +18,18 @@ Dartastic and Flutterrific OTel are made with 💙 by Michael Bushe at [Mindful 
 
 ## Commercial Support
 
-[Dartastic.io](https://dartastic.io) provides an OpenTelemetry support, training, consulting
-and an Observability backend customized for Flutter apps, Dart backends, and any other service or process that produces
-OpenTelemetry data.
-
-- Dartastic Cloud - your Observability platform of choice integrated with your Dart and Flutter builds. 
-  See source stack traces from production errors in your observability platform for Dart and Flutter without revealing your source code (debug symbols, source maps) to your Observability vendors.
-- Dartastic Pub Dev 
-  - Use a private pub dev server to share package with your team or partners, managed access with a familiar pub.dev feel.
-  - Store debug symbols and source maps with Dartastic Cloud and turn your production errors into source code lines right in your Observability platform. See source code in the UI, send source code lines with tickets or alerts.  Squash bugs fast. 
-- Pro Dartastic OTel libraries
-    - access the Dartastic Pro professionally maintained package that is has features and fixes not available in the open source library.
-    - access to packages with advanced features, such PII protection, not available in the open source offering.
-    - access instrumented versions of Dart and Flutter libraries, such as dio and go_router.
-- Paid support to deliver with confidence.
-- Training on OTel for Dart, Flutter on GCP and other platforms.
-- Professional consulting in Dart, Flutter, Observability and AI development.
+[Dartastic.io](https://dartastic.io) tools and services for Dart and Flutter teams shipping to production.
+* **Dartastic.io Pro OTel**
+  * Professionally supported version of this open source dartastic_opentelemetry package and dartastic_opentelemetry_api - and their future CNCF equivalents.
+  * Professional OpenTelemetry libraries for Dart and Flutter
+    * Keep PII out of your observability data.
+    * Integrate OTel observability into common Dart and Flutter like shelf, dio and go_router.
+* **Dartastic.io Pub Dev** [pub.dartastic.io](pub.dartastic.io) Privately share your packages and plugins with your team,
+  partners and customers.
+* **Dartastic.io Symbolizer** [symbolizer.dartastic.io](symbolizer.dartastic.io) Turn production errors into
+  source code lines with a Web API call. Squash Dart and Flutter bugs fast and keep your source code artifacts private.
+* **Dartastic.io Observability Cloud** - observability backends, customized for Dart and Flutter and integrated with Dartastic.io Symbolizer.
+* Dart and Flutter OpenTelemetry support, training, consulting, integrations and upgrades.
 
 ## Features
 
@@ -41,11 +37,11 @@ OpenTelemetry data.
 - 📐 **Standards Compliant**: Complies with the [OpenTelemetry specification](https://opentelemetry.io/docs/specs/)
   so it's portable and future-proof.
 - 🌎 **Ecosystem**:
-  - [Dartastic.io](https://dartastic.io) is an OTel backend for Dart with a generous free tier,
-    professional support and enterprise features.
+  - [Dartastic.io](https://dartastic.io) has professional OTel packages, a private pub.dev integrated with OTel backends and a Symbolizer
+    service that shows source code lines from production errors.
   - [Flutterrific OTel](https://pub.dev/packages/flutterrific_opentelemetry)
     adds Dartastic OTel to Flutter apps with ease.  Observe app routes, errors, web vitals and more with as few
-    as two lines of code.
+    as two lines of code.  Flutterrific OTel will follow the developing OTel Client standards.
 - 💪🏻 **Powerful**:
   - Propagate OpenTelemetry Context across async gaps and Isolates.
   - Pick from a rich set of Samplers including On/Off, probability and rate-limiting.
@@ -70,26 +66,20 @@ OpenTelemetry data.
   - Context propagation
   - Baggage management and optional `BaggageSpanProcessor` to automatically copy baggage entries as span attributes
 
-[Dartastic.io](https://dartastic.io) offers a Pro OTel libraries, a private pub.dev server for your team and partners integrated with your OTel backend - get source code lines for production errors immediately.
-
-[Flutterrific OTel](https://pub.dev/packages/flutterrific_opentelemetry) adds Dartastic OTel to Flutter apps with ease.
-
-[Dartastic OTel](https://pub.dev/packages/dartastic_opentelemetry) is suitable for Dart backends, CLIs or any
+[`dartastic_opentelemetry_api`](https://pub.dev/packages/dartastic_opentelemetry) is suitable for Dart backends, CLIs or any
 Dart application.
 
 [Dartastic OTel API](https://pub.dev/packages/dartastic_opentelemetry_api) is the API for the Dartastic OTel SDK.
 The `dartastic_opentelemetry_api` exists as a standalone library to strictly adhere to the
 OpenTelemetry specification which separates API and the SDK.  All OpenTelemetry API classes on in
-`dartastic_opentelemetry_api`.  Developers should use this SDK.
-
-
+`dartastic_opentelemetry_api`.  Developers should use the SDK, not the API.
 
 ## Getting started
 
 Include this in your pubspec.yaml:
 ```
 dependencies:
-  dartastic_opentelemetry: ^1.1.0-beta.2
+  dartastic_opentelemetry: ^1.1.0-beta.5
 ```
 
 ## Usage
