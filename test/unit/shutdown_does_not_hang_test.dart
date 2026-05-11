@@ -60,6 +60,15 @@ Future<Duration> _runUntilExit({
   try {
     final pubspec = File('${tmpDir.path}/pubspec.yaml');
     final repoRoot = Directory.current.absolute.path;
+    // `dependency_overrides` from the SDK's own pubspec are ignored when
+    // the SDK is a transitive dep (pub only honors overrides from the
+    // root package). Replicate the SDK's local API override here so the
+    // subprocess can resolve the in-flight API beta against its local
+    // path even when its published `^x.y.z-beta.N` constraint hasn't
+    // landed yet.
+    final apiPath = Directory('$repoRoot/../dartastic_opentelemetry_api')
+        .absolute
+        .path;
     pubspec.writeAsStringSync('''
 name: shutdown_repro
 publish_to: none
@@ -68,6 +77,9 @@ environment:
 dependencies:
   dartastic_opentelemetry:
     path: $repoRoot
+dependency_overrides:
+  dartastic_opentelemetry_api:
+    path: $apiPath
 ''');
     final src = File('${tmpDir.path}/main.dart');
     src.writeAsStringSync(reproSource);

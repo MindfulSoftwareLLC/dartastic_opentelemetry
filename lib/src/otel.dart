@@ -38,9 +38,69 @@ import '../dartastic_opentelemetry.dart';
 /// The values must be valid Attribute types (String, bool, int, double, or
 /// List\<String>, List\<bool>, List\<int> or List\<double>).
 class OTel {
-  static OTelSDKFactory? _otelFactory;
+  /// Cached factory reference. Typed as the base `OTelFactory` because
+  /// pre-`OTel.initialize`, the API layer's lazy-noop default
+  /// (`OTelAPIFactory`) is what's installed — and that is NOT an
+  /// `OTelSDKFactory`. SDK-specific factory methods (e.g.
+  /// `OTelSDKFactory.resource(...)`) are accessed at their call sites
+  /// with explicit casts; methods that exist on the base interface
+  /// (`contextKey`, `attributes`, `spanEvent`, etc.) work uniformly on
+  /// both API and SDK factories.
+  static OTelFactory? _otelFactory;
   static Sampler? _defaultSampler;
   static TimeProvider? _defaultTimeProvider;
+
+  /// Tracks whether [initialize] has been called explicitly. Distinct
+  /// from "is a factory installed" — the API layer's
+  /// `_getAndCacheOtelFactory` auto-installs a noop factory on first
+  /// access per the OTel spec ("in the absence of an installed SDK,
+  /// the Trace API is a 'no-op' API"). That auto-install does NOT count
+  /// as SDK initialization, so a subsequent [initialize] call legitimately
+  /// upgrades from noop to a real SDK factory exactly once.
+  static bool _userInitialized = false;
+
+  /// Whether [initialize] has been called explicitly. Returns `false` if
+  /// only the auto-installed noop default is in place (the spec-compliant
+  /// pre-initialization state). Useful for library code that owns its
+  /// own initialization and wants to guard against double-init without
+  /// try/catch.
+  static bool get isInitialized => _userInitialized;
+
+  /// Cached late-binding proxy providers — one per (signal, name)
+  /// pair. These are what callers receive from [tracerProvider] /
+  /// [meterProvider] / [loggerProvider]; they re-resolve to the
+  /// current underlying real provider on every call, so a reference
+  /// captured pre-`initialize` keeps working post-init. Identity is
+  /// stable across `initialize`; cleared only on [reset].
+  static final Map<String?, LateBindingTracerProvider>
+      _proxyTracerProviders = {};
+  static final Map<String, LateBindingTracer> _proxyTracers = {};
+  static LateBindingMeterProvider? _proxyMeterProvider;
+  static LateBindingLoggerProvider? _proxyLoggerProvider;
+  static final Map<String, LateBindingLogger> _proxyLoggers = {};
+
+  /// Cached noop SDK wrappers around the API noop factory's providers
+  /// — what [internalResolveRealTracerProvider] (and the meter / logger
+  /// equivalents) hand back when no SDK factory has been installed yet.
+  /// Cached so identity is stable during the pre-init window; cleared
+  /// on [initialize] (the real factory replaces them) and [reset].
+  static final Map<String?, TracerProvider> _noopSdkTracerProviders = {};
+  static MeterProvider? _noopSdkMeterProvider;
+  static LoggerProvider? _noopSdkLoggerProvider;
+
+  /// Identity-tracked sets of providers that have already had the OTel
+  /// defaults (resource, sampler, timeProvider) applied. Each provider
+  /// — whether the SDK noop wrapper installed pre-init or the real SDK
+  /// provider installed by `initialize` — gets defaults exactly once.
+  /// Without this, applying defaults on every [internalResolveRealXxx]
+  /// call would silently overwrite user mutations (e.g. setting
+  /// `provider.resource = null` to test ensureResourceIsSet would be
+  /// reverted before the next access).
+  static final Set<TracerProvider> _tracerProvidersWithDefaults =
+      Set.identity();
+  static final Set<MeterProvider> _meterProvidersWithDefaults = Set.identity();
+  static final Set<LoggerProvider> _loggerProvidersWithDefaults =
+      Set.identity();
 
   /// Whether print interception is enabled (set via initialize).
   static bool _logPrintEnabled = false;
@@ -220,7 +280,7 @@ class OTel {
         resourceAttributes = OTel.attributesFromMap(envResourceAttrs);
       }
     }
-    if (OTelFactory.otelFactory != null) {
+    if (_userInitialized) {
       throw StateError(
         'OTelAPI can only be initialized once. If you need multiple endpoints or service names or versions create a named TracerProvider',
       );
@@ -248,11 +308,35 @@ class OTel {
     // Initialize logging from environment variables if needed
     initializeLogging();
 
+    // Replaces whatever's installed — including the lazy noop default
+    // that `_getAndCacheOtelFactory` may have installed on a pre-init
+    // API access. The `_userInitialized` flag (not the factory pointer)
+    // gates double-initialization.
     OTelFactory.otelFactory = factoryFactory(
       apiEndpoint: endpoint,
       apiServiceName: serviceName,
       apiServiceVersion: serviceVersion,
     );
+    _userInitialized = true;
+    // Refresh the local SDK factory cache so SDK-specific casts (e.g.
+    // `OTel.resource` -> `_otelFactory as OTelSDKFactory`) hit the
+    // freshly-installed real factory rather than the stale API noop
+    // that any pre-init access may have cached.
+    _otelFactory = OTelFactory.otelFactory;
+    // Drop any noop SDK wrappers that were issued pre-init; the
+    // late-binding proxies will re-resolve to real SDK providers
+    // backed by the new SDK factory on their next call. The proxy
+    // instances themselves are intentionally NOT cleared — captured
+    // pre-init references must keep working after init.
+    _noopSdkTracerProviders.clear();
+    _noopSdkMeterProvider = null;
+    _noopSdkLoggerProvider = null;
+    // Forget that the (now-discarded) noop wrappers had defaults
+    // applied so the real SDK providers get their defaults applied on
+    // the next resolve. Real providers stay in the set until [reset].
+    _tracerProvidersWithDefaults.clear();
+    _meterProvidersWithDefaults.clear();
+    _loggerProvidersWithDefaults.clear();
 
     if (OTelLog.isDebug()) {
       OTelLog.debug(
@@ -558,14 +642,83 @@ class OTel {
   ///
   /// The endpoint, serviceName, serviceVersion, sampler and resource set flow down
   /// to the [Tracer]s created by the TracerProvider and the [Span]
-  /// created by those tracers
+  /// created by those tracers.
+  ///
+  /// Returns a [LateBindingTracerProvider] proxy whose identity is stable
+  /// across `OTel.initialize`. Each method/getter/setter on the returned
+  /// proxy resolves to the current underlying SDK provider — a noop SDK
+  /// wrapper around the API noop factory pre-init, the real SDK provider
+  /// post-init. This means library code that captures
+  /// `OTel.tracerProvider()` at module load (Genkit-style) continues to
+  /// work after a later `OTel.initialize` without re-fetching.
+  ///
   /// @param name Optional name of a specific TracerProvider
-  /// @return The TracerProvider instance
+  /// @return The TracerProvider instance (a late-binding proxy)
   static TracerProvider tracerProvider({String? name}) {
-    final tracerProvider = OTelAPI.tracerProvider(name) as TracerProvider;
-    // Ensure the resource is properly set
-    if (tracerProvider.resource == null && defaultResource != null) {
-      tracerProvider.resource = defaultResource;
+    return _proxyTracerProviders.putIfAbsent(
+      name,
+      () => LateBindingTracerProvider(name),
+    );
+  }
+
+  /// Internal: resolve the current real (non-proxy) [TracerProvider] for
+  /// the named provider. Used by [LateBindingTracerProvider] and
+  /// [LateBindingTracer] to forward calls to whatever provider is
+  /// installed *right now* — the SDK factory's provider post-init, or a
+  /// cached SDK noop wrapper pre-init. Defaults (resource, sampler,
+  /// timeProvider) are applied exactly once per provider instance
+  /// (tracked via [_tracerProvidersWithDefaults]). Not part of the
+  /// public API.
+  @internal
+  static TracerProvider internalResolveRealTracerProvider(String? name) {
+    final apiTp = OTelAPI.tracerProvider(name);
+    final tp = apiTp is TracerProvider
+        ? apiTp
+        : _noopSdkTracerProviders.putIfAbsent(
+            name,
+            () => SDKTracerProviderCreate.create(delegate: apiTp),
+          );
+    if (_tracerProvidersWithDefaults.add(tp)) {
+      _applyTracerProviderDefaults(tp);
+    }
+    return tp;
+  }
+
+  /// Internal: get-or-create a cached [LateBindingTracer] proxy for the
+  /// given identifying tuple. Called by [LateBindingTracerProvider.getTracer].
+  /// Cache key matches the underlying SDK [TracerProvider.getTracer]
+  /// (`name:version`) so the first call's `schemaUrl` / `attributes` /
+  /// `sampler` win for the lifetime of the cached entry. Not part of
+  /// the public API.
+  @internal
+  static LateBindingTracer internalGetCachedLateBindingTracer({
+    required String? providerName,
+    required String name,
+    String? version,
+    String? schemaUrl,
+    Attributes? attributes,
+    Sampler? sampler,
+  }) {
+    final key = '${providerName ?? ''}|$name|${version ?? ''}';
+    return _proxyTracers.putIfAbsent(
+      key,
+      () => LateBindingTracer(
+        providerName: providerName,
+        name: name,
+        version: version,
+        schemaUrl: schemaUrl,
+        attributes: attributes,
+        sampler: sampler,
+      ),
+    );
+  }
+
+  /// Applies the OTel defaults (resource, sampler, timeProvider) to a
+  /// freshly-resolved real TracerProvider. Idempotent — every getter
+  /// uses null-or-default semantics so repeated calls are a no-op.
+  static void _applyTracerProviderDefaults(TracerProvider tp) {
+    if (tp.resource == null && defaultResource != null) {
+      tp.resource = defaultResource;
       if (OTelLog.isDebug()) {
         OTelLog.debug('OTel.tracerProvider: Setting resource from default');
         if (defaultResource != null) {
@@ -577,28 +730,56 @@ class OTel {
         }
       }
     }
-
-    tracerProvider.sampler ??= _defaultSampler;
+    tp.sampler ??= _defaultSampler;
     if (_defaultTimeProvider != null) {
-      tracerProvider.timeProvider = _defaultTimeProvider!;
+      tp.timeProvider = _defaultTimeProvider!;
     }
-    return tracerProvider;
   }
 
   /// Gets a MeterProvider for creating Meters.
   ///
-  /// If name is null, this returns the global default MeterProvider, which shares
-  /// the endpoint, serviceName, serviceVersion and resource set in initialize().
-  /// If the name is not null, it returns a MeterProvider for the name that was added
-  /// with addMeterProvider.
+  /// Returns a [LateBindingMeterProvider] proxy — see [tracerProvider]
+  /// for the late-binding rationale. Pre-init the proxy resolves to a
+  /// noop SDK MeterProvider wrapper; post-init it resolves to the real
+  /// SDK provider installed by `OTel.initialize`. Named MeterProviders
+  /// are not yet supported via the late-binding path; pass [name] to
+  /// fall back to the legacy direct-return behavior.
   ///
   /// @param name Optional name of a specific MeterProvider
   /// @return The MeterProvider instance
   static MeterProvider meterProvider({String? name}) {
-    final meterProvider = OTelAPI.meterProvider(name) as MeterProvider;
-    meterProvider.resource ??= defaultResource;
-    return meterProvider;
+    if (name != null) {
+      // Named providers fall back to the legacy direct-return pattern.
+      // Late binding for named meter providers can be added if a
+      // concrete consumer needs it.
+      final apiMp = OTelAPI.meterProvider(name);
+      final mp = apiMp is MeterProvider
+          ? apiMp
+          : SDKMeterProviderCreate.create(delegate: apiMp);
+      mp.resource ??= defaultResource;
+      return mp;
+    }
+    return _proxyMeterProvider ??= LateBindingMeterProvider();
   }
+
+  /// Internal: resolve the current real (non-proxy) [MeterProvider].
+  /// Used by [LateBindingMeterProvider] to forward calls. Defaults
+  /// (resource) are applied exactly once per provider instance —
+  /// tracked via [_meterProvidersWithDefaults] so user mutations stick.
+  /// Not part of the public API.
+  @internal
+  static MeterProvider internalResolveRealMeterProvider() {
+    final apiMp = OTelAPI.meterProvider();
+    final mp = apiMp is MeterProvider
+        ? apiMp
+        : (_noopSdkMeterProvider ??=
+            SDKMeterProviderCreate.create(delegate: apiMp));
+    if (_meterProvidersWithDefaults.add(mp)) {
+      mp.resource ??= defaultResource;
+    }
+    return mp;
+  }
+
 
   /// Adds or replaces a named TracerProvider.
   ///
@@ -606,13 +787,18 @@ class OTel {
   /// which can be useful for sending telemetry to different backends or with different
   /// settings.
   ///
+  /// Returns a late-binding [TracerProvider] proxy keyed by [name] (the
+  /// same one [tracerProvider] returns); the underlying SDK provider is
+  /// created or replaced as a side effect, and the proxy resolves to it
+  /// on subsequent calls.
+  ///
   /// @param name The name of the TracerProvider
   /// @param endpoint Optional custom endpoint URL
   /// @param serviceName Optional custom service name
   /// @param serviceVersion Optional custom service version
   /// @param resource Optional custom resource
   /// @param sampler Optional custom sampler
-  /// @return The newly created or replaced TracerProvider
+  /// @return The newly created or replaced TracerProvider (a late-binding proxy)
   static TracerProvider addTracerProvider(
     String name, {
     String? endpoint,
@@ -621,13 +807,20 @@ class OTel {
     Resource? resource,
     Sampler? sampler,
   }) {
-    final sdkTracerProvider = OTelAPI.addTracerProvider(name) as TracerProvider;
+    final apiTp = OTelAPI.addTracerProvider(name);
+    final sdkTracerProvider = apiTp is TracerProvider
+        ? apiTp
+        : (_noopSdkTracerProviders[name] ??=
+            SDKTracerProviderCreate.create(delegate: apiTp));
     sdkTracerProvider.resource = resource ?? defaultResource;
     sdkTracerProvider.sampler = sampler ?? _defaultSampler;
     if (_defaultTimeProvider != null) {
       sdkTracerProvider.timeProvider = _defaultTimeProvider!;
     }
-    return sdkTracerProvider;
+    return _proxyTracerProviders.putIfAbsent(
+      name,
+      () => LateBindingTracerProvider(name),
+    );
   }
 
   /// @return the [TracerProvider]s, the global default and named ones.
@@ -641,10 +834,15 @@ class OTel {
   /// The endpoint, serviceName, serviceVersion, sampler and resource all flow down
   /// from the OTel defaults set during initialization.
   ///
-  /// @return The default Tracer instance
+  /// Returns a [LateBindingTracer] proxy — see [tracerProvider] for the
+  /// rationale. The proxy identity stays stable across `OTel.initialize`,
+  /// so a captured reference keeps producing real spans after init.
+  ///
+  /// @return The default Tracer instance (a late-binding proxy)
   static Tracer tracer() {
-    return tracerProvider().getTracer(
-      defaultTracerName,
+    return internalGetCachedLateBindingTracer(
+      providerName: null,
+      name: defaultTracerName,
       version: defaultTracerVersion,
     );
   }
@@ -687,12 +885,15 @@ class OTel {
     Resource? resource,
   }) {
     _getAndCacheOtelFactory();
-    final mp = _otelFactory!.addMeterProvider(
+    final apiMp = _otelFactory!.addMeterProvider(
       name,
       endpoint: endpoint,
       serviceName: serviceName,
       serviceVersion: serviceVersion,
-    ) as MeterProvider;
+    );
+    final mp = apiMp is MeterProvider
+        ? apiMp
+        : SDKMeterProviderCreate.create(delegate: apiMp);
     mp.resource = resource ?? defaultResource;
     return mp;
   }
@@ -704,14 +905,19 @@ class OTel {
 
   /// Gets the default Meter from the default MeterProvider.
   ///
-  /// This is a convenience method for getting a Meter with the default configuration.
-  /// The endpoint, serviceName, serviceVersion and resource all flow down from
-  /// the OTel defaults set during initialization.
+  /// Returns the *real* SDK [Meter] (not a proxy) — resolved at call
+  /// time from the current underlying [MeterProvider]. References
+  /// captured pre-`OTel.initialize` will NOT auto-update across init;
+  /// fetch the meter again after init if you need one. See
+  /// `lib/src/metrics/late_binding_meter.dart` for the rationale on
+  /// why metrics opts out of meter-level late binding (instruments
+  /// hold `instrument.meter` back-references that must match the
+  /// real Meter object).
   ///
   /// @param name Optional custom name for the meter (defaults to defaultTracerName)
-  /// @return The default Meter instance
+  /// @return The default Meter instance (real, not proxied)
   static Meter meter([String? name]) {
-    return meterProvider().getMeter(
+    return internalResolveRealMeterProvider().getMeter(
       name: name ?? defaultTracerName,
       version: defaultTracerVersion,
     ) as Meter;
@@ -719,17 +925,59 @@ class OTel {
 
   /// Gets a LoggerProvider for creating Loggers.
   ///
-  /// If name is null, this returns the global default LoggerProvider, which shares
-  /// the endpoint, serviceName, serviceVersion and resource set in initialize().
-  /// If the name is not null, it returns a LoggerProvider for the name that was added
-  /// with addLoggerProvider.
+  /// Returns a [LateBindingLoggerProvider] proxy — see [tracerProvider]
+  /// for the late-binding rationale. Named LoggerProviders fall back to
+  /// the legacy direct-return pattern.
   ///
   /// @param name Optional name of a specific LoggerProvider
   /// @return The LoggerProvider instance
   static LoggerProvider loggerProvider({String? name}) {
-    final logProvider = OTelAPI.loggerProvider(name) as LoggerProvider;
-    logProvider.resource ??= defaultResource;
-    return logProvider;
+    if (name != null) {
+      final apiLp = OTelAPI.loggerProvider(name);
+      final lp = apiLp is LoggerProvider
+          ? apiLp
+          : SDKLoggerProviderCreate.create(delegate: apiLp);
+      lp.resource ??= defaultResource;
+      return lp;
+    }
+    return _proxyLoggerProvider ??= LateBindingLoggerProvider();
+  }
+
+  /// Internal: resolve the current real (non-proxy) [LoggerProvider].
+  /// Defaults (resource) applied exactly once per provider instance.
+  @internal
+  static LoggerProvider internalResolveRealLoggerProvider() {
+    final apiLp = OTelAPI.loggerProvider();
+    final lp = apiLp is LoggerProvider
+        ? apiLp
+        : (_noopSdkLoggerProvider ??=
+            SDKLoggerProviderCreate.create(delegate: apiLp));
+    if (_loggerProvidersWithDefaults.add(lp)) {
+      lp.resource ??= defaultResource;
+    }
+    return lp;
+  }
+
+  /// Internal: get-or-create a cached [LateBindingLogger] proxy. Cache
+  /// key matches the underlying SDK [LoggerProvider.getLogger]
+  /// (`name:version`) so first-call `schemaUrl` / `attributes` win.
+  @internal
+  static LateBindingLogger internalGetCachedLateBindingLogger({
+    required String name,
+    String? version,
+    String? schemaUrl,
+    Attributes? attributes,
+  }) {
+    final key = '$name|${version ?? ''}';
+    return _proxyLoggers.putIfAbsent(
+      key,
+      () => LateBindingLogger(
+        name: name,
+        version: version,
+        schemaUrl: schemaUrl,
+        attributes: attributes,
+      ),
+    );
   }
 
   /// Adds or replaces a named LoggerProvider.
@@ -752,25 +1000,27 @@ class OTel {
     Resource? resource,
   }) {
     _getAndCacheOtelFactory();
-    final lp = _otelFactory!.addLogProvider(name,
+    final apiLp = _otelFactory!.addLogProvider(name,
         endpoint: endpoint,
         serviceName: serviceName,
-        serviceVersion: serviceVersion) as LoggerProvider;
+        serviceVersion: serviceVersion);
+    final lp = apiLp is LoggerProvider
+        ? apiLp
+        : SDKLoggerProviderCreate.create(delegate: apiLp);
     lp.resource = resource ?? defaultResource;
     return lp;
   }
 
   /// Gets the default OTelLogger from the default LoggerProvider.
   ///
-  /// This is a convenience method for getting a OTelLogger with the default configuration.
-  /// The endpoint, serviceName, serviceVersion and resource all flow down from
-  /// the OTel defaults set during initialization.
+  /// Returns a [LateBindingLogger] proxy — captured references survive
+  /// `OTel.initialize`.
   ///
   /// @param name Optional custom name for the logger (defaults to defaultTracerName)
-  /// @return The default OTelLogger instance
+  /// @return The default OTelLogger instance (a late-binding proxy)
   static OTelLogger logger([String? name]) {
-    return loggerProvider().getLogger(
-      name ?? defaultTracerName,
+    return internalGetCachedLateBindingLogger(
+      name: name ?? defaultTracerName,
       version: defaultTracerVersion,
     );
   }
@@ -1235,10 +1485,15 @@ class OTel {
     if (_otelFactory != null) {
       return _otelFactory!;
     }
-    if (OTelFactory.otelFactory == null) {
-      throw StateError('initialize() must be called first.');
-    }
-    return _otelFactory = OTelFactory.otelFactory! as OTelSDKFactory;
+    // Trigger the API's canonical lazy-install logic by calling its
+    // `ensureFactoryInstalled` helper — installs the spec-mandated
+    // noop API factory if no SDK factory has been registered yet.
+    OTelAPI.ensureFactoryInstalled();
+    // We cache whatever's installed — SDK factory or noop API factory.
+    // SDK-specific factory methods (e.g. `OTelSDKFactory.resource(...)`)
+    // are cast at their per-call-site boundaries; methods on the base
+    // `OTelFactory` interface work uniformly.
+    return _otelFactory = OTelFactory.otelFactory!;
   }
 
   /// Initializes logging based on environment variables.
@@ -1361,6 +1616,18 @@ class OTel {
     _otelFactory = null;
     _defaultSampler = null;
     _defaultTimeProvider = null;
+    _userInitialized = false;
+    _proxyTracerProviders.clear();
+    _proxyTracers.clear();
+    _proxyMeterProvider = null;
+    _proxyLoggerProvider = null;
+    _proxyLoggers.clear();
+    _noopSdkTracerProviders.clear();
+    _noopSdkMeterProvider = null;
+    _noopSdkLoggerProvider = null;
+    _tracerProvidersWithDefaults.clear();
+    _meterProvidersWithDefaults.clear();
+    _loggerProvidersWithDefaults.clear();
     defaultResource = null;
     dartasticApiKey = null;
 

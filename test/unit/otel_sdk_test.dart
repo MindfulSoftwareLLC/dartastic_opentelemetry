@@ -652,9 +652,16 @@ void main() {
       await OTel.reset();
     });
 
-    test('_getAndCacheOtelFactory throws when not initialized', () {
-      // Exercises the StateError thrown when OTel is not initialized
-      expect(() => OTel.contextKey<String>('test-key'), throwsStateError);
+    test('contextKey() pre-initialize returns a usable key (spec-aligned '
+        'noop-default factory installs lazily on first access)', () {
+      // Pre-`OTel.initialize`, the API's noop factory is auto-installed
+      // on first access. `contextKey` goes through the base
+      // `OTelFactory` interface, so it works even before the SDK has
+      // been initialized — matches Java/JS/Python. The prior
+      // StateError-on-pre-init behavior was a Dartastic-only
+      // divergence, removed when the noop-default-factory landed.
+      final key = OTel.contextKey<String>('test-key');
+      expect(key.name, 'test-key');
     });
   });
 
