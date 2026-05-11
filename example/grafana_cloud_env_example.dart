@@ -11,9 +11,9 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
 /// Example-only attribute keys for things not in the OTel semantic
 /// conventions (https://opentelemetry.io/docs/specs/semconv/). Always
-/// check the conventions first — the API's built-in enums (UserSemantics,
-/// HttpResource, ServerResource, DatabaseResource, ClientResource,
-/// SessionViewSemantics) cover the spec keys. Rename this in your own
+/// check the conventions first — the API's built-in enums (User,
+/// Http, Server, Database, Client,
+/// Session) cover the spec keys. Rename this in your own
 /// code (e.g. `CheckoutAttribute`) so the names reflect your domain.
 enum ExampleAttribute implements OTelSemantic {
   authMethod('auth.method'),
@@ -61,7 +61,7 @@ Future<void> main() async {
 
   print('OpenTelemetry initialized with environment configuration');
   print(
-    'Service: ${OTel.defaultResource?.attributes.toList().firstWhere((a) => a.key == ServiceResource.serviceName.key).value}',
+    'Service: ${OTel.defaultResource?.attributes.toList().firstWhere((a) => a.key == Service.serviceName.key).value}',
   );
 
   // Create a tracer
@@ -89,10 +89,10 @@ Future<void> traceUserLogin(Tracer tracer, String userId) async {
     'user.login',
     kind: SpanKind.server,
     attributes: OTel.attributesFromSemanticMap({
-      UserSemantics.userId: userId,
+      User.userId: userId,
       ExampleAttribute.authMethod: 'oauth2',
       // client.address replaces the deprecated client.ip per OTel semconv.
-      ClientResource.clientAddress: '192.168.1.100',
+      Client.clientAddress: '192.168.1.100',
     }),
   );
 
@@ -105,8 +105,7 @@ Future<void> traceUserLogin(Tracer tracer, String userId) async {
       OTel.spanEventNow(
         'authentication.success',
         OTel.attributesFromSemanticMap({
-          SessionViewSemantics.sessionId:
-              'sess_${DateTime.now().millisecondsSinceEpoch}',
+          Session.sessionId: 'sess_${DateTime.now().millisecondsSinceEpoch}',
           ExampleAttribute.permissions: 'read,write',
         }),
       ),
@@ -128,9 +127,9 @@ Future<void> traceHttpRequest(Tracer tracer) async {
     'http.request',
     kind: SpanKind.client,
     attributes: OTel.attributesFromSemanticMap({
-      HttpResource.requestMethod: 'GET',
-      UrlResource.urlFull: 'https://api.example.com/users/123',
-      UrlResource.urlPath: '/users/123',
+      Http.requestMethod: 'GET',
+      Url.urlFull: 'https://api.example.com/users/123',
+      Url.urlPath: '/users/123',
       ServerResource.serverAddress: 'api.example.com',
       ServerResource.serverPort: 443,
     }),
@@ -143,13 +142,13 @@ Future<void> traceHttpRequest(Tracer tracer) async {
     // Set response attributes.
     span.addAttributes(
       OTel.attributesFromSemanticMap({
-        HttpResource.responseStatusCode: 200,
-        HttpResource.responseBodySize: 1234,
+        Http.responseStatusCode: 200,
+        Http.responseBodySize: 1234,
       }),
     );
   } catch (e, stackTrace) {
     span.addAttributes(
-        OTel.attributesFromSemanticMap({HttpResource.responseStatusCode: 500}));
+        OTel.attributesFromSemanticMap({Http.responseStatusCode: 500}));
     // The span has a status of SpanStatus.Ok on creation, set it to
     // Error when an error occurs in the span.
     span.recordException(e, stackTrace: stackTrace);
@@ -166,12 +165,11 @@ Future<void> traceDatabaseOperation(Tracer tracer) async {
     'db.query',
     kind: SpanKind.client,
     attributes: OTel.attributesFromSemanticMap({
-      DatabaseResource.dbSystem: 'postgresql',
-      DatabaseResource.dbName: 'users_db',
-      DatabaseResource.dbOperation: 'SELECT',
-      DatabaseResource.dbStatement:
-          'SELECT * FROM users WHERE active = true LIMIT 100',
-      DatabaseResource.dbUser: 'app_user',
+      Database.dbSystem: 'postgresql',
+      Database.dbName: 'users_db',
+      Database.dbOperation: 'SELECT',
+      Database.dbStatement: 'SELECT * FROM users WHERE active = true LIMIT 100',
+      Database.dbUser: 'app_user',
       // server.address / server.port replace the deprecated net.peer.*
       // per OTel semconv.
       ServerResource.serverAddress: 'postgres.example.com',
@@ -185,7 +183,7 @@ Future<void> traceDatabaseOperation(Tracer tracer) async {
 
     // Add result metadata.
     span.addAttributes(
-        Attributes.of({DatabaseResource.dbResponseReturnedRows.key: 42}));
+        Attributes.of({Database.dbResponseReturnedRows.key: 42}));
   } catch (e, stackTrace) {
     // The span has a status of SpanStatus.Ok on creation, set it to
     // Error when an error occurs in the span.

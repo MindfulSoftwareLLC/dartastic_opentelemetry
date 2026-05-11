@@ -4,7 +4,7 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 /// strings so attribute keys are typo-free and discoverable. Always check
 /// the OTel semantic conventions first (https://opentelemetry.io/docs/specs/semconv/)
 /// — if one exists for your attribute, use the corresponding enum from
-/// the API (e.g. UserSemantics, HttpResource) instead of inventing one.
+/// the API (e.g. User, Http) instead of inventing one.
 enum DemoAttribute implements OTelSemantic {
   magicNumber('demo.magic.number'),
   canUseBoolean('demo.can_use_boolean'),

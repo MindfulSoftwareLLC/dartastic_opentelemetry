@@ -35,7 +35,7 @@ void main() async {
     // convention name for an attribute:
     // https://opentelemetry.io/docs/specs/semconv/general/attributes/
     resourceAttributes: {
-      DeploymentResource.deploymentEnvironmentName.key:
+      Deployment.deploymentEnvironmentName.key:
           'dev', //https://opentelemetry.io/docs/specs/semconv/resource/deployment-environment/
     }.toAttributes(),
   );
@@ -48,7 +48,7 @@ void main() async {
   // convention name for an attribute:
   // https://opentelemetry.io/docs/specs/semconv/general/attributes/
   tracer.attributes = OTel.attributesFromSemanticMap({
-    SourceCodeResource.codeFunctionName: 'main',
+    SourceCode.codeFunctionName: 'main',
   });
 
   // Create a new root span. Prefer typed enum keys over raw strings.

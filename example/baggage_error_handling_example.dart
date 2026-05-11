@@ -5,7 +5,7 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
 /// Example-only baggage keys for things not in the OTel semantic
 /// conventions. Always check the conventions first before inventing keys
-/// (e.g. `UserSemantics.userId` covers `user.id`). Rename this in your
+/// (e.g. `User.userId` covers `user.id`). Rename this in your
 /// own code (e.g. `CheckoutBaggage`) so the names reflect your domain.
 enum ExampleBaggage implements OTelSemantic {
   userRegion('user.region'),
@@ -44,8 +44,7 @@ class UserPreferenceService {
         throw StateError('Baggage expected but non-existent.');
       }
       // Validate required baggage entries exist.
-      final userId =
-          _getRequiredBaggageValue(baggage, UserSemantics.userId.key);
+      final userId = _getRequiredBaggageValue(baggage, User.userId.key);
       final region =
           _getRequiredBaggageValue(baggage, ExampleBaggage.userRegion.key);
 
@@ -108,9 +107,8 @@ class ConfigurationService {
       final baggage = Context.currentWithBaggage().baggage;
 
       // Validate environment.
-      final env = baggage!
-          .getEntry(DeploymentResource.deploymentEnvironmentName.key)
-          ?.value;
+      final env =
+          baggage!.getEntry(Deployment.deploymentEnvironmentName.key)?.value;
       if (env != null && !_validEnvironments.contains(env)) {
         throw BaggageException(
           'Invalid environment value',
@@ -206,7 +204,7 @@ Future<void> main() async {
   // Example with missing required value.
   final invalidContext = OTel.context().withBaggage(
     OTel.baggage().copyWith(ExampleBaggage.userLanguage.key, 'fr-FR'),
-    // Note: missing required user.id (UserSemantics.userId).
+    // Note: missing required user.id (User.userId).
   );
 
   await invalidContext.run(() async {
@@ -217,8 +215,8 @@ Future<void> main() async {
 
   // Example with invalid value.
   final invalidValueContext = OTel.context().withBaggage(
-    OTel.baggage().copyWith(
-        DeploymentResource.deploymentEnvironmentName.key, 'invalid_env'),
+    OTel.baggage()
+        .copyWith(Deployment.deploymentEnvironmentName.key, 'invalid_env'),
   );
 
   await invalidValueContext.run(() async {

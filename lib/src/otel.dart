@@ -1085,17 +1085,17 @@ class OTel {
   }
 
   /// Creates an [Attributes] from a map keyed by [OTelSemantic] enum values
-  /// (e.g. `HttpResource.requestMethod`). Each enum's `.key` is used as the
+  /// (e.g. `Http.requestMethod`). Each enum's `.key` is used as the
   /// attribute name. Lets you write
   ///
   /// ```dart
   /// OTel.attributesFromSemanticMap({
-  ///   HttpResource.requestMethod: 'GET',
-  ///   HttpResource.responseStatusCode: 200,
+  ///   Http.requestMethod: 'GET',
+  ///   Http.responseStatusCode: 200,
   /// })
   /// ```
   ///
-  /// instead of `attributesFromMap({HttpResource.requestMethod.key: 'GET', …})`.
+  /// instead of `attributesFromMap({Http.requestMethod.key: 'GET', …})`.
   /// Mixing enum types in one map is fine — the param is `Map<OTelSemantic, Object>`,
   /// and every semconv enum implements `OTelSemantic`.
   ///
