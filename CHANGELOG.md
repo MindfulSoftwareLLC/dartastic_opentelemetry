@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.1.0-beta.3-wip]
+## [1.1.0-beta.3] - 2026-05-11
 
 ### Added
 - **OTLP/HTTP-JSON wire format on all three signals.** `OtlpHttpSpanExporter`, `OtlpHttpMetricExporter`, and `OtlpHttpLogRecordExporter` now accept an `OtlpHttpProtocol` config option — defaults to `httpProtobuf` (unchanged behaviour), set to `httpJson` to send proto3-JSON-encoded payloads with `Content-Type: application/json`. The encoding follows the OTLP spec's proto3-to-JSON mapping (`request.toProto3Json()` on the generated protobuf classes), so no hand-rolled JSON marshaling lives in Dartastic. Wire-up via `OTEL_EXPORTER_OTLP_PROTOCOL=http/json` (or signal-specific `_TRACES_PROTOCOL` / `_METRICS_PROTOCOL` / `_LOGS_PROTOCOL`) flows through `OTel.initialize`. Per spec, `http/json` is `MAY`-support, not `MUST` — adding it lives up to Dartastic's "No skimping: if it's optional in the spec, it's included" promise. Unblocks integration with backends that prefer JSON (Genkit dev UI, browser-based viewers, lightweight collectors).
