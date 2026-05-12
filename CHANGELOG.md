@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.5-wip]
 
+### Removed
+- **Breaking: `Tracer.startSpanWithContext` is removed.** Deprecated since 1.1.0-beta (released 2026-05-07), four betas ago. Migration is a 1:1 rename — `tracer.startSpanWithContext(name: x, context: ctx, kind: k, attributes: a)` → `tracer.startSpan(x, context: ctx, kind: k, attributes: a)`. To make the returned span active for a scope, wrap the work with `tracer.withSpan` (sync) or `tracer.withSpanAsync` (async); the deprecated method had stopped activating the span as of 1.1.0-beta anyway, so call sites that relied on activation already needed updating. Test suites that exercised `startSpanWithContext` were migrated in this release.
+
 ## [1.1.0-beta.4] - 2026-05-11
 
 ### Changed

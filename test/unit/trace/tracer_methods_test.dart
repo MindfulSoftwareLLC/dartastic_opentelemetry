@@ -406,14 +406,20 @@ void main() {
     });
   });
 
-  group('startSpanWithContext', () {
+  group('startSpan with explicit context', () {
+    // Migrated from the removed `startSpanWithContext`. The behavior is
+    // the same — pass an explicit `Context` and the span uses it as
+    // its parent — but expressed via the unified `startSpan(name,
+    // context: ...)` API. To make the returned span active for a scope,
+    // use `tracer.withSpan` / `withSpanAsync`.
+
     test('creates span with given context', () async {
       final tracer = OTel.tracer();
       final parentSpan = tracer.startSpan('parent-span');
       final parentContext = Context.current.withSpan(parentSpan);
 
-      final childSpan = tracer.startSpanWithContext(
-        name: 'child-with-context',
+      final childSpan = tracer.startSpan(
+        'child-with-context',
         context: parentContext,
       );
 
@@ -437,8 +443,8 @@ void main() {
       final parentSpan = tracer.startSpan('parent-for-context');
       final parentContext = Context.current.withSpan(parentSpan);
 
-      final childSpan = tracer.startSpanWithContext(
-        name: 'context-child',
+      final childSpan = tracer.startSpan(
+        'context-child',
         context: parentContext,
       );
 

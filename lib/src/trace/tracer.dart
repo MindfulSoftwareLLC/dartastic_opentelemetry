@@ -180,27 +180,6 @@ class Tracer implements APITracer {
     }
   }
 
-  /// Starts a span using the provided context to determine the parent.
-  ///
-  /// This is now a thin wrapper around [startSpan] with the `context`
-  /// parameter set; it no longer mutates `Context.current`. To make the
-  /// returned span active for a scope, call [withSpan] / [withSpanAsync].
-  @Deprecated(
-      'Use startSpan(name, context: ctx) and tracer.withSpan/withSpanAsync to activate the returned span.')
-  APISpan startSpanWithContext({
-    required String name,
-    required Context context,
-    SpanKind kind = SpanKind.internal,
-    Attributes? attributes,
-  }) {
-    return startSpan(
-      name,
-      context: context,
-      kind: kind,
-      attributes: attributes,
-    );
-  }
-
   @override
   Span createSpan({
     required String name,

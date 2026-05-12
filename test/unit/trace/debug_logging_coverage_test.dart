@@ -539,13 +539,14 @@ void main() {
     span.end();
   });
 
-  test('tracer startSpanWithContext logs debug', () {
+  test('tracer startSpan with explicit context logs debug', () {
+    // Migrated from the removed `startSpanWithContext`.
     final tracer = OTel.tracer();
     final ctx = OTel.context();
     logOutput.clear();
 
-    final span = tracer.startSpanWithContext(
-      name: 'ctx-span-test',
+    final span = tracer.startSpan(
+      'ctx-span-test',
       context: ctx,
     );
     expect(span, isNotNull);
@@ -555,7 +556,7 @@ void main() {
         (msg) => msg.contains('Tracer') && msg.contains('Starting span'),
       ),
       isTrue,
-      reason: 'Expected Tracer startSpan debug log from startSpanWithContext',
+      reason: 'Expected Tracer startSpan debug log when context is passed',
     );
     span.end();
   });
