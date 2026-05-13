@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.1.0-beta.5-wip]
+## [1.1.0-beta.5] - 2026-05-13
 
 ### Added
 - **`package:dartastic_opentelemetry/testing.dart`** — opt-in library with the in-memory test harness used by the dart-otel-reference-demo and every OTel-Dart wrapper. Exports `InMemorySpanExporter` (with `findSpanByName` / `findSpansByName` / `findSpansStartingWith` / `clear`), `InMemoryLogExporter`, `InMemoryMetricExporter`, `OnDemandMetricReader` (timer-free; tests call `collect()` explicitly via `TestHarness.collectMetrics`), `TestHarness` aggregator, and `maybeInitializeOtelForTest()` (singleton initializer for `setUpAll`). Deliberately *not* re-exported from the main barrel so production bundles don't carry the test classes — import the `/testing.dart` path explicitly. Unifies the test scaffolding across the SDK, the reference demo, and the `otel_*` wrapper packages; previously each wrapper had its own near-identical copy.
