@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.5-wip]
 
+### Added
+- **`package:dartastic_opentelemetry/testing.dart`** — opt-in library with the in-memory test harness used by the dart-otel-reference-demo and every OTel-Dart wrapper. Exports `InMemorySpanExporter` (with `findSpanByName` / `findSpansByName` / `findSpansStartingWith` / `clear`), `InMemoryLogExporter`, `InMemoryMetricExporter`, `OnDemandMetricReader` (timer-free; tests call `collect()` explicitly via `TestHarness.collectMetrics`), `TestHarness` aggregator, and `maybeInitializeOtelForTest()` (singleton initializer for `setUpAll`). Deliberately *not* re-exported from the main barrel so production bundles don't carry the test classes — import the `/testing.dart` path explicitly. Unifies the test scaffolding across the SDK, the reference demo, and the `otel_*` wrapper packages; previously each wrapper had its own near-identical copy.
+
+### Removed
+- **Breaking: `Tracer.startSpanWithContext` is removed.** Deprecated since 1.1.0-beta (released 2026-05-07), four betas ago. Migration is a 1:1 rename — `tracer.startSpanWithContext(name: x, context: ctx, kind: k, attributes: a)` → `tracer.startSpan(x, context: ctx, kind: k, attributes: a)`. To make the returned span active for a scope, wrap the work with `tracer.withSpan` (sync) or `tracer.withSpanAsync` (async); the deprecated method had stopped activating the span as of 1.1.0-beta anyway, so call sites that relied on activation already needed updating. Test suites that exercised `startSpanWithContext` were migrated in this release.
+
 ## [1.1.0-beta.4] - 2026-05-11
 
 ### Changed

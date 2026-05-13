@@ -415,10 +415,13 @@ void main() {
   });
 
   group('Tracer', () {
-    test('startSpanWithContext sets span in context', () {
+    test('startSpan with explicit context attaches to that context', () {
       final tracer = OTel.tracer();
-      final span = tracer.startSpanWithContext(
-        name: 'context-span',
+      // Migrated from the removed `startSpanWithContext`. The behavior
+      // — pass an explicit Context and have the span use it as its
+      // parent — is now expressed via `startSpan(name, context: ...)`.
+      final span = tracer.startSpan(
+        'context-span',
         context: Context.current,
       );
       expect(span, isNotNull);
