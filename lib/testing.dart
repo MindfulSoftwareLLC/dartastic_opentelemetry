@@ -313,7 +313,7 @@ TestHarness? _shared;
 ///   Override only if your code-under-test reads it.
 Future<TestHarness> maybeInitializeOtelForTest({
   String serviceName = 'otel-test',
-  String endpoint = 'http://localhost:4317',
+  String endpoint = OTel.defaultEndpoint,
 }) async {
   if (_shared != null) return _shared!;
   final spanExporter = InMemorySpanExporter();

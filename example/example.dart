@@ -36,9 +36,10 @@ Future<void> main() async {
   await OTel.initialize(
     serviceName: 'example-service',
     serviceVersion: '1.0.0',
-    // Default endpoint is http://localhost:4317 for local OTLP collector
-    // For production, set your collector endpoint:
-    // endpoint: 'https://your-collector.example.com:4317',
+    // Default endpoint is http://localhost:4318 (OTLP/HTTP per spec).
+    // Override via OTEL_EXPORTER_OTLP_ENDPOINT env var, or pass `endpoint:`
+    // explicitly. For gRPC, also set OTEL_EXPORTER_OTLP_PROTOCOL=grpc and
+    // point at port 4317.
   );
 
   // Get the default tracer

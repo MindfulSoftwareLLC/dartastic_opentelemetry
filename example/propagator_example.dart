@@ -17,7 +17,6 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 void main() async {
   await OTel.initialize(
     serviceName: 'propagator-example',
-    endpoint: 'http://localhost:4317',
   );
 
   print('=== W3C Trace Context Propagator Example ===\n');
