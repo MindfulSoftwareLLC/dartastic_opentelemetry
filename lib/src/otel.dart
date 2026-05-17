@@ -344,7 +344,15 @@ class OTel {
       }
     }
 
-    if (spanProcessor == null) {
+    // OTEL_SDK_DISABLED=true is the spec-defined global off-switch: all three
+    // signals become no-ops. Honoring this here keeps signal-specific configs
+    // (`OTEL_*_EXPORTER`) from being ever consulted.
+    final sdkDisabled = OTelEnv.isSdkDisabled();
+    if (sdkDisabled && OTelLog.isDebug()) {
+      OTelLog.debug('OTel: OTEL_SDK_DISABLED=true, skipping all signal setup');
+    }
+
+    if (spanProcessor == null && !sdkDisabled) {
       // Determine which exporter to create based on environment or defaults
       final exporterType = OTelEnv.getExporter(signal: 'traces') ?? 'otlp';
 
@@ -427,13 +435,15 @@ class OTel {
       // If exporterType == 'none', spanProcessor remains null and no processor is added
     }
 
-    // Create and configure TracerProvider
-    if (spanProcessor != null) {
+    // Create and configure TracerProvider — but when OTEL_SDK_DISABLED=true,
+    // do not install any processor even if the caller passed one explicitly,
+    // so the SDK is a true no-op for traces.
+    if (spanProcessor != null && !sdkDisabled) {
       OTel.tracerProvider().addSpanProcessor(spanProcessor);
     }
 
     // Configure metrics if enabled
-    if (enableMetrics) {
+    if (enableMetrics && !sdkDisabled) {
       // If no explicit metric exporter is provided, create one with the same endpoint
       if (metricExporter == null && metricReader == null) {
         MetricsConfiguration.configureMeterProvider(
@@ -454,7 +464,7 @@ class OTel {
     }
 
     // Configure logs if enabled
-    if (enableLogs) {
+    if (enableLogs && !sdkDisabled) {
       LogsConfiguration.configureLoggerProvider(
         endpoint: endpoint,
         secure: secure,

@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.6-wip]
 
+### Fixed
+- **Default metrics pipeline no longer prints to stdout.** `OTel.initialize()` used to wrap the default OTLP metric exporter in a `CompositeMetricExporter` with `ConsoleMetricExporter`, so every server using the SDK with zero env vars dumped metric payloads to the console. The default is now OTLP-only, matching traces and logs (and the OTel spec, which specifies `otlp` as the default for all three signals — never `console`). To opt back into stdout output set `OTEL_METRICS_EXPORTER=console` (or pass an explicit `metricExporter`/`metricReader` to `OTel.initialize`).
+
+### Added
+- **`OTEL_TRACES_EXPORTER` / `OTEL_METRICS_EXPORTER` / `OTEL_LOGS_EXPORTER` now honored end-to-end.** Each accepts `otlp` (default), `console`, or `none`; `none` skips processor/reader installation for that signal entirely. Previously only `OTEL_TRACES_EXPORTER` and `OTEL_LOGS_EXPORTER` were partially read and `OTEL_METRICS_EXPORTER` was ignored.
+- **`OTEL_SDK_DISABLED=true` global off-switch.** When set, `OTel.initialize()` installs no span processors, metric readers, or log record processors — the SDK becomes a no-op for all three signals. Implemented via the new `OTelEnv.isSdkDisabled()` helper.
+
 ## [1.1.0-beta.5] - 2026-05-13
 
 ### Added
