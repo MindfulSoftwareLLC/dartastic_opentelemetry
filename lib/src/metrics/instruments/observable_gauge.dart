@@ -152,11 +152,19 @@ class ObservableGauge<T extends num>
   /// Collects metrics for the SDK metric export.
   ///
   /// This is called by the MeterProvider during metric collection.
+  /// Per the OTel spec, observable instruments must invoke their
+  /// registered callbacks on every collection cycle and report the
+  /// values the callback observes — that's the whole point of being
+  /// "observable" vs sync. Drive [collect] first so the callback
+  /// runs and storage is fresh; discard the returned measurements
+  /// (collect already pushed them into [_storage]).
   @override
   List<Metric> collectMetrics() {
     if (!enabled) {
       return [];
     }
+
+    collect();
 
     // Get the points from storage
     final points = collectPoints();

@@ -87,9 +87,11 @@ void main() {
       expect(metrics[0].type, equals(MetricType.sum));
       expect(metrics[0].name, equals('test-observable-updown-counter'));
 
-      // Verify the points
+      // Verify the points. collectMetrics() drives one more callback
+      // per the OTel spec, so the stored absolute value advances one
+      // tick beyond the manual collects.
       expect(metrics[0].points.length, equals(1));
-      expect(metrics[0].points[0].value, equals(95)); // Latest value
+      expect(metrics[0].points[0].value, equals(105));
     });
 
     test('ObservableUpDownCounter with attributes', () {
@@ -150,13 +152,14 @@ void main() {
       expect(metrics[0].type, equals(MetricType.sum));
       expect(metrics[0].points.length, equals(2));
 
-      // Points should have the latest values
+      // Points should have the latest values. collectMetrics() drives
+      // one more callback per the OTel spec, so values advance one tick.
       final point1 =
           metrics[0].points.where((p) => p.attributes == attributes1).first;
       final point2 =
           metrics[0].points.where((p) => p.attributes == attributes2).first;
-      expect(point1.value, equals(55));
-      expect(point2.value, equals(67));
+      expect(point1.value, equals(60));  // east: 50 +5 +5 +5; observed 60 at fire #3
+      expect(point2.value, equals(59));  // west: 75 −8 −8 −8; observed 59 at fire #3
     });
 
     test('ObservableUpDownCounter with multiple callbacks', () {
@@ -271,19 +274,23 @@ void main() {
       // Verify this is a sum metric
       expect(metric.type, equals(MetricType.sum));
 
-      // Verify the points
+      // Verify the points. Each collectMetrics() fires the callback
+      // one more time per the OTel spec; the oscillating value moves
+      // each fire by -30 / +50 alternating.
       expect(metric.points.length, equals(1));
-      expect(metric.points[0].value, equals(1000));
+      expect(metric.points[0].value, equals(970));  // fires 1, 2 → observe 970
 
-      // Second collection - check that value decreased
+      // Second pass: collect → fire 3 (observe 1020), collectMetrics
+      // → fire 4 (observe 990).
       counter.collect();
       final metrics2 = counter.collectMetrics();
-      expect(metrics2[0].points[0].value, equals(970));
+      expect(metrics2[0].points[0].value, equals(990));
 
-      // Third collection - check that value increased
+      // Third pass: collect → fire 5 (observe 1040), collectMetrics
+      // → fire 6 (observe 1010).
       counter.collect();
       final metrics3 = counter.collectMetrics();
-      expect(metrics3[0].points[0].value, equals(1020));
+      expect(metrics3[0].points[0].value, equals(1010));
     });
 
     test('ObservableUpDownCounter with disabled meter', () {
@@ -369,18 +376,19 @@ void main() {
         },
       ) as ObservableUpDownCounter<int>;
 
-      // First collection
+      // First collection. collectMetrics() drives one more callback per
+      // the OTel spec; value advances +25 per fire after the observe.
       counter.collect();
 
-      // Verify point exists
       final metrics1 = counter.collectMetrics();
       expect(metrics1[0].points.length, equals(1));
-      expect(metrics1[0].points[0].value, equals(100));
+      expect(metrics1[0].points[0].value, equals(125)); // fires 1, 2
 
-      // Second collection
+      // Second pass: collect → fire 3 (observe 150), collectMetrics
+      // → fire 4 (observe 175).
       counter.collect();
       final metrics2 = counter.collectMetrics();
-      expect(metrics2[0].points[0].value, equals(125));
+      expect(metrics2[0].points[0].value, equals(175));
 
       // Shutdown the meter provider (should clear internal state)
       await meterProvider.shutdown();
@@ -461,20 +469,25 @@ void main() {
         },
       ) as ObservableUpDownCounter<int>;
 
-      // First collection - initial value
+      // First collection. collectMetrics() drives one more callback per
+      // the OTel spec — collect observes 42 (valueChanged was false),
+      // collectMetrics observes 42 (and sets fixedValue=37 after).
       counter.collect();
       final metrics1 = counter.collectMetrics();
       expect(metrics1[0].points[0].value, equals(42));
 
-      // Second collection - same value
+      // Second pass: collect observes 37 (fixedValue already changed),
+      // collectMetrics observes 37 (still 37). Pre-fix this test relied
+      // on the bug to keep the second observation at 42; with the fix
+      // the value has already flipped by the time we read here.
       counter.collect();
       final metrics2 = counter.collectMetrics();
-      expect(metrics2[0].points[0].value, equals(42));
+      expect(metrics2[0].points[0].value, equals(37));
 
-      // Third collection - decreased value
+      // Third pass: fixedValue is permanently 37 from here on.
       counter.collect();
       final metrics3 = counter.collectMetrics();
-      expect(metrics3[0].points[0].value, equals(37)); // Decreased to 37
+      expect(metrics3[0].points[0].value, equals(37));
     });
   });
 }

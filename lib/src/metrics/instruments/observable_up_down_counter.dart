@@ -182,11 +182,17 @@ class ObservableUpDownCounter<T extends num>
   /// Collects metrics for the SDK metric export.
   ///
   /// This is called by the MeterProvider during metric collection.
+  /// Per the OTel spec, observable instruments must invoke their
+  /// registered callbacks on every collection cycle. Drive [collect]
+  /// first so the callback runs and storage reflects the latest
+  /// value before we read it.
   @override
   List<Metric> collectMetrics() {
     if (!enabled) {
       return [];
     }
+
+    collect();
 
     // Get the points from storage
     final points = collectPoints();
