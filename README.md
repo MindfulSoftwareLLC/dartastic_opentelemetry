@@ -922,6 +922,7 @@ Constants are defined for all 74 OpenTelemetry environment variables. See `lib/s
 | `otelServiceName`          | `OTEL_SERVICE_NAME`         | Sets the service name             | `my-dart-app`                           |
 | `otelResourceAttributes`   | `OTEL_RESOURCE_ATTRIBUTES`  | Additional resource attributes    | `environment=prod,region=us-west`       |
 | `otelLogLevel`             | `OTEL_LOG_LEVEL`            | SDK internal log level            | `INFO`, `DEBUG`, `WARN`, `ERROR`        |
+| `otelSdkDisabled`          | `OTEL_SDK_DISABLED`         | Global off-switch — when `true`, the SDK installs no span processors, metric readers, or log record processors (true no-op across all three signals, including explicit overrides) | `true` |
 
 #### OTLP Exporter Configuration
 
@@ -935,32 +936,34 @@ Constants are defined for all 74 OpenTelemetry environment variables. See `lib/s
 
 #### Signal-Specific Configuration
 
+Per the OTel spec, the default exporter for every signal is `otlp` (HTTP/protobuf to `http://localhost:4318`). Each `OTEL_*_EXPORTER` env var accepts `otlp` (default), `console` (prints to stdout — useful for local debugging), or `none` (skips processor/reader installation for that signal entirely). `OTEL_SDK_DISABLED=true` silences all three signals globally and overrides everything else.
+
 ##### Traces
 
-| Constant                              | Environment Variable                    | Description               |
-|---------------------------------------|-----------------------------------------|---------------------------|
-| `otelTracesExporter`                  | `OTEL_TRACES_EXPORTER`                  | Trace exporter type       |
-| `otelExporterOtlpTracesEndpoint`      | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`    | Traces-specific endpoint  |
-| `otelExporterOtlpTracesProtocol`      | `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`    | Traces-specific protocol  |
-| `otelExporterOtlpTracesHeaders`       | `OTEL_EXPORTER_OTLP_TRACES_HEADERS`     | Traces-specific headers   |
+| Constant                              | Environment Variable                    | Description                                              | Default |
+|---------------------------------------|-----------------------------------------|----------------------------------------------------------|---------|
+| `otelTracesExporter`                  | `OTEL_TRACES_EXPORTER`                  | Trace exporter type (`otlp`, `console`, `none`)          | `otlp`  |
+| `otelExporterOtlpTracesEndpoint`      | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`    | Traces-specific endpoint                                 |         |
+| `otelExporterOtlpTracesProtocol`      | `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`    | Traces-specific protocol                                 |         |
+| `otelExporterOtlpTracesHeaders`       | `OTEL_EXPORTER_OTLP_TRACES_HEADERS`     | Traces-specific headers                                  |         |
 
 ##### Metrics
 
-| Constant                              | Environment Variable                    | Description               |
-|---------------------------------------|-----------------------------------------|---------------------------|
-| `otelMetricsExporter`                 | `OTEL_METRICS_EXPORTER`                 | Metrics exporter type     |
-| `otelExporterOtlpMetricsEndpoint`     | `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`   | Metrics-specific endpoint |
-| `otelExporterOtlpMetricsProtocol`     | `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL`   | Metrics-specific protocol |
-| `otelExporterOtlpMetricsHeaders`      | `OTEL_EXPORTER_OTLP_METRICS_HEADERS`    | Metrics-specific headers  |
+| Constant                              | Environment Variable                    | Description                                              | Default |
+|---------------------------------------|-----------------------------------------|----------------------------------------------------------|---------|
+| `otelMetricsExporter`                 | `OTEL_METRICS_EXPORTER`                 | Metrics exporter type (`otlp`, `console`, `none`)        | `otlp`  |
+| `otelExporterOtlpMetricsEndpoint`     | `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`   | Metrics-specific endpoint                                |         |
+| `otelExporterOtlpMetricsProtocol`     | `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL`   | Metrics-specific protocol                                |         |
+| `otelExporterOtlpMetricsHeaders`      | `OTEL_EXPORTER_OTLP_METRICS_HEADERS`    | Metrics-specific headers                                 |         |
 
 ##### Logs
 
-| Constant                              | Environment Variable                    | Description               |
-|---------------------------------------|-----------------------------------------|---------------------------|
-| `otelLogsExporter`                    | `OTEL_LOGS_EXPORTER`                    | Logs exporter type (`otlp`, `console`, `none`) |
-| `otelExporterOtlpLogsEndpoint`        | `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`      | Logs-specific endpoint    |
-| `otelExporterOtlpLogsProtocol`        | `OTEL_EXPORTER_OTLP_LOGS_PROTOCOL`      | Logs-specific protocol    |
-| `otelExporterOtlpLogsHeaders`         | `OTEL_EXPORTER_OTLP_LOGS_HEADERS`       | Logs-specific headers     |
+| Constant                              | Environment Variable                    | Description                                              | Default |
+|---------------------------------------|-----------------------------------------|----------------------------------------------------------|---------|
+| `otelLogsExporter`                    | `OTEL_LOGS_EXPORTER`                    | Logs exporter type (`otlp`, `console`, `none`)           | `otlp`  |
+| `otelExporterOtlpLogsEndpoint`        | `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`      | Logs-specific endpoint                                   |         |
+| `otelExporterOtlpLogsProtocol`        | `OTEL_EXPORTER_OTLP_LOGS_PROTOCOL`      | Logs-specific protocol                                   |         |
+| `otelExporterOtlpLogsHeaders`         | `OTEL_EXPORTER_OTLP_LOGS_HEADERS`       | Logs-specific headers                                    |         |
 
 ##### Batch LogRecord Processor (BLRP)
 
