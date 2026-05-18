@@ -1,5 +1,5 @@
 // Licensed under the Apache License, Version 2.0
-// Copyright 2025, Mindful Software LLC, All rights reserved.
+// Copyright 2025, Dartastic.io, All rights reserved.
 
 /// Test helpers for the Dartastic OpenTelemetry SDK.
 ///
@@ -33,7 +33,7 @@
 ///   calls.
 ///
 /// The shape mirrors the test harness used in the OTel-Dart reference
-/// demo at https://github.com/MindfulSoftwareLLC/dart-otel-reference-demo
+/// demo at https://github.com/dartastic/dart-otel-reference-demo
 /// so wrappers, customer apps, and the reference demo all use the same
 /// scaffolding.
 library;
