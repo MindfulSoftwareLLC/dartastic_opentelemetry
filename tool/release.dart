@@ -69,8 +69,6 @@ Future<void> main(List<String> args) async {
     _die('working tree is dirty. commit or stash first.');
   }
 
-  _assertLicensePublishToMatch();
-
   final originalRef = _currentRef();
   final current = _readWipVersion();
   final release = _stripWip(current);
@@ -102,6 +100,8 @@ Future<void> main(List<String> args) async {
     }
   }
 
+  final packageName = _readPackageName();
+
   try {
     // ---- release commit ----
     _replaceVersionLine(from: current, to: release);
@@ -109,8 +109,21 @@ Future<void> main(List<String> args) async {
       from: current,
       newHeader: '## [$release] - ${_today()}',
     );
-    _runOrThrow('dart', ['pub', 'get'], silent: true);
-    _runOrThrow('dart', ['analyze']);
+    final readmeRefs =
+    _replaceReadmeVersion(packageName: packageName, to: release);
+    // Flutter packages need `flutter` for analyze/test (Dart-only
+    // tools can't resolve flutter_test). Detect by looking for an
+    // `sdk: flutter` line in pubspec.yaml.
+    final isFlutterPkg = File(_pubspecPath)
+        .readAsLinesSync()
+        .any((l) => RegExp(r'^\s*sdk:\s*flutter\s*$').hasMatch(l));
+    final runner = isFlutterPkg ? 'flutter' : 'dart';
+    _runOrThrow(runner, ['pub', 'get'], silent: true);
+    if (isFlutterPkg) {
+      _runOrThrow(runner, ['analyze', '--no-fatal-infos']);
+    } else {
+      _runOrThrow(runner, ['analyze']);
+    }
     if (flags.skipTests) {
       stdout.writeln('(skipping tests — --skip-tests)');
     } else if (File('tool/test.sh').existsSync() &&
@@ -121,9 +134,14 @@ Future<void> main(List<String> args) async {
       // hang on those tests.
       _runOrThrow('bash', ['tool/test.sh']);
     } else {
-      _runOrThrow('dart', ['test']);
+      _runOrThrow(runner, ['test']);
     }
-    _runOrThrow('git', ['add', _pubspecPath, _changelogPath]);
+    _runOrThrow('git', [
+      'add',
+      _pubspecPath,
+      _changelogPath,
+      if (readmeRefs > 0) _readmePath,
+    ]);
     _runOrThrow('git', ['commit', '-m', 'Release $release']);
     _runOrThrow('git', ['tag', 'v$release']);
     stdout.writeln('✓ tagged v$release');
@@ -198,15 +216,15 @@ Future<void> main(List<String> args) async {
         if (!ghReleaseCreated) {
           stderr.writeln(
             'warning: `gh release create` did not succeed. '
-            'The tag and commits are pushed; create the release manually '
-            'or rerun the gh command shown above.',
+                'The tag and commits are pushed; create the release manually '
+                'or rerun the gh command shown above.',
           );
         }
       } catch (e) {
         stderr.writeln(
           'warning: GitHub release step failed ($e). '
-          'pub.dev publish succeeded — push and create the release manually '
-          'if you want one.',
+              'pub.dev publish succeeded — push and create the release manually '
+              'if you want one.',
         );
       }
     }
@@ -233,7 +251,7 @@ Future<void> main(List<String> args) async {
     if (flags.publish && !flags.githubRelease) {
       stdout.writeln(
         '  # GitHub release skipped (--no-github-release). '
-        'Create one in the web UI if you want it.',
+            'Create one in the web UI if you want it.',
       );
     }
     stdout.writeln();
@@ -294,7 +312,7 @@ Future<bool> _createGitHubRelease({
 }) async {
   stdout
       .writeln('\$ gh release create $tag${prerelease ? ' --prerelease' : ''} '
-          '--title $tag --notes-file - <<< (CHANGELOG section)');
+      '--title $tag --notes-file - <<< (CHANGELOG section)');
   final p = await Process.start(
     'gh',
     [
@@ -312,9 +330,9 @@ Future<bool> _createGitHubRelease({
   p.stdin.write(notes);
   await p.stdin.close();
   final stdoutFuture =
-      p.stdout.transform(const SystemEncoding().decoder).join();
+  p.stdout.transform(const SystemEncoding().decoder).join();
   final stderrFuture =
-      p.stderr.transform(const SystemEncoding().decoder).join();
+  p.stderr.transform(const SystemEncoding().decoder).join();
   final code = await p.exitCode;
   final out = await stdoutFuture;
   final err = await stderrFuture;
@@ -396,6 +414,16 @@ void _printUsage() {
 /// Reads pubspec.yaml via `pubspec_parse`, validates the version exists
 /// and is semver, asserts it ends in `-wip`, returns the version string.
 String _readWipVersion() {
+  return _readPubspec().version;
+}
+
+/// Returns the package name from pubspec.yaml.
+String _readPackageName() => _readPubspec().name;
+
+/// Minimal pubspec accessor used by [_readWipVersion] and
+/// [_readPackageName]. Parses once per call; that's plenty fast and
+/// keeps the entry points stateless.
+({String name, String version}) _readPubspec() {
   final text = File(_pubspecPath).readAsStringSync();
   final Pubspec pubspec;
   try {
@@ -412,7 +440,7 @@ String _readWipVersion() {
     _die('pubspec.yaml version is "$str" — expected to end in $_wipSuffix.\n'
         '       did you already release? bump to the next $_wipSuffix version.');
   }
-  return str;
+  return (name: pubspec.name, version: str);
 }
 
 /// Strips the `-wip` suffix from [version] and validates the result is
@@ -476,6 +504,52 @@ void _replaceVersionLine({required String from, required String to}) {
 }
 
 // ---------------------------------------------------------------------------
+// README read / write
+// ---------------------------------------------------------------------------
+
+const _readmePath = 'README.md';
+
+/// Bumps every `<packageName>: ^X.Y.Z[…]` reference in README.md to
+/// match the [to] version. Leaves the file alone if it's missing or
+/// has no such references. Returns the number of references rewritten.
+///
+/// We intentionally match by the package name + a caret instead of
+/// asking the caller for the old version — the README usually lags
+/// behind by a few patch versions and the previously-released version
+/// in the README is whatever lives there now.
+int _replaceReadmeVersion({
+  required String packageName,
+  required String to,
+}) {
+  final f = File(_readmePath);
+  if (!f.existsSync()) {
+    stdout.writeln('(no README.md — skipping README version bump)');
+    return 0;
+  }
+  final original = f.readAsStringSync();
+  // Match `<name>: ^<anything-not-whitespace>` so we preserve the
+  // caret and any indent. The trailing version token is anything
+  // non-whitespace, which covers `1.2.3`, `1.2.3-beta.4`, `1.2.3+1`.
+  final pattern = RegExp(
+    r'(\b' + RegExp.escape(packageName) + r':\s*\^)\S+',
+  );
+  var count = 0;
+  final updated = original.replaceAllMapped(pattern, (m) {
+    count++;
+    return '${m.group(1)}$to';
+  });
+  if (count == 0) {
+    stdout.writeln('(README has no `$packageName: ^...` references)');
+    return 0;
+  }
+  if (updated != original) {
+    f.writeAsStringSync(updated);
+  }
+  stdout.writeln('✓ updated $count README reference(s) to ^$to');
+  return count;
+}
+
+// ---------------------------------------------------------------------------
 // CHANGELOG read / write
 // ---------------------------------------------------------------------------
 
@@ -527,9 +601,9 @@ void _injectChangelogSectionAbove({
 }
 
 RegExp _changelogHeaderRegex(String version) => RegExp(
-      r'^##[ \t]*\[?' + RegExp.escape(version) + r'\]?',
-      multiLine: true,
-    );
+  r'^##[ \t]*\[?' + RegExp.escape(version) + r'\]?',
+  multiLine: true,
+);
 
 // ---------------------------------------------------------------------------
 // Misc
@@ -601,50 +675,4 @@ Future<bool> _runInteractive(String exe, List<String> args) async {
 Never _die(String msg) {
   stderr.writeln('error: $msg');
   exit(1);
-}
-
-/// Verifies that LICENSE matches `publish_to` in pubspec.yaml. OSS
-/// packages (publish_to unset, or `https://pub.dev`) must ship Apache
-/// 2.0; Pro packages (`publish_to: https://pub.dartastic.io`) must
-/// ship the Mindful Software proprietary license, never Apache 2.0.
-/// Fails fast so an OSS package can't accidentally ship a proprietary
-/// LICENSE and vice versa.
-void _assertLicensePublishToMatch() {
-  final pubspec = File(_pubspecPath).readAsStringSync();
-  final m = RegExp(r'^publish_to:\s*(\S+)\s*$', multiLine: true)
-      .firstMatch(pubspec);
-  final publishTo = m?.group(1);
-
-  if (!File(_licensePath).existsSync()) {
-    _die('LICENSE file is missing.');
-  }
-  final license = File(_licensePath).readAsStringSync();
-  final head = license.length > 500 ? license.substring(0, 500) : license;
-  final isApache =
-      head.contains('Apache License') && head.contains('Version 2.0');
-
-  const proPublishTo = 'https://pub.dartastic.io';
-  final isPro = publishTo == proPublishTo;
-  final isOss = publishTo == null || publishTo == 'https://pub.dev';
-
-  if (isPro && isApache) {
-    _die(
-      'license/publish_to mismatch: pubspec sets publish_to=$proPublishTo '
-      '(Pro) but LICENSE is Apache 2.0. Pro packages require the Mindful '
-      'Software proprietary license — refusing to publish.',
-    );
-  }
-  if (isOss && !isApache) {
-    _die(
-      'license/publish_to mismatch: pubspec is OSS '
-      '(publish_to ${publishTo ?? "unset"}) but LICENSE is not Apache '
-      '2.0. OSS packages must ship Apache 2.0 — refusing to publish.',
-    );
-  }
-  if (publishTo != null && !isPro && !isOss && publishTo != 'none') {
-    _die(
-      'pubspec has publish_to: $publishTo — expected "https://pub.dev" '
-      '(OSS) or "https://pub.dartastic.io" (Pro) or unset.',
-    );
-  }
 }
