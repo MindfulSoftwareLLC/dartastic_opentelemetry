@@ -158,8 +158,10 @@ void main() {
           metrics[0].points.where((p) => p.attributes == attributes1).first;
       final point2 =
           metrics[0].points.where((p) => p.attributes == attributes2).first;
-      expect(point1.value, equals(60));  // east: 50 +5 +5 +5; observed 60 at fire #3
-      expect(point2.value, equals(59));  // west: 75 −8 −8 −8; observed 59 at fire #3
+      expect(point1.value,
+          equals(60)); // east: 50 +5 +5 +5; observed 60 at fire #3
+      expect(point2.value,
+          equals(59)); // west: 75 −8 −8 −8; observed 59 at fire #3
     });
 
     test('ObservableUpDownCounter with multiple callbacks', () {
@@ -278,7 +280,7 @@ void main() {
       // one more time per the OTel spec; the oscillating value moves
       // each fire by -30 / +50 alternating.
       expect(metric.points.length, equals(1));
-      expect(metric.points[0].value, equals(970));  // fires 1, 2 → observe 970
+      expect(metric.points[0].value, equals(970)); // fires 1, 2 → observe 970
 
       // Second pass: collect → fire 3 (observe 1020), collectMetrics
       // → fire 4 (observe 990).

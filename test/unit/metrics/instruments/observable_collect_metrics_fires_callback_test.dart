@@ -13,8 +13,7 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('collectMetrics() fires callback per OTel spec (#155 regression)',
-      () {
+  group('collectMetrics() fires callback per OTel spec (#155 regression)', () {
     late MeterProvider meterProvider;
     late Meter meter;
 

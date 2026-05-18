@@ -60,7 +60,6 @@ import 'package:pubspec_parse/pubspec_parse.dart';
 const _wipSuffix = '-wip';
 const _pubspecPath = 'pubspec.yaml';
 const _changelogPath = 'CHANGELOG.md';
-const _licensePath = 'LICENSE';
 
 Future<void> main(List<String> args) async {
   final flags = _Flags.parse(args);
