@@ -60,6 +60,7 @@ import 'package:pubspec_parse/pubspec_parse.dart';
 const _wipSuffix = '-wip';
 const _pubspecPath = 'pubspec.yaml';
 const _changelogPath = 'CHANGELOG.md';
+const _licensePath = 'LICENSE';
 
 Future<void> main(List<String> args) async {
   final flags = _Flags.parse(args);
@@ -67,6 +68,8 @@ Future<void> main(List<String> args) async {
   if (!_isWorkingTreeClean()) {
     _die('working tree is dirty. commit or stash first.');
   }
+
+  _assertLicensePublishToMatch();
 
   final originalRef = _currentRef();
   final current = _readWipVersion();
@@ -598,4 +601,50 @@ Future<bool> _runInteractive(String exe, List<String> args) async {
 Never _die(String msg) {
   stderr.writeln('error: $msg');
   exit(1);
+}
+
+/// Verifies that LICENSE matches `publish_to` in pubspec.yaml. OSS
+/// packages (publish_to unset, or `https://pub.dev`) must ship Apache
+/// 2.0; Pro packages (`publish_to: https://pubdev.dartastic.io`) must
+/// ship the Mindful Software proprietary license, never Apache 2.0.
+/// Fails fast so an OSS package can't accidentally ship a proprietary
+/// LICENSE and vice versa.
+void _assertLicensePublishToMatch() {
+  final pubspec = File(_pubspecPath).readAsStringSync();
+  final m = RegExp(r'^publish_to:\s*(\S+)\s*$', multiLine: true)
+      .firstMatch(pubspec);
+  final publishTo = m?.group(1);
+
+  if (!File(_licensePath).existsSync()) {
+    _die('LICENSE file is missing.');
+  }
+  final license = File(_licensePath).readAsStringSync();
+  final head = license.length > 500 ? license.substring(0, 500) : license;
+  final isApache =
+      head.contains('Apache License') && head.contains('Version 2.0');
+
+  const proPublishTo = 'https://pubdev.dartastic.io';
+  final isPro = publishTo == proPublishTo;
+  final isOss = publishTo == null || publishTo == 'https://pub.dev';
+
+  if (isPro && isApache) {
+    _die(
+      'license/publish_to mismatch: pubspec sets publish_to=$proPublishTo '
+      '(Pro) but LICENSE is Apache 2.0. Pro packages require the Mindful '
+      'Software proprietary license — refusing to publish.',
+    );
+  }
+  if (isOss && !isApache) {
+    _die(
+      'license/publish_to mismatch: pubspec is OSS '
+      '(publish_to ${publishTo ?? "unset"}) but LICENSE is not Apache '
+      '2.0. OSS packages must ship Apache 2.0 — refusing to publish.',
+    );
+  }
+  if (publishTo != null && !isPro && !isOss && publishTo != 'none') {
+    _die(
+      'pubspec has publish_to: $publishTo — expected "https://pub.dev" '
+      '(OSS) or "https://pubdev.dartastic.io" (Pro) or unset.',
+    );
+  }
 }
