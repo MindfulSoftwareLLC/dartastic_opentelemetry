@@ -605,7 +605,7 @@ Never _die(String msg) {
 
 /// Verifies that LICENSE matches `publish_to` in pubspec.yaml. OSS
 /// packages (publish_to unset, or `https://pub.dev`) must ship Apache
-/// 2.0; Pro packages (`publish_to: https://pubdev.dartastic.io`) must
+/// 2.0; Pro packages (`publish_to: https://pub.dartastic.io`) must
 /// ship the Mindful Software proprietary license, never Apache 2.0.
 /// Fails fast so an OSS package can't accidentally ship a proprietary
 /// LICENSE and vice versa.
@@ -623,7 +623,7 @@ void _assertLicensePublishToMatch() {
   final isApache =
       head.contains('Apache License') && head.contains('Version 2.0');
 
-  const proPublishTo = 'https://pubdev.dartastic.io';
+  const proPublishTo = 'https://pub.dartastic.io';
   final isPro = publishTo == proPublishTo;
   final isOss = publishTo == null || publishTo == 'https://pub.dev';
 
@@ -644,7 +644,7 @@ void _assertLicensePublishToMatch() {
   if (publishTo != null && !isPro && !isOss && publishTo != 'none') {
     _die(
       'pubspec has publish_to: $publishTo — expected "https://pub.dev" '
-      '(OSS) or "https://pubdev.dartastic.io" (Pro) or unset.',
+      '(OSS) or "https://pub.dartastic.io" (Pro) or unset.',
     );
   }
 }
