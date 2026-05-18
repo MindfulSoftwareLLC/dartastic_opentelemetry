@@ -10,10 +10,6 @@
 // to collectMetrics() == one callback fire, no manual collect() needed.
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry/src/metrics/instruments/observable_counter.dart';
-import 'package:dartastic_opentelemetry/src/metrics/instruments/observable_gauge.dart';
-import 'package:dartastic_opentelemetry/src/metrics/instruments/observable_up_down_counter.dart';
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:test/test.dart';
 
 void main() {
