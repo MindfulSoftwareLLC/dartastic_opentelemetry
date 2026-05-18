@@ -110,7 +110,7 @@ Future<void> main(List<String> args) async {
       newHeader: '## [$release] - ${_today()}',
     );
     final readmeRefs =
-    _replaceReadmeVersion(packageName: packageName, to: release);
+        _replaceReadmeVersion(packageName: packageName, to: release);
     // Flutter packages need `flutter` for analyze/test (Dart-only
     // tools can't resolve flutter_test). Detect by looking for an
     // `sdk: flutter` line in pubspec.yaml.
@@ -216,15 +216,15 @@ Future<void> main(List<String> args) async {
         if (!ghReleaseCreated) {
           stderr.writeln(
             'warning: `gh release create` did not succeed. '
-                'The tag and commits are pushed; create the release manually '
-                'or rerun the gh command shown above.',
+            'The tag and commits are pushed; create the release manually '
+            'or rerun the gh command shown above.',
           );
         }
       } catch (e) {
         stderr.writeln(
           'warning: GitHub release step failed ($e). '
-              'pub.dev publish succeeded — push and create the release manually '
-              'if you want one.',
+          'pub.dev publish succeeded — push and create the release manually '
+          'if you want one.',
         );
       }
     }
@@ -251,7 +251,7 @@ Future<void> main(List<String> args) async {
     if (flags.publish && !flags.githubRelease) {
       stdout.writeln(
         '  # GitHub release skipped (--no-github-release). '
-            'Create one in the web UI if you want it.',
+        'Create one in the web UI if you want it.',
       );
     }
     stdout.writeln();
@@ -312,7 +312,7 @@ Future<bool> _createGitHubRelease({
 }) async {
   stdout
       .writeln('\$ gh release create $tag${prerelease ? ' --prerelease' : ''} '
-      '--title $tag --notes-file - <<< (CHANGELOG section)');
+          '--title $tag --notes-file - <<< (CHANGELOG section)');
   final p = await Process.start(
     'gh',
     [
@@ -330,9 +330,9 @@ Future<bool> _createGitHubRelease({
   p.stdin.write(notes);
   await p.stdin.close();
   final stdoutFuture =
-  p.stdout.transform(const SystemEncoding().decoder).join();
+      p.stdout.transform(const SystemEncoding().decoder).join();
   final stderrFuture =
-  p.stderr.transform(const SystemEncoding().decoder).join();
+      p.stderr.transform(const SystemEncoding().decoder).join();
   final code = await p.exitCode;
   final out = await stdoutFuture;
   final err = await stderrFuture;
@@ -601,9 +601,9 @@ void _injectChangelogSectionAbove({
 }
 
 RegExp _changelogHeaderRegex(String version) => RegExp(
-  r'^##[ \t]*\[?' + RegExp.escape(version) + r'\]?',
-  multiLine: true,
-);
+      r'^##[ \t]*\[?' + RegExp.escape(version) + r'\]?',
+      multiLine: true,
+    );
 
 // ---------------------------------------------------------------------------
 // Misc
