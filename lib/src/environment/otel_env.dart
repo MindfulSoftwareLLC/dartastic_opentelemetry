@@ -364,6 +364,13 @@ class OTelEnv {
     return resourceAttrs;
   }
 
+  /// Whether `OTEL_SDK_DISABLED` is set to a truthy value.
+  ///
+  /// Per the OTel spec, when this is true the SDK acts as a no-op for all
+  /// signals — no span processors, metric readers, or log record processors
+  /// should be installed.
+  static bool isSdkDisabled() => _getEnvBool(otelSdkDisabled);
+
   /// Get the selected exporter for a signal.
   ///
   /// Returns the exporter type configured via environment variables.

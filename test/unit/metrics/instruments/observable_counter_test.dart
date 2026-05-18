@@ -316,14 +316,16 @@ void main() {
       // Sum metrics from ObservableCounter are monotonic
       expect(metric.points.isNotEmpty, isTrue);
 
-      // Verify the points
+      // Verify the points. collectMetrics() drives one more callback
+      // per the OTel spec; the cumulative counter advances by another
+      // +5 per fire.
       expect(metric.points.length, equals(1));
-      expect(metric.points[0].value, equals(5));
+      expect(metric.points[0].value, equals(10)); // fires 1, 2 → 10
 
-      // Second collection - check the cumulative value
+      // Second pass: collect → fire 3 (15), collectMetrics → fire 4 (20).
       counter.collect();
       final metrics2 = counter.collectMetrics();
-      expect(metrics2[0].points[0].value, equals(10)); // 5 + 5
+      expect(metrics2[0].points[0].value, equals(20));
     });
 
     test('ObservableCounter with disabled meter', () {
@@ -372,18 +374,19 @@ void main() {
         },
       ) as ObservableCounter<int>;
 
-      // First collection
+      // First collection. collectMetrics() drives one more callback per
+      // the OTel spec; value advances +25 per fire after the observe.
       counter.collect();
 
-      // Verify point exists
       final metrics1 = counter.collectMetrics();
       expect(metrics1[0].points.length, equals(1));
-      expect(metrics1[0].points[0].value, equals(100));
+      expect(metrics1[0].points[0].value, equals(125)); // fires 1, 2
 
-      // Second collection
+      // Second pass: collect → fire 3 (observe 150), collectMetrics
+      // → fire 4 (observe 175).
       counter.collect();
       final metrics2 = counter.collectMetrics();
-      expect(metrics2[0].points[0].value, equals(125));
+      expect(metrics2[0].points[0].value, equals(175));
 
       // Shutdown the meter provider (should clear internal state)
       await meterProvider.shutdown();

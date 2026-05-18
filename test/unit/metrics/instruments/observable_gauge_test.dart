@@ -71,9 +71,12 @@ void main() {
       // Verify this is a gauge metric with the correct properties
       expect(metrics[0].type, equals(MetricType.gauge));
 
-      // Verify the points
+      // Verify the points. collectMetrics() drives one more callback
+      // per the OTel spec (observable instruments are observed at
+      // collection time), so the stored value reflects the third
+      // observation — 25.5 + 1.5 + 1.5 = 28.5.
       expect(metrics[0].points.length, equals(1));
-      expect(metrics[0].points[0].value, equals(27.0)); // Latest value
+      expect(metrics[0].points[0].value, equals(28.5));
     });
 
     test('ObservableGauge with attributes', () {
@@ -137,26 +140,30 @@ void main() {
       expect(metrics[0].type, equals(MetricType.gauge));
       expect(metrics[0].points.length, equals(2));
 
-      // Points should have the latest values
+      // Points should have the latest values. collectMetrics() drives
+      // one more callback per the OTel spec, so values advance one tick:
+      // attributes1: 22.5 + 0.5 + 0.5 = 23.5
+      // attributes2: 24.8 - 0.2 - 0.2 = 24.4
       final point1 =
           metrics[0].points.where((p) => p.attributes == attributes1).first;
       final point2 =
           metrics[0].points.where((p) => p.attributes == attributes2).first;
-      expect(point1.value, closeTo(23.0, 0.001));
-      expect(point2.value, closeTo(24.6, 0.001));
+      expect(point1.value, closeTo(23.5, 0.001));
+      expect(point2.value, closeTo(24.4, 0.001));
 
-      // third collection
+      // fourth collection (collectMetrics already advanced the state
+      // one tick via its internal collect call).
       final measurements3 = gauge.collect();
       expect(measurements3.length, equals(2));
 
-      // Values should reflect the changes
+      // Values reflect one more tick beyond the collectMetrics fire.
       expect(
         measurements3.where((m) => m.attributes == attributes1).first.value,
-        closeTo(23.5, 0.001),
+        closeTo(24.0, 0.001),
       );
       expect(
         measurements3.where((m) => m.attributes == attributes2).first.value,
-        closeTo(24.4, 0.001),
+        closeTo(24.2, 0.001),
       );
     });
 
@@ -271,14 +278,17 @@ void main() {
       // Verify this is a gauge metric
       expect(metric.type, equals(MetricType.gauge));
 
-      // Verify the points
+      // collectMetrics() drives one more callback per the OTel spec.
+      // Initial value 98.6, line 259 collect advances to 98.9, line 262
+      // collectMetrics advances to 99.2 and stores 98.9.
       expect(metric.points.length, equals(1));
-      expect(metric.points[0].value, closeTo(98.6, 0.001));
+      expect(metric.points[0].value, closeTo(98.9, 0.001));
 
-      // Second collection - check the new value
+      // Second pass: 99.2 → collect → 99.5 → collectMetrics fires once
+      // more (observe 99.5, then > 99.5 triggers decreasing=true).
       gauge.collect();
       final metrics2 = gauge.collectMetrics();
-      expect(metrics2[0].points[0].value, closeTo(98.9, 0.001));
+      expect(metrics2[0].points[0].value, closeTo(99.5, 0.001));
     });
 
     test('ObservableGauge with disabled meter', () {
@@ -397,16 +407,18 @@ void main() {
       // First collection
       gauge.collect();
 
-      // Verify point exists
+      // collectMetrics() drives one more callback per spec, so the
+      // stored value advances one tick beyond the manual collect.
       final metrics1 = gauge.collectMetrics();
       expect(metrics1[0].points.length, equals(1));
-      expect(metrics1[0].points[0].value, equals(50.0));
+      expect(metrics1[0].points[0].value, equals(60.0)); // 50 + 10
 
-      // Second collection - should get the new value
+      // Second pass: collect advances to 70 (observe 70, value→80),
+      // then collectMetrics fires once more (observe 80, value→90).
       gauge.collect();
       final metrics2 = gauge.collectMetrics();
       expect(metrics2[0].points.length, equals(1));
-      expect(metrics2[0].points[0].value, equals(60.0)); // 50.0 + 10.0 = 60.0
+      expect(metrics2[0].points[0].value, equals(80.0));
 
       // Shutdown the meter provider (should clear internal state)
       await meterProvider.shutdown();

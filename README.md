@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![OpenTelemetry Specification](https://img.shields.io/badge/OpenTelemetry-Specification-blueviolet)](https://opentelemetry.io/docs/specs/otel/)
-[![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen.svg)](https://mindfulsoftwarellc.github.io/dartastic_opentelemetry/)
+[![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen.svg)](https://dartastic.github.io/dartastic_opentelemetry/)
 
 Dartastic is an [OpenTelemetry](https://opentelemetry.io/) SDK to add standard observability to Dart applications.
 Dartastic can be used with any OTel backend since it's standards-compliant.
@@ -14,22 +14,27 @@ to become the official standard for Dart OpenTelemetry.
 
 Flutter developers should use the [Flutterific OpenTelemetry SDK](https://pub.dev/packages/flutterrific_opentelemetry/) which builds on top of Dartastic OTel.
 
-Dartastic and Flutterrific OTel are made with 💙 by Michael Bushe at [Mindful Software](https://mindfulsoftware.com)
+Dartastic and Flutterrific OTel are made with 💙 by Michael Bushe at [Dartastic.io](https://dartastic.io)
 
 ## Commercial Support
 
 [Dartastic.io](https://dartastic.io) tools and services for Dart and Flutter teams shipping to production.
-* **Dartastic.io Pro OTel**
+* **Dartastic Pro OTel Runtime**
+  * Native OTel runtime that takes OTel of the UI thread or server threads.
+    * Detects native crashes
+    * Identifies the janky widget
+    * Strips PII out of your data on the fly.
+    * Sends source code lines with error spans with Symbolizer.
+    * Metrics from iOS, Android and Linux, standard and beyond the standard. 
+    * Use with any o11y backend.
   * Professionally supported version of this open source dartastic_opentelemetry package and dartastic_opentelemetry_api - and their future CNCF equivalents.
-  * Professional OpenTelemetry libraries for Dart and Flutter
-    * Keep PII out of your observability data.
-    * Integrate OTel observability into common Dart and Flutter like shelf, dio and go_router.
-* **Dartastic.io Pub Dev** [pub.dartastic.io](pub.dartastic.io) Privately share your packages and plugins with your team,
+  * Over 50 OSS OpenTelemetry integration libraries for Dart and Flutter - dio, shelf, logger...
+  * Over 600 Pro OpenTelemetry integration libraries for Dart and Flutter - anthropic, aws, azure, stripe...
+* **Dartastic Pub** [pub.dartastic.io](pub.dartastic.io) Privately share your packages and plugins with your team,
   partners and customers.
-* **Dartastic.io Symbolizer** [symbolizer.dartastic.io](symbolizer.dartastic.io) Turn production errors into
+* **Dartastic Symbolizer** [symbolizer.dartastic.io](symbolizer.dartastic.io) Turn production errors into
   source code lines with a Web API call. Squash Dart and Flutter bugs fast and keep your source code artifacts private.
-* **Dartastic.io Observability Cloud** - observability backends, customized for Dart and Flutter and integrated with Dartastic.io Symbolizer.
-* Dart and Flutter OpenTelemetry support, training, consulting, integrations and upgrades.
+* **Dartastic Hosted** - spin up a private observability ecosystem customized for Flutter and Dart - private pub server, private unlimited Symbolizer, custom dashboards for Dart and Flutter.
 
 ## Features
 
@@ -922,6 +927,7 @@ Constants are defined for all 74 OpenTelemetry environment variables. See `lib/s
 | `otelServiceName`          | `OTEL_SERVICE_NAME`         | Sets the service name             | `my-dart-app`                           |
 | `otelResourceAttributes`   | `OTEL_RESOURCE_ATTRIBUTES`  | Additional resource attributes    | `environment=prod,region=us-west`       |
 | `otelLogLevel`             | `OTEL_LOG_LEVEL`            | SDK internal log level            | `INFO`, `DEBUG`, `WARN`, `ERROR`        |
+| `otelSdkDisabled`          | `OTEL_SDK_DISABLED`         | Global off-switch — when `true`, the SDK installs no span processors, metric readers, or log record processors (true no-op across all three signals, including explicit overrides) | `true` |
 
 #### OTLP Exporter Configuration
 
@@ -935,32 +941,34 @@ Constants are defined for all 74 OpenTelemetry environment variables. See `lib/s
 
 #### Signal-Specific Configuration
 
+Per the OTel spec, the default exporter for every signal is `otlp` (HTTP/protobuf to `http://localhost:4318`). Each `OTEL_*_EXPORTER` env var accepts `otlp` (default), `console` (prints to stdout — useful for local debugging), or `none` (skips processor/reader installation for that signal entirely). `OTEL_SDK_DISABLED=true` silences all three signals globally and overrides everything else.
+
 ##### Traces
 
-| Constant                              | Environment Variable                    | Description               |
-|---------------------------------------|-----------------------------------------|---------------------------|
-| `otelTracesExporter`                  | `OTEL_TRACES_EXPORTER`                  | Trace exporter type       |
-| `otelExporterOtlpTracesEndpoint`      | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`    | Traces-specific endpoint  |
-| `otelExporterOtlpTracesProtocol`      | `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`    | Traces-specific protocol  |
-| `otelExporterOtlpTracesHeaders`       | `OTEL_EXPORTER_OTLP_TRACES_HEADERS`     | Traces-specific headers   |
+| Constant                              | Environment Variable                    | Description                                              | Default |
+|---------------------------------------|-----------------------------------------|----------------------------------------------------------|---------|
+| `otelTracesExporter`                  | `OTEL_TRACES_EXPORTER`                  | Trace exporter type (`otlp`, `console`, `none`)          | `otlp`  |
+| `otelExporterOtlpTracesEndpoint`      | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`    | Traces-specific endpoint                                 |         |
+| `otelExporterOtlpTracesProtocol`      | `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`    | Traces-specific protocol                                 |         |
+| `otelExporterOtlpTracesHeaders`       | `OTEL_EXPORTER_OTLP_TRACES_HEADERS`     | Traces-specific headers                                  |         |
 
 ##### Metrics
 
-| Constant                              | Environment Variable                    | Description               |
-|---------------------------------------|-----------------------------------------|---------------------------|
-| `otelMetricsExporter`                 | `OTEL_METRICS_EXPORTER`                 | Metrics exporter type     |
-| `otelExporterOtlpMetricsEndpoint`     | `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`   | Metrics-specific endpoint |
-| `otelExporterOtlpMetricsProtocol`     | `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL`   | Metrics-specific protocol |
-| `otelExporterOtlpMetricsHeaders`      | `OTEL_EXPORTER_OTLP_METRICS_HEADERS`    | Metrics-specific headers  |
+| Constant                              | Environment Variable                    | Description                                              | Default |
+|---------------------------------------|-----------------------------------------|----------------------------------------------------------|---------|
+| `otelMetricsExporter`                 | `OTEL_METRICS_EXPORTER`                 | Metrics exporter type (`otlp`, `console`, `none`)        | `otlp`  |
+| `otelExporterOtlpMetricsEndpoint`     | `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`   | Metrics-specific endpoint                                |         |
+| `otelExporterOtlpMetricsProtocol`     | `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL`   | Metrics-specific protocol                                |         |
+| `otelExporterOtlpMetricsHeaders`      | `OTEL_EXPORTER_OTLP_METRICS_HEADERS`    | Metrics-specific headers                                 |         |
 
 ##### Logs
 
-| Constant                              | Environment Variable                    | Description               |
-|---------------------------------------|-----------------------------------------|---------------------------|
-| `otelLogsExporter`                    | `OTEL_LOGS_EXPORTER`                    | Logs exporter type (`otlp`, `console`, `none`) |
-| `otelExporterOtlpLogsEndpoint`        | `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`      | Logs-specific endpoint    |
-| `otelExporterOtlpLogsProtocol`        | `OTEL_EXPORTER_OTLP_LOGS_PROTOCOL`      | Logs-specific protocol    |
-| `otelExporterOtlpLogsHeaders`         | `OTEL_EXPORTER_OTLP_LOGS_HEADERS`       | Logs-specific headers     |
+| Constant                              | Environment Variable                    | Description                                              | Default |
+|---------------------------------------|-----------------------------------------|----------------------------------------------------------|---------|
+| `otelLogsExporter`                    | `OTEL_LOGS_EXPORTER`                    | Logs exporter type (`otlp`, `console`, `none`)           | `otlp`  |
+| `otelExporterOtlpLogsEndpoint`        | `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT`      | Logs-specific endpoint                                   |         |
+| `otelExporterOtlpLogsProtocol`        | `OTEL_EXPORTER_OTLP_LOGS_PROTOCOL`      | Logs-specific protocol                                   |         |
+| `otelExporterOtlpLogsHeaders`         | `OTEL_EXPORTER_OTLP_LOGS_HEADERS`       | Logs-specific headers                                    |         |
 
 ##### Batch LogRecord Processor (BLRP)
 
