@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [1.1.0-beta.6-wip]
+- **Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.7`.** Beta.7 fixes observable metrics and standard env var defaults.
 
 ### Fixed
 - **Default metrics pipeline no longer prints to stdout.** `OTel.initialize()` used to wrap the default OTLP metric exporter in a `CompositeMetricExporter` with `ConsoleMetricExporter`, so every server using the SDK with zero env vars dumped metric payloads to the console. The default is now OTLP-only, matching traces and logs (and the OTel spec, which specifies `otlp` as the default for all three signals — never `console`). To opt back into stdout output set `OTEL_METRICS_EXPORTER=console` (or pass an explicit `metricExporter`/`metricReader` to `OTel.initialize`).
