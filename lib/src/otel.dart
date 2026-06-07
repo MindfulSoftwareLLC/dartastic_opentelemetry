@@ -43,9 +43,10 @@ class OTel {
 
   /// The global default exception handling options applied by the withSpan
   /// family of methods. Configured via `OTel.initialize(...)` and propagated
-  /// to TracerProviders. Per-call `exceptionOptions` override this.
-  static SpanExceptionOptions _defaultSpanExceptionOptions =
-      const SpanExceptionOptions();
+  /// to TracerProviders. Per-call `exceptionOptions` override this. Null
+  /// until set by initialize(); the Tracer falls back to
+  /// [SpanExceptionOptions.defaults] when unset.
+  static SpanExceptionOptions? _defaultSpanExceptionOptions;
 
   /// Whether print interception is enabled (set via initialize).
   static bool _logPrintEnabled = false;
@@ -1436,7 +1437,7 @@ class OTel {
     // Reset all static fields
     _otelFactory = null;
     _defaultSampler = null;
-    _defaultSpanExceptionOptions = const SpanExceptionOptions();
+    _defaultSpanExceptionOptions = null;
     _defaultTimeProvider = null;
     defaultResource = null;
     dartasticApiKey = null;
