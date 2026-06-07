@@ -41,6 +41,12 @@ class OTel {
   static Sampler? _defaultSampler;
   static TimeProvider? _defaultTimeProvider;
 
+  /// The global default exception handling options applied by the withSpan
+  /// family of methods. Configured via `OTel.initialize(...)` and propagated
+  /// to TracerProviders. Per-call `exceptionOptions` override this.
+  static SpanExceptionOptions _defaultSpanExceptionOptions =
+      const SpanExceptionOptions();
+
   /// Whether print interception is enabled (set via initialize).
   static bool _logPrintEnabled = false;
 
@@ -135,6 +141,7 @@ class OTel {
     Attributes? resourceAttributes,
     SpanProcessor? spanProcessor,
     Sampler sampler = const AlwaysOnSampler(),
+    SpanExceptionOptions spanExceptionOptions = const SpanExceptionOptions(),
     SpanKind spanKind = SpanKind.server,
     MetricExporter? metricExporter,
     MetricReader? metricReader,
@@ -240,6 +247,7 @@ class OTel {
         oTelFactoryCreationFunction ?? otelSDKFactoryFactoryFunction;
     // Initialize with default sampler
     _defaultSampler = sampler;
+    _defaultSpanExceptionOptions = spanExceptionOptions;
     _defaultTimeProvider = timeProvider;
     OTel.defaultTracerName = tracerName ?? _defaultTracerName;
     OTel.defaultTracerVersion = tracerVersion ?? defaultTracerVersion;
@@ -588,6 +596,7 @@ class OTel {
     }
 
     tracerProvider.sampler ??= _defaultSampler;
+    tracerProvider.spanExceptionOptions ??= _defaultSpanExceptionOptions;
     if (_defaultTimeProvider != null) {
       tracerProvider.timeProvider = _defaultTimeProvider!;
     }
@@ -621,6 +630,8 @@ class OTel {
   /// @param serviceVersion Optional custom service version
   /// @param resource Optional custom resource
   /// @param sampler Optional custom sampler
+  /// @param spanExceptionOptions Optional default exception handling options;
+  ///   defaults to the options set in initialize()
   /// @return The newly created or replaced TracerProvider
   static TracerProvider addTracerProvider(
     String name, {
@@ -629,10 +640,13 @@ class OTel {
     String? serviceVersion,
     Resource? resource,
     Sampler? sampler,
+    SpanExceptionOptions? spanExceptionOptions,
   }) {
     final sdkTracerProvider = OTelAPI.addTracerProvider(name) as TracerProvider;
     sdkTracerProvider.resource = resource ?? defaultResource;
     sdkTracerProvider.sampler = sampler ?? _defaultSampler;
+    sdkTracerProvider.spanExceptionOptions =
+        spanExceptionOptions ?? _defaultSpanExceptionOptions;
     if (_defaultTimeProvider != null) {
       sdkTracerProvider.timeProvider = _defaultTimeProvider!;
     }
@@ -665,16 +679,27 @@ class OTel {
   ///
   /// Convenience over `OTel.tracer().withSpan(span, fn)` for callers
   /// that don't already have a [Tracer] reference.
-  static T withSpan<T>(APISpan span, T Function() fn) =>
-      tracer().withSpan(span, fn);
+  ///
+  /// [exceptionOptions] controls how a thrown exception is recorded and
+  /// whether the span status is set; see [SpanExceptionOptions].
+  static T withSpan<T>(
+    APISpan span,
+    T Function() fn, {
+    SpanExceptionOptions? exceptionOptions,
+  }) =>
+      tracer().withSpan(span, fn, exceptionOptions: exceptionOptions);
 
   /// Async variant of [withSpan]. Propagates the active span across
   /// `await` boundaries via Zone-based context.
+  ///
+  /// [exceptionOptions] controls how a thrown exception is recorded and
+  /// whether the span status is set; see [SpanExceptionOptions].
   static Future<T> withSpanAsync<T>(
     APISpan span,
-    Future<T> Function() fn,
-  ) =>
-      tracer().withSpanAsync(span, fn);
+    Future<T> Function() fn, {
+    SpanExceptionOptions? exceptionOptions,
+  }) =>
+      tracer().withSpanAsync(span, fn, exceptionOptions: exceptionOptions);
 
   /// Adds or replaces a named MeterProvider.
   ///
@@ -1411,6 +1436,7 @@ class OTel {
     // Reset all static fields
     _otelFactory = null;
     _defaultSampler = null;
+    _defaultSpanExceptionOptions = const SpanExceptionOptions();
     _defaultTimeProvider = null;
     defaultResource = null;
     dartasticApiKey = null;

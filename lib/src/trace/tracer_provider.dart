@@ -38,6 +38,15 @@ class TracerProvider implements APITracerProvider {
   /// The default sampler to use for new tracers.
   Sampler? sampler;
 
+  /// The default exception handling options applied by [Tracer.withSpan] /
+  /// [Tracer.withSpanAsync] for tracers created by this provider when no
+  /// per-call options are supplied.
+  ///
+  /// Set globally via `OTel.initialize(spanExceptionOptions: ...)`. When
+  /// null, a default [SpanExceptionOptions] (record exception + set error
+  /// status) is used.
+  SpanExceptionOptions? spanExceptionOptions;
+
   /// Clock used for span start, end, and event timestamps. Delegates to the
   /// underlying [APITracerProvider] so the SDK and API share a single
   /// source of truth. Defaults are platform-aware (native:

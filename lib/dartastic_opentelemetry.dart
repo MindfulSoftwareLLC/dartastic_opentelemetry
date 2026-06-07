@@ -89,6 +89,7 @@ export 'src/trace/sampling/rate_limiting_sampler.dart';
 export 'src/trace/sampling/sampler.dart';
 export 'src/trace/sampling/trace_id_ratio_sampler.dart';
 export 'src/trace/span.dart';
+export 'src/trace/span_exception_options.dart';
 export 'src/trace/span_processor.dart';
 export 'src/trace/tracer.dart';
 export 'src/trace/tracer_provider.dart';
