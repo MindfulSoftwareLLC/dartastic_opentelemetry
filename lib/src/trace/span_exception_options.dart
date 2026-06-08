@@ -28,10 +28,8 @@ typedef ExceptionSanitizer = SanitizedSpanException Function(
 /// [SpanStatusCode.Error]. The original exception is always rethrown
 /// regardless of these options.
 ///
-/// This mirrors OpenTelemetry Python's `record_exception` /
-/// `set_status_on_exception` controls and the Grafana Faro Flutter SDK's
-/// `SpanExceptionOptions`, while additionally allowing the exception details
-/// to be sanitized via [exceptionSanitizer].
+/// Use this to opt out of automatic recording or status updates, or to
+/// sanitize exception details via [exceptionSanitizer].
 ///
 /// Example:
 /// ```dart
