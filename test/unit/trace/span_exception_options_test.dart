@@ -323,6 +323,44 @@ void main() {
       span.end();
     });
 
+    test('OTel.withSpanAsync forwards options', () async {
+      await init();
+      final span = OTel.tracer().startSpan('otel-async-span');
+
+      await expectLater(
+        OTel.withSpanAsync(
+          span,
+          () async => throw StateError('boom'),
+          exceptionOptions: const SpanExceptionOptions(recordException: false),
+        ),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(span.status, equals(SpanStatusCode.Error));
+      expect(_exceptionEvent(span), isNull);
+      span.end();
+    });
+
+    test('addTracerProvider honors explicit spanExceptionOptions', () async {
+      await init();
+      final provider = OTel.addTracerProvider(
+        'no-record-provider',
+        spanExceptionOptions:
+            const SpanExceptionOptions(recordException: false),
+      );
+      final tracer = provider.getTracer('no-record-tracer');
+      final span = tracer.startSpan('provider-options-span');
+
+      expect(
+        () => tracer.withSpan(span, () => throw StateError('boom')),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(span.status, equals(SpanStatusCode.Error));
+      expect(_exceptionEvent(span), isNull);
+      span.end();
+    });
+
     test('startActiveSpan forwards options and ends the span', () async {
       await init();
       final tracer = OTel.tracer();
@@ -338,6 +376,28 @@ void main() {
 
       await tracer.provider.forceFlush();
       final exported = exporter.findSpanByName('active-span')!;
+      expect(exported.status, equals(SpanStatusCode.Error));
+      expect(
+        exported.spanEvents?.any((e) => e.name == 'exception') ?? false,
+        isFalse,
+      );
+    });
+
+    test('startActiveSpanAsync forwards options and ends the span', () async {
+      await init();
+      final tracer = OTel.tracer();
+
+      await expectLater(
+        tracer.startActiveSpanAsync<void>(
+          name: 'active-async-span',
+          fn: (span) async => throw StateError('boom'),
+          exceptionOptions: const SpanExceptionOptions(recordException: false),
+        ),
+        throwsA(isA<StateError>()),
+      );
+
+      await tracer.provider.forceFlush();
+      final exported = exporter.findSpanByName('active-async-span')!;
       expect(exported.status, equals(SpanStatusCode.Error));
       expect(
         exported.spanEvents?.any((e) => e.name == 'exception') ?? false,
