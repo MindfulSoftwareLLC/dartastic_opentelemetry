@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.7-wip]
 
+### Fixed
+- **`OTel.initialize()` now upgrades the API no-op factory (issue #50).** If the API auto-installed its no-op factory before SDK initialization, the SDK now replaces it with a configured SDK factory instead of refusing to initialize or later failing with API-provider-to-SDK-provider cast errors for traces, metrics, or logs.
+
+### Added
+- **`OTel.isInitialized`** reports whether `OTel.initialize()` has been called since the last `OTel.reset()`.
+
 ## [1.1.0-beta.6] - 2026-05-18
 - **Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.7`.** Beta.7 fixes observable metrics and standard env var defaults.
 

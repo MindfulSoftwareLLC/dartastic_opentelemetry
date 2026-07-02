@@ -651,9 +651,12 @@ void main() {
       await OTel.reset();
     });
 
-    test('_getAndCacheOtelFactory throws when not initialized', () {
-      // Exercises the StateError thrown when OTel is not initialized
+    test('SDK accessor throws when no factory has been installed', () {
+      // SDK entry points require OTel.initialize(); API-only no-op behavior is
+      // available through OTelAPI, not through concrete SDK accessors.
       expect(() => OTel.contextKey<String>('test-key'), throwsStateError);
+      expect(OTel.isInitialized, isFalse);
+      expect(OTelFactory.otelFactory, isNull);
     });
   });
 

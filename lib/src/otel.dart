@@ -38,6 +38,16 @@ import '../dartastic_opentelemetry.dart';
 /// List\<String>, List\<bool>, List\<int> or List\<double>).
 class OTel {
   static OTelSDKFactory? _otelFactory;
+
+  /// Whether [initialize] has been explicitly called by the user.
+  ///
+  /// This is intentionally separate from "an [OTelFactory] is installed":
+  /// the API may auto-install a no-op factory before [initialize] runs (see
+  /// [_ensureSDKFactory]). Only an explicit [initialize] call flips this flag,
+  /// so re-initialization is detected correctly while still allowing the SDK
+  /// to replace the API's no-op factory during first initialization.
+  static bool _userInitialized = false;
+
   static Sampler? _defaultSampler;
   static TimeProvider? _defaultTimeProvider;
 
@@ -80,6 +90,13 @@ class OTel {
 
   /// Default tracer version.
   static String defaultTracerVersion = '1.0.0';
+
+  /// Whether [initialize] has been called (and not undone by [reset]).
+  ///
+  /// This reflects the explicit [initialize] call only, so it can still be
+  /// `false` while the API's no-op factory is installed before the SDK has
+  /// been initialized.
+  static bool get isInitialized => _userInitialized;
 
   /// Initializes the OpenTelemetry SDK with the specified configuration.
   ///
@@ -219,10 +236,28 @@ class OTel {
         resourceAttributes = OTel.attributesFromMap(envResourceAttrs);
       }
     }
-    if (OTelFactory.otelFactory != null) {
+    // Re-initialization is keyed on an explicit prior initialize() call, not
+    // on the mere presence of a factory: the API may have auto-installed a
+    // no-op factory before initialize() runs. That no-op factory is
+    // upgraded/overwritten below.
+    if (_userInitialized) {
       throw StateError(
-        'OTelAPI can only be initialized once. If you need multiple endpoints or service names or versions create a named TracerProvider',
+        'OTel.initialize() can only be called once. For additional telemetry '
+        'pipelines, create named tracer, meter, or logger providers instead.',
       );
+    }
+    final installedFactory = OTelFactory.otelFactory;
+    if (installedFactory is OTelSDKFactory) {
+      throw StateError(
+        'An SDK OpenTelemetry factory (${installedFactory.runtimeType}) is '
+        'already installed. OTel.initialize() can only install the global SDK '
+        'factory once. Call OTel.reset() first if this is a test.',
+      );
+    }
+    if (installedFactory != null && installedFactory is! OTelAPIFactory) {
+      // A foreign, caller-supplied factory is installed; refuse rather than
+      // silently discard it.
+      throw _foreignFactoryError(installedFactory);
     }
 
     if (endpoint.isEmpty) {
@@ -247,11 +282,25 @@ class OTel {
     // Initialize logging from environment variables if needed
     initializeLogging();
 
-    OTelFactory.otelFactory = factoryFactory(
+    // Install the fully-configured SDK factory, overwriting any no-op API
+    // factory installed before now. Using a fresh instance discards any no-op
+    // providers the API factory cached.
+    final createdFactory = factoryFactory(
       apiEndpoint: endpoint,
       apiServiceName: serviceName,
       apiServiceVersion: serviceVersion,
     );
+    // OTelFactoryCreationFunction returns the base OTelFactory type, but SDK
+    // initialization requires the concrete SDK factory implementation.
+    if (createdFactory is! OTelSDKFactory) {
+      throw StateError(
+        'oTelFactoryCreationFunction must create an OTelSDKFactory, got '
+        '${createdFactory.runtimeType}.',
+      );
+    }
+    OTelFactory.otelFactory = createdFactory;
+    _otelFactory = createdFactory;
+    _userInitialized = true;
 
     if (OTelLog.isDebug()) {
       OTelLog.debug(
@@ -512,7 +561,7 @@ class OTel {
   /// @param schemaUrl Optional URL of the schema defining the attributes
   /// @return A new Resource instance
   static Resource resource(Attributes? attributes, [String? schemaUrl]) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return (_otelFactory as OTelSDKFactory).resource(
       attributes ?? OTel.attributes(),
       schemaUrl,
@@ -533,7 +582,7 @@ class OTel {
   /// @return A new ContextKey instance
   static ContextKey<T> contextKey<T>(String name,
       {bool isTransferable = false}) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.contextKey<T>(
       name,
       ContextKey.generateContextKeyId(),
@@ -550,7 +599,7 @@ class OTel {
   /// @param spanContext Optional span context to include in the context
   /// @return A new Context instance
   static Context context({Baggage? baggage, SpanContext? spanContext}) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     var context = OTelFactory.otelFactory!.context(baggage: baggage);
     if (spanContext != null) {
       context = context.copyWithSpanContext(spanContext);
@@ -571,6 +620,7 @@ class OTel {
   /// @param name Optional name of a specific TracerProvider
   /// @return The TracerProvider instance
   static TracerProvider tracerProvider({String? name}) {
+    _ensureSDKFactory();
     final tracerProvider = OTelAPI.tracerProvider(name) as TracerProvider;
     // Ensure the resource is properly set
     if (tracerProvider.resource == null && defaultResource != null) {
@@ -604,6 +654,7 @@ class OTel {
   /// @param name Optional name of a specific MeterProvider
   /// @return The MeterProvider instance
   static MeterProvider meterProvider({String? name}) {
+    _ensureSDKFactory();
     final meterProvider = OTelAPI.meterProvider(name) as MeterProvider;
     meterProvider.resource ??= defaultResource;
     return meterProvider;
@@ -630,6 +681,7 @@ class OTel {
     Resource? resource,
     Sampler? sampler,
   }) {
+    _ensureSDKFactory();
     final sdkTracerProvider = OTelAPI.addTracerProvider(name) as TracerProvider;
     sdkTracerProvider.resource = resource ?? defaultResource;
     sdkTracerProvider.sampler = sampler ?? _defaultSampler;
@@ -695,7 +747,7 @@ class OTel {
     String? serviceVersion,
     Resource? resource,
   }) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     final mp = _otelFactory!.addMeterProvider(
       name,
       endpoint: endpoint,
@@ -736,6 +788,7 @@ class OTel {
   /// @param name Optional name of a specific LoggerProvider
   /// @return The LoggerProvider instance
   static LoggerProvider loggerProvider({String? name}) {
+    _ensureSDKFactory();
     final logProvider = OTelAPI.loggerProvider(name) as LoggerProvider;
     logProvider.resource ??= defaultResource;
     return logProvider;
@@ -760,7 +813,7 @@ class OTel {
     String? serviceVersion,
     Resource? resource,
   }) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     final lp = _otelFactory!.addLogProvider(name,
         endpoint: endpoint,
         serviceName: serviceName,
@@ -879,7 +932,7 @@ class OTel {
   /// @param parent The parent SpanContext
   /// @return A new child SpanContext
   static SpanContext spanContextFromParent(SpanContext parent) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return OTelFactory.otelFactory!.spanContextFromParent(parent);
   }
 
@@ -889,7 +942,7 @@ class OTel {
   ///
   /// @return An invalid SpanContext instance
   static SpanContext spanContextInvalid() {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return OTelFactory.otelFactory!.spanContextInvalid();
   }
 
@@ -902,7 +955,7 @@ class OTel {
   /// @param attributes Attributes to associate with the event
   /// @return A new SpanEvent instance with the current timestamp
   static SpanEvent spanEventNow(String name, Attributes attributes) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return spanEvent(name, attributes, DateTime.now());
   }
 
@@ -920,7 +973,7 @@ class OTel {
     Attributes? attributes,
     DateTime? timestamp,
   ]) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.spanEvent(name, attributes, timestamp);
   }
 
@@ -932,7 +985,7 @@ class OTel {
   /// @param keyValuePairs A map of key-value pairs to include in the baggage
   /// @return A new Baggage instance
   static Baggage baggageForMap(Map<String, String> keyValuePairs) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.baggageForMap(keyValuePairs);
   }
 
@@ -942,7 +995,7 @@ class OTel {
   /// @param metadata Optional metadata for the baggage entry
   /// @return A new BaggageEntry instance
   static BaggageEntry baggageEntry(String value, [String? metadata]) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.baggageEntry(value, metadata);
   }
 
@@ -951,7 +1004,7 @@ class OTel {
   /// @param entries Optional map of baggage entries
   /// @return A new Baggage instance
   static Baggage baggage([Map<String, BaggageEntry>? entries]) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.baggage(entries);
   }
 
@@ -969,7 +1022,7 @@ class OTel {
   /// @param value The string value of the attribute
   /// @return A new Attribute instance
   static Attribute<String> attributeString(String name, String value) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.attributeString(name, value);
   }
 
@@ -979,7 +1032,7 @@ class OTel {
   /// @param value The boolean value of the attribute
   /// @return A new Attribute instance
   static Attribute<bool> attributeBool(String name, bool value) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.attributeBool(name, value);
   }
 
@@ -989,7 +1042,7 @@ class OTel {
   /// @param value The integer value of the attribute
   /// @return A new Attribute instance
   static Attribute<int> attributeInt(String name, int value) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.attributeInt(name, value);
   }
 
@@ -999,7 +1052,7 @@ class OTel {
   /// @param value The double value of the attribute
   /// @return A new Attribute instance
   static Attribute<double> attributeDouble(String name, double value) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.attributeDouble(name, value);
   }
 
@@ -1012,7 +1065,7 @@ class OTel {
     String name,
     List<String> value,
   ) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.attributeStringList(name, value);
   }
 
@@ -1025,7 +1078,7 @@ class OTel {
     String name,
     List<bool> value,
   ) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.attributeBoolList(name, value);
   }
 
@@ -1035,7 +1088,7 @@ class OTel {
   /// @param value The list of integer values
   /// @return A new Attribute instance
   static Attribute<List<int>> attributeIntList(String name, List<int> value) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.attributeIntList(name, value);
   }
 
@@ -1048,7 +1101,7 @@ class OTel {
     String name,
     List<double> value,
   ) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.attributeDoubleList(name, value);
   }
 
@@ -1056,7 +1109,7 @@ class OTel {
   ///
   /// @return A new empty Attributes collection
   static Attributes createAttributes() {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.attributes();
   }
 
@@ -1163,7 +1216,7 @@ class OTel {
   /// @param attributeList List of Attribute objects
   /// @return A new Attributes collection
   static Attributes attributesFromList(List<Attribute> attributeList) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.attributesFromList(attributeList);
   }
 
@@ -1174,7 +1227,7 @@ class OTel {
   /// @param entries Optional map of key-value pairs for the trace state
   /// @return A new TraceState instance
   static TraceState traceState(Map<String, String>? entries) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.traceState(entries);
   }
 
@@ -1187,7 +1240,7 @@ class OTel {
   /// @param flags Optional flags value (default: NONE_FLAG)
   /// @return A new TraceFlags instance
   static TraceFlags traceFlags([int? flags]) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.traceFlags(flags ?? TraceFlags.NONE_FLAG);
   }
 
@@ -1204,7 +1257,7 @@ class OTel {
   /// @return A new TraceId instance
   /// @throws ArgumentError if traceId is not exactly 16 bytes
   static TraceId traceIdOf(Uint8List traceId) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     if (traceId.length != TraceId.traceIdLength) {
       throw ArgumentError(
         'Trace ID must be exactly ${TraceId.traceIdLength} bytes, got ${traceId.length} bytes',
@@ -1241,7 +1294,7 @@ class OTel {
   /// @return A new SpanId instance
   /// @throws ArgumentError if spanId is not exactly 8 bytes
   static SpanId spanIdOf(Uint8List spanId) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     if (spanId.length != 8) {
       throw ArgumentError(
         'Span ID must be exactly 8 bytes, got ${spanId.length} bytes',
@@ -1274,23 +1327,43 @@ class OTel {
   /// @param attributes Optional attributes to associate with the link
   /// @return A new SpanLink instance
   static SpanLink spanLink(SpanContext spanContext, {Attributes? attributes}) {
-    _getAndCacheOtelFactory();
+    _ensureSDKFactory();
     return _otelFactory!.spanLink(spanContext, attributes: attributes);
   }
 
-  /// Retrieves and caches the OTelFactory instance.
+  /// Ensures an [OTelSDKFactory] is installed as the global factory.
   ///
-  /// @return The OTelFactory instance
-  /// @throws StateError if initialize() has not been called
-  static OTelFactory _getAndCacheOtelFactory() {
-    if (_otelFactory != null) {
-      return _otelFactory!;
+  /// The API may auto-install a no-op [OTelAPIFactory] before [initialize]
+  /// runs. [initialize] is responsible for replacing that no-op factory with
+  /// the configured SDK factory. SDK accessors do not create a temporary SDK
+  /// factory before initialization, because any provider returned from such a
+  /// factory would not automatically become configured when [initialize]
+  /// replaces the global factory later.
+  static OTelSDKFactory _ensureSDKFactory() {
+    final installedFactory = OTelFactory.otelFactory;
+    if (installedFactory is OTelSDKFactory) {
+      // The global factory is the source of truth. Keep the local SDK cache
+      // aligned in case tests or advanced users replaced OTelFactory.otelFactory
+      // directly, or after any other global factory swap.
+      _otelFactory = installedFactory;
+      return installedFactory;
     }
-    if (OTelFactory.otelFactory == null) {
-      throw StateError('initialize() must be called first.');
+    if (installedFactory == null || installedFactory is OTelAPIFactory) {
+      throw StateError('OTel.initialize() must be called first.');
     }
-    return _otelFactory = OTelFactory.otelFactory! as OTelSDKFactory;
+    // A foreign factory (neither the API no-op nor an SDK factory) is
+    // installed; we must not silently discard a caller-supplied factory.
+    throw _foreignFactoryError(installedFactory);
   }
+
+  /// Error thrown when a non-API, non-SDK [OTelFactory] is already installed
+  /// and therefore cannot be upgraded to an SDK factory.
+  static StateError _foreignFactoryError(OTelFactory installed) => StateError(
+        'A non-SDK OpenTelemetry factory (${installed.runtimeType}) is already '
+        'installed, so OTel cannot upgrade it to an SDK factory. Install the '
+        'SDK factory before any other factory, or call OTel.reset() first '
+        '(for example between tests).',
+      );
 
   /// Initializes logging based on environment variables.
   ///
@@ -1410,6 +1483,7 @@ class OTel {
 
     // Reset all static fields
     _otelFactory = null;
+    _userInitialized = false;
     _defaultSampler = null;
     _defaultTimeProvider = null;
     defaultResource = null;
