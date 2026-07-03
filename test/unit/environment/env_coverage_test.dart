@@ -1194,18 +1194,6 @@ void main() {
       );
       expect(customAttr.value, equals('custom-value'));
     });
-
-    test('initialize with dartasticApiKey stores it', () async {
-      await OTel.initialize(
-        serviceName: 'api-key-test',
-        dartasticApiKey: 'test-api-key-123',
-        detectPlatformResources: false,
-        enableMetrics: false,
-        enableLogs: false,
-      );
-
-      expect(OTel.dartasticApiKey, equals('test-api-key-123'));
-    });
   });
 
   // =========================================================================

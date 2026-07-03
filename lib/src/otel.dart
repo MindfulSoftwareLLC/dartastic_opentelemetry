@@ -59,9 +59,6 @@ class OTel {
   /// that don't have a specific resource set.
   static Resource? defaultResource;
 
-  /// API key for Dartastic.io backend, if used.
-  static String? dartasticApiKey;
-
   /// Default service name used if none is provided.
   static const defaultServiceName = '@dart/dartastic_opentelemetry';
 
@@ -142,7 +139,6 @@ class OTel {
     bool enableLogs = true,
     LogRecordExporter? logRecordExporter,
     LogRecordProcessor? logRecordProcessor,
-    String? dartasticApiKey,
     String? tenantId,
     bool detectPlatformResources = true,
     bool logPrint = false,
@@ -243,7 +239,6 @@ class OTel {
     _defaultTimeProvider = timeProvider;
     OTel.defaultTracerName = tracerName ?? _defaultTracerName;
     OTel.defaultTracerVersion = tracerVersion ?? defaultTracerVersion;
-    OTel.dartasticApiKey = dartasticApiKey;
     // Initialize logging from environment variables if needed
     initializeLogging();
 
@@ -313,36 +308,10 @@ class OTel {
         });
       }
     }
-    // Set the final merged resource as default
+    // Set the final merged resource as default. tenant_id (merged into
+    // baseResource above) rides through the platform/user merges like any
+    // other resource attribute — no special-casing needed.
     OTel.defaultResource = mergedResource;
-
-    if (OTelLog.isDebug()) {
-      // Final check to ensure tenant_id is preserved
-      if (tenantId != null && OTel.defaultResource != null) {
-        var hasTenantId = false;
-        OTel.defaultResource!.attributes.toList().forEach((attr) {
-          if (attr.key == 'tenant_id') {
-            hasTenantId = true;
-            if (OTelLog.isDebug()) {
-              OTelLog.debug(
-                'Final resource check - tenant_id is present: ${attr.value}',
-              );
-            }
-          }
-        });
-
-        if (!hasTenantId) {
-          // As a last resort, add the tenant_id directly
-          if (OTelLog.isDebug()) {
-            OTelLog.debug('tenant_id was missing - adding it as fallback');
-          }
-          final tenantResource = OTel.resource(
-            OTel.attributesFromMap({'tenant_id': tenantId}),
-          );
-          OTel.defaultResource = OTel.defaultResource!.merge(tenantResource);
-        }
-      }
-    }
 
     // OTEL_SDK_DISABLED=true is the spec-defined global off-switch: all three
     // signals become no-ops. Honoring this here keeps signal-specific configs
@@ -1413,7 +1382,6 @@ class OTel {
     _defaultSampler = null;
     _defaultTimeProvider = null;
     defaultResource = null;
-    dartasticApiKey = null;
 
     // Reset print interception state
     if (_logBridge != null) {
