@@ -1,9 +1,12 @@
 name: dartastic_opentelemetry
 description: OpenTelemetry SDK for Dart and Flutter. Distributed tracing, metrics, OTLP exporters (gRPC/HTTP),
   and context propagation for observability backends.
-version: 1.1.0-beta.6
-repository: https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry.git
+version: 1.1.0-beta.6.dartastic.1
+# Dartastic fork release - upstream is MindfulSoftwareLLC/dartastic_opentelemetry
+repository: https://github.com/Dartastic/dartastic_opentelemetry.git
 homepage: https://dartastic.io
+# Fork releases go to the Dartastic registry, never pub.dev (upstream owns pub.dev).
+publish_to: https://pub.dartastic.io
 
 environment:
   sdk: ^3.0.0

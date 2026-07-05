@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.1.0-beta.6.dartastic.1] - 2026-07-05
+
+Dartastic fork interim release (github.com/Dartastic/dartastic_opentelemetry):
+`1.1.0-beta.6` plus the fix below, published ahead of the next upstream
+release. Supersede with the upstream version that contains the fix.
+
+### Fixed
+- **API-first usage no longer wedges SDK initialization (#50).** The API
+  package auto-installs its no-op `OTelAPIFactory` when API-only code runs
+  before the SDK initializes (per the OTel spec). Previously
+  `OTel.initialize()` then failed with "can only be initialized once", and
+  `OTel.tracerProvider()` crashed with an opaque
+  `APITracerProvider is not a subtype of TracerProvider` cast error.
+  `OTel.initialize()` now replaces exactly the auto-installed no-op API
+  factory (custom factories still cannot be silently replaced), and the SDK
+  accessors `tracerProvider()`/`meterProvider()`/`loggerProvider()` throw a
+  clear `initialize() must be called first.` `StateError` before
+  initialization instead of the cast error. Note: API objects handed out
+  before `initialize()` remain no-ops — capture tracers after initialize.
+
 ## [1.1.0-beta.6] - 2026-05-18
 - **Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.7`.** Beta.7 fixes observable metrics and standard env var defaults.
 

@@ -219,9 +219,24 @@ class OTel {
         resourceAttributes = OTel.attributesFromMap(envResourceAttrs);
       }
     }
-    if (OTelFactory.otelFactory != null) {
+    // The API auto-installs its no-op OTelAPIFactory when API-only code runs
+    // before the SDK initializes (per spec). That no-op must not block SDK
+    // initialization — replace exactly it and nothing else. The runtimeType
+    // check is deliberate: every factory (OTelSDKFactory, FlutterSDKFactory,
+    // custom consumer factories) extends OTelAPIFactory, so an `is` check
+    // would match them all; only the pure auto-installed no-op is replaceable.
+    final existingFactory = OTelFactory.otelFactory;
+    if (existingFactory != null &&
+        existingFactory.runtimeType != OTelAPIFactory) {
       throw StateError(
         'OTelAPI can only be initialized once. If you need multiple endpoints or service names or versions create a named TracerProvider',
+      );
+    }
+    if (existingFactory != null && OTelLog.isDebug()) {
+      OTelLog.debug(
+        'OTel.initialize: replacing the auto-installed no-op API factory '
+        'with the SDK factory. API objects obtained before initialize() '
+        'remain no-ops.',
       );
     }
 
@@ -571,6 +586,10 @@ class OTel {
   /// @param name Optional name of a specific TracerProvider
   /// @return The TracerProvider instance
   static TracerProvider tracerProvider({String? name}) {
+    // Fail fast with a clear error pre-initialize; without this guard the
+    // OTelAPI call below auto-installs the no-op API factory and the cast
+    // throws an opaque APITracerProvider-is-not-TracerProvider TypeError (#50).
+    _getAndCacheOtelFactory();
     final tracerProvider = OTelAPI.tracerProvider(name) as TracerProvider;
     // Ensure the resource is properly set
     if (tracerProvider.resource == null && defaultResource != null) {
@@ -604,6 +623,7 @@ class OTel {
   /// @param name Optional name of a specific MeterProvider
   /// @return The MeterProvider instance
   static MeterProvider meterProvider({String? name}) {
+    _getAndCacheOtelFactory(); // clear initialize-first error, see tracerProvider
     final meterProvider = OTelAPI.meterProvider(name) as MeterProvider;
     meterProvider.resource ??= defaultResource;
     return meterProvider;
@@ -736,6 +756,7 @@ class OTel {
   /// @param name Optional name of a specific LoggerProvider
   /// @return The LoggerProvider instance
   static LoggerProvider loggerProvider({String? name}) {
+    _getAndCacheOtelFactory(); // clear initialize-first error, see tracerProvider
     final logProvider = OTelAPI.loggerProvider(name) as LoggerProvider;
     logProvider.resource ??= defaultResource;
     return logProvider;
@@ -1286,10 +1307,14 @@ class OTel {
     if (_otelFactory != null) {
       return _otelFactory!;
     }
-    if (OTelFactory.otelFactory == null) {
+    final installed = OTelFactory.otelFactory;
+    // An installed factory that is not SDK-capable is the API's auto-installed
+    // no-op (API-only code ran first) — the SDK still isn't initialized, and
+    // saying so beats the `as` TypeError the cast would produce (#50).
+    if (installed == null || installed is! OTelSDKFactory) {
       throw StateError('initialize() must be called first.');
     }
-    return _otelFactory = OTelFactory.otelFactory! as OTelSDKFactory;
+    return _otelFactory = installed;
   }
 
   /// Initializes logging based on environment variables.
