@@ -53,6 +53,9 @@ class OTelSDKFactory extends OTelAPIFactory {
     super.factoryFactory = otelSDKFactoryFactoryFunction,
   });
 
+  @override
+  bool get isAPIFactory => false;
+
   /// Creates a new Resource with the specified attributes and schema URL.
   ///
   /// Resources are immutable collections of attributes that describe the entity

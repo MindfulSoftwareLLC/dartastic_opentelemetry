@@ -8,6 +8,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.7-wip]
 
+### Fixed
+- **API-first usage no longer wedges SDK initialization (#50).** The API
+  package auto-installs its no-op `OTelAPIFactory` when API-only code runs
+  before the SDK initializes (per the OTel spec). Previously
+  `OTel.initialize()` then failed with "can only be initialized once", and
+  `OTel.tracerProvider()` crashed with an opaque
+  `APITracerProvider is not a subtype of TracerProvider` cast error.
+  `OTel.initialize()` now replaces exactly the auto-installed no-op API
+  factory — identified via `OTelFactory.isAPIFactory` (API ≥ beta.8), so real
+  factories are never silently replaced — and the SDK accessors
+  (`tracerProvider()`/`meterProvider()`/`loggerProvider()`/`addTracerProvider()`)
+  throw a clear `OTel.initialize() must be called first.` `StateError` before
+  initialization instead of the cast error. `OTelSDKFactory` now overrides
+  `isAPIFactory` to `false` per the API ≥ beta.8 contract. Note: API objects
+  handed out before `initialize()` remain no-ops — capture tracers after
+  initialize. Thanks @robert-northmind for the investigation in #53 and the
+  regression test suite adapted from it.
+
+### Changed
+- **Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.9`.** Beta.8 adds
+  `OTelFactory.isAPIFactory` (used by the fix above) and replaces the no-op
+  factory in `OTelAPI.initialize()`; beta.9 fixes pre-initialization lazy
+  no-op installs (`tracer()`, `logger()`, `instrumentationScope()`,
+  `TraceState.fromString`, the `fromJson`s) and makes `Context` re-read the
+  global factory so an SDK factory installed later actually takes effect.
+
 ## [1.1.0-beta.6] - 2026-05-18
 - **Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.7`.** Beta.7 fixes observable metrics and standard env var defaults.
 
