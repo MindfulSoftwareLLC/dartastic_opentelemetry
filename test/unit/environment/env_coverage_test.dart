@@ -74,6 +74,92 @@ class _FixedDetector implements ResourceDetector {
 
 void main() {
   // =========================================================================
+  // OTelEnv - subprocess tests for getBspConfig
+  // =========================================================================
+  group('OTelEnv.getBspConfig (subprocess)', () {
+    test('reads scheduleDelay', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {'OTEL_BSP_SCHEDULE_DELAY': '2000'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['scheduleDelay_ms'], equals(2000));
+    });
+
+    test('reads exportTimeout', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {'OTEL_BSP_EXPORT_TIMEOUT': '30000'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['exportTimeout_ms'], equals(30000));
+    });
+
+    test('reads maxQueueSize', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {'OTEL_BSP_MAX_QUEUE_SIZE': '4096'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['maxQueueSize'], equals(4096));
+    });
+
+    test('reads maxExportBatchSize', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {'OTEL_BSP_MAX_EXPORT_BATCH_SIZE': '1024'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['maxExportBatchSize'], equals(1024));
+    });
+
+    test('ignores non-numeric scheduleDelay', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {'OTEL_BSP_SCHEDULE_DELAY': 'not-a-number'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result.containsKey('scheduleDelay_ms'), isFalse);
+    });
+
+    test('ignores non-numeric exportTimeout', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {'OTEL_BSP_EXPORT_TIMEOUT': 'abc'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result.containsKey('exportTimeout_ms'), isFalse);
+    });
+
+    test('ignores non-numeric maxQueueSize', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {'OTEL_BSP_MAX_QUEUE_SIZE': 'xyz'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result.containsKey('maxQueueSize'), isFalse);
+    });
+
+    test('ignores non-numeric maxExportBatchSize', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {'OTEL_BSP_MAX_EXPORT_BATCH_SIZE': 'foo'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result.containsKey('maxExportBatchSize'), isFalse);
+    });
+
+    test('returns empty map when no BSP env vars set', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result, isEmpty);
+    });
+  });
+
+  // =========================================================================
   // OTelEnv - subprocess tests for getBlrpConfig
   // =========================================================================
   group('OTelEnv.getBlrpConfig (subprocess)', () {

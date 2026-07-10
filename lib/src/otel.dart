@@ -457,11 +457,7 @@ class OTel {
 
         spanProcessor = BatchSpanProcessor(
           exporters.length == 1 ? exporter : CompositeExporter(exporters),
-          const BatchSpanProcessorConfig(
-            maxQueueSize: 2048,
-            scheduleDelay: Duration(seconds: 1),
-            maxExportBatchSize: 512,
-          ),
+          BatchSpanProcessorConfig.fromEnvironment(),
         );
       }
       // If exporterType == 'none', spanProcessor remains null and no processor is added

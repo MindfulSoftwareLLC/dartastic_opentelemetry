@@ -7,6 +7,7 @@ import 'dart:collection';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:synchronized/synchronized.dart';
 
+import '../../environment/otel_env.dart';
 import '../span.dart';
 import '../span_processor.dart';
 import 'span_exporter.dart';
@@ -30,21 +31,49 @@ class BatchSpanProcessorConfig {
   final Duration exportTimeout;
 
   /// Creates a new configuration for a [BatchSpanProcessor].
-  ///
-  /// [maxQueueSize] The maximum number of spans that can be queued for export. Default is 2048.
-  ///    If this limit is reached, additional spans will be dropped.
-  /// [scheduleDelay] The time interval between two consecutive exports. Default is 5 seconds.
-  ///    This controls how frequently batches are sent to the exporter.
-  /// [maxExportBatchSize] The maximum number of spans to export in a single batch. Default is 512.
-  ///    This helps control resource usage during export operations.
-  /// [exportTimeout] The maximum time to wait for an export operation to complete. Default is 30 seconds.
-  ///    After this time, export operations will be considered failed.
   const BatchSpanProcessorConfig({
     this.maxQueueSize = 2048,
     this.scheduleDelay = const Duration(milliseconds: 5000),
     this.maxExportBatchSize = 512,
     this.exportTimeout = const Duration(seconds: 30),
   });
+
+  /// Creates a configuration by reading from environment variables via [OTelEnv].
+  /// Falls back to standard OTel defaults if variables are missing or invalid.
+  factory BatchSpanProcessorConfig.fromEnvironment() {
+    final env = OTelEnv.getBspConfig();
+
+    var queueSize = (env['maxQueueSize'] as int?) ?? 2048;
+    var batchSize = (env['maxExportBatchSize'] as int?) ?? 512;
+
+    final scheduleDelay = env['scheduleDelay'] is Duration &&
+            (env['scheduleDelay'] as Duration).inMilliseconds > 0
+        ? env['scheduleDelay'] as Duration
+        : const Duration(milliseconds: 5000);
+    final exportTimeout = env['exportTimeout'] is Duration &&
+            (env['exportTimeout'] as Duration).inMilliseconds > 0
+        ? env['exportTimeout'] as Duration
+        : const Duration(milliseconds: 30000);
+
+    // --- Validation Logic ---
+    if (queueSize <= 0) {
+      queueSize = 2048;
+    }
+    if (batchSize <= 0) {
+      batchSize = 512;
+    }
+    // Spec rule: maxExportBatchSize must be less than or equal to maxQueueSize
+    if (batchSize > queueSize) {
+      batchSize = queueSize;
+    }
+
+    return BatchSpanProcessorConfig(
+      maxQueueSize: queueSize,
+      maxExportBatchSize: batchSize,
+      scheduleDelay: scheduleDelay,
+      exportTimeout: exportTimeout,
+    );
+  }
 }
 
 /// A [SpanProcessor] that batches spans before export.

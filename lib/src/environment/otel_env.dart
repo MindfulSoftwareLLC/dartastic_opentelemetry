@@ -387,6 +387,56 @@ class OTelEnv {
     }
   }
 
+  /// Get Batch Span Processor (BSP) configuration from environment variables.
+  ///
+  /// Returns a map containing the BSP configuration read from environment variables.
+  /// Keys returned:
+  /// - 'scheduleDelay': Duration for the schedule delay
+  /// - 'exportTimeout': Duration for the export timeout
+  /// - 'maxQueueSize': int for maximum queue size
+  /// - 'maxExportBatchSize': int for maximum export batch size
+  static Map<String, dynamic> getBspConfig() {
+    final config = <String, dynamic>{};
+
+    // Get schedule delay
+    final scheduleDelay = _getEnv(otelBspScheduleDelay);
+    if (scheduleDelay != null) {
+      final delayMs = int.tryParse(scheduleDelay);
+      if (delayMs != null) {
+        config['scheduleDelay'] = Duration(milliseconds: delayMs);
+      }
+    }
+
+    // Get export timeout
+    final exportTimeout = _getEnv(otelBspExportTimeout);
+    if (exportTimeout != null) {
+      final timeoutMs = int.tryParse(exportTimeout);
+      if (timeoutMs != null) {
+        config['exportTimeout'] = Duration(milliseconds: timeoutMs);
+      }
+    }
+
+    // Get max queue size
+    final maxQueueSize = _getEnv(otelBspMaxQueueSize);
+    if (maxQueueSize != null) {
+      final size = int.tryParse(maxQueueSize);
+      if (size != null) {
+        config['maxQueueSize'] = size;
+      }
+    }
+
+    // Get max export batch size
+    final maxExportBatchSize = _getEnv(otelBspMaxExportBatchSize);
+    if (maxExportBatchSize != null) {
+      final size = int.tryParse(maxExportBatchSize);
+      if (size != null) {
+        config['maxExportBatchSize'] = size;
+      }
+    }
+
+    return config;
+  }
+
   /// Get Batch LogRecord Processor (BLRP) configuration from environment variables.
   ///
   /// Returns a map containing the BLRP configuration read from environment variables.
