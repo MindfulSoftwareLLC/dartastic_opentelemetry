@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 //
 // Regression for #155 — the OTel spec requires observable instruments
 // to invoke their registered callbacks on every collection cycle. Pre-

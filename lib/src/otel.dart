@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 import 'dart:async';
 import 'dart:typed_data';
@@ -40,6 +40,13 @@ class OTel {
   static OTelSDKFactory? _otelFactory;
   static Sampler? _defaultSampler;
   static TimeProvider? _defaultTimeProvider;
+
+  /// The global default exception handling options applied by the withSpan
+  /// family of methods. Configured via `OTel.initialize(...)` and propagated
+  /// to TracerProviders. Per-call `exceptionOptions` override this. Null
+  /// until set by initialize(); the Tracer falls back to
+  /// [SpanExceptionOptions.defaults] when unset.
+  static SpanExceptionOptions? _defaultSpanExceptionOptions;
 
   /// Whether print interception is enabled (set via initialize).
   static bool _logPrintEnabled = false;
@@ -86,9 +93,12 @@ class OTel {
   /// This method must be called before any other OpenTelemetry operations.
   /// It sets up the global configuration and installs the SDK implementation.
   ///
-  /// When OTelLog.debug is true or the environmental variable
-  /// OTEL_CONSOLE_EXPORTER is set to true, a ConsoleExporter is added to the
-  /// exports to print spans.
+  /// When OTEL_CONSOLE_EXPORTER is set to true (a compile-time
+  /// --dart-define), a ConsoleExporter is added alongside the configured
+  /// span exporter. To replace the default exporter with console output
+  /// instead, set OTEL_TRACES_EXPORTER=console. Per the OTel spec the
+  /// default exporter is otlp only — debug logging does not change the
+  /// export pipeline (use OTEL_LOG_SPANS for span logging).
   ///
   /// @param endpoint The endpoint URL for the OpenTelemetry collector (default: http://localhost:4318)
   /// @param secure Whether to use TLS for the connection (default: true)
@@ -135,6 +145,7 @@ class OTel {
     Attributes? resourceAttributes,
     SpanProcessor? spanProcessor,
     Sampler sampler = const AlwaysOnSampler(),
+    SpanExceptionOptions spanExceptionOptions = const SpanExceptionOptions(),
     SpanKind spanKind = SpanKind.server,
     MetricExporter? metricExporter,
     MetricReader? metricReader,
@@ -219,17 +230,12 @@ class OTel {
         resourceAttributes = OTel.attributesFromMap(envResourceAttrs);
       }
     }
-    // The API auto-installs its no-op OTelAPIFactory when API-only code runs
-    // before the SDK initializes (per spec). That no-op must not block SDK
-    // initialization — replace exactly it and nothing else. The runtimeType
-    // check is deliberate: every factory (OTelSDKFactory, FlutterSDKFactory,
-    // custom consumer factories) extends OTelAPIFactory, so an `is` check
-    // would match them all; only the pure auto-installed no-op is replaceable.
+    // The API auto-installs its OTelAPIFactory if API-only code runs
+    // before the SDK initializes. The SDK must upgrade it to the SDK (per spec).
     final existingFactory = OTelFactory.otelFactory;
-    if (existingFactory != null &&
-        existingFactory.runtimeType != OTelAPIFactory) {
+    if (existingFactory != null && !existingFactory.isAPIFactory) {
       throw StateError(
-        'OTelAPI can only be initialized once. If you need multiple endpoints or service names or versions create a named TracerProvider',
+        'OTel.initialize() can only be called once. If you need multiple endpoints or service names or versions create a named TracerProvider',
       );
     }
     if (existingFactory != null && OTelLog.isDebug()) {
@@ -255,6 +261,7 @@ class OTel {
         oTelFactoryCreationFunction ?? otelSDKFactoryFactoryFunction;
     // Initialize with default sampler
     _defaultSampler = sampler;
+    _defaultSpanExceptionOptions = spanExceptionOptions;
     _defaultTimeProvider = timeProvider;
     OTel.defaultTracerName = tracerName ?? _defaultTracerName;
     OTel.defaultTracerVersion = tracerVersion ?? defaultTracerVersion;
@@ -262,11 +269,18 @@ class OTel {
     // Initialize logging from environment variables if needed
     initializeLogging();
 
-    OTelFactory.otelFactory = factoryFactory(
+    final createdFactory = factoryFactory(
       apiEndpoint: endpoint,
       apiServiceName: serviceName,
       apiServiceVersion: serviceVersion,
     );
+    OTelFactory.otelFactory = createdFactory;
+    // Populate the cache _getAndCacheOtelFactory maintains, so methods that
+    // branch on it before the guard (attributes, attributesFromMap) route
+    // through the SDK factory immediately after initialize.
+    if (createdFactory is OTelSDKFactory) {
+      _otelFactory = createdFactory;
+    }
 
     if (OTelLog.isDebug()) {
       OTelLog.debug(
@@ -430,11 +444,14 @@ class OTel {
 
         // Only add ConsoleExporter in debug mode or if explicitly requested
         final exporters = <SpanExporter>[exporter];
-        if (OTelLog.isDebug() ||
-            const bool.fromEnvironment(
-              'OTEL_CONSOLE_EXPORTER',
-              defaultValue: false,
-            )) {
+        // Spec: the default pipeline is otlp only — debug logging must not
+        // alter it (see #49 for the identical metrics fix). Console output
+        // stays available via OTEL_TRACES_EXPORTER=console (replaces) or the
+        // OTEL_CONSOLE_EXPORTER dart-define (adds alongside).
+        if (const bool.fromEnvironment(
+          'OTEL_CONSOLE_EXPORTER',
+          defaultValue: false,
+        )) {
           exporters.add(ConsoleExporter());
         }
 
@@ -586,9 +603,6 @@ class OTel {
   /// @param name Optional name of a specific TracerProvider
   /// @return The TracerProvider instance
   static TracerProvider tracerProvider({String? name}) {
-    // Fail fast with a clear error pre-initialize; without this guard the
-    // OTelAPI call below auto-installs the no-op API factory and the cast
-    // throws an opaque APITracerProvider-is-not-TracerProvider TypeError (#50).
     _getAndCacheOtelFactory();
     final tracerProvider = OTelAPI.tracerProvider(name) as TracerProvider;
     // Ensure the resource is properly set
@@ -607,6 +621,7 @@ class OTel {
     }
 
     tracerProvider.sampler ??= _defaultSampler;
+    tracerProvider.spanExceptionOptions ??= _defaultSpanExceptionOptions;
     if (_defaultTimeProvider != null) {
       tracerProvider.timeProvider = _defaultTimeProvider!;
     }
@@ -623,7 +638,7 @@ class OTel {
   /// @param name Optional name of a specific MeterProvider
   /// @return The MeterProvider instance
   static MeterProvider meterProvider({String? name}) {
-    _getAndCacheOtelFactory(); // clear initialize-first error, see tracerProvider
+    _getAndCacheOtelFactory();
     final meterProvider = OTelAPI.meterProvider(name) as MeterProvider;
     meterProvider.resource ??= defaultResource;
     return meterProvider;
@@ -641,6 +656,8 @@ class OTel {
   /// @param serviceVersion Optional custom service version
   /// @param resource Optional custom resource
   /// @param sampler Optional custom sampler
+  /// @param spanExceptionOptions Optional default exception handling options;
+  ///   defaults to the options set in initialize()
   /// @return The newly created or replaced TracerProvider
   static TracerProvider addTracerProvider(
     String name, {
@@ -649,10 +666,14 @@ class OTel {
     String? serviceVersion,
     Resource? resource,
     Sampler? sampler,
+    SpanExceptionOptions? spanExceptionOptions,
   }) {
+    _getAndCacheOtelFactory();
     final sdkTracerProvider = OTelAPI.addTracerProvider(name) as TracerProvider;
     sdkTracerProvider.resource = resource ?? defaultResource;
     sdkTracerProvider.sampler = sampler ?? _defaultSampler;
+    sdkTracerProvider.spanExceptionOptions =
+        spanExceptionOptions ?? _defaultSpanExceptionOptions;
     if (_defaultTimeProvider != null) {
       sdkTracerProvider.timeProvider = _defaultTimeProvider!;
     }
@@ -685,16 +706,27 @@ class OTel {
   ///
   /// Convenience over `OTel.tracer().withSpan(span, fn)` for callers
   /// that don't already have a [Tracer] reference.
-  static T withSpan<T>(APISpan span, T Function() fn) =>
-      tracer().withSpan(span, fn);
+  ///
+  /// [exceptionOptions] controls how a thrown exception is recorded and
+  /// whether the span status is set; see [SpanExceptionOptions].
+  static T withSpan<T>(
+    APISpan span,
+    T Function() fn, {
+    SpanExceptionOptions? exceptionOptions,
+  }) =>
+      tracer().withSpan(span, fn, exceptionOptions: exceptionOptions);
 
   /// Async variant of [withSpan]. Propagates the active span across
   /// `await` boundaries via Zone-based context.
+  ///
+  /// [exceptionOptions] controls how a thrown exception is recorded and
+  /// whether the span status is set; see [SpanExceptionOptions].
   static Future<T> withSpanAsync<T>(
     APISpan span,
-    Future<T> Function() fn,
-  ) =>
-      tracer().withSpanAsync(span, fn);
+    Future<T> Function() fn, {
+    SpanExceptionOptions? exceptionOptions,
+  }) =>
+      tracer().withSpanAsync(span, fn, exceptionOptions: exceptionOptions);
 
   /// Adds or replaces a named MeterProvider.
   ///
@@ -756,7 +788,7 @@ class OTel {
   /// @param name Optional name of a specific LoggerProvider
   /// @return The LoggerProvider instance
   static LoggerProvider loggerProvider({String? name}) {
-    _getAndCacheOtelFactory(); // clear initialize-first error, see tracerProvider
+    _getAndCacheOtelFactory();
     final logProvider = OTelAPI.loggerProvider(name) as LoggerProvider;
     logProvider.resource ??= defaultResource;
     return logProvider;
@@ -1083,13 +1115,15 @@ class OTel {
 
   /// Creates an Attributes collection from a list of Attribute objects.
   ///
+  /// Often called before initialize; pre-init this routes through the API,
+  /// which lazily installs the no-op factory per spec (API ≥ beta.9 — there
+  /// is no factory-bypassing cheat path anymore).
+  ///
   /// @param entries Optional list of Attribute objects
   /// @return A new Attributes collection
   static Attributes attributes([List<Attribute>? entries]) {
-    // Cheating here since Attributes is unlikely to be overriden in a
-    // factory and is often called before initialize
     return _otelFactory == null
-        ? AttributesCreate.create(entries ?? [])
+        ? OTelAPI.attributes(entries)
         : _otelFactory!.attributes(entries);
   }
 
@@ -1312,7 +1346,7 @@ class OTel {
     // no-op (API-only code ran first) — the SDK still isn't initialized, and
     // saying so beats the `as` TypeError the cast would produce (#50).
     if (installed == null || installed is! OTelSDKFactory) {
-      throw StateError('initialize() must be called first.');
+      throw StateError('OTel.initialize() must be called first.');
     }
     return _otelFactory = installed;
   }
@@ -1436,6 +1470,7 @@ class OTel {
     // Reset all static fields
     _otelFactory = null;
     _defaultSampler = null;
+    _defaultSpanExceptionOptions = null;
     _defaultTimeProvider = null;
     defaultResource = null;
     dartasticApiKey = null;

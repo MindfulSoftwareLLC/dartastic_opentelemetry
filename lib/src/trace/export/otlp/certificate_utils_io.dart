@@ -1,3 +1,6 @@
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
 // Native (`dart:io`) implementation of certificate utilities. Imported
 // via the facade `certificate_utils.dart`, which falls back to a stub
 // on web.

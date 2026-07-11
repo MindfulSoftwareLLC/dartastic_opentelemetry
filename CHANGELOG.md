@@ -6,11 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.1.0-beta.6.dartastic.1] - 2026-07-05
+## [1.1.0-beta.7] - 2026-07-11
 
-Dartastic fork interim release (github.com/Dartastic/dartastic_opentelemetry):
-`1.1.0-beta.6` plus the fix below, published ahead of the next upstream
-release. Supersede with the upstream version that contains the fix.
+### Fixed
+- **Debug logging no longer adds a `ConsoleExporter` to the trace pipeline.**
+  `OTel.initialize()` used to append a `ConsoleExporter` to the span exporters
+  whenever debug logging was enabled (e.g. `OTEL_LOG_LEVEL=debug`/`trace`),
+  silently changing the export pipeline shape. Per the OTel spec the default
+  exporter is `otlp` only — the same cleanup #49 applied to metrics. Console
+  output remains available explicitly: `OTEL_TRACES_EXPORTER=console`
+  (replaces the exporter) or the `OTEL_CONSOLE_EXPORTER` `--dart-define`
+  (adds one alongside). For span logging use `OTEL_LOG_SPANS=true`.
+
+### Added
+- **Configurable exception handling for `Tracer.withSpan` / `withSpanAsync`.** A new `SpanExceptionOptions` (with `recordException`, `setStatusOnException`, and an `exceptionSanitizer` callback returning a `SanitizedSpanException`) lets callers customize how a thrown exception is recorded and whether the span status is set. The defaults preserve the existing behavior (record the exception + set `SpanStatusCode.Error`), and the original exception is always rethrown. Configure globally via `OTel.initialize(spanExceptionOptions: ...)` (also available per `TracerProvider` and `OTel.addTracerProvider`) and override per call via the new `exceptionOptions:` parameter on `withSpan` / `withSpanAsync` / `startActiveSpan` / `startActiveSpanAsync` and `OTel.withSpan` / `OTel.withSpanAsync`. Per-call options are merged field-by-field over the global config (via `SpanExceptionOptions.mergeWith`), so overriding a single flag preserves a globally configured sanitizer. When a sanitizer is provided, only its returned type/message/stacktrace are recorded — the raw exception's details never leak — and if the sanitizer itself throws, the span is marked failed with a generic description. This enables SDKs and applications to redact PII before it is recorded. ([#51](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/51))
 
 ### Fixed
 - **API-first usage no longer wedges SDK initialization (#50).** The API
@@ -20,11 +29,23 @@ release. Supersede with the upstream version that contains the fix.
   `OTel.tracerProvider()` crashed with an opaque
   `APITracerProvider is not a subtype of TracerProvider` cast error.
   `OTel.initialize()` now replaces exactly the auto-installed no-op API
-  factory (custom factories still cannot be silently replaced), and the SDK
-  accessors `tracerProvider()`/`meterProvider()`/`loggerProvider()` throw a
-  clear `initialize() must be called first.` `StateError` before
-  initialization instead of the cast error. Note: API objects handed out
-  before `initialize()` remain no-ops — capture tracers after initialize.
+  factory — identified via `OTelFactory.isAPIFactory` (API ≥ beta.8), so real
+  factories are never silently replaced — and the SDK accessors
+  (`tracerProvider()`/`meterProvider()`/`loggerProvider()`/`addTracerProvider()`)
+  throw a clear `OTel.initialize() must be called first.` `StateError` before
+  initialization instead of the cast error. `OTelSDKFactory` now overrides
+  `isAPIFactory` to `false` per the API ≥ beta.8 contract. Note: API objects
+  handed out before `initialize()` remain no-ops — capture tracers after
+  initialize. Thanks @robert-northmind for the investigation in #53 and the
+  regression test suite adapted from it.
+
+### Changed
+- **Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.9`.** Beta.8 adds
+  `OTelFactory.isAPIFactory` (used by the fix above) and replaces the no-op
+  factory in `OTelAPI.initialize()`; beta.9 fixes pre-initialization lazy
+  no-op installs (`tracer()`, `logger()`, `instrumentationScope()`,
+  `TraceState.fromString`, the `fromJson`s) and makes `Context` re-read the
+  global factory so an SDK factory installed later actually takes effect.
 
 ## [1.1.0-beta.6] - 2026-05-18
 - **Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.7`.** Beta.7 fixes observable metrics and standard env var defaults.

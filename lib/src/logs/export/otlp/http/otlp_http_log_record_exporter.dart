@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 import 'dart:async';
 import 'dart:convert';
@@ -11,6 +11,7 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
 import 'package:http/http.dart' as http;
 
 import '../../../../export/otlp_http_protocol.dart';
+import '../../../../export/otlp_json.dart';
 import '../../../../trace/export/otlp/http/http_client_factory.dart';
 import '../../../../util/zip/gzip.dart';
 import '../../../readable_log_record.dart';
@@ -106,7 +107,7 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
     Uint8List messageBytes;
     if (_config.protocol == OtlpHttpProtocol.httpJson) {
       headers['Content-Type'] = 'application/json';
-      final jsonValue = request.toProto3Json();
+      final jsonValue = otlpProto3JsonWithHexIds(request);
       messageBytes = Uint8List.fromList(utf8.encode(jsonEncode(jsonValue)));
     } else {
       headers['Content-Type'] = 'application/x-protobuf';

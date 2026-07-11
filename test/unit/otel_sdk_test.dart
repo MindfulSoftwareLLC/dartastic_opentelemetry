@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 // Combined test file for OTel SDK initialization, configuration, factory
 // methods, shutdown handling, and SimpleSpanProcessor error paths.
@@ -651,9 +651,11 @@ void main() {
       await OTel.reset();
     });
 
-    test('_getAndCacheOtelFactory throws when not initialized', () {
-      // Exercises the StateError thrown when OTel is not initialized
+    test('SDK accessor throws when no factory has been installed', () {
+      // SDK entry points require OTel.initialize(); API-only no-op behavior is
+      // available through OTelAPI, not through concrete SDK accessors.
       expect(() => OTel.contextKey<String>('test-key'), throwsStateError);
+      expect(OTelFactory.otelFactory, isNull);
     });
   });
 

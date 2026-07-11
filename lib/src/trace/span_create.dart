@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 part of 'span.dart';
 
@@ -8,6 +8,7 @@ part of 'span.dart';
 /// This factory class provides a static create method for constructing
 /// properly configured Span instances. It follows the factory pattern
 /// to separate the construction logic from the Span class itself.
+@internal
 class SDKSpanCreate {
   /// Creates a new Span with the specified delegate and tracer.
   ///

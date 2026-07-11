@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 import 'dart:async';
 import 'dart:convert';
@@ -12,6 +12,7 @@ import '../../../../../dartastic_opentelemetry.dart';
 import '../../../../../proto/collector/metrics/v1/metrics_service.pb.dart';
 import '../../../../../proto/common/v1/common.pb.dart' as common_pb;
 import '../../../../../proto/metrics/v1/metrics.pb.dart' as metrics_pb;
+import '../../../../export/otlp_json.dart';
 import '../../../../trace/export/otlp/http/http_client_factory.dart';
 import '../../../../util/zip/gzip.dart';
 import '../metric_transformer.dart';
@@ -300,7 +301,7 @@ class OtlpHttpMetricExporter implements MetricExporter {
     Uint8List messageBytes;
     if (_config.protocol == OtlpHttpProtocol.httpJson) {
       headers['Content-Type'] = 'application/json';
-      final jsonValue = request.toProto3Json();
+      final jsonValue = otlpProto3JsonWithHexIds(request);
       messageBytes = Uint8List.fromList(utf8.encode(jsonEncode(jsonValue)));
     } else {
       headers['Content-Type'] = 'application/x-protobuf';
