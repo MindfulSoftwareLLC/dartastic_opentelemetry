@@ -11,6 +11,7 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
 import 'package:http/http.dart' as http;
 
 import '../../../../export/otlp_http_protocol.dart';
+import '../../../../export/otlp_json.dart';
 import '../../../../util/zip/gzip.dart';
 import '../../../span.dart';
 import '../../../span_logger.dart';
@@ -118,15 +119,15 @@ class OtlpHttpSpanExporter implements SpanExporter {
 
     // Prepare headers + body. Wire format is selected by config.protocol:
     // protobuf (default) writes the message as its compact binary encoding
-    // with Content-Type application/x-protobuf; JSON serializes via the
-    // standard proto3-JSON mapping (`toProto3Json`) with Content-Type
-    // application/json. The proto3-JSON mapping is the OTLP/JSON
-    // encoding the spec specifies; we don't hand-roll it.
+    // with Content-Type application/x-protobuf; JSON uses the OTLP/JSON
+    // encoding — proto3-JSON PLUS the spec's deviations, the critical one
+    // being hex-encoded (not base64) trace/span ids. Strict receivers
+    // (OTel Collector ≥ ~0.15x) reject base64 ids with HTTP 400.
     final headers = Map<String, String>.from(_config.headers);
     Uint8List messageBytes;
     if (_config.protocol == OtlpHttpProtocol.httpJson) {
       headers['Content-Type'] = 'application/json';
-      final jsonValue = request.toProto3Json();
+      final jsonValue = otlpProto3JsonWithHexIds(request);
       messageBytes = Uint8List.fromList(utf8.encode(jsonEncode(jsonValue)));
     } else {
       headers['Content-Type'] = 'application/x-protobuf';
