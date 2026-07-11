@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 part of 'tracer.dart';
 
@@ -8,6 +8,7 @@ part of 'tracer.dart';
 /// This factory class provides a static create method for constructing
 /// properly configured Tracer instances. It follows the factory pattern
 /// to separate the construction logic from the Tracer class itself.
+@internal
 class SDKTracerCreate {
   /// Creates a new Tracer with the specified delegate, provider, and optional sampler.
   ///

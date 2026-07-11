@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 /// Test file covering remaining small coverage gaps across multiple files.
 library;
@@ -15,6 +15,7 @@ library;
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/src/metrics/export/otlp/metric_transformer.dart';
+import 'package:dartastic_opentelemetry/src/resource/resource.dart';
 import 'package:test/test.dart';
 
 import '../../testing_utils/in_memory_span_exporter.dart';

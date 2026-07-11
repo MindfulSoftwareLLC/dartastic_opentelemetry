@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 // Native (`dart:io`) implementation of the HTTP client factory used by
 // the OTLP/HTTP exporters. Builds an `IOClient` wrapping an `HttpClient`

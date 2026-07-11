@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 // Tests for environment configuration, resource detection, and OTel
 // initialization exercising error paths and edge cases.
@@ -17,6 +17,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry/src/resource/resource.dart';
 import 'package:test/test.dart';
 
 import '../../testing_utils/memory_log_record_exporter.dart';

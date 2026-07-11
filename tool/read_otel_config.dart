@@ -1,4 +1,6 @@
 #!/usr/bin/env dart
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 // Utility to read OTelEnv configuration and output in parseable format
 // Used by integration test scripts to verify environment variable parsing
 

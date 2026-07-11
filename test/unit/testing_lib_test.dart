@@ -1,4 +1,5 @@
-// Licensed under the Apache License, Version 2.0
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 // Copyright 2025, Mindful Software LLC, All rights reserved.
 //
 // Self-test for `package:dartastic_opentelemetry/testing.dart`.

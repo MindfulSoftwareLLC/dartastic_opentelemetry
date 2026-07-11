@@ -1,5 +1,13 @@
 # OpenTelemetry SDK for Dart
 
+> This is **Dartastic.io's maintenance fork** of
+> [`dartastic_opentelemetry`](https://pub.dev/packages/dartastic_opentelemetry),
+> the OpenTelemetry SDK for Dart and Flutter, published to the Dartastic
+> registry for Dartastic.io customers. It mirrors upstream releases exactly;
+> when a critical fix can't wait for the next upstream release, it ships here
+> first. Upstream:
+> [MindfulSoftwareLLC/dartastic_opentelemetry](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry).
+
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![OpenTelemetry Specification](https://img.shields.io/badge/OpenTelemetry-Specification-blueviolet)](https://opentelemetry.io/docs/specs/otel/)
 [![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen.svg)](https://dartastic.github.io/dartastic_opentelemetry/)
@@ -84,7 +92,7 @@ OpenTelemetry specification which separates API and the SDK.  All OpenTelemetry 
 Include this in your pubspec.yaml:
 ```
 dependencies:
-  dartastic_opentelemetry: ^1.1.0-beta.6
+  dartastic_opentelemetry: ^1.1.0-beta.7
 ```
 
 ## Usage
@@ -298,6 +306,51 @@ OTel.tracer().startActiveSpan(
   },
 );
 ```
+
+### Customizing exception handling — `SpanExceptionOptions`
+
+By default the `withSpan` family records a thrown exception as an
+`exception` event and sets the span status to `SpanStatusCode.Error`
+before rethrowing. `SpanExceptionOptions` lets you customize this —
+skip recording, skip the status update, or **sanitize** the exception
+before it is recorded (useful for stripping PII, tokens, or user IDs
+in RUM scenarios). The original exception is always rethrown.
+
+Configure a global default at initialization, override per call, or
+both — per-call options are merged field-by-field over the global
+config, so overriding one flag preserves a globally configured
+sanitizer:
+
+```dart
+// Global default, applied to every span created by the SDK.
+await OTel.initialize(
+  serviceName: 'my-service',
+  spanExceptionOptions: SpanExceptionOptions(
+    exceptionSanitizer: (error, stackTrace) => SanitizedSpanException(
+      type: error.runtimeType.toString(),
+      message: redactPii(error.toString()),
+      stackTrace: redactStackTrace(stackTrace), // null => no stacktrace
+      statusDescription: 'sanitized exception',
+    ),
+  ),
+);
+
+// Per-call override — keeps the global sanitizer, just disables the
+// status update for this one call.
+await tracer.withSpanAsync(
+  span,
+  () => doWork(),
+  exceptionOptions: const SpanExceptionOptions(setStatusOnException: false),
+);
+```
+
+When a sanitizer is provided, only its returned `type` / `message` /
+`stackTrace` are recorded — the raw exception's details never leak. If
+the sanitizer itself throws, the span is marked failed with a generic
+description and nothing sensitive is recorded. `exceptionOptions` is
+available on `Tracer.withSpan` / `withSpanAsync` /
+`startActiveSpan` / `startActiveSpanAsync` and the
+`OTel.withSpan` / `OTel.withSpanAsync` convenience methods.
 
 ### Span Attributes
 

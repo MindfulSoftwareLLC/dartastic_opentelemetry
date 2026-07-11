@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 part of 'resource.dart';
 
@@ -7,6 +7,7 @@ part of 'resource.dart';
 ///
 /// This class follows the factory pattern and provides a static method
 /// for creating new Resource instances.
+@internal
 class ResourceCreate<T> {
   /// Creates a new Resource with the specified attributes and schema URL.
   ///

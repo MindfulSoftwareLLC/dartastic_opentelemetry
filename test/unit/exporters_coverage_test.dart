@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 // Comprehensive test file targeting ~90 additional uncovered lines across
 // multiple source files to push overall coverage from 87.7% toward 90%.

@@ -1,3 +1,6 @@
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
 // Integration test for environment variable behavior
 // This test should be run with actual environment variables or --dart-define flags
 // via the tool/test_env_vars.sh script

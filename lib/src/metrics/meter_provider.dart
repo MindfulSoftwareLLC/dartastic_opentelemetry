@@ -1,9 +1,12 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 import 'dart:async';
 
+import 'package:meta/meta.dart';
+
 import '../../dartastic_opentelemetry.dart';
+import 'meter.dart';
 
 part 'meter_provider_create.dart';
 
