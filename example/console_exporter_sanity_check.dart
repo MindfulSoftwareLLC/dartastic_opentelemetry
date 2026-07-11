@@ -1,3 +1,6 @@
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
 /// App-specific attribute keys as a typed enum. Prefer enums over raw

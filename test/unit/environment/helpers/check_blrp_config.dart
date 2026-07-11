@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 // Helper script: prints JSON of OTelEnv.getBlrpConfig() result.
 // Run via subprocess with OTEL_BLRP_* env vars set.
