@@ -257,11 +257,18 @@ class OTel {
     // Initialize logging from environment variables if needed
     initializeLogging();
 
-    OTelFactory.otelFactory = factoryFactory(
+    final createdFactory = factoryFactory(
       apiEndpoint: endpoint,
       apiServiceName: serviceName,
       apiServiceVersion: serviceVersion,
     );
+    OTelFactory.otelFactory = createdFactory;
+    // Populate the cache _getAndCacheOtelFactory maintains, so methods that
+    // branch on it before the guard (attributes, attributesFromMap) route
+    // through the SDK factory immediately after initialize.
+    if (createdFactory is OTelSDKFactory) {
+      _otelFactory = createdFactory;
+    }
 
     if (OTelLog.isDebug()) {
       OTelLog.debug(
@@ -581,9 +588,6 @@ class OTel {
   /// @param name Optional name of a specific TracerProvider
   /// @return The TracerProvider instance
   static TracerProvider tracerProvider({String? name}) {
-    // Fail fast with a clear error pre-initialize; without this guard the
-    // OTelAPI call below auto-installs the no-op API factory and the cast
-    // throws an opaque APITracerProvider-is-not-TracerProvider TypeError (#50).
     _getAndCacheOtelFactory();
     final tracerProvider = OTelAPI.tracerProvider(name) as TracerProvider;
     // Ensure the resource is properly set
@@ -618,7 +622,7 @@ class OTel {
   /// @param name Optional name of a specific MeterProvider
   /// @return The MeterProvider instance
   static MeterProvider meterProvider({String? name}) {
-    _getAndCacheOtelFactory(); // clear initialize-first error, see tracerProvider
+    _getAndCacheOtelFactory();
     final meterProvider = OTelAPI.meterProvider(name) as MeterProvider;
     meterProvider.resource ??= defaultResource;
     return meterProvider;
@@ -752,7 +756,7 @@ class OTel {
   /// @param name Optional name of a specific LoggerProvider
   /// @return The LoggerProvider instance
   static LoggerProvider loggerProvider({String? name}) {
-    _getAndCacheOtelFactory(); // clear initialize-first error, see tracerProvider
+    _getAndCacheOtelFactory();
     final logProvider = OTelAPI.loggerProvider(name) as LoggerProvider;
     logProvider.resource ??= defaultResource;
     return logProvider;
