@@ -175,7 +175,7 @@ class MetricTransformer {
         .toList();
 
     // Prepare exemplars if available
-    final exemplars = _transformExemplars(point.exemplars);
+    final exemplars = _transformExemplars(point.exemplars?.cast<Exemplar>());
 
     // Create bucket counts as Int64 list
     final bucketCountsInt64 =
@@ -207,7 +207,7 @@ class MetricTransformer {
         .toList();
 
     // Prepare exemplars if available
-    final exemplars = _transformExemplars(point.exemplars);
+    final exemplars = _transformExemplars(point.exemplars?.cast<Exemplar>());
 
     // Create the NumberDataPoint with all fields set
     return proto.NumberDataPoint(

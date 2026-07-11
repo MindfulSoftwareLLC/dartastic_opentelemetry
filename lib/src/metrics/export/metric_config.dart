@@ -3,7 +3,6 @@
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
     show OTelLog;
-
 import '../../environment/otel_env.dart';
 import '../../otel.dart';
 import '../../resource/resource.dart';
