@@ -6,7 +6,7 @@ set -e  # Exit on any error
 # Parse command line arguments
 # Need trace logging for coverage of debug and trace logs
 LOG_LEVEL="trace"
-CONCURRENCY="20"
+CONCURRENCY="10"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
