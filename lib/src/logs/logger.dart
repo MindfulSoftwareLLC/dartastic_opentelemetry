@@ -4,6 +4,7 @@
 library;
 
 import 'package:fixnum/fixnum.dart';
+import 'package:meta/meta.dart';
 
 import '../../dartastic_opentelemetry.dart';
 

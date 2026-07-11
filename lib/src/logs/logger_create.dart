@@ -9,6 +9,7 @@ part of 'logger.dart';
 /// properly configured OTelLogger instances. It follows the factory
 /// pattern to separate the construction logic from the OTelLogger
 /// class itself.
+@internal
 class SDKLoggerCreate {
   /// Creates a new OTelLogger with the specified delegate and provider.
   ///

@@ -2,6 +2,7 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+import 'package:meta/meta.dart';
 
 import 'instruments/counter.dart';
 import 'instruments/gauge.dart';

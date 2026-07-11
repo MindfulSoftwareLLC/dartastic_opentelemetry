@@ -51,6 +51,15 @@ class ObservableResult<T extends num> implements APIObservableResult<T> {
   /// @param attributes Map of attribute names to values
   @override
   void observeWithMap(T value, Map<String, Object> attributes) {
+    if (OTelFactory.otelFactory == null) {
+      if (OTelLog.isWarn()) {
+        OTelLog.warn(
+          'Warning: OTelFactory.otelFactory is null in '
+          'ObservableResult.observeWithMap',
+        );
+      }
+      return;
+    }
     observe(value, attributes.toAttributes());
   }
 

@@ -11,6 +11,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Configurable exception handling for `Tracer.withSpan` / `withSpanAsync`.** A new `SpanExceptionOptions` (with `recordException`, `setStatusOnException`, and an `exceptionSanitizer` callback returning a `SanitizedSpanException`) lets callers customize how a thrown exception is recorded and whether the span status is set. The defaults preserve the existing behavior (record the exception + set `SpanStatusCode.Error`), and the original exception is always rethrown. Configure globally via `OTel.initialize(spanExceptionOptions: ...)` (also available per `TracerProvider` and `OTel.addTracerProvider`) and override per call via the new `exceptionOptions:` parameter on `withSpan` / `withSpanAsync` / `startActiveSpan` / `startActiveSpanAsync` and `OTel.withSpan` / `OTel.withSpanAsync`. Per-call options are merged field-by-field over the global config (via `SpanExceptionOptions.mergeWith`), so overriding a single flag preserves a globally configured sanitizer. When a sanitizer is provided, only its returned type/message/stacktrace are recorded — the raw exception's details never leak — and if the sanitizer itself throws, the span is marked failed with a generic description. This enables SDKs and applications to redact PII before it is recorded. ([#51](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/51))
 
+### Fixed
+- **API-first usage no longer wedges SDK initialization (#50).** The API
+  package auto-installs its no-op `OTelAPIFactory` when API-only code runs
+  before the SDK initializes (per the OTel spec). Previously
+  `OTel.initialize()` then failed with "can only be initialized once", and
+  `OTel.tracerProvider()` crashed with an opaque
+  `APITracerProvider is not a subtype of TracerProvider` cast error.
+  `OTel.initialize()` now replaces exactly the auto-installed no-op API
+  factory — identified via `OTelFactory.isAPIFactory` (API ≥ beta.8), so real
+  factories are never silently replaced — and the SDK accessors
+  (`tracerProvider()`/`meterProvider()`/`loggerProvider()`/`addTracerProvider()`)
+  throw a clear `OTel.initialize() must be called first.` `StateError` before
+  initialization instead of the cast error. `OTelSDKFactory` now overrides
+  `isAPIFactory` to `false` per the API ≥ beta.8 contract. Note: API objects
+  handed out before `initialize()` remain no-ops — capture tracers after
+  initialize. Thanks @robert-northmind for the investigation in #53 and the
+  regression test suite adapted from it.
+
+### Changed
+- **Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.9`.** Beta.8 adds
+  `OTelFactory.isAPIFactory` (used by the fix above) and replaces the no-op
+  factory in `OTelAPI.initialize()`; beta.9 fixes pre-initialization lazy
+  no-op installs (`tracer()`, `logger()`, `instrumentationScope()`,
+  `TraceState.fromString`, the `fromJson`s) and makes `Context` re-read the
+  global factory so an SDK factory installed later actually takes effect.
+
 ## [1.1.0-beta.6] - 2026-05-18
 - **Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.7`.** Beta.7 fixes observable metrics and standard env var defaults.
 
