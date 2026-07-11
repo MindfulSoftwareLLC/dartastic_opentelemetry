@@ -93,9 +93,12 @@ class OTel {
   /// This method must be called before any other OpenTelemetry operations.
   /// It sets up the global configuration and installs the SDK implementation.
   ///
-  /// When OTelLog.debug is true or the environmental variable
-  /// OTEL_CONSOLE_EXPORTER is set to true, a ConsoleExporter is added to the
-  /// exports to print spans.
+  /// When OTEL_CONSOLE_EXPORTER is set to true (a compile-time
+  /// --dart-define), a ConsoleExporter is added alongside the configured
+  /// span exporter. To replace the default exporter with console output
+  /// instead, set OTEL_TRACES_EXPORTER=console. Per the OTel spec the
+  /// default exporter is otlp only — debug logging does not change the
+  /// export pipeline (use OTEL_LOG_SPANS for span logging).
   ///
   /// @param endpoint The endpoint URL for the OpenTelemetry collector (default: http://localhost:4318)
   /// @param secure Whether to use TLS for the connection (default: true)
@@ -441,11 +444,14 @@ class OTel {
 
         // Only add ConsoleExporter in debug mode or if explicitly requested
         final exporters = <SpanExporter>[exporter];
-        if (OTelLog.isDebug() ||
-            const bool.fromEnvironment(
-              'OTEL_CONSOLE_EXPORTER',
-              defaultValue: false,
-            )) {
+        // Spec: the default pipeline is otlp only — debug logging must not
+        // alter it (see #49 for the identical metrics fix). Console output
+        // stays available via OTEL_TRACES_EXPORTER=console (replaces) or the
+        // OTEL_CONSOLE_EXPORTER dart-define (adds alongside).
+        if (const bool.fromEnvironment(
+          'OTEL_CONSOLE_EXPORTER',
+          defaultValue: false,
+        )) {
           exporters.add(ConsoleExporter());
         }
 

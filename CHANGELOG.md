@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.7-wip]
 
+### Fixed
+- **Debug logging no longer adds a `ConsoleExporter` to the trace pipeline.**
+  `OTel.initialize()` used to append a `ConsoleExporter` to the span exporters
+  whenever debug logging was enabled (e.g. `OTEL_LOG_LEVEL=debug`/`trace`),
+  silently changing the export pipeline shape. Per the OTel spec the default
+  exporter is `otlp` only — the same cleanup #49 applied to metrics. Console
+  output remains available explicitly: `OTEL_TRACES_EXPORTER=console`
+  (replaces the exporter) or the `OTEL_CONSOLE_EXPORTER` `--dart-define`
+  (adds one alongside). For span logging use `OTEL_LOG_SPANS=true`.
+
 ### Added
 - **Configurable exception handling for `Tracer.withSpan` / `withSpanAsync`.** A new `SpanExceptionOptions` (with `recordException`, `setStatusOnException`, and an `exceptionSanitizer` callback returning a `SanitizedSpanException`) lets callers customize how a thrown exception is recorded and whether the span status is set. The defaults preserve the existing behavior (record the exception + set `SpanStatusCode.Error`), and the original exception is always rethrown. Configure globally via `OTel.initialize(spanExceptionOptions: ...)` (also available per `TracerProvider` and `OTel.addTracerProvider`) and override per call via the new `exceptionOptions:` parameter on `withSpan` / `withSpanAsync` / `startActiveSpan` / `startActiveSpanAsync` and `OTel.withSpan` / `OTel.withSpanAsync`. Per-call options are merged field-by-field over the global config (via `SpanExceptionOptions.mergeWith`), so overriding a single flag preserves a globally configured sanitizer. When a sanitizer is provided, only its returned type/message/stacktrace are recorded — the raw exception's details never leak — and if the sanitizer itself throws, the span is marked failed with a generic description. This enables SDKs and applications to redact PII before it is recorded. ([#51](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/51))
 

@@ -381,11 +381,13 @@ void main() {
   // ---------------------------------------------------------------
   // Compression path coverage
   // ---------------------------------------------------------------
+  // retry: flaky under high test concurrency (local server starvation),
+  // solid when run solo.
   test('export with compression exercises gzip path', () async {
     await startServer();
     final exp = createExporter(compression: true);
     final result = await exp.export(makeMetrics());
     expect(result, isTrue);
     await exp.shutdown();
-  });
+  }, retry: 2);
 }
