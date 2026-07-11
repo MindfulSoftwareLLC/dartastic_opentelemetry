@@ -9,7 +9,7 @@ environment:
   sdk: ^3.0.0
 
 dependencies:
-  dartastic_opentelemetry_api: ^1.0.0-beta.7
+  dartastic_opentelemetry_api: ^1.0.0-beta.8
   fixnum: ^1.1.1
   grpc: ^5.1.0
   http: ^1.5.0
