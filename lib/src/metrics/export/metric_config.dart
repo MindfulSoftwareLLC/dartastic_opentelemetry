@@ -14,6 +14,7 @@ import 'otlp/http/otlp_http_metric_exporter.dart';
 import 'otlp/http/otlp_http_metric_exporter_config.dart';
 import 'otlp/otlp_grpc_metric_exporter.dart';
 import 'otlp/otlp_grpc_metric_exporter_config.dart';
+import 'otlp/metric_transformer.dart';
 
 /// Configuration for metrics exporters and readers.
 class MetricsConfiguration {
@@ -39,6 +40,9 @@ class MetricsConfiguration {
     if (resource != null) {
       meterProvider.resource = resource;
     }
+
+    final metricsSdkConfig = OTelEnv.getMetricsSdkConfig();
+    MetricTransformer.setExemplarFilter(metricsSdkConfig.exemplarFilter);
 
     // Honor OTEL_METRICS_EXPORTER, but only when the caller did not pass an
     // explicit exporter/reader — explicit args are an unambiguous opt-in and
@@ -66,7 +70,8 @@ class MetricsConfiguration {
 
     metricReader ??= PeriodicExportingMetricReader(
       metricExporter,
-      interval: const Duration(seconds: 15),
+      interval: metricsSdkConfig.exportInterval,
+      timeout: metricsSdkConfig.exportTimeout,
     );
 
     meterProvider.addMetricReader(metricReader);

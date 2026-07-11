@@ -75,6 +75,12 @@ class PeriodicExportingMetricReader extends MetricReader {
     _startTimer();
   }
 
+  /// How often metrics are exported.
+  Duration get interval => _interval;
+
+  /// Maximum time to wait for each export.
+  Duration get timeout => _timeout;
+
   /// Start the periodic collection timer.
   void _startTimer() {
     _timer?.cancel();
