@@ -10,9 +10,11 @@ import '../../../../proto/common/v1/common.pb.dart' as common_proto;
 import '../../../../proto/metrics/v1/metrics.pb.dart' as proto;
 import '../../../../proto/resource/v1/resource.pb.dart' as resource_proto;
 import '../../../resource/resource.dart';
+import '../../data/exemplar.dart';
 import '../../data/metric.dart';
 import '../../data/metric_data.dart';
 import '../../data/metric_point.dart';
+import '../metrics_sdk_config.dart';
 
 /// Utility class for transforming metric data to OTLP protobuf format.
 class MetricTransformer {
@@ -54,6 +56,14 @@ class MetricTransformer {
     resourceMetrics.scopeMetrics.add(scopeMetrics);
     request.resourceMetrics.add(resourceMetrics);
     return request;
+  }
+
+  static MetricsExemplarFilter _exemplarFilter =
+      MetricsExemplarFilter.traceBased;
+
+  /// Configures the exemplar filter used during OTLP transformation.
+  static void setExemplarFilter(MetricsExemplarFilter filter) {
+    _exemplarFilter = filter;
   }
 
   /// Transforms a Resource to an OTLP Resource proto.
@@ -165,16 +175,7 @@ class MetricTransformer {
         .toList();
 
     // Prepare exemplars if available
-    final exemplars = <proto.Exemplar>[];
-    if (point.hasExemplars) {
-      for (final exemplar in point.exemplars!) {
-        final exemplarProto = proto.Exemplar(
-          timeUnixNano: Int64(exemplar.timestamp.microsecondsSinceEpoch * 1000),
-          asDouble: exemplar.value.toDouble(),
-        );
-        exemplars.add(exemplarProto);
-      }
-    }
+    final exemplars = _transformExemplars(point.exemplars);
 
     // Create bucket counts as Int64 list
     final bucketCountsInt64 =
@@ -206,16 +207,7 @@ class MetricTransformer {
         .toList();
 
     // Prepare exemplars if available
-    final exemplars = <proto.Exemplar>[];
-    if (point.hasExemplars) {
-      for (final exemplar in point.exemplars!) {
-        final exemplarProto = proto.Exemplar(
-          timeUnixNano: Int64(exemplar.timestamp.microsecondsSinceEpoch * 1000),
-          asDouble: exemplar.value.toDouble(),
-        );
-        exemplars.add(exemplarProto);
-      }
-    }
+    final exemplars = _transformExemplars(point.exemplars);
 
     // Create the NumberDataPoint with all fields set
     return proto.NumberDataPoint(
@@ -264,5 +256,27 @@ class MetricTransformer {
     }
 
     return keyValue;
+  }
+
+  static List<proto.Exemplar> _transformExemplars(List<Exemplar>? exemplars) {
+    if (exemplars == null || exemplars.isEmpty) {
+      return const [];
+    }
+
+    return exemplars.where((exemplar) {
+      switch (_exemplarFilter) {
+        case MetricsExemplarFilter.alwaysOn:
+          return true;
+        case MetricsExemplarFilter.alwaysOff:
+          return false;
+        case MetricsExemplarFilter.traceBased:
+          return exemplar.traceId != null || exemplar.spanId != null;
+      }
+    }).map((exemplar) {
+      return proto.Exemplar(
+        timeUnixNano: Int64(exemplar.timestamp.microsecondsSinceEpoch * 1000),
+        asDouble: exemplar.value.toDouble(),
+      );
+    }).toList(growable: false);
   }
 }
