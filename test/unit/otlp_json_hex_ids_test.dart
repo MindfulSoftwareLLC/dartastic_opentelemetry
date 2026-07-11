@@ -8,10 +8,15 @@
 // (Dartastic Cloud) broke every httpJson exporter in the field.
 
 import 'package:dartastic_opentelemetry/proto/collector/logs/v1/logs_service.pb.dart';
+import 'package:dartastic_opentelemetry/proto/collector/metrics/v1/metrics_service.pb.dart';
 import 'package:dartastic_opentelemetry/proto/collector/trace/v1/trace_service.pb.dart';
 import 'package:dartastic_opentelemetry/proto/logs/v1/logs.pb.dart' as pl;
+import 'package:dartastic_opentelemetry/proto/metrics/v1/metrics.pb.dart'
+    as pm;
 import 'package:dartastic_opentelemetry/proto/trace/v1/trace.pb.dart' as pt;
 import 'package:dartastic_opentelemetry/src/export/otlp_json.dart';
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
+    show IdGenerator;
 import 'package:test/test.dart';
 
 void main() {
@@ -66,11 +71,52 @@ void main() {
     expect((rec.first as Map)['spanId'], spanIdHex);
   });
 
-  test('defensive: a non-base64 id value passes through unchanged', () {
-    expect(
-      (otlpProto3JsonWithHexIds(ExportTraceServiceRequest()) as Map).isEmpty ||
-          true,
-      isTrue,
-    );
+  test('metric exemplar ids are hex', () {
+    final req = ExportMetricsServiceRequest(resourceMetrics: [
+      pm.ResourceMetrics(scopeMetrics: [
+        pm.ScopeMetrics(metrics: [
+          pm.Metric(
+            name: 'http.request.duration',
+            gauge: pm.Gauge(dataPoints: [
+              pm.NumberDataPoint(exemplars: [
+                pm.Exemplar(traceId: traceId, spanId: spanId),
+              ]),
+            ]),
+          ),
+        ]),
+      ]),
+    ]);
+    final json = otlpProto3JsonWithHexIds(req) as Map<String, Object?>;
+    final metric = ((((json['resourceMetrics'] as List).first
+            as Map)['scopeMetrics'] as List)
+        .first as Map)['metrics'] as List;
+    final exemplar =
+        ((((metric.first as Map)['gauge'] as Map)['dataPoints'] as List)
+            .first as Map)['exemplars'] as List;
+    expect((exemplar.first as Map)['traceId'], traceIdHex);
+    expect((exemplar.first as Map)['spanId'], spanIdHex);
+  });
+
+  test('empty request stays empty; hex matches the shared id codec', () {
+    expect(otlpProto3JsonWithHexIds(ExportTraceServiceRequest()), isEmpty);
+
+    // The wire encoding must agree with TraceId.hexString/SpanId.hexString,
+    // which delegate to IdGenerator.bytesToHex — one codec for the whole SDK.
+    final genTrace = IdGenerator.generateTraceId();
+    final genSpan = IdGenerator.generateSpanId();
+    final req = ExportTraceServiceRequest(resourceSpans: [
+      pt.ResourceSpans(scopeSpans: [
+        pt.ScopeSpans(spans: [
+          pt.Span(traceId: genTrace, spanId: genSpan, name: 'x'),
+        ]),
+      ]),
+    ]);
+    final json = otlpProto3JsonWithHexIds(req) as Map<String, Object?>;
+    final s = (((((json['resourceSpans'] as List).first
+            as Map)['scopeSpans'] as List)
+        .first as Map)['spans'] as List)
+        .first as Map;
+    expect(s['traceId'], IdGenerator.bytesToHex(genTrace));
+    expect(s['spanId'], IdGenerator.bytesToHex(genSpan));
   });
 }

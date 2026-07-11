@@ -3,6 +3,8 @@
 
 import 'dart:convert';
 
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
+    show IdGenerator;
 import 'package:protobuf/protobuf.dart';
 
 /// OTLP/JSON encoding of an OTLP request message.
@@ -42,16 +44,13 @@ Object? _hexifyIds(Object? node) {
   return node;
 }
 
-/// Base64 → lowercase hex. Defensive: a value that doesn't parse as base64
-/// is returned unchanged (never corrupt a payload we don't understand).
+/// Base64 → lowercase hex, via the same codec that formats
+/// `TraceId.hexString`/`SpanId.hexString`. Defensive: a value that doesn't
+/// parse as base64 is returned unchanged (never corrupt a payload we don't
+/// understand).
 String _base64ToHex(String b64) {
   try {
-    final bytes = base64.decode(b64);
-    final sb = StringBuffer();
-    for (final b in bytes) {
-      sb.write(b.toRadixString(16).padLeft(2, '0'));
-    }
-    return sb.toString();
+    return IdGenerator.bytesToHex(base64.decode(b64));
   } on FormatException {
     return b64;
   }
