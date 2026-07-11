@@ -1,4 +1,5 @@
-// Licensed under the Apache License, Version 2.0
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 // Copyright 2025, Dartastic.io, All rights reserved.
 
 /// Test helpers for the Dartastic OpenTelemetry SDK.

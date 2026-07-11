@@ -1,4 +1,6 @@
 #!/usr/bin/env dart
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 // Simple utility to read environment variables and output them in a parseable format
 // Used by test_env_vars.sh to verify environment variable reading works correctly
 

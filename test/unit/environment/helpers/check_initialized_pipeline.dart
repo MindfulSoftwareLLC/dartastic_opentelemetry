@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 // Helper script: calls OTel.initialize() with no parameters and prints a
 // JSON snapshot of the resulting pipeline (span processors, metric readers,
