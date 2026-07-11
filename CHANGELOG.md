@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.7-wip]
 
+### Fixed
+- **`OTel.initialize()` upgrades the API's auto-installed no-op factory
+  (#50).** Against `dartastic_opentelemetry_api` >= 1.0.0-beta.8 the API
+  lazily installs its no-op factory whenever API code runs first —
+  including `OTel.initialize()`'s own `OTEL_RESOURCE_ATTRIBUTES` parsing —
+  so initialization threw 'OTelAPI can only be initialized once' and any
+  app setting `OTEL_RESOURCE_ATTRIBUTES` crashed at startup. initialize()
+  now replaces a factory reporting `isAPIFactory`, `OTelSDKFactory`
+  overrides `isAPIFactory` to false, and SDK accessors report
+  'initialize() must be called first.' instead of a cast TypeError when
+  only the no-op API factory is installed.
+
 ## [1.1.0-beta.6] - 2026-05-18
 - **Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.7`.** Beta.7 fixes observable metrics and standard env var defaults.
 

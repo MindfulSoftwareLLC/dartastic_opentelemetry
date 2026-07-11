@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import '../logs/logger_provider.dart';
@@ -52,6 +52,10 @@ class OTelSDKFactory extends OTelAPIFactory {
     required super.apiServiceVersion,
     super.factoryFactory = otelSDKFactoryFactoryFunction,
   });
+
+  /// A real SDK implementation, never the replaceable no-op API factory.
+  @override
+  bool get isAPIFactory => false;
 
   /// Creates a new Resource with the specified attributes and schema URL.
   ///

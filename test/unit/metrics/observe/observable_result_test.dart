@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:test/test.dart';
@@ -148,7 +148,7 @@ void main() {
       OTelFactory.otelFactory = savedFactory;
     });
 
-    test('observeWithMap with null OTelFactory does not add measurement', () {
+    test('observeWithMap with null OTelFactory records via the no-op API', () {
       // First make observations with valid factory
       intResult.observeWithMap(1, {'key': 'value'});
       expect(intResult.measurements.length, equals(1));
@@ -157,11 +157,11 @@ void main() {
       final savedFactory = OTelFactory.otelFactory;
       OTelFactory.otelFactory = null;
 
-      // Try to observe with null factory
+      // Since dartastic_opentelemetry_api 1.0.0-beta.8, API calls lazily
+      // install the no-op factory instead of failing, so the observation
+      // is recorded
       intResult.observeWithMap(2, {'key': 'value'});
-
-      // Should still have just one measurement
-      expect(intResult.measurements.length, equals(1));
+      expect(intResult.measurements.length, equals(2));
 
       // Restore factory
       OTelFactory.otelFactory = savedFactory;

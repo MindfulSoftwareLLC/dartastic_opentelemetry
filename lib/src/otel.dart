@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 import 'dart:async';
 import 'dart:typed_data';
@@ -219,9 +219,21 @@ class OTel {
         resourceAttributes = OTel.attributesFromMap(envResourceAttrs);
       }
     }
-    if (OTelFactory.otelFactory != null) {
+    // The API auto-installs its no-op factory when API code runs before the
+    // SDK initializes (per spec) — including the OTEL_RESOURCE_ATTRIBUTES
+    // parsing above. That no-op must not block SDK initialization: replace
+    // exactly it and nothing else.
+    final existingFactory = OTelFactory.otelFactory;
+    if (existingFactory != null && !existingFactory.isAPIFactory) {
       throw StateError(
         'OTelAPI can only be initialized once. If you need multiple endpoints or service names or versions create a named TracerProvider',
+      );
+    }
+    if (existingFactory != null && OTelLog.isDebug()) {
+      OTelLog.debug(
+        'OTel.initialize: replacing the auto-installed no-op API factory '
+        'with the SDK factory. API objects obtained before initialize() '
+        'remain no-ops.',
       );
     }
 
@@ -1286,10 +1298,14 @@ class OTel {
     if (_otelFactory != null) {
       return _otelFactory!;
     }
-    if (OTelFactory.otelFactory == null) {
+    final installed = OTelFactory.otelFactory;
+    // An installed factory that is not SDK-capable is the API's
+    // auto-installed no-op (API-only code ran first) — the SDK still isn't
+    // initialized, and saying so beats the TypeError the cast produced (#50).
+    if (installed == null || installed is! OTelSDKFactory) {
       throw StateError('initialize() must be called first.');
     }
-    return _otelFactory = OTelFactory.otelFactory! as OTelSDKFactory;
+    return _otelFactory = installed;
   }
 
   /// Initializes logging based on environment variables.
