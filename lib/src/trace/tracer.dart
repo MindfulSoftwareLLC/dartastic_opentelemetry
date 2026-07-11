@@ -4,6 +4,7 @@
 library;
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+import 'package:meta/meta.dart';
 
 import '../otel.dart';
 import '../resource/resource.dart';

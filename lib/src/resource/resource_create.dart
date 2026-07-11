@@ -7,6 +7,7 @@ part of 'resource.dart';
 ///
 /// This class follows the factory pattern and provides a static method
 /// for creating new Resource instances.
+@internal
 class ResourceCreate<T> {
   /// Creates a new Resource with the specified attributes and schema URL.
   ///

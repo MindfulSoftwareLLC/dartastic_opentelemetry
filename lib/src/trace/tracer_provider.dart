@@ -3,7 +3,9 @@
 
 library;
 
+import 'package:meta/meta.dart';
 import '../../dartastic_opentelemetry.dart';
+import 'tracer.dart';
 
 part 'tracer_provider_create.dart';
 

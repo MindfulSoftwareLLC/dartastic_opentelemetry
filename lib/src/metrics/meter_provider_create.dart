@@ -4,6 +4,7 @@
 part of 'meter_provider.dart';
 
 /// Internal constructor access for TracerProvider
+@internal
 class SDKMeterProviderCreate {
   /// Creates a TracerProvider, only accessible within library
   static MeterProvider create({
