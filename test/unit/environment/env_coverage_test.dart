@@ -201,7 +201,8 @@ void main() {
       expect(result.containsKey('maxExportBatchSize'), isFalse);
     });
 
-    test('clamps maxExportBatchSize to maxQueueSize when both are set', () async {
+    test('clamps maxExportBatchSize to maxQueueSize when both are set',
+        () async {
       final output = await runWithEnv(
         'test/unit/environment/helpers/check_blrp_config.dart',
         {
@@ -214,7 +215,8 @@ void main() {
       expect(result['maxExportBatchSize'], equals(100));
     });
 
-    test('clamps maxExportBatchSize to default maxQueueSize when queue is unset',
+    test(
+        'clamps maxExportBatchSize to default maxQueueSize when queue is unset',
         () async {
       final output = await runWithEnv(
         'test/unit/environment/helpers/check_blrp_config.dart',
@@ -224,7 +226,8 @@ void main() {
       expect(result['maxExportBatchSize'], equals(2048));
     });
 
-    test('sets maxExportBatchSize when maxQueueSize is smaller than default batch',
+    test(
+        'sets maxExportBatchSize when maxQueueSize is smaller than default batch',
         () async {
       final output = await runWithEnv(
         'test/unit/environment/helpers/check_blrp_config.dart',

@@ -421,7 +421,8 @@ class OTelEnv {
 
     // Get queue and batch sizes.
     final hasMaxQueueSizeEnv = _getEnv(otelBlrpMaxQueueSize) != null;
-    final hasMaxExportBatchSizeEnv = _getEnv(otelBlrpMaxExportBatchSize) != null;
+    final hasMaxExportBatchSizeEnv =
+        _getEnv(otelBlrpMaxExportBatchSize) != null;
 
     final parsedMaxQueueSize =
         _getPositiveIntEnv(otelBlrpMaxQueueSize, minInclusive: 1);
