@@ -3,7 +3,6 @@
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
     show OTelLog;
-
 import '../../environment/otel_env.dart';
 import '../../otel.dart';
 import '../../resource/resource.dart';
@@ -12,9 +11,9 @@ import '../metric_exporter.dart';
 import '../metric_reader.dart';
 import 'otlp/http/otlp_http_metric_exporter.dart';
 import 'otlp/http/otlp_http_metric_exporter_config.dart';
+import 'otlp/metric_transformer.dart';
 import 'otlp/otlp_grpc_metric_exporter.dart';
 import 'otlp/otlp_grpc_metric_exporter_config.dart';
-import 'otlp/metric_transformer.dart';
 
 /// Configuration for metrics exporters and readers.
 class MetricsConfiguration {

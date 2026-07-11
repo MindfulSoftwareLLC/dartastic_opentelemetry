@@ -9,6 +9,7 @@ import '../../../../proto/common/v1/common.pb.dart' as common_proto;
 import '../../../../proto/metrics/v1/metrics.pb.dart' as proto;
 import '../../../../proto/resource/v1/resource.pb.dart' as resource_proto;
 import '../../../resource/resource.dart';
+import '../../data/exemplar.dart';
 import '../../data/metric.dart';
 import '../../data/metric_point.dart';
 import '../metrics_sdk_config.dart';
@@ -132,7 +133,7 @@ class MetricTransformer {
         .toList();
 
     // Prepare exemplars if available
-    final exemplars = _transformExemplars(point.exemplars);
+    final exemplars = _transformExemplars(point.exemplars?.cast<Exemplar>());
 
     // Create bucket counts as Int64 list
     final bucketCountsInt64 =
@@ -164,7 +165,7 @@ class MetricTransformer {
         .toList();
 
     // Prepare exemplars if available
-    final exemplars = _transformExemplars(point.exemplars);
+    final exemplars = _transformExemplars(point.exemplars?.cast<Exemplar>());
 
     // Create the NumberDataPoint with all fields set
     return proto.NumberDataPoint(
@@ -215,7 +216,7 @@ class MetricTransformer {
     return keyValue;
   }
 
-  static List<proto.Exemplar> _transformExemplars(List<dynamic>? exemplars) {
+  static List<proto.Exemplar> _transformExemplars(List<Exemplar>? exemplars) {
     if (exemplars == null || exemplars.isEmpty) {
       return const [];
     }

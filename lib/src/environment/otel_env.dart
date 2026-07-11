@@ -2,9 +2,9 @@
 // Copyright 2025, Michael Bushe, All rights reserved.
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+import '../metrics/export/metrics_sdk_config.dart';
 import 'env_constants.dart';
 import 'environment_service.dart';
-import '../metrics/export/metrics_sdk_config.dart';
 
 /// Utility class for handling OpenTelemetry environment variables.
 ///
