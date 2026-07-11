@@ -1083,13 +1083,15 @@ class OTel {
 
   /// Creates an Attributes collection from a list of Attribute objects.
   ///
+  /// Often called before initialize; pre-init this routes through the API,
+  /// which lazily installs the no-op factory per spec (API ≥ beta.9 — there
+  /// is no factory-bypassing cheat path anymore).
+  ///
   /// @param entries Optional list of Attribute objects
   /// @return A new Attributes collection
   static Attributes attributes([List<Attribute>? entries]) {
-    // Cheating here since Attributes is unlikely to be overriden in a
-    // factory and is often called before initialize
     return _otelFactory == null
-        ? AttributesCreate.create(entries ?? [])
+        ? OTelAPI.attributes(entries)
         : _otelFactory!.attributes(entries);
   }
 
