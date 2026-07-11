@@ -11,8 +11,7 @@ import 'package:dartastic_opentelemetry/proto/collector/logs/v1/logs_service.pb.
 import 'package:dartastic_opentelemetry/proto/collector/metrics/v1/metrics_service.pb.dart';
 import 'package:dartastic_opentelemetry/proto/collector/trace/v1/trace_service.pb.dart';
 import 'package:dartastic_opentelemetry/proto/logs/v1/logs.pb.dart' as pl;
-import 'package:dartastic_opentelemetry/proto/metrics/v1/metrics.pb.dart'
-    as pm;
+import 'package:dartastic_opentelemetry/proto/metrics/v1/metrics.pb.dart' as pm;
 import 'package:dartastic_opentelemetry/proto/trace/v1/trace.pb.dart' as pt;
 import 'package:dartastic_opentelemetry/src/export/otlp_json.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
@@ -41,9 +40,9 @@ void main() {
     ]);
 
     final json = otlpProto3JsonWithHexIds(req) as Map<String, Object?>;
-    final span = ((((json['resourceSpans'] as List).first
-            as Map)['scopeSpans'] as List)
-        .first as Map)['spans'] as List;
+    final span =
+        ((((json['resourceSpans'] as List).first as Map)['scopeSpans'] as List)
+            .first as Map)['spans'] as List;
     final s = span.first as Map;
     expect(s['traceId'], traceIdHex);
     expect(s['spanId'], spanIdHex);
@@ -64,9 +63,9 @@ void main() {
       ]),
     ]);
     final json = otlpProto3JsonWithHexIds(req) as Map<String, Object?>;
-    final rec = ((((json['resourceLogs'] as List).first as Map)['scopeLogs']
-            as List)
-        .first as Map)['logRecords'] as List;
+    final rec =
+        ((((json['resourceLogs'] as List).first as Map)['scopeLogs'] as List)
+            .first as Map)['logRecords'] as List;
     expect((rec.first as Map)['traceId'], traceIdHex);
     expect((rec.first as Map)['spanId'], spanIdHex);
   });
@@ -91,8 +90,8 @@ void main() {
             as Map)['scopeMetrics'] as List)
         .first as Map)['metrics'] as List;
     final exemplar =
-        ((((metric.first as Map)['gauge'] as Map)['dataPoints'] as List)
-            .first as Map)['exemplars'] as List;
+        ((((metric.first as Map)['gauge'] as Map)['dataPoints'] as List).first
+            as Map)['exemplars'] as List;
     expect((exemplar.first as Map)['traceId'], traceIdHex);
     expect((exemplar.first as Map)['spanId'], spanIdHex);
   });
@@ -112,10 +111,10 @@ void main() {
       ]),
     ]);
     final json = otlpProto3JsonWithHexIds(req) as Map<String, Object?>;
-    final s = (((((json['resourceSpans'] as List).first
-            as Map)['scopeSpans'] as List)
-        .first as Map)['spans'] as List)
-        .first as Map;
+    final s =
+        (((((json['resourceSpans'] as List).first as Map)['scopeSpans'] as List)
+                .first as Map)['spans'] as List)
+            .first as Map;
     expect(s['traceId'], IdGenerator.bytesToHex(genTrace));
     expect(s['spanId'], IdGenerator.bytesToHex(genSpan));
   });
