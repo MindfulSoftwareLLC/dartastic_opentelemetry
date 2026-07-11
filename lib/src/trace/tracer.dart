@@ -10,6 +10,7 @@ import '../otel.dart';
 import '../resource/resource.dart';
 import 'sampling/sampler.dart';
 import 'span.dart';
+import 'span_exception_options.dart';
 import 'tracer_provider.dart';
 
 part 'tracer_create.dart';
@@ -38,6 +39,16 @@ class Tracer implements APITracer {
   /// Gets the sampler associated with this tracer.
   /// If no sampler was specified for this tracer, uses the provider's sampler.
   Sampler? get sampler => _sampler ?? _provider.sampler;
+
+  /// The effective exception handling options used by [withSpan] /
+  /// [withSpanAsync] when no per-call options are supplied.
+  ///
+  /// Falls back to the provider's [TracerProvider.spanExceptionOptions]
+  /// (configured globally via `OTel.initialize(spanExceptionOptions: ...)`)
+  /// and finally to a default [SpanExceptionOptions] that records the
+  /// exception and sets the span status to error.
+  SpanExceptionOptions get spanExceptionOptions =>
+      _provider.spanExceptionOptions ?? SpanExceptionOptions.defaults;
 
   /// Private constructor for creating Tracer instances.
   ///
@@ -89,7 +100,15 @@ class Tracer implements APITracer {
   TimeProvider get timeProvider => _delegate.timeProvider;
 
   @override
-  T withSpan<T>(APISpan span, T Function() fn) {
+  T withSpan<T>(
+    APISpan span,
+    T Function() fn, {
+    SpanExceptionOptions? exceptionOptions,
+  }) {
+    // Per-call options are merged field-by-field over the tracer/provider
+    // default (set globally via OTel.initialize), so overriding a single flag
+    // preserves the globally configured sanitizer.
+    final options = spanExceptionOptions.mergeWith(exceptionOptions);
     if (OTelLog.isDebug()) {
       OTelLog.debug(
         'Tracer: withSpan called with span ${span.name}, spanId: ${span.spanContext.spanId}',
@@ -119,8 +138,7 @@ class Tracer implements APITracer {
           // of ours. Foreign / no-op APISpans skip this branch — we
           // still activate them and rethrow.
           if (span is Span) {
-            span.recordException(e, stackTrace: stackTrace);
-            span.setStatus(SpanStatusCode.Error, e.toString());
+            _handleSpanException(span, e, stackTrace, options);
           }
           rethrow;
         }
@@ -138,7 +156,15 @@ class Tracer implements APITracer {
   }
 
   @override
-  Future<T> withSpanAsync<T>(APISpan span, Future<T> Function() fn) async {
+  Future<T> withSpanAsync<T>(
+    APISpan span,
+    Future<T> Function() fn, {
+    SpanExceptionOptions? exceptionOptions,
+  }) async {
+    // Per-call options are merged field-by-field over the tracer/provider
+    // default (set globally via OTel.initialize), so overriding a single flag
+    // preserves the globally configured sanitizer.
+    final options = spanExceptionOptions.mergeWith(exceptionOptions);
     if (OTelLog.isDebug()) {
       OTelLog.debug(
         'Tracer: withSpanAsync called with span ${span.name}, spanId: ${span.spanContext.spanId}',
@@ -163,8 +189,7 @@ class Tracer implements APITracer {
           // of ours. Foreign / no-op APISpans skip this branch — we
           // still activate them and rethrow.
           if (span is Span) {
-            span.recordException(e, stackTrace: stackTrace);
-            span.setStatus(SpanStatusCode.Error, e.toString());
+            _handleSpanException(span, e, stackTrace, options);
           }
           rethrow;
         }
@@ -395,16 +420,18 @@ class Tracer implements APITracer {
   /// as an argument and ends the span when [fn] returns,
   /// so callers can attach attributes / events without going through
   /// `Context.current`. Routes through [withSpan] for activation;
-  /// [withSpan] handles `recordException` / `setStatus(Error)` on throw.
+  /// [withSpan] handles `recordException` / `setStatus(Error)` on throw,
+  /// honoring [exceptionOptions].
   T startActiveSpan<T>({
     required String name,
     required T Function(APISpan span) fn,
     SpanKind kind = SpanKind.internal,
     Attributes? attributes,
+    SpanExceptionOptions? exceptionOptions,
   }) {
     final span = startSpan(name, kind: kind, attributes: attributes);
     try {
-      return withSpan(span, () => fn(span));
+      return withSpan(span, () => fn(span), exceptionOptions: exceptionOptions);
     } finally {
       span.end();
     }
@@ -412,18 +439,100 @@ class Tracer implements APITracer {
 
   /// Async variant of [startActiveSpan]. Routes through [withSpanAsync]
   /// for activation; [withSpanAsync] handles `recordException` /
-  /// `setStatus(Error)` on throw.
+  /// `setStatus(Error)` on throw, honoring [exceptionOptions].
   Future<T> startActiveSpanAsync<T>({
     required String name,
     required Future<T> Function(APISpan span) fn,
     SpanKind kind = SpanKind.internal,
     Attributes? attributes,
+    SpanExceptionOptions? exceptionOptions,
   }) async {
     final span = startSpan(name, kind: kind, attributes: attributes);
     try {
-      return await withSpanAsync(span, () => fn(span));
+      return await withSpanAsync(
+        span,
+        () => fn(span),
+        exceptionOptions: exceptionOptions,
+      );
     } finally {
       span.end();
+    }
+  }
+
+  /// Applies [options] when [fn] throws inside [withSpan] / [withSpanAsync].
+  ///
+  /// Default behavior (no sanitizer): records the exception and sets the
+  /// span status to [SpanStatusCode.Error], each gated by
+  /// [SpanExceptionOptions.recordException] and
+  /// [SpanExceptionOptions.setStatusOnException].
+  ///
+  /// When a [SpanExceptionOptions.exceptionSanitizer] is provided, it is
+  /// invoked first and only its returned [SanitizedSpanException] values are
+  /// recorded — the original exception's type, message, and stack trace are
+  /// never recorded, so unsanitized data cannot leak. If the sanitizer
+  /// throws, the span is marked with [SpanStatusCode.Error] using a generic
+  /// description (when status updates are enabled) and the exception is not
+  /// recorded.
+  ///
+  /// The caller always rethrows the original exception; this method never
+  /// throws.
+  void _handleSpanException(
+    Span span,
+    Object error,
+    StackTrace stackTrace,
+    SpanExceptionOptions options,
+  ) {
+    final sanitizer = options.exceptionSanitizer;
+    if (sanitizer != null) {
+      // Nothing to sanitize for if neither recording nor status is enabled.
+      if (!options.recordException && !options.setStatusOnException) {
+        return;
+      }
+      SanitizedSpanException sanitized;
+      try {
+        sanitized = sanitizer(error, stackTrace);
+      } catch (sanitizerError) {
+        if (OTelLog.isError()) {
+          OTelLog.error(
+            'Tracer: exceptionSanitizer threw while handling an exception '
+            'on span ${span.name}: $sanitizerError',
+          );
+        }
+        // The sanitizer failed, so we cannot safely record the original
+        // (possibly sensitive) exception. Mark the span as failed with a
+        // generic description instead.
+        if (options.setStatusOnException) {
+          span.setStatus(SpanStatusCode.Error, 'Exception sanitizer failed');
+        }
+        return;
+      }
+      if (options.recordException) {
+        // Pass only the sanitized type/message/stacktrace. recordException
+        // derives defaults from `error`, but the attribute overrides below
+        // replace them, and the original stack trace is never forwarded.
+        span.recordException(
+          error,
+          stackTrace: sanitized.stackTrace,
+          attributes: OTel.attributesFromMap(<String, Object>{
+            'exception.type': sanitized.type,
+            'exception.message': sanitized.message,
+          }),
+        );
+      }
+      if (options.setStatusOnException) {
+        span.setStatus(
+          SpanStatusCode.Error,
+          sanitized.statusDescription ?? sanitized.message,
+        );
+      }
+      return;
+    }
+
+    if (options.recordException) {
+      span.recordException(error, stackTrace: stackTrace);
+    }
+    if (options.setStatusOnException) {
+      span.setStatus(SpanStatusCode.Error, error.toString());
     }
   }
 }
