@@ -1,5 +1,13 @@
 # OpenTelemetry SDK for Dart
 
+> This is **Dartastic.io's maintenance fork** of
+> [`dartastic_opentelemetry`](https://pub.dev/packages/dartastic_opentelemetry),
+> the OpenTelemetry SDK for Dart and Flutter, published to the Dartastic
+> registry for Dartastic.io customers. It mirrors upstream releases exactly;
+> when a critical fix can't wait for the next upstream release, it ships here
+> first. Upstream:
+> [MindfulSoftwareLLC/dartastic_opentelemetry](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry).
+
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![OpenTelemetry Specification](https://img.shields.io/badge/OpenTelemetry-Specification-blueviolet)](https://opentelemetry.io/docs/specs/otel/)
 [![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen.svg)](https://dartastic.github.io/dartastic_opentelemetry/)
