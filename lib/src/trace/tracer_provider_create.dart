@@ -9,6 +9,7 @@ part of 'tracer_provider.dart';
 /// properly configured TracerProvider instances. It follows the factory
 /// pattern to separate the construction logic from the TracerProvider
 /// class itself.
+@internal
 class SDKTracerProviderCreate {
   /// Creates a new TracerProvider with the specified delegate and resource.
   ///

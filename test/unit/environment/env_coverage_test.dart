@@ -17,6 +17,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry/src/resource/resource.dart';
 import 'package:test/test.dart';
 
 import '../../testing_utils/memory_log_record_exporter.dart';

@@ -8,6 +8,7 @@ part of 'tracer.dart';
 /// This factory class provides a static create method for constructing
 /// properly configured Tracer instances. It follows the factory pattern
 /// to separate the construction logic from the Tracer class itself.
+@internal
 class SDKTracerCreate {
   /// Creates a new Tracer with the specified delegate, provider, and optional sampler.
   ///
