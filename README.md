@@ -997,6 +997,15 @@ Per the OTel spec, the default exporter for every signal is `otlp` (HTTP/protobu
 | `otelExporterOtlpTracesProtocol`      | `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`    | Traces-specific protocol                                 |         |
 | `otelExporterOtlpTracesHeaders`       | `OTEL_EXPORTER_OTLP_TRACES_HEADERS`     | Traces-specific headers                                  |         |
 
+##### Batch Span Processor (BSP)
+
+| Constant                         | Environment Variable              | Default  | Description                          |
+|----------------------------------|-----------------------------------|----------|------------------------------------- |
+| `otelBspScheduleDelay`           | `OTEL_BSP_SCHEDULE_DELAY`         | `5000`   | Delay between exports (milliseconds) |
+| `otelBspExportTimeout`           | `OTEL_BSP_EXPORT_TIMEOUT`         | `30000`  | Export timeout (milliseconds)        |
+| `otelBspMaxQueueSize`            | `OTEL_BSP_MAX_QUEUE_SIZE`         | `2048`   | Maximum queue size                   |
+| `otelBspMaxExportBatchSize`      | `OTEL_BSP_MAX_EXPORT_BATCH_SIZE`  | `512`    | Maximum batch size per export        |
+
 ##### Metrics
 
 | Constant                              | Environment Variable                    | Description                                              | Default |

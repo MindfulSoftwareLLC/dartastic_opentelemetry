@@ -67,6 +67,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `TraceState.fromString`, the `fromJson`s) and makes `Context` re-read the
   global factory so an SDK factory installed later actually takes effect.
 
+### Added
+- **`OTEL_BSP_*` environment variables** for configuring `BatchSpanProcessor`
+  (`OTEL_BSP_SCHEDULE_DELAY`, `OTEL_BSP_EXPORT_TIMEOUT`, `OTEL_BSP_MAX_QUEUE_SIZE`,
+  `OTEL_BSP_MAX_EXPORT_BATCH_SIZE`). Values are read by
+  `BatchSpanProcessorConfig.fromEnvironment()` which `OTel.initialize()` uses
+  by default. Invalid or out-of-range values now emit `OTelLog.warn` diagnostics.
+  `OTEL_BSP_EXPORT_TIMEOUT=0` is honored as "no limit" per spec.
+
+### Changed
+- **Default span batch schedule delay changed from 1 s to 5 s** (spec default).
+  The previous hard-coded `BatchSpanProcessorConfig(scheduleDelay: Duration(seconds: 1))`
+  in `OTel.initialize()` has been replaced by `BatchSpanProcessorConfig.fromEnvironment()`,
+  whose fallback is the spec-mandated 5000 ms. To restore the old behavior, set
+  `OTEL_BSP_SCHEDULE_DELAY=1000`.
+
 ## [1.1.0-beta.6] - 2026-05-18
 - **Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.7`.** Beta.7 fixes observable metrics and standard env var defaults.
 

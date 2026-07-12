@@ -404,6 +404,11 @@ class OTelEnv {
       final delayMs = int.tryParse(scheduleDelay);
       if (delayMs != null) {
         config['scheduleDelay'] = Duration(milliseconds: delayMs);
+      } else {
+        if (OTelLog.isWarn()) {
+          OTelLog.warn('OTelEnv: Invalid OTEL_BSP_SCHEDULE_DELAY value '
+              '"$scheduleDelay", ignoring.');
+        }
       }
     }
 
@@ -413,6 +418,11 @@ class OTelEnv {
       final timeoutMs = int.tryParse(exportTimeout);
       if (timeoutMs != null) {
         config['exportTimeout'] = Duration(milliseconds: timeoutMs);
+      } else {
+        if (OTelLog.isWarn()) {
+          OTelLog.warn('OTelEnv: Invalid OTEL_BSP_EXPORT_TIMEOUT value '
+              '"$exportTimeout", ignoring.');
+        }
       }
     }
 
@@ -422,6 +432,11 @@ class OTelEnv {
       final size = int.tryParse(maxQueueSize);
       if (size != null) {
         config['maxQueueSize'] = size;
+      } else {
+        if (OTelLog.isWarn()) {
+          OTelLog.warn('OTelEnv: Invalid OTEL_BSP_MAX_QUEUE_SIZE value '
+              '"$maxQueueSize", ignoring.');
+        }
       }
     }
 
@@ -431,6 +446,11 @@ class OTelEnv {
       final size = int.tryParse(maxExportBatchSize);
       if (size != null) {
         config['maxExportBatchSize'] = size;
+      } else {
+        if (OTelLog.isWarn()) {
+          OTelLog.warn('OTelEnv: Invalid OTEL_BSP_MAX_EXPORT_BATCH_SIZE '
+              'value "$maxExportBatchSize", ignoring.');
+        }
       }
     }
 

@@ -74,6 +74,94 @@ class _FixedDetector implements ResourceDetector {
 
 void main() {
   // =========================================================================
+  // BatchSpanProcessorConfig - subprocess tests for fromEnvironment
+  // =========================================================================
+  group('BatchSpanProcessorConfig.fromEnvironment() (subprocess)', () {
+    test('uses defaults when no vars set', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_from_env.dart',
+        {},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['scheduleDelay_ms'], equals(5000));
+      expect(result['exportTimeout_ms'], equals(30000));
+      expect(result['maxQueueSize'], equals(2048));
+      expect(result['maxExportBatchSize'], equals(512));
+      expect(result['logs'], isEmpty);
+    });
+
+    test('honors scheduleDelay=0 (export ASAP)', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_from_env.dart',
+        {'OTEL_BSP_SCHEDULE_DELAY': '0'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['scheduleDelay_ms'], equals(0));
+      expect(result['logs'], isEmpty);
+    });
+
+    test('warns and defaults for scheduleDelay=-1', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_from_env.dart',
+        {'OTEL_BSP_SCHEDULE_DELAY': '-1'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['scheduleDelay_ms'], equals(5000));
+      final logs = result['logs'] as List<dynamic>;
+      expect(logs.length, equals(1));
+      expect(logs[0].toString(), contains('Negative OTEL_BSP_SCHEDULE_DELAY'));
+    });
+
+    test('honors exportTimeout=0 (no limit)', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_from_env.dart',
+        {'OTEL_BSP_EXPORT_TIMEOUT': '0'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['exportTimeout_ms'], equals(0x7FFFFFFF));
+      expect(result['logs'], isEmpty);
+    });
+
+    test('warns and defaults for exportTimeout=-1', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_from_env.dart',
+        {'OTEL_BSP_EXPORT_TIMEOUT': '-1'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['exportTimeout_ms'], equals(30000));
+      final logs = result['logs'] as List<dynamic>;
+      expect(logs.length, equals(1));
+      expect(logs[0].toString(), contains('Negative OTEL_BSP_EXPORT_TIMEOUT'));
+    });
+
+    test('clamps maxExportBatchSize to maxQueueSize', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_from_env.dart',
+        {
+          'OTEL_BSP_MAX_QUEUE_SIZE': '100',
+          'OTEL_BSP_MAX_EXPORT_BATCH_SIZE': '200',
+        },
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['maxQueueSize'], equals(100));
+      expect(result['maxExportBatchSize'], equals(100));
+      expect(result['logs'], isEmpty);
+    });
+
+    test('warns and defaults for non-positive queue size', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_from_env.dart',
+        {'OTEL_BSP_MAX_QUEUE_SIZE': '-5'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['maxQueueSize'], equals(2048));
+      final logs = result['logs'] as List<dynamic>;
+      expect(logs.length, equals(1));
+      expect(
+          logs[0].toString(), contains('Non-positive OTEL_BSP_MAX_QUEUE_SIZE'));
+    });
+  });
+  // =========================================================================
   // OTelEnv - subprocess tests for getBspConfig
   // =========================================================================
   group('OTelEnv.getBspConfig (subprocess)', () {
