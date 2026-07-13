@@ -437,6 +437,59 @@ class OTelEnv {
     return config;
   }
 
+  /// Get general attribute limits from environment variables.
+  ///
+  /// These limits apply globally to all telemetry signals (traces, metrics,
+  /// logs) unless overridden by signal-specific limits (e.g., span or
+  /// log record attribute limits).
+  ///
+  /// Returns a map containing the general attribute limits.
+  /// Keys returned:
+  /// - 'attributeValueLengthLimit': int for max attribute value length
+  ///   (no default — unlimited when not set)
+  /// - 'attributeCountLimit': int for max number of attributes per item
+  ///   (spec default: 128)
+  ///
+  /// Per the OpenTelemetry specification:
+  /// - Values exceeding the length limit should be truncated.
+  /// - Attributes exceeding the count limit should be dropped.
+  /// - Warnings should be logged when limits are exceeded.
+  ///
+  /// See: https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#attribute-limits
+  static Map<String, dynamic> getAttributeLimits() {
+    final config = <String, dynamic>{};
+
+    // Get attribute value length limit
+    final valueLengthLimit = _getEnv(otelAttributeValueLengthLimit);
+    if (valueLengthLimit != null) {
+      final limit = int.tryParse(valueLengthLimit);
+      if (limit != null) {
+        config['attributeValueLengthLimit'] = limit;
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+            'OTelEnv: General attribute value length limit set to $limit',
+          );
+        }
+      }
+    }
+
+    // Get attribute count limit (spec default: 128)
+    final countLimit = _getEnv(otelAttributeCountLimit);
+    if (countLimit != null) {
+      final limit = int.tryParse(countLimit);
+      if (limit != null) {
+        config['attributeCountLimit'] = limit;
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+            'OTelEnv: General attribute count limit set to $limit',
+          );
+        }
+      }
+    }
+
+    return config;
+  }
+
   /// Get LogRecord attribute limits from environment variables.
   ///
   /// Returns a map containing the log record attribute limits.
