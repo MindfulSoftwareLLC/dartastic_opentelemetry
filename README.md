@@ -990,7 +990,7 @@ Constants are defined for all 74 OpenTelemetry environment variables. See `lib/s
 
 #### Signal-Specific Configuration
 
-Per the OTel spec, the default exporter for every signal is `otlp` (HTTP/protobuf to `http://localhost:4318`). Each `OTEL_*_EXPORTER` env var accepts `otlp` (default), `console` (prints to stdout — useful for local debugging), or `none` (skips processor/reader installation for that signal entirely). `OTEL_SDK_DISABLED=true` silences all three signals globally and overrides everything else.
+Per the OTel spec, the default exporter for every signal is `otlp` (HTTP/protobuf to `http://localhost:4318`). Each `OTEL_*_EXPORTER` env var accepts `otlp` (default), `console` (prints to stdout — useful for local debugging), `none` (skips processor/reader installation for that signal entirely), or a comma-separated list to enable multiple exporters at once (e.g. `OTEL_TRACES_EXPORTER=otlp,console`); `none` in a list wins, and unsupported values (`zipkin`, the deprecated `logging`, …) are ignored with a warning. (Zipkin exporters are deprecated in the OTel spec — removal scheduled December 2026 — and not required for new SDKs; if you need the Zipkin format, route OTLP through the collector's zipkin exporter.) `OTEL_METRICS_EXPORTER=prometheus` is recognized but not auto-wired yet (the SDK has no scrape server — tracked in #82); construct `PrometheusExporter` programmatically and serve `prometheusData`, or route OTLP through the collector's prometheus exporter. `OTEL_SDK_DISABLED=true` silences all three signals globally and overrides everything else.
 
 ##### Traces
 

@@ -3,7 +3,7 @@
 
 // Helper script: prints JSON with boolean log function status after
 // OTelEnv.initializeLogging().
-// Run via subprocess with OTEL_LOG_METRICS, OTEL_LOG_SPANS, OTEL_LOG_EXPORT
+// Run via subprocess with OTEL_DART_LOG_METRICS, OTEL_DART_LOG_SPANS, OTEL_DART_LOG_EXPORT
 // env vars set.
 
 import 'dart:convert';

@@ -329,24 +329,32 @@ class OTel {
     }
 
     if (spanProcessor == null && !sdkDisabled) {
-      // Determine which exporter to create based on environment or defaults
-      final exporterType = OTelEnv.getExporter(signal: 'traces') ?? 'otlp';
-
-      if (exporterType != 'none') {
+      // Spec "Exporter Selection": OTEL_TRACES_EXPORTER, default otlp; "The
+      // implementation MAY accept a comma-separated list to enable setting
+      // multiple exporters" — supported here. Known: otlp, console, none.
+      final requested = OTelEnv.getExporters(signal: 'traces') ?? ['otlp'];
+      if (requested.contains('none')) {
+        if (requested.length > 1 && OTelLog.isWarn()) {
+          OTelLog.warn("OTEL_TRACES_EXPORTER contains 'none' alongside other "
+              'values; installing no exporter.');
+        }
+        // spanProcessor remains null and no processor is added.
+      } else {
         // Determine protocol - default to http/protobuf if not set
         final protocol =
             otlpConfigForExporter['protocol'] as String? ?? 'http/protobuf';
 
-        SpanExporter exporter;
-        if (exporterType == 'console') {
-          exporter = ConsoleExporter();
-        } else if (exporterType == 'otlp') {
+        // Capture the resolved values: promotion of the nullable
+        // parameters does not carry into the closure.
+        final resolvedEndpoint = endpoint;
+        final resolvedSecure = secure;
+        SpanExporter buildOtlpExporter() {
           // Create appropriate exporter based on protocol
           if (protocol == 'grpc') {
-            exporter = OtlpGrpcSpanExporter(
+            return OtlpGrpcSpanExporter(
               OtlpGrpcExporterConfig(
-                endpoint: endpoint,
-                insecure: !secure,
+                endpoint: resolvedEndpoint,
+                insecure: !resolvedSecure,
                 headers:
                     otlpConfigForExporter['headers'] as Map<String, String>? ??
                         {},
@@ -365,9 +373,9 @@ class OTel {
             // recommended default per `specification/protocol/exporter.md`.
             final httpProtocol = otlpHttpProtocolFromString(protocol) ??
                 OtlpHttpProtocol.httpProtobuf;
-            exporter = OtlpHttpSpanExporter(
+            return OtlpHttpSpanExporter(
               OtlpHttpExporterConfig(
-                endpoint: endpoint,
+                endpoint: resolvedEndpoint,
                 headers:
                     otlpConfigForExporter['headers'] as Map<String, String>? ??
                         {},
@@ -382,24 +390,47 @@ class OTel {
               ),
             );
           }
-        } else {
-          // Fallback to gRPC for backward compatibility
-          exporter = OtlpGrpcSpanExporter(
-            OtlpGrpcExporterConfig(endpoint: endpoint, insecure: !secure),
-          );
         }
 
+        final exporters = <SpanExporter>[];
+        for (final name in requested) {
+          switch (name) {
+            case 'otlp':
+              exporters.add(buildOtlpExporter());
+            case 'console':
+              exporters.add(ConsoleExporter());
+            case 'logging':
+              if (OTelLog.isWarn()) {
+                OTelLog.warn("OTEL_TRACES_EXPORTER value 'logging' is "
+                    "deprecated in the spec and not supported; use 'console'.");
+              }
+            default:
+              if (OTelLog.isWarn()) {
+                OTelLog.warn("OTEL_TRACES_EXPORTER value '$name' is not "
+                    'supported; ignoring. Supported: otlp, console, none.');
+              }
+          }
+        }
+        if (exporters.isEmpty) {
+          // Invalid enum values: warn, gracefully ignore, use the default.
+          if (OTelLog.isWarn()) {
+            OTelLog.warn('OTEL_TRACES_EXPORTER produced no usable exporter; '
+                'falling back to the default otlp exporter.');
+          }
+          exporters.add(buildOtlpExporter());
+        }
         // Spec: the default pipeline is otlp only — debug logging must not
         // alter it (see #49 for the identical metrics fix). Console output
-        // stays available via OTEL_TRACES_EXPORTER=console.
+        // stays available via OTEL_TRACES_EXPORTER=console (or a
+        // comma-separated list, e.g. otlp,console).
         spanProcessor = BatchSpanProcessor(
-          exporter,
+          exporters.length == 1
+              ? exporters.single
+              : CompositeExporter(exporters),
           BatchSpanProcessorConfig.fromEnvironment(),
         );
       }
-      // If exporterType == 'none', spanProcessor remains null and no processor is added
     }
-
     // Create and configure TracerProvider — but when OTEL_SDK_DISABLED=true,
     // do not install any processor even if the caller passed one explicitly,
     // so the SDK is a true no-op for traces.

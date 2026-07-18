@@ -386,6 +386,24 @@ class OTelEnv {
     }
   }
 
+  /// Reads `OTEL_<SIGNAL>_EXPORTER` as the spec's comma-separated list
+  /// (sdk-environment-variables.md, "Exporter Selection": "The
+  /// implementation MAY accept a comma-separated list to enable setting
+  /// multiple exporters"). Returns normalized (trimmed, lowercased,
+  /// deduplicated) names, or null when the variable is unset or empty.
+  static List<String>? getExporters({String signal = 'traces'}) {
+    final raw = getExporter(signal: signal);
+    if (raw == null) return null;
+    final names = <String>[];
+    for (final part in raw.split(',')) {
+      final name = part.trim().toLowerCase();
+      if (name.isNotEmpty && !names.contains(name)) {
+        names.add(name);
+      }
+    }
+    return names.isEmpty ? null : names;
+  }
+
   /// Get Batch Span Processor (BSP) configuration from environment variables.
   ///
   /// Returns a map containing the BSP configuration read from environment variables.
