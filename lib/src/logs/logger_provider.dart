@@ -181,7 +181,7 @@ class LoggerProvider implements APILoggerProvider {
         if (resource != null) {
           OTelLog.debug('Resource attributes:');
           resource!.attributes.toList().forEach((attr) {
-            if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+            if (attr.key == 'service.name') {
               OTelLog.debug('  ${attr.key}: ${attr.value}');
             }
           });

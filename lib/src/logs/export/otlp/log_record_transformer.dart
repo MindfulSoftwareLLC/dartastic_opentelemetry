@@ -45,7 +45,7 @@ class OtlpLogRecordTransformer {
       if (OTelLog.isDebug()) {
         OTelLog.debug('LogRecordTransformer: Extracting resource attributes:');
         resourceAttrs.toList().forEach((attr) {
-          if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+          if (attr.key == 'service.name') {
             OTelLog.debug('  ${attr.key}: ${attr.value}');
           }
         });

@@ -32,7 +32,7 @@ import '../dartastic_opentelemetry.dart';
 /// span.end();
 /// ```
 ///
-/// The tenant_id and the resources from platform resource detection are merged
+/// The resources from platform resource detection are merged
 /// with resource attributes with resource attributes taking priority.
 /// The values must be valid Attribute types (String, bool, int, double, or
 /// List\<String>, List\<bool>, List\<int> or List\<double>).
@@ -89,13 +89,6 @@ class OTel {
   ///
   /// This method must be called before any other OpenTelemetry operations.
   /// It sets up the global configuration and installs the SDK implementation.
-  ///
-  /// When OTEL_CONSOLE_EXPORTER is set to true (a compile-time
-  /// --dart-define), a ConsoleExporter is added alongside the configured
-  /// span exporter. To replace the default exporter with console output
-  /// instead, set OTEL_TRACES_EXPORTER=console. Per the OTel spec the
-  /// default exporter is otlp only — debug logging does not change the
-  /// export pipeline (use OTEL_LOG_SPANS for span logging).
   ///
   /// @param endpoint The endpoint URL for the OpenTelemetry collector (default: http://localhost:4318)
   /// @param secure Whether to use TLS for the connection (default: true)
@@ -304,7 +297,7 @@ class OTel {
       if (OTelLog.isDebug()) {
         OTelLog.debug('Resource after platform merge:');
         mergedResource.attributes.toList().forEach((attr) {
-          if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+          if (attr.key == 'service.name') {
             OTelLog.debug('  ${attr.key}: ${attr.value}');
           }
         });
@@ -318,7 +311,7 @@ class OTel {
       if (OTelLog.isDebug()) {
         OTelLog.debug('Resource after user attributes merge:');
         mergedResource.attributes.toList().forEach((attr) {
-          if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+          if (attr.key == 'service.name') {
             OTelLog.debug('  ${attr.key}: ${attr.value}');
           }
         });
@@ -396,21 +389,11 @@ class OTel {
           );
         }
 
-        // Only add ConsoleExporter in debug mode or if explicitly requested
-        final exporters = <SpanExporter>[exporter];
         // Spec: the default pipeline is otlp only — debug logging must not
         // alter it (see #49 for the identical metrics fix). Console output
-        // stays available via OTEL_TRACES_EXPORTER=console (replaces) or the
-        // OTEL_CONSOLE_EXPORTER dart-define (adds alongside).
-        if (const bool.fromEnvironment(
-          'OTEL_CONSOLE_EXPORTER',
-          defaultValue: false,
-        )) {
-          exporters.add(ConsoleExporter());
-        }
-
+        // stays available via OTEL_TRACES_EXPORTER=console.
         spanProcessor = BatchSpanProcessor(
-          exporters.length == 1 ? exporter : CompositeExporter(exporters),
+          exporter,
           BatchSpanProcessorConfig.fromEnvironment(),
         );
       }
@@ -562,7 +545,7 @@ class OTel {
         OTelLog.debug('OTel.tracerProvider: Setting resource from default');
         if (defaultResource != null) {
           defaultResource!.attributes.toList().forEach((attr) {
-            if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+            if (attr.key == 'service.name') {
               OTelLog.debug('  ${attr.key}: ${attr.value}');
             }
           });

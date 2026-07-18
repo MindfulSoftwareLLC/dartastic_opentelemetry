@@ -203,33 +203,6 @@ void main() {
           expect(OTelLog.currentLevel, equals(LogLevel.info));
         }
       });
-
-      test('sets metric/span/export log functions when env vars are true', () {
-        // Clear log functions
-        OTelLog.metricLogFunction = null;
-        OTelLog.spanLogFunction = null;
-        OTelLog.exportLogFunction = null;
-
-        OTelEnv.initializeLogging();
-
-        final logMetrics = EnvironmentService.instance.getValue(
-          'OTEL_LOG_METRICS',
-        );
-        final logSpans = EnvironmentService.instance.getValue('OTEL_LOG_SPANS');
-        final logExport = EnvironmentService.instance.getValue(
-          'OTEL_LOG_EXPORT',
-        );
-
-        if (logMetrics?.toLowerCase() == 'true') {
-          expect(OTelLog.metricLogFunction, equals(print));
-        }
-        if (logSpans?.toLowerCase() == 'true') {
-          expect(OTelLog.spanLogFunction, equals(print));
-        }
-        if (logExport?.toLowerCase() == 'true') {
-          expect(OTelLog.exportLogFunction, equals(print));
-        }
-      });
     });
 
     // =========================================================================
@@ -425,38 +398,39 @@ void main() {
       });
     });
 
-    group('subprocess - initializeLogging boolean env vars', () {
-      test('enables metric logging when OTEL_LOG_METRICS is true', () async {
+    group('subprocess - initializeLogging OTEL_DART_* diagnostic vars', () {
+      test('enables metric logging when OTEL_DART_LOG_METRICS is true',
+          () async {
         final output = await runWithEnv(
           'test/unit/environment/helpers/check_log_bools.dart',
-          {'OTEL_LOG_METRICS': 'true'},
+          {'OTEL_DART_LOG_METRICS': 'true'},
         );
         final result = jsonDecode(output.trim()) as Map<String, dynamic>;
         expect(result['metricLogFunction'], isTrue);
       });
 
-      test('enables span logging when OTEL_LOG_SPANS is 1', () async {
+      test('enables span logging when OTEL_DART_LOG_SPANS is 1', () async {
         final output = await runWithEnv(
           'test/unit/environment/helpers/check_log_bools.dart',
-          {'OTEL_LOG_SPANS': '1'},
+          {'OTEL_DART_LOG_SPANS': '1'},
         );
         final result = jsonDecode(output.trim()) as Map<String, dynamic>;
         expect(result['spanLogFunction'], isTrue);
       });
 
-      test('enables export logging when OTEL_LOG_EXPORT is yes', () async {
+      test('enables export logging when OTEL_DART_LOG_EXPORT is yes', () async {
         final output = await runWithEnv(
           'test/unit/environment/helpers/check_log_bools.dart',
-          {'OTEL_LOG_EXPORT': 'yes'},
+          {'OTEL_DART_LOG_EXPORT': 'yes'},
         );
         final result = jsonDecode(output.trim()) as Map<String, dynamic>;
         expect(result['exportLogFunction'], isTrue);
       });
 
-      test('enables export logging when OTEL_LOG_EXPORT is on', () async {
+      test('enables export logging when OTEL_DART_LOG_EXPORT is on', () async {
         final output = await runWithEnv(
           'test/unit/environment/helpers/check_log_bools.dart',
-          {'OTEL_LOG_EXPORT': 'on'},
+          {'OTEL_DART_LOG_EXPORT': 'on'},
         );
         final result = jsonDecode(output.trim()) as Map<String, dynamic>;
         expect(result['exportLogFunction'], isTrue);
@@ -466,9 +440,9 @@ void main() {
         final output = await runWithEnv(
           'test/unit/environment/helpers/check_log_bools.dart',
           {
-            'OTEL_LOG_METRICS': 'false',
-            'OTEL_LOG_SPANS': '0',
-            'OTEL_LOG_EXPORT': 'no',
+            'OTEL_DART_LOG_METRICS': 'false',
+            'OTEL_DART_LOG_SPANS': '0',
+            'OTEL_DART_LOG_EXPORT': 'no',
           },
         );
         final result = jsonDecode(output.trim()) as Map<String, dynamic>;
@@ -481,9 +455,9 @@ void main() {
         final output = await runWithEnv(
           'test/unit/environment/helpers/check_log_bools.dart',
           {
-            'OTEL_LOG_METRICS': 'true',
-            'OTEL_LOG_SPANS': 'true',
-            'OTEL_LOG_EXPORT': 'true',
+            'OTEL_DART_LOG_METRICS': 'true',
+            'OTEL_DART_LOG_SPANS': 'true',
+            'OTEL_DART_LOG_EXPORT': 'true',
           },
         );
         final result = jsonDecode(output.trim()) as Map<String, dynamic>;
