@@ -19,6 +19,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   propagator via `OTelAPI.textMapPropagator` instead of being handed one
   explicitly.
 
+### Removed
+
+- **Breaking: `OTel.initialize` no longer accepts `dartasticApiKey` or
+  `tenantId`, and the `OTel.dartasticApiKey` static is gone.** Both were
+  non-standard, vendor-specific parameters that predate the platform
+  layering: API keys belong in OTLP exporter headers
+  (`OTEL_EXPORTER_OTLP_HEADERS`) and tenant identity is platform-layer
+  context, not an SDK concern. The `tenant_id` resource-attribute
+  stamping and its debug-log special-casing are removed with them.
+- **Breaking: the non-standard `OTEL_*`-namespace extensions are renamed
+  or removed.** The per-signal diagnostic vars squatted the spec's core
+  namespace and are renamed to the spec's language-specific convention
+  (`OTEL_{LANGUAGE}_{FEATURE}`): `OTEL_LOG_SPANS` → `OTEL_DART_LOG_SPANS`,
+  `OTEL_LOG_METRICS` → `OTEL_DART_LOG_METRICS`, `OTEL_LOG_EXPORT` →
+  `OTEL_DART_LOG_EXPORT` (same semantics: enable the `OTelLog` per-signal
+  diagnostic sinks; programmatic setters unchanged). The
+  `OTEL_CONSOLE_EXPORTER` dart-define is removed — console output of the
+  telemetry itself uses the standard `OTEL_*_EXPORTER=console` (or the
+  comma-list form, e.g. `otlp,console`).
+
 ### Changed
 - **Depends on `dartastic_opentelemetry_api` 1.0.0-beta.10** and re-exports
   its surface: the Weaver-generated semantic-convention enums (90 registry

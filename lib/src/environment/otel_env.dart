@@ -61,18 +61,17 @@ class OTelEnv {
       OTelLog.logFunction = print;
     }
 
-    // Enable metrics logging based on environment variable
-    if (_getEnvBool(otelLogMetrics) && OTelLog.metricLogFunction == null) {
+    // Dart-specific per-signal diagnostic sinks, named per the spec's
+    // language-specific env var convention (OTEL_{LANGUAGE}_{FEATURE}).
+    // The spec's self-diagnostics section leaves this to language
+    // conventions; OTEL_LOG_LEVEL governs only the internal logger level.
+    if (_getEnvBool(otelDartLogMetrics) && OTelLog.metricLogFunction == null) {
       OTelLog.metricLogFunction = print;
     }
-
-    // Enable spans logging based on environment variable
-    if (_getEnvBool(otelLogSpans) && OTelLog.spanLogFunction == null) {
+    if (_getEnvBool(otelDartLogSpans) && OTelLog.spanLogFunction == null) {
       OTelLog.spanLogFunction = print;
     }
-
-    // Enable export logging based on environment variable
-    if (_getEnvBool(otelLogExport) && OTelLog.exportLogFunction == null) {
+    if (_getEnvBool(otelDartLogExport) && OTelLog.exportLogFunction == null) {
       OTelLog.exportLogFunction = print;
     }
   }

@@ -82,24 +82,6 @@ void main() {
       await OTel.reset();
     });
 
-    test('initialize with tenantId sets tenant_id in resource', () async {
-      await OTel.initialize(
-        serviceName: 'tenant-test-service',
-        serviceVersion: '1.0.0',
-        tenantId: 'test-tenant',
-        detectPlatformResources: false,
-        enableMetrics: false,
-      );
-
-      expect(OTel.defaultResource, isNotNull);
-      final attrs = OTel.defaultResource!.attributes.toList();
-      final tenantAttr = attrs.firstWhere(
-        (a) => a.key == 'tenant_id',
-        orElse: () => throw StateError('tenant_id attribute not found'),
-      );
-      expect(tenantAttr.value, equals('test-tenant'));
-    });
-
     test('initialize with resourceAttributes merges attributes', () async {
       final resourceAttrs = OTel.attributesFromMap({
         'custom.attr': 'custom-value',
@@ -159,42 +141,6 @@ void main() {
         reason:
             'Platform resource detection should add platform-related attributes',
       );
-    });
-
-    test('initialize with tenantId and resourceAttributes', () async {
-      final resourceAttrs = OTel.attributesFromMap({
-        'custom.key': 'custom-value',
-      });
-
-      await OTel.initialize(
-        serviceName: 'combined-test-service',
-        serviceVersion: '1.0.0',
-        tenantId: 'test-tenant',
-        resourceAttributes: resourceAttrs,
-        detectPlatformResources: false,
-        enableMetrics: false,
-      );
-
-      expect(OTel.defaultResource, isNotNull);
-      final attrs = OTel.defaultResource!.attributes.toList();
-
-      final tenantAttr = attrs.firstWhere(
-        (a) => a.key == 'tenant_id',
-        orElse: () => throw StateError('tenant_id attribute not found'),
-      );
-      expect(tenantAttr.value, equals('test-tenant'));
-
-      final customAttr = attrs.firstWhere(
-        (a) => a.key == 'custom.key',
-        orElse: () => throw StateError('custom.key attribute not found'),
-      );
-      expect(customAttr.value, equals('custom-value'));
-
-      final serviceAttr = attrs.firstWhere(
-        (a) => a.key == 'service.name',
-        orElse: () => throw StateError('service.name attribute not found'),
-      );
-      expect(serviceAttr.value, equals('combined-test-service'));
     });
 
     test('initialize throws if called twice', () async {

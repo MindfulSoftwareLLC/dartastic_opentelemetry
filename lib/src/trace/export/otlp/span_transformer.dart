@@ -40,7 +40,7 @@ class OtlpSpanTransformer {
       if (OTelLog.isDebug()) {
         OTelLog.debug('Extracting resource attributes for export:');
         resourceAttrs.toList().forEach((attr) {
-          if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+          if (attr.key == 'service.name') {
             OTelLog.debug('  ${attr.key}: ${attr.value}');
           }
         });
@@ -49,7 +49,7 @@ class OtlpSpanTransformer {
       if (OTelLog.isDebug()) {
         OTelLog.debug('Extracting resource attributes for export:');
         resourceAttrs.toList().forEach((attr) {
-          if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+          if (attr.key == 'service.name') {
             OTelLog.debug('  ${attr.key}: ${attr.value}');
           }
         });

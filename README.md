@@ -972,6 +972,9 @@ Constants are defined for all 74 OpenTelemetry environment variables. See `lib/s
 | `otelServiceName`          | `OTEL_SERVICE_NAME`         | Sets the service name             | `my-dart-app`                           |
 | `otelResourceAttributes`   | `OTEL_RESOURCE_ATTRIBUTES`  | Additional resource attributes    | `environment=prod,region=us-west`       |
 | `otelLogLevel`             | `OTEL_LOG_LEVEL`            | SDK internal log level            | `INFO`, `DEBUG`, `WARN`, `ERROR`        |
+| `otelDartLogSpans`         | `OTEL_DART_LOG_SPANS`       | Diagnostic span logging (Dart-specific, spec `OTEL_{LANGUAGE}_{FEATURE}` pattern) | `true`/`false` |
+| `otelDartLogMetrics`       | `OTEL_DART_LOG_METRICS`     | Diagnostic metric logging (Dart-specific) | `true`/`false` |
+| `otelDartLogExport`        | `OTEL_DART_LOG_EXPORT`      | Diagnostic export logging (Dart-specific) | `true`/`false` |
 | `otelSdkDisabled`          | `OTEL_SDK_DISABLED`         | Global off-switch — when `true`, the SDK installs no span processors, metric readers, or log record processors (true no-op across all three signals, including explicit overrides) | `true` |
 | `otelPropagators`                     | `OTEL_PROPAGATORS`                      | Global propagators: `tracecontext`, `baggage`, `none` (comma-separated) | `tracecontext,baggage` |
 

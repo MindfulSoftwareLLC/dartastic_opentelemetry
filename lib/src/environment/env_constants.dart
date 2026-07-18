@@ -87,26 +87,28 @@ const String otelTracesSampler = 'OTEL_TRACES_SAMPLER';
 const String otelTracesSamplerArg = 'OTEL_TRACES_SAMPLER_ARG';
 
 // =============================================================================
-// Dartastic-specific Logging Configuration
+// Dart-specific Logging Configuration
+// (named per the spec's language-specific convention: OTEL_{LANGUAGE}_{FEATURE})
 // =============================================================================
 
-/// Enables logging of metrics when set to "true" (Dartastic-specific).
+/// Enables diagnostic logging of metrics when set to "true" (Dart-specific).
 ///
 /// Type: Boolean
 /// Default: false
-const String otelLogMetrics = 'OTEL_LOG_METRICS';
+const String otelDartLogMetrics = 'OTEL_DART_LOG_METRICS';
 
-/// Enables logging of spans when set to "true" (Dartastic-specific).
+/// Enables diagnostic logging of spans when set to "true" (Dart-specific).
 ///
 /// Type: Boolean
 /// Default: false
-const String otelLogSpans = 'OTEL_LOG_SPANS';
+const String otelDartLogSpans = 'OTEL_DART_LOG_SPANS';
 
-/// Enables logging of export operations when set to "true" (Dartastic-specific).
+/// Enables diagnostic logging of export operations when set to "true"
+/// (Dart-specific).
 ///
 /// Type: Boolean
 /// Default: false
-const String otelLogExport = 'OTEL_LOG_EXPORT';
+const String otelDartLogExport = 'OTEL_DART_LOG_EXPORT';
 
 // =============================================================================
 // General OTLP Exporter Configuration
@@ -688,10 +690,10 @@ const Set<String> supportedEnvVars = {
   otelTracesSampler,
   otelTracesSamplerArg,
 
-  // Dartastic-specific Logging Configuration
-  otelLogMetrics,
-  otelLogSpans,
-  otelLogExport,
+  // Dart-specific Logging Configuration
+  otelDartLogMetrics,
+  otelDartLogSpans,
+  otelDartLogExport,
 
   // General OTLP Exporter Configuration
   otelExporterOtlpEndpoint,

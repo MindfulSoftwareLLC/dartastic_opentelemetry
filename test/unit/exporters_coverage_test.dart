@@ -374,23 +374,6 @@ void main() {
       expect(meterProviders, isNotEmpty);
     });
 
-    test('initialize with tenantId sets tenant_id on resource', () async {
-      await OTel.initialize(
-        serviceName: 'tenant-test',
-        serviceVersion: '1.0.0',
-        tenantId: 'test-tenant-123',
-        detectPlatformResources: false,
-        enableMetrics: false,
-      );
-
-      final resource = OTel.defaultResource;
-      expect(resource, isNotNull);
-
-      final attrs = resource!.attributes.toList();
-      final tenantAttr = attrs.where((a) => a.key == 'tenant_id');
-      expect(tenantAttr, isNotEmpty);
-    });
-
     test('initialize logs environment variable usage with debug', () async {
       // With trace logging enabled, the env var debug guards are evaluated.
       // Env vars are null in the test environment, so the inner blocks don't

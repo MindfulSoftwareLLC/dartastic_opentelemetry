@@ -32,7 +32,7 @@ import '../dartastic_opentelemetry.dart';
 /// span.end();
 /// ```
 ///
-/// The tenant_id and the resources from platform resource detection are merged
+/// The resources from platform resource detection are merged
 /// with resource attributes with resource attributes taking priority.
 /// The values must be valid Attribute types (String, bool, int, double, or
 /// List\<String>, List\<bool>, List\<int> or List\<double>).
@@ -66,9 +66,6 @@ class OTel {
   /// that don't have a specific resource set.
   static Resource? defaultResource;
 
-  /// API key for Dartastic.io backend, if used.
-  static String? dartasticApiKey;
-
   /// Default service name used if none is provided.
   static const defaultServiceName = '@dart/dartastic_opentelemetry';
 
@@ -93,13 +90,6 @@ class OTel {
   /// This method must be called before any other OpenTelemetry operations.
   /// It sets up the global configuration and installs the SDK implementation.
   ///
-  /// When OTEL_CONSOLE_EXPORTER is set to true (a compile-time
-  /// --dart-define), a ConsoleExporter is added alongside the configured
-  /// span exporter. To replace the default exporter with console output
-  /// instead, set OTEL_TRACES_EXPORTER=console. Per the OTel spec the
-  /// default exporter is otlp only — debug logging does not change the
-  /// export pipeline (use OTEL_LOG_SPANS for span logging).
-  ///
   /// @param endpoint The endpoint URL for the OpenTelemetry collector (default: http://localhost:4318)
   /// @param secure Whether to use TLS for the connection (default: true)
   /// @param serviceName Name that uniquely identifies the service (default: "@dart/dartastic_opentelemetry")
@@ -117,8 +107,6 @@ class OTel {
   ///   When enabled, the logs exporter is configured based on OTEL_LOGS_EXPORTER env var.
   /// @param logRecordExporter Custom log record exporter (overrides OTEL_LOGS_EXPORTER)
   /// @param logRecordProcessor Custom log record processor (overrides auto-configuration)
-  /// @param dartasticApiKey API key for Dartastic.io backend
-  /// @param tenantId Tenant ID for multi-tenant backends (required for Dartastic.io)
   /// @param detectPlatformResources Whether to detect platform resources (default: true)
   /// @param logPrint Whether to intercept print() calls and route them to OTel logs (default: false).
   ///   When enabled, all print() calls within [runWithPrintInterception] will be captured
@@ -153,8 +141,6 @@ class OTel {
     bool enableLogs = true,
     LogRecordExporter? logRecordExporter,
     LogRecordProcessor? logRecordProcessor,
-    String? dartasticApiKey,
-    String? tenantId,
     bool detectPlatformResources = true,
     bool logPrint = false,
     String logPrintLoggerName = 'dart.print',
@@ -265,7 +251,6 @@ class OTel {
     _defaultTimeProvider = timeProvider;
     OTel.defaultTracerName = tracerName ?? _defaultTracerName;
     OTel.defaultTracerVersion = tracerVersion ?? defaultTracerVersion;
-    OTel.dartasticApiKey = dartasticApiKey;
     // Initialize logging from environment variables if needed
     initializeLogging();
 
@@ -301,20 +286,6 @@ class OTel {
       OTel.attributesFromMap(serviceResourceAttributes),
     );
 
-    if (tenantId != null) {
-      // Create a separate tenant_id resource to ensure it's preserved
-      final tenantResource = OTel.resource(
-        OTel.attributesFromMap({'tenant_id': tenantId}),
-      );
-      if (OTelLog.isDebug()) {
-        OTelLog.debug(
-          'OTel.initialize: Creating tenant_id resource with: $tenantId',
-        );
-      }
-      // Merge tenant into the base resource
-      baseResource = baseResource.merge(tenantResource);
-    }
-
     // Initialize with tenant-aware resource
     var mergedResource = baseResource;
     if (detectPlatformResources) {
@@ -326,7 +297,7 @@ class OTel {
       if (OTelLog.isDebug()) {
         OTelLog.debug('Resource after platform merge:');
         mergedResource.attributes.toList().forEach((attr) {
-          if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+          if (attr.key == 'service.name') {
             OTelLog.debug('  ${attr.key}: ${attr.value}');
           }
         });
@@ -340,7 +311,7 @@ class OTel {
       if (OTelLog.isDebug()) {
         OTelLog.debug('Resource after user attributes merge:');
         mergedResource.attributes.toList().forEach((attr) {
-          if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+          if (attr.key == 'service.name') {
             OTelLog.debug('  ${attr.key}: ${attr.value}');
           }
         });
@@ -348,34 +319,6 @@ class OTel {
     }
     // Set the final merged resource as default
     OTel.defaultResource = mergedResource;
-
-    if (OTelLog.isDebug()) {
-      // Final check to ensure tenant_id is preserved
-      if (tenantId != null && OTel.defaultResource != null) {
-        var hasTenantId = false;
-        OTel.defaultResource!.attributes.toList().forEach((attr) {
-          if (attr.key == 'tenant_id') {
-            hasTenantId = true;
-            if (OTelLog.isDebug()) {
-              OTelLog.debug(
-                'Final resource check - tenant_id is present: ${attr.value}',
-              );
-            }
-          }
-        });
-
-        if (!hasTenantId) {
-          // As a last resort, add the tenant_id directly
-          if (OTelLog.isDebug()) {
-            OTelLog.debug('tenant_id was missing - adding it as fallback');
-          }
-          final tenantResource = OTel.resource(
-            OTel.attributesFromMap({'tenant_id': tenantId}),
-          );
-          OTel.defaultResource = OTel.defaultResource!.merge(tenantResource);
-        }
-      }
-    }
 
     // OTEL_SDK_DISABLED=true is the spec-defined global off-switch: all three
     // signals become no-ops. Honoring this here keeps signal-specific configs
@@ -446,21 +389,11 @@ class OTel {
           );
         }
 
-        // Only add ConsoleExporter in debug mode or if explicitly requested
-        final exporters = <SpanExporter>[exporter];
         // Spec: the default pipeline is otlp only — debug logging must not
         // alter it (see #49 for the identical metrics fix). Console output
-        // stays available via OTEL_TRACES_EXPORTER=console (replaces) or the
-        // OTEL_CONSOLE_EXPORTER dart-define (adds alongside).
-        if (const bool.fromEnvironment(
-          'OTEL_CONSOLE_EXPORTER',
-          defaultValue: false,
-        )) {
-          exporters.add(ConsoleExporter());
-        }
-
+        // stays available via OTEL_TRACES_EXPORTER=console.
         spanProcessor = BatchSpanProcessor(
-          exporters.length == 1 ? exporter : CompositeExporter(exporters),
+          exporter,
           BatchSpanProcessorConfig.fromEnvironment(),
         );
       }
@@ -612,7 +545,7 @@ class OTel {
         OTelLog.debug('OTel.tracerProvider: Setting resource from default');
         if (defaultResource != null) {
           defaultResource!.attributes.toList().forEach((attr) {
-            if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+            if (attr.key == 'service.name') {
               OTelLog.debug('  ${attr.key}: ${attr.value}');
             }
           });
@@ -1512,7 +1445,6 @@ class OTel {
     _defaultSpanExceptionOptions = null;
     _defaultTimeProvider = null;
     defaultResource = null;
-    dartasticApiKey = null;
 
     // Reset print interception state
     if (_logBridge != null) {

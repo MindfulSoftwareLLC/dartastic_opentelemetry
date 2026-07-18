@@ -23,6 +23,12 @@ String? getFromEnvironment(String key) {
       return const String.fromEnvironment(otelServiceName);
     case otelLogLevel:
       return const String.fromEnvironment(otelLogLevel);
+    case otelDartLogMetrics:
+      return const String.fromEnvironment(otelDartLogMetrics);
+    case otelDartLogSpans:
+      return const String.fromEnvironment(otelDartLogSpans);
+    case otelDartLogExport:
+      return const String.fromEnvironment(otelDartLogExport);
     case otelPropagators:
       return const String.fromEnvironment(otelPropagators);
     case otelTracesSampler:
@@ -31,12 +37,6 @@ String? getFromEnvironment(String key) {
       return const String.fromEnvironment(otelTracesSamplerArg);
 
     // Logging Configuration
-    case otelLogMetrics:
-      return const String.fromEnvironment(otelLogMetrics);
-    case otelLogSpans:
-      return const String.fromEnvironment(otelLogSpans);
-    case otelLogExport:
-      return const String.fromEnvironment(otelLogExport);
 
     // General OTLP Configuration
     case otelExporterOtlpEndpoint:

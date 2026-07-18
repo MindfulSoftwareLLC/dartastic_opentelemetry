@@ -419,12 +419,9 @@ void main() {
       expect(merged.schemaUrl, equals(url));
     });
 
-    test('Resource merge logs debug with service.name and tenant_id', () {
+    test('Resource merge logs debug with service.name', () {
       final r1 = OTel.resource(
-        OTel.attributesFromMap({
-          'service.name': 'svc-a',
-          'tenant_id': 'tenant-1',
-        }),
+        OTel.attributesFromMap({'service.name': 'svc-a'}),
       );
       final r2 = OTel.resource(
         OTel.attributesFromMap({'service.name': 'svc-b', 'other': 'value'}),
@@ -438,7 +435,7 @@ void main() {
         isTrue,
         reason: 'Expected resource merge debug log',
       );
-      // The debug log should contain service.name and tenant_id entries.
+      // The debug log should contain the service.name entry.
       expect(
         logOutput.any((m) => m.contains('service.name')),
         isTrue,
