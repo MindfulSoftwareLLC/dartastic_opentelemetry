@@ -74,5 +74,11 @@ lcov --remove coverage/lcov.info '**/proto/**' '**/test/**' --ignore-errors unus
 # Generate HTML report
 genhtml coverage/lcov.info -o coverage/html
 
+# Open the report in the default browser on macOS (CI runs Linux, where
+# `open` does not exist and would fail the script under set -e).
+if [[ "$OSTYPE" == darwin* ]]; then
+  open coverage/html/index.html
+fi
+
 echo "Coverage process completed successfully"
 exit 0
