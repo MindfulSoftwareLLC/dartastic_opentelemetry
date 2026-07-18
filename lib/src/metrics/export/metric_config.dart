@@ -10,6 +10,7 @@ import '../../resource/resource.dart';
 import '../meter_provider.dart';
 import '../metric_exporter.dart';
 import '../metric_reader.dart';
+import 'composite_metric_exporter.dart';
 import 'otlp/http/otlp_http_metric_exporter.dart';
 import 'otlp/http/otlp_http_metric_exporter_config.dart';
 import 'otlp/otlp_grpc_metric_exporter.dart';
@@ -44,19 +45,46 @@ class MetricsConfiguration {
     // explicit exporter/reader — explicit args are an unambiguous opt-in and
     // should not be silently dropped by env config.
     if (metricExporter == null && metricReader == null) {
-      final exporterType =
-          OTelEnv.getExporter(signal: 'metrics')?.toLowerCase() ?? 'otlp';
-      if (exporterType == 'none') {
-        if (OTelLog.isDebug()) {
+      // Spec "Exporter Selection": OTEL_METRICS_EXPORTER, default otlp; the
+      // comma-separated list form is supported. Known: otlp, console, none.
+      final requested = OTelEnv.getExporters(signal: 'metrics') ?? ['otlp'];
+      if (requested.contains('none')) {
+        if (requested.length > 1 && OTelLog.isWarn()) {
+          OTelLog.warn("OTEL_METRICS_EXPORTER contains 'none' alongside "
+              'other values; installing no reader.');
+        } else if (OTelLog.isDebug()) {
           OTelLog.debug(
               'MetricsConfiguration: OTEL_METRICS_EXPORTER=none, skipping reader');
         }
         return meterProvider;
       }
-      metricExporter = _createExporter(exporterType, endpoint, secure);
-      if (metricExporter == null) {
-        return meterProvider;
+      final exporters = <MetricExporter>[];
+      for (final name in requested) {
+        if (name == 'logging') {
+          if (OTelLog.isWarn()) {
+            OTelLog.warn("OTEL_METRICS_EXPORTER value 'logging' is "
+                "deprecated in the spec and not supported; use 'console'.");
+          }
+          continue;
+        }
+        final created = _createExporter(name, endpoint, secure);
+        if (created != null) {
+          exporters.add(created);
+        } else if (OTelLog.isWarn()) {
+          OTelLog.warn("OTEL_METRICS_EXPORTER value '$name' is not "
+              'supported; ignoring. Supported: otlp, console, none.');
+        }
       }
+      if (exporters.isEmpty) {
+        if (OTelLog.isWarn()) {
+          OTelLog.warn('OTEL_METRICS_EXPORTER produced no usable exporter; '
+              'falling back to the default otlp exporter.');
+        }
+        exporters.add(_createExporter('otlp', endpoint, secure)!);
+      }
+      metricExporter = exporters.length == 1
+          ? exporters.single
+          : CompositeMetricExporter(exporters);
     }
 
     metricExporter ??= _createExporter('otlp', endpoint, secure);
