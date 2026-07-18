@@ -345,7 +345,25 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         );
       }
 
-      final response = await _traceService!.export(request, options: options);
+      // gRPC's CallOptions deadline (set above) can fail to terminate a call
+      // when the connection is torn down mid-flight — e.g. a half-open or
+      // broken collector that accepts then drops the TCP connection — leaving
+      // this await hung well past _config.timeout. This Dart-level backstop
+      // guarantees export() is bounded by the configured timeout regardless of
+      // the gRPC client's connection-state behavior. On timeout we tear the
+      // channel down so the leaked RPC is aborted and the next attempt (if any)
+      // reconnects cleanly.
+      final response =
+          await _traceService!.export(request, options: options).timeout(
+        _config.timeout,
+        onTimeout: () {
+          unawaited(_cleanupChannel());
+          throw TimeoutException(
+            'OtlpGrpcSpanExporter: export exceeded configured timeout',
+            _config.timeout,
+          );
+        },
+      );
       if (OTelLog.isDebug()) {
         OTelLog.debug(
           'OtlpGrpcSpanExporter: Export request completed successfully',

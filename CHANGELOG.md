@@ -54,6 +54,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0-beta.7] - 2026-07-11
 
 ### Fixed
+- **`OtlpGrpcSpanExporter.export()` gains a Dart-level timeout backstop.**
+  Previously the configured `timeout` was applied only via gRPC's `CallOptions`
+  deadline. A Dart-level `.timeout()` now also bounds the RPC and tears down the
+  channel on expiry, as defense-in-depth for real-world hangs where a collector
+  accepts a connection then stops responding. **Note (under review):** this does
+  NOT fix the concurrency test hang that prompted it — that was event-loop
+  starvation from the gRPC client's reconnect churn, which no Timer-based bound
+  can fix (see the PR discussion). Reviewers are deciding whether to keep this
+  backstop; if dropped, this entry goes with it.
 - **Debug logging no longer adds a `ConsoleExporter` to the trace pipeline.**
   `OTel.initialize()` used to append a `ConsoleExporter` to the span exporters
   whenever debug logging was enabled (e.g. `OTEL_LOG_LEVEL=debug`/`trace`),
