@@ -1,6 +1,8 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
+import 'package:meta/meta.dart';
+
 import 'env_constants.dart';
 import 'environment_service.dart';
 
@@ -30,6 +32,13 @@ class EnvironmentService implements EnvironmentServiceInterface {
 
   EnvironmentService._();
 
+  /// Test-only replacement for the lookup sources. When non-null, values
+  /// come exclusively from this map (a missing key reads as unset) and
+  /// still flow through the semicolon-to-comma conversion, so tests get
+  /// deterministic, in-process control of the environment.
+  @visibleForTesting
+  static Map<String, String>? testOverrides;
+
   /// Gets the value of an environment variable.
   ///
   /// Returns the value from String.fromEnvironment if defined via --dart-define,
@@ -42,10 +51,13 @@ class EnvironmentService implements EnvironmentServiceInterface {
   /// @return The value of the environment variable, or null if not found
   @override
   String? getValue(String key) {
-    // String.fromEnvironment (--dart-define values)
-    // Only check if this is a known environment variable
     String? value;
-    if (supportedEnvVars.contains(key)) {
+    final overrides = testOverrides;
+    if (overrides != null) {
+      value = overrides[key];
+    } else if (supportedEnvVars.contains(key)) {
+      // String.fromEnvironment (--dart-define values)
+      // Only check if this is a known environment variable
       final fromEnvironment = _getFromEnvironment(key);
       if (fromEnvironment != null && fromEnvironment.isNotEmpty) {
         value = fromEnvironment;
@@ -58,12 +70,6 @@ class EnvironmentService implements EnvironmentServiceInterface {
     if (value != null) {
       switch (key) {
         case otelResourceAttributes:
-        case otelDartLogMetrics:
-          return const String.fromEnvironment(otelDartLogMetrics);
-        case otelDartLogSpans:
-          return const String.fromEnvironment(otelDartLogSpans);
-        case otelDartLogExport:
-          return const String.fromEnvironment(otelDartLogExport);
         case otelPropagators:
         case otelExporterOtlpHeaders:
         case otelExporterOtlpTracesHeaders:
@@ -106,6 +112,12 @@ class EnvironmentService implements EnvironmentServiceInterface {
         return const String.fromEnvironment(otelTracesSamplerArg);
 
       // Logging Configuration
+      case otelDartLogMetrics:
+        return const String.fromEnvironment(otelDartLogMetrics);
+      case otelDartLogSpans:
+        return const String.fromEnvironment(otelDartLogSpans);
+      case otelDartLogExport:
+        return const String.fromEnvironment(otelDartLogExport);
 
       // General OTLP Configuration
       case otelExporterOtlpEndpoint:
