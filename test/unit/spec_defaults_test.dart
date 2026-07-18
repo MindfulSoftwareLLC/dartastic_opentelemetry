@@ -168,6 +168,26 @@ void main() {
       expect(readers.single, isNot(contains('Otlp')));
     });
 
+    test('=prometheus warns (no scrape server yet) and falls back to otlp',
+        () async {
+      final snap =
+          await _runPipeline(const {'OTEL_METRICS_EXPORTER': 'prometheus'});
+      final readers = _metricReaders(snap);
+      expect(readers, hasLength(1));
+      expect(readers.single, contains('OtlpHttpMetricExporter'));
+      expect(readers.single, isNot(contains('Prometheus')));
+    });
+
+    test('unknown metrics value warns and is ignored, not silently otlp',
+        () async {
+      final snap =
+          await _runPipeline(const {'OTEL_METRICS_EXPORTER': 'bogus,console'});
+      final readers = _metricReaders(snap);
+      expect(readers, hasLength(1));
+      expect(readers.single, contains('ConsoleMetricExporter'));
+      expect(readers.single, isNot(contains('Composite')));
+    });
+
     test(
         '=otlp,console installs both via a CompositeMetricExporter (spec '
         'list form)', () async {

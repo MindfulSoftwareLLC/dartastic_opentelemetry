@@ -18,6 +18,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `baggage`, `none`. Instrumentation libraries can now obtain "the"
   propagator via `OTelAPI.textMapPropagator` instead of being handed one
   explicitly.
+- **`OTEL_BSP_*` environment variables** for configuring `BatchSpanProcessor`
+  (`OTEL_BSP_SCHEDULE_DELAY`, `OTEL_BSP_EXPORT_TIMEOUT`, `OTEL_BSP_MAX_QUEUE_SIZE`,
+  `OTEL_BSP_MAX_EXPORT_BATCH_SIZE`). Values are read by
+  `BatchSpanProcessorConfig.fromEnvironment()` which `OTel.initialize()` uses
+  by default. Invalid or out-of-range values now emit `OTelLog.warn` diagnostics.
+  `OTEL_BSP_EXPORT_TIMEOUT=0` is honored as "no limit" per spec.
+- **Comma-separated `OTEL_*_EXPORTER` lists.** The spec's "implementation
+  MAY accept a comma-separated list to enable setting multiple exporters"
+  is now supported for all three signals: `OTEL_TRACES_EXPORTER=otlp,console`
+  installs a `CompositeExporter`, metrics use a `CompositeMetricExporter`,
+  and logs install one processor per exporter. `none` in a list wins;
+  unsupported values (`zipkin`, the deprecated `logging`) emit an
+  `OTelLog.warn` and are ignored; a list with no usable values falls back
+  to the spec default `otlp`. Previously a list value silently installed
+  no exporter at all.
+- Unknown `OTEL_METRICS_EXPORTER` values now warn and are ignored
+  instead of silently becoming `otlp`; `prometheus` gets a dedicated
+  warning pointing at programmatic `PrometheusExporter` use and the
+  planned scrape server (#82) — auto-wiring it today would be a silent
+  no-op since the env-created exporter is unreachable by the app.
 
 ### Removed
 
@@ -61,15 +81,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in `OTel.initialize()` has been replaced by `BatchSpanProcessorConfig.fromEnvironment()`,
   whose fallback is the spec-mandated 5000 ms. To restore the old behavior, set
   `OTEL_BSP_SCHEDULE_DELAY=1000`.
-
-### Added
-
-- **`OTEL_BSP_*` environment variables** for configuring `BatchSpanProcessor`
-  (`OTEL_BSP_SCHEDULE_DELAY`, `OTEL_BSP_EXPORT_TIMEOUT`, `OTEL_BSP_MAX_QUEUE_SIZE`,
-  `OTEL_BSP_MAX_EXPORT_BATCH_SIZE`). Values are read by
-  `BatchSpanProcessorConfig.fromEnvironment()` which `OTel.initialize()` uses
-  by default. Invalid or out-of-range values now emit `OTelLog.warn` diagnostics.
-  `OTEL_BSP_EXPORT_TIMEOUT=0` is honored as "no limit" per spec.
 
 ## [1.1.0-beta.7] - 2026-07-11
 

@@ -60,19 +60,35 @@ class MetricsConfiguration {
       }
       final exporters = <MetricExporter>[];
       for (final name in requested) {
-        if (name == 'logging') {
-          if (OTelLog.isWarn()) {
-            OTelLog.warn("OTEL_METRICS_EXPORTER value 'logging' is "
-                "deprecated in the spec and not supported; use 'console'.");
-          }
-          continue;
-        }
-        final created = _createExporter(name, endpoint, secure);
-        if (created != null) {
-          exporters.add(created);
-        } else if (OTelLog.isWarn()) {
-          OTelLog.warn("OTEL_METRICS_EXPORTER value '$name' is not "
-              'supported; ignoring. Supported: otlp, console, none.');
+        switch (name) {
+          case 'otlp':
+          case 'console':
+            final created = _createExporter(name, endpoint, secure);
+            if (created != null) {
+              exporters.add(created);
+            }
+          case 'prometheus':
+            // Recognized spec value, but not auto-wirable yet: the SDK has
+            // no scrape server, and an env-created PrometheusExporter would
+            // be unreachable by the app — a silent no-op. Honest support
+            // arrives with the scrape server (#82). Programmatic use of
+            // PrometheusExporter (app serves prometheusData) works today.
+            if (OTelLog.isWarn()) {
+              OTelLog.warn("OTEL_METRICS_EXPORTER value 'prometheus' is not "
+                  'supported yet (no scrape server; see issue #82). '
+                  'Construct PrometheusExporter programmatically and serve '
+                  'prometheusData, or route OTLP through the collector.');
+            }
+          case 'logging':
+            if (OTelLog.isWarn()) {
+              OTelLog.warn("OTEL_METRICS_EXPORTER value 'logging' is "
+                  "deprecated in the spec and not supported; use 'console'.");
+            }
+          default:
+            if (OTelLog.isWarn()) {
+              OTelLog.warn("OTEL_METRICS_EXPORTER value '$name' is not "
+                  'supported; ignoring. Supported: otlp, console, none.');
+            }
         }
       }
       if (exporters.isEmpty) {
