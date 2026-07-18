@@ -110,7 +110,7 @@ void main() {
 
     test('composite propagator combines multiple propagators', () {
       final context = Context.root;
-      final propagator = CompositePropagator([
+      final propagator = OTelAPI.compositePropagator([
         TestPropagator(),
         TestPropagator(),
       ]);
@@ -126,7 +126,7 @@ void main() {
     });
 
     test('returns all fields from propagators', () {
-      final propagator = CompositePropagator([
+      final propagator = OTelAPI.compositePropagator([
         TestPropagator(),
         TestPropagator(),
       ]);

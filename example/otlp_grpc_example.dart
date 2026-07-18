@@ -48,7 +48,7 @@ void main() async {
   // convention name for an attribute:
   // https://opentelemetry.io/docs/specs/semconv/general/attributes/
   tracer.attributes = OTel.attributesFromSemanticMap({
-    SourceCode.codeFunctionName: 'main',
+    Code.codeFunctionName: 'main',
   });
 
   // Create a new root span. Prefer typed enum keys over raw strings.

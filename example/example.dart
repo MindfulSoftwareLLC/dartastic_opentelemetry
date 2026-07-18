@@ -91,9 +91,9 @@ Future<void> performDatabaseQuery(Tracer tracer, Span parentSpan) async {
     // Link to parent span via context
     context: OTel.context(spanContext: parentSpan.spanContext),
     attributes: OTel.attributesFromSemanticMap({
-      Database.dbSystem: 'postgresql',
-      Database.dbOperation: 'SELECT',
-      Database.dbName: 'users',
+      Db.dbSystemName: 'postgresql',
+      Db.dbOperationName: 'SELECT',
+      Db.dbNamespace: 'users',
     }),
   );
 
@@ -118,7 +118,7 @@ Future<void> callExternalService(Tracer tracer, Span parentSpan) async {
     kind: SpanKind.client,
     context: OTel.context(spanContext: parentSpan.spanContext),
     attributes: OTel.attributesFromSemanticMap({
-      Http.requestMethod: 'GET',
+      Http.httpRequestMethod: 'GET',
       Url.urlFull: 'https://api.example.com/data',
       Url.urlPath: '/data',
     }),
@@ -131,8 +131,8 @@ Future<void> callExternalService(Tracer tracer, Span parentSpan) async {
     // Add response attributes.
     span.addAttributes(
       OTel.attributesFromSemanticMap({
-        Http.responseStatusCode: 200,
-        Http.responseBodySize: 1024,
+        Http.httpResponseStatusCode: 200,
+        Http.httpResponseBodySize: 1024,
       }),
     );
   } catch (e, stackTrace) {
