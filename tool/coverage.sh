@@ -3,6 +3,9 @@
 
 set -e  # Exit on any error
 
+# Always operate from the repo root, wherever the script is invoked from.
+cd "$(dirname "$0")/.." || exit 1
+
 # Parse command line arguments
 # Need trace logging for coverage of debug and trace logs
 LOG_LEVEL="trace"
