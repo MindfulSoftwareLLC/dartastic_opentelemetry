@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.9-wip]
 
+### Changed
+- Adopt `dartastic_opentelemetry_api` 1.0.0-rc.1 (constraint
+  `^1.0.0-rc.1`). No SDK code changes were needed: the SDK never used
+  the removed vendor/RUM enums, and it implements the now-abstract
+  `APIObservableResult` interface.
+- CI: self-hosted coverage badge built from lcov.info and published to
+  the `badges` branch; Codecov upload removed (uploads had failed since
+  branch protection was enabled). The README coverage badge is now live
+  data instead of a hardcoded percentage.
+
 ## [1.1.0-beta.8] - 2026-07-18
 
 ### Added
