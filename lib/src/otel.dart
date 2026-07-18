@@ -1149,17 +1149,17 @@ class OTel {
   }
 
   /// Creates an [Attributes] from a map keyed by [OTelSemantic] enum values
-  /// (e.g. `Http.requestMethod`). Each enum's `.key` is used as the
+  /// (e.g. `Http.httpRequestMethod`). Each enum's `.key` is used as the
   /// attribute name. Lets you write
   ///
   /// ```dart
   /// OTel.attributesFromSemanticMap({
-  ///   Http.requestMethod: 'GET',
-  ///   Http.responseStatusCode: 200,
+  ///   Http.httpRequestMethod: 'GET',
+  ///   Http.httpResponseStatusCode: 200,
   /// })
   /// ```
   ///
-  /// instead of `attributesFromMap({Http.requestMethod.key: 'GET', …})`.
+  /// instead of `attributesFromMap({Http.httpRequestMethod.key: 'GET', …})`.
   /// Mixing enum types in one map is fine — the param is `Map<OTelSemantic, Object>`,
   /// and every semconv enum implements `OTelSemantic`.
   ///
@@ -1179,8 +1179,8 @@ class OTel {
   /// ```dart
   /// // Today and forever:
   /// OTel.attributesOf<Http>({
-  ///   Http.requestMethod: 'GET',
-  ///   Http.responseStatusCode: 200,
+  ///   Http.httpRequestMethod: 'GET',
+  ///   Http.httpResponseStatusCode: 200,
   /// });
   ///
   /// // With Dart 3.10+ static dot-shorthand enabled:
@@ -1198,11 +1198,11 @@ class OTel {
   /// ```dart
   /// OTel.attributesFromSemanticMap({
   ///   ...<Http, Object>{
-  ///     Http.requestMethod: 'GET',
-  ///     Http.responseStatusCode: 200,
+  ///     Http.httpRequestMethod: 'GET',
+  ///     Http.httpResponseStatusCode: 200,
   ///   },
   ///   ...<Database, Object>{
-  ///     Database.dbSystemName: DbSystem.postgresql.value,
+  ///     Db.dbSystemName: DbSystem.postgresql.value,
   ///   },
   /// });
   /// ```

@@ -22,7 +22,7 @@ void main() async {
   print('=== W3C Trace Context Propagator Example ===\n');
 
   // Create a composite propagator that handles both trace context and baggage
-  final propagator = CompositePropagator<Map<String, String>, String>([
+  final propagator = OTelAPI.compositePropagator<Map<String, String>, String>([
     W3CTraceContextPropagator(),
     W3CBaggagePropagator(),
   ]);

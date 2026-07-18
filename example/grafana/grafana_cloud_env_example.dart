@@ -126,7 +126,7 @@ Future<void> traceHttpRequest(Tracer tracer) async {
   // `attributesOf<E>` is the single-enum form — every key is checked
   // against `Http` at compile time, and Dart 3.10's static dot-shorthand
   // can shorten each entry to `.requestMethod`, `.urlFull`, etc.
-  // `ServerResource` (which keeps its suffix because plain `Server`
+  // `Server` (which keeps its suffix because plain `Server`
   // clashes with `package:grpc`'s `Server`) is mixed in via a map spread
   // — Dart widens the literal's type to `Map<OTelSemantic, Object>`
   // automatically, so `attributesFromSemanticMap` accepts it.
@@ -135,15 +135,15 @@ Future<void> traceHttpRequest(Tracer tracer) async {
     kind: SpanKind.client,
     attributes: OTel.attributesFromSemanticMap({
       ...<Http, Object>{
-        Http.requestMethod: 'GET',
+        Http.httpRequestMethod: 'GET',
       },
       ...<Url, Object>{
         Url.urlFull: 'https://api.example.com/users/123',
         Url.urlPath: '/users/123',
       },
-      ...<ServerResource, Object>{
-        ServerResource.serverAddress: 'api.example.com',
-        ServerResource.serverPort: 443,
+      ...<Server, Object>{
+        Server.serverAddress: 'api.example.com',
+        Server.serverPort: 443,
       },
     }),
   );
@@ -156,12 +156,13 @@ Future<void> traceHttpRequest(Tracer tracer) async {
     // `attributesOf<Http>` form.
     span.addAttributes(
       OTel.attributesOf<Http>({
-        Http.responseStatusCode: 200,
-        Http.responseBodySize: 1234,
+        Http.httpResponseStatusCode: 200,
+        Http.httpResponseBodySize: 1234,
       }),
     );
   } catch (e, stackTrace) {
-    span.addAttributes(OTel.attributesOf<Http>({Http.responseStatusCode: 500}));
+    span.addAttributes(
+        OTel.attributesOf<Http>({Http.httpResponseStatusCode: 500}));
     // The span has a status of SpanStatus.Ok on creation, set it to
     // Error when an error occurs in the span.
     span.recordException(e, stackTrace: stackTrace);
@@ -178,15 +179,14 @@ Future<void> traceDatabaseOperation(Tracer tracer) async {
     'db.query',
     kind: SpanKind.client,
     attributes: OTel.attributesFromSemanticMap({
-      Database.dbSystem: 'postgresql',
-      Database.dbName: 'users_db',
-      Database.dbOperation: 'SELECT',
-      Database.dbStatement: 'SELECT * FROM users WHERE active = true LIMIT 100',
-      Database.dbUser: 'app_user',
+      Db.dbSystemName: DbSystemName.postgresql.value,
+      Db.dbNamespace: 'users_db',
+      Db.dbOperationName: 'SELECT',
+      Db.dbQueryText: 'SELECT * FROM users WHERE active = true LIMIT 100',
       // server.address / server.port replace the deprecated net.peer.*
       // per OTel semconv.
-      ServerResource.serverAddress: 'postgres.example.com',
-      ServerResource.serverPort: 5432,
+      Server.serverAddress: 'postgres.example.com',
+      Server.serverPort: 5432,
     }),
   );
 
@@ -195,8 +195,7 @@ Future<void> traceDatabaseOperation(Tracer tracer) async {
     await Future<void>.delayed(const Duration(milliseconds: 50));
 
     // Add result metadata.
-    span.addAttributes(
-        Attributes.of({Database.dbResponseReturnedRows.key: 42}));
+    span.addAttributes(Attributes.of({Db.dbResponseReturnedRows.key: 42}));
   } catch (e, stackTrace) {
     // The span has a status of SpanStatus.Ok on creation, set it to
     // Error when an error occurs in the span.

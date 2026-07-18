@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.8-wip]
 
+### Changed
+- **Depends on `dartastic_opentelemetry_api` 1.0.0-beta.10** and re-exports
+  its surface: the Weaver-generated semantic-convention enums (90 registry
+  namespaces incl. entities/metrics/events), `NonRecordingSpan`, and the
+  global `TextMapPropagator`. SDK consumers referencing renamed semconv
+  enums through this package inherit the API's breaking renames — the
+  complete old→new tables are in the API package's 1.0.0-beta.10
+  CHANGELOG. SDK span creation is unaffected (the API's no-SDK span
+  behavior only applies without an SDK factory installed).
+- Examples and tests migrated to the new names (`Db`, `Server`, `Code`,
+  `Http.httpRequestMethod`/`httpResponseStatusCode`/`httpResponseBodySize`)
+  and off registry-deprecated keys: the database examples now emit
+  `db.system.name`, `db.namespace`, `db.operation.name`, and
+  `db.query.text` instead of the deprecated `db.system`/`db.name`/
+  `db.operation`/`db.statement`, and drop the deprecated `db.user`.
+- `CompositePropagator` is constructed via `OTelAPI.compositePropagator`
+  (its constructor is factory-only as of the API's beta.10).
+
 ## [1.1.0-beta.7] - 2026-07-11
 
 ### Fixed
