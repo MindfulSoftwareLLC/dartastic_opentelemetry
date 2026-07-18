@@ -99,11 +99,11 @@ void main() {
       final exporter = createExporter(maxRetries: 2);
       final spans = createTestSpans();
 
-      // Should throw after exhausting all retries
-      expect(() => exporter.export(spans), throwsA(anything));
-
-      // Allow async operations to settle
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      // Should throw after exhausting all retries. Awaiting the export
+      // future (instead of sleeping a fixed settle window) makes the
+      // attempt-count assertion deterministic: the future only completes
+      // after every retry has run, however slow the runner.
+      await expectLater(exporter.export(spans), throwsA(anything));
       expect(requestCount, equals(3));
       await exporter.shutdown();
     });
@@ -114,9 +114,7 @@ void main() {
       final spans = createTestSpans();
 
       // 400 is not retryable - should throw after single attempt
-      expect(() => exporter.export(spans), throwsA(anything));
-
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await expectLater(exporter.export(spans), throwsA(anything));
       expect(requestCount, equals(1));
       await exporter.shutdown();
     });
@@ -126,9 +124,7 @@ void main() {
       final exporter = createExporter();
       final spans = createTestSpans();
 
-      expect(() => exporter.export(spans), throwsA(anything));
-
-      await Future<void>.delayed(const Duration(milliseconds: 100));
+      await expectLater(exporter.export(spans), throwsA(anything));
       expect(requestCount, equals(1));
       await exporter.shutdown();
     });
