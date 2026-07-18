@@ -35,9 +35,9 @@ download_otelcol
 
 #Consider using these log settings to diagnose test problem
 #export OTEL_LOG_LEVEL=trace
-#export OTEL_LOG_METRICS=true
-#export OTEL_LOG_SPANS=true
-#export OTEL_LOG_EXPORT=true
+#export OTEL_DART_LOG_METRICS=true
+#export OTEL_DART_LOG_SPANS=true
+#export OTEL_DART_LOG_EXPORT=true
 # Environment variable to signal tests they are running in isolation
 #export DART_OTEL_ISOLATED_TESTING=true
 

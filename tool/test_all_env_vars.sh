@@ -103,9 +103,9 @@ test_env_var "OTEL_TRACES_SAMPLER_ARG" "0.5"
 
 echo ""
 echo -e "${YELLOW}=== Dartastic-specific Logging ===${NC}"
-test_env_var "OTEL_LOG_METRICS" "true"
-test_env_var "OTEL_LOG_SPANS" "true"
-test_env_var "OTEL_LOG_EXPORT" "true"
+test_env_var "OTEL_DART_LOG_METRICS" "true"
+test_env_var "OTEL_DART_LOG_SPANS" "true"
+test_env_var "OTEL_DART_LOG_EXPORT" "true"
 
 echo ""
 echo -e "${YELLOW}=== General OTLP Exporter Configuration ===${NC}"
