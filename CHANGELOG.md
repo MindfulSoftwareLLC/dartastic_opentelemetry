@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.8-wip]
 
+### Added
+- **`OTEL_PROPAGATORS` support and global propagator wiring.**
+  `OTel.initialize()` now installs the API's global `TextMapPropagator`
+  per the spec ("Global Propagators"): the default is the W3C
+  `tracecontext,baggage` composite; `none` (or no supported values)
+  leaves the API's spec-mandated no-op in place; unsupported names emit
+  an `OTelLog.warn` and are ignored. Supported values: `tracecontext`,
+  `baggage`, `none`. Instrumentation libraries can now obtain "the"
+  propagator via `OTelAPI.textMapPropagator` instead of being handed one
+  explicitly.
+
 ### Changed
 - **Depends on `dartastic_opentelemetry_api` 1.0.0-beta.10** and re-exports
   its surface: the Weaver-generated semantic-convention enums (90 registry

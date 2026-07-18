@@ -973,6 +973,7 @@ Constants are defined for all 74 OpenTelemetry environment variables. See `lib/s
 | `otelResourceAttributes`   | `OTEL_RESOURCE_ATTRIBUTES`  | Additional resource attributes    | `environment=prod,region=us-west`       |
 | `otelLogLevel`             | `OTEL_LOG_LEVEL`            | SDK internal log level            | `INFO`, `DEBUG`, `WARN`, `ERROR`        |
 | `otelSdkDisabled`          | `OTEL_SDK_DISABLED`         | Global off-switch — when `true`, the SDK installs no span processors, metric readers, or log record processors (true no-op across all three signals, including explicit overrides) | `true` |
+| `otelPropagators`                     | `OTEL_PROPAGATORS`                      | Global propagators: `tracecontext`, `baggage`, `none` (comma-separated) | `tracecontext,baggage` |
 
 #### OTLP Exporter Configuration
 
