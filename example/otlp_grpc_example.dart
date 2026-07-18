@@ -30,7 +30,6 @@ void main() async {
     serviceName: 'dartastic-examples',
     tracerName: 'otlp_grpc_example',
     tracerVersion: '1.0.0',
-    tenantId: 'my-valued-customer',
     // Always consult the OTel Semantic Conventions to find an existing
     // convention name for an attribute:
     // https://opentelemetry.io/docs/specs/semconv/general/attributes/

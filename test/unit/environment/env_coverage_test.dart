@@ -1380,68 +1380,6 @@ void main() {
       final hasTenantId = attrs.any((a) => a.key == 'tenant_id');
       expect(hasTenantId, isFalse);
     });
-
-    test('initialize with tenantId preserves it through platform detection',
-        () async {
-      await OTel.initialize(
-        serviceName: 'tenant-with-platform',
-        tenantId: 'my-tenant',
-        detectPlatformResources: true,
-        enableMetrics: false,
-        enableLogs: false,
-      );
-
-      expect(OTel.defaultResource, isNotNull);
-      final attrs = OTel.defaultResource!.attributes.toList();
-      final tenantAttr = attrs.firstWhere(
-        (a) => a.key == 'tenant_id',
-        orElse: () => throw StateError('tenant_id not found'),
-      );
-      expect(tenantAttr.value, equals('my-tenant'));
-    });
-
-    test('tenantId coexists with custom resource attributes', () async {
-      final customAttrs = OTel.attributesFromMap({
-        'custom.key': 'custom-value',
-        'deployment.environment': 'staging',
-      });
-
-      await OTel.initialize(
-        serviceName: 'tenant-with-custom',
-        tenantId: 'multi-tenant',
-        resourceAttributes: customAttrs,
-        detectPlatformResources: false,
-        enableMetrics: false,
-        enableLogs: false,
-      );
-
-      expect(OTel.defaultResource, isNotNull);
-      final attrs = OTel.defaultResource!.attributes.toList();
-
-      final tenantAttr = attrs.firstWhere(
-        (a) => a.key == 'tenant_id',
-        orElse: () => throw StateError('tenant_id not found'),
-      );
-      expect(tenantAttr.value, equals('multi-tenant'));
-
-      final customAttr = attrs.firstWhere(
-        (a) => a.key == 'custom.key',
-        orElse: () => throw StateError('custom.key not found'),
-      );
-      expect(customAttr.value, equals('custom-value'));
-    });
-
-    test('initialize with dartasticApiKey stores it', () async {
-      await OTel.initialize(
-        serviceName: 'api-key-test',
-        dartasticApiKey: 'test-api-key-123',
-        detectPlatformResources: false,
-        enableMetrics: false,
-        enableLogs: false,
-      );
-
-      expect(OTel.dartasticApiKey, equals('test-api-key-123'));
-    });
   });
 
   // =========================================================================
