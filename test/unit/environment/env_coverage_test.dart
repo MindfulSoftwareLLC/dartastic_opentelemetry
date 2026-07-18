@@ -802,6 +802,67 @@ void main() {
   // =========================================================================
   // OTel - print interception methods
   // =========================================================================
+
+  // ==========================================================================
+  // OTEL_PROPAGATORS - subprocess tests for the global propagator install
+  // (context/api-propagators.md, "Global Propagators": the SDK configures
+  // the API's global propagator; the API default is no-op.)
+  // ==========================================================================
+  group('OTEL_PROPAGATORS (subprocess)', () {
+    const helper = 'test/unit/environment/helpers/check_propagators.dart';
+
+    test('default installs tracecontext + baggage composite', () async {
+      final output = await runWithEnv(helper, {});
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['type'], contains('CompositePropagator'));
+      expect(
+          result['fields'], equals(['baggage', 'traceparent', 'tracestate']));
+      expect(result['logs'], isEmpty);
+    });
+
+    test('tracecontext alone installs the W3C trace context propagator',
+        () async {
+      final output =
+          await runWithEnv(helper, {'OTEL_PROPAGATORS': 'tracecontext'});
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['type'], contains('W3CTraceContextPropagator'));
+      expect(result['fields'], equals(['traceparent', 'tracestate']));
+    });
+
+    test('baggage alone installs the W3C baggage propagator', () async {
+      final output = await runWithEnv(helper, {'OTEL_PROPAGATORS': 'baggage'});
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['type'], contains('W3CBaggagePropagator'));
+      expect(result['fields'], equals(['baggage']));
+    });
+
+    test('none leaves the spec-mandated no-op propagator', () async {
+      final output = await runWithEnv(helper, {'OTEL_PROPAGATORS': 'none'});
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['type'], contains('NoopTextMapPropagator'));
+      expect(result['fields'], isEmpty);
+    });
+
+    test('unsupported names warn and are ignored', () async {
+      final output = await runWithEnv(
+          helper, {'OTEL_PROPAGATORS': 'tracecontext,b3,xray'});
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['type'], contains('W3CTraceContextPropagator'));
+      final logs = result['logs'] as List<dynamic>;
+      expect(logs.length, equals(2));
+      expect(logs[0].toString(), contains('"b3" ignored'));
+      expect(logs[1].toString(), contains('"xray" ignored'));
+    });
+
+    test('only unsupported names keeps the no-op default and warns', () async {
+      final output = await runWithEnv(helper, {'OTEL_PROPAGATORS': 'jaeger'});
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['type'], contains('NoopTextMapPropagator'));
+      expect((result['logs'] as List<dynamic>).single.toString(),
+          contains('"jaeger" ignored'));
+    });
+  });
+
   group('OTel print interception', () {
     setUp(() async {
       await OTel.reset();

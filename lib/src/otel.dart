@@ -282,6 +282,10 @@ class OTel {
       _otelFactory = createdFactory;
     }
 
+    // context/api-propagators.md, "Global Propagators": the SDK configures
+    // the API's global propagator at initialization, per OTEL_PROPAGATORS.
+    _installGlobalPropagator();
+
     if (OTelLog.isDebug()) {
       OTelLog.debug(
         'OTel initialized with endpoint: $endpoint, service: $serviceName',
@@ -1355,6 +1359,45 @@ class OTel {
   ///
   /// This can be called separately from initialize(), but initialize() will
   /// call it automatically if not already done.
+
+  /// Installs the global [TextMapPropagator] per `OTEL_PROPAGATORS`
+  /// (default `tracecontext,baggage`). Unsupported names emit an
+  /// [OTelLog.warn] and are ignored; `none` — or a list with no supported
+  /// names — leaves the API's spec-mandated no-op propagator in place.
+  /// Supported: `tracecontext`, `baggage`, `none`.
+  static void _installGlobalPropagator() {
+    final names = OTelEnv.getPropagators();
+    if (names.contains('none')) {
+      if (names.length > 1 && OTelLog.isWarn()) {
+        OTelLog.warn('OTEL_PROPAGATORS contains "none" alongside other '
+            'values; using no propagator per spec.');
+      }
+      return; // The API default is the no-op propagator.
+    }
+    final propagators = <TextMapPropagator<Map<String, String>, String>>[];
+    final seen = <String>{};
+    for (final name in names) {
+      if (!seen.add(name)) continue;
+      switch (name) {
+        case 'tracecontext':
+          propagators.add(W3CTraceContextPropagator());
+        case 'baggage':
+          propagators.add(W3CBaggagePropagator());
+        default:
+          if (OTelLog.isWarn()) {
+            OTelLog.warn('OTEL_PROPAGATORS: unsupported propagator '
+                '"$name" ignored. Supported: tracecontext, baggage, none.');
+          }
+      }
+    }
+    if (propagators.isEmpty) {
+      return; // Nothing supported was requested; keep the no-op default.
+    }
+    OTelAPI.textMapPropagator = propagators.length == 1
+        ? propagators.single
+        : OTelAPI.compositePropagator<Map<String, String>, String>(propagators);
+  }
+
   static void initializeLogging() {
     // Initialize log settings from environment variables
     OTelEnv.initializeLogging();

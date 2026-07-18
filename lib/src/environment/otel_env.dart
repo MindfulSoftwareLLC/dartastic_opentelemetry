@@ -395,6 +395,22 @@ class OTelEnv {
   /// - 'exportTimeout': Duration for the export timeout
   /// - 'maxQueueSize': int for maximum queue size
   /// - 'maxExportBatchSize': int for maximum export batch size
+  /// Reads `OTEL_PROPAGATORS` (sdk-environment-variables.md, "General SDK
+  /// Configuration"): a comma-separated list of propagator names. Returns
+  /// the normalized (trimmed, lowercased) names, defaulting to the spec
+  /// default `[tracecontext, baggage]` when unset or empty.
+  static List<String> getPropagators() {
+    final raw = _getEnv(otelPropagators);
+    if (raw == null || raw.trim().isEmpty) {
+      return const ['tracecontext', 'baggage'];
+    }
+    return raw
+        .split(',')
+        .map((name) => name.trim().toLowerCase())
+        .where((name) => name.isNotEmpty)
+        .toList();
+  }
+
   static Map<String, dynamic> getBlrpConfig() {
     final config = <String, dynamic>{};
 
