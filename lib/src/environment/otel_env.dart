@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+import '../metrics/export/metrics_sdk_config.dart';
 import 'env_constants.dart';
 import 'environment_service.dart';
 
@@ -465,6 +466,74 @@ class OTelEnv {
     }
 
     return config;
+  }
+
+  /// Get metrics SDK configuration from environment variables.
+  static MetricsSdkConfig getMetricsSdkConfig() {
+    return parseMetricsSdkConfig(
+      exemplarFilter: _getEnv(otelMetricsExemplarFilter),
+      exportInterval: _getEnv(otelMetricExportInterval),
+      exportTimeout: _getEnv(otelMetricExportTimeout),
+    );
+  }
+
+  /// Parse metrics SDK configuration values.
+  static MetricsSdkConfig parseMetricsSdkConfig({
+    String? exemplarFilter,
+    String? exportInterval,
+    String? exportTimeout,
+  }) {
+    return MetricsSdkConfig(
+      exemplarFilter: _parseMetricsExemplarFilter(exemplarFilter),
+      exportInterval: _parseDurationMilliseconds(
+        exportInterval,
+        const Duration(seconds: 60),
+      ),
+      exportTimeout: _parseDurationMilliseconds(
+        exportTimeout,
+        const Duration(seconds: 30),
+      ),
+    );
+  }
+
+  static MetricsExemplarFilter _parseMetricsExemplarFilter(String? value) {
+    switch (value?.toLowerCase()) {
+      case 'always_on':
+        return MetricsExemplarFilter.alwaysOn;
+      case 'always_off':
+        return MetricsExemplarFilter.alwaysOff;
+      case null:
+      case 'trace_based':
+        return MetricsExemplarFilter.traceBased;
+      default:
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+            'OTelEnv: Invalid OTEL_METRICS_EXEMPLAR_FILTER value "$value", using trace_based',
+          );
+        }
+        return MetricsExemplarFilter.traceBased;
+    }
+  }
+
+  static Duration _parseDurationMilliseconds(
+    String? value,
+    Duration defaultValue,
+  ) {
+    if (value == null) {
+      return defaultValue;
+    }
+
+    final milliseconds = int.tryParse(value);
+    if (milliseconds == null || milliseconds < 0) {
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+          'OTelEnv: Invalid duration value "$value", using $defaultValue',
+        );
+      }
+      return defaultValue;
+    }
+
+    return Duration(milliseconds: milliseconds);
   }
 
   /// Parse headers from the environment variable format.

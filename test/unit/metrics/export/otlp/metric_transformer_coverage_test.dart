@@ -4,6 +4,7 @@
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/proto/metrics/v1/metrics.pb.dart'
     as proto;
+import 'package:dartastic_opentelemetry/src/metrics/export/metrics_sdk_config.dart';
 import 'package:dartastic_opentelemetry/src/metrics/export/otlp/metric_transformer.dart';
 import 'package:dartastic_opentelemetry/src/resource/resource.dart';
 import 'package:fixnum/fixnum.dart';
@@ -250,6 +251,14 @@ void main() {
     });
 
     group('number data point with exemplars', () {
+      setUp(() {
+        MetricTransformer.setExemplarFilter(MetricsExemplarFilter.alwaysOn);
+      });
+
+      tearDown(() {
+        MetricTransformer.setExemplarFilter(MetricsExemplarFilter.traceBased);
+      });
+
       test('transforms exemplars for sum metric', () {
         final now = DateTime.now();
         final start = now.subtract(const Duration(minutes: 1));
@@ -315,6 +324,14 @@ void main() {
     });
 
     group('histogram data point with exemplars', () {
+      setUp(() {
+        MetricTransformer.setExemplarFilter(MetricsExemplarFilter.alwaysOn);
+      });
+
+      tearDown(() {
+        MetricTransformer.setExemplarFilter(MetricsExemplarFilter.traceBased);
+      });
+
       test('transforms exemplars for histogram metric', () {
         final now = DateTime.now();
         final start = now.subtract(const Duration(minutes: 1));
