@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.10-wip]
 
+### Added
+- **Public `MetricTransformer.transformMetrics` one-shot** — the metrics
+  analogue of `OtlpLogRecordTransformer.transformLogRecords`: converts a
+  whole `MetricData` batch to a ready-to-serialize OTLP
+  `ExportMetricsServiceRequest` (`transformMetrics(data).writeToBuffer()`),
+  so alternative exporters and sinks can reuse the transform instead of
+  re-implementing the per-metric mapping. Both bundled OTLP metric
+  exporters (HTTP and gRPC) now build their requests through it, removing
+  two hand-rolled copies of the same assembly; wire output is unchanged
+  (same instrumentation-scope constant, same `OTel.resource(null)`
+  fallback, resolved by the caller so the transformer stays a pure leaf).
+
 ## [1.1.0-beta.9] - 2026-07-18
 
 ### Changed
