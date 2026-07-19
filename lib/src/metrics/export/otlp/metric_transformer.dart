@@ -5,15 +5,57 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
     show OTelLog;
 import 'package:fixnum/fixnum.dart';
 
+import '../../../../proto/collector/metrics/v1/metrics_service.pb.dart';
 import '../../../../proto/common/v1/common.pb.dart' as common_proto;
 import '../../../../proto/metrics/v1/metrics.pb.dart' as proto;
 import '../../../../proto/resource/v1/resource.pb.dart' as resource_proto;
 import '../../../resource/resource.dart';
 import '../../data/metric.dart';
+import '../../data/metric_data.dart';
 import '../../data/metric_point.dart';
 
 /// Utility class for transforming metric data to OTLP protobuf format.
 class MetricTransformer {
+  /// Convert a whole [MetricData] batch to an OTLP
+  /// [ExportMetricsServiceRequest] — the metrics analogue of
+  /// `OtlpLogRecordTransformer.transformLogRecords`.
+  ///
+  /// This is exactly the request the OTLP metric exporters build before
+  /// they send, factored out so alternative exporters and sinks can reuse
+  /// the transform instead of re-implementing the per-metric mapping.
+  /// Callers get wire bytes via `transformMetrics(data).writeToBuffer()`.
+  ///
+  /// When [MetricData.resource] is null the caller-supplied
+  /// [fallbackResource] is used (the bundled exporters pass
+  /// `OTel.resource(null)`); if that is also null an empty resource proto
+  /// is emitted. The fallback is resolved by the caller so this
+  /// transformer stays a pure leaf (no dependency on `OTel`).
+  static ExportMetricsServiceRequest transformMetrics(
+    MetricData data, {
+    Resource? fallbackResource,
+  }) {
+    final request = ExportMetricsServiceRequest();
+    final resourceMetrics = proto.ResourceMetrics();
+
+    final effectiveResource = data.resource ?? fallbackResource;
+    resourceMetrics.resource = effectiveResource != null
+        ? transformResource(effectiveResource)
+        : resource_proto.Resource();
+
+    final scopeMetrics = proto.ScopeMetrics();
+    scopeMetrics.scope = common_proto.InstrumentationScope(
+      name: '@dart/dartastic_opentelemetry',
+      version: '1.0.0',
+    );
+    for (final metric in data.metrics) {
+      scopeMetrics.metrics.add(transformMetric(metric));
+    }
+
+    resourceMetrics.scopeMetrics.add(scopeMetrics);
+    request.resourceMetrics.add(resourceMetrics);
+    return request;
+  }
+
   /// Transforms a Resource to an OTLP Resource proto.
   static resource_proto.Resource transformResource(Resource resource) {
     final resourceProto = resource_proto.Resource();
