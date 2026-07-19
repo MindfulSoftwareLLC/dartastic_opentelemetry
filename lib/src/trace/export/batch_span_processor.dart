@@ -196,9 +196,14 @@ class BatchSpanProcessor implements SpanProcessor {
     _timer = Timer.periodic(_config.scheduleDelay, (_) async {
       try {
         await _exportBatch();
+        // Exporter errors are caught inside _exportSingleBatch; this is a
+        // last-resort guard so an unexpected failure can never become an
+        // unhandled async error inside a periodic timer.
+        // coverage:ignore-start
       } catch (e) {
         if (OTelLog.isError()) OTelLog.error('Error in batch export timer: $e');
       }
+      // coverage:ignore-end
     });
   }
 
