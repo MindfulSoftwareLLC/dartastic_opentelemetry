@@ -11,5 +11,5 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 void main() {
   OTelLog.logFunction = null;
   final config = OTelEnv.getAttributeLimits();
-  print(jsonEncode(config));
+  print(jsonEncode(config.toJson()));
 }
