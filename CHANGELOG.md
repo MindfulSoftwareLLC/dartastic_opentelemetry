@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.10-wip]
 
+### Fixed
+- **OTLP/JSON enum fields are now encoded as integers per the OTLP spec**,
+  not proto3-JSON's default enum names: span `kind`, status `code`, log
+  `severityNumber`, metric `aggregationTemporality`. Same origin story as
+  the 1.1.0-beta.7 hex-id fix — `toProto3Json()`'s defaults deviate from
+  the OTLP spec, lenient receivers masked it, and a strict
+  cross-implementation check (the Dartastic engine wire-parity harness)
+  caught it. Conversion is field-keyed and prefix-guarded, so attribute
+  string values that merely resemble enum names are never touched.
+
 ### Added
 - **Public `MetricTransformer.transformMetrics` one-shot** — the metrics
   analogue of `OtlpLogRecordTransformer.transformLogRecords`: converts a
