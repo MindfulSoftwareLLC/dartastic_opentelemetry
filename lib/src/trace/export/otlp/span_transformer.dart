@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 // ignore_for_file: invalid_use_of_visible_for_testing_member
 
@@ -40,7 +40,7 @@ class OtlpSpanTransformer {
       if (OTelLog.isDebug()) {
         OTelLog.debug('Extracting resource attributes for export:');
         resourceAttrs.toList().forEach((attr) {
-          if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+          if (attr.key == 'service.name') {
             OTelLog.debug('  ${attr.key}: ${attr.value}');
           }
         });
@@ -49,7 +49,7 @@ class OtlpSpanTransformer {
       if (OTelLog.isDebug()) {
         OTelLog.debug('Extracting resource attributes for export:');
         resourceAttrs.toList().forEach((attr) {
-          if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+          if (attr.key == 'service.name') {
             OTelLog.debug('  ${attr.key}: ${attr.value}');
           }
         });

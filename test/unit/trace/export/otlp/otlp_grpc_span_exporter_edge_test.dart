@@ -1,10 +1,11 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 import 'dart:async';
 import 'dart:io';
 
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart'
+    hide Server;
 import 'package:dartastic_opentelemetry/proto/collector/trace/v1/trace_service.pbgrpc.dart';
 import 'package:grpc/grpc.dart';
 import 'package:test/test.dart';
@@ -387,16 +388,17 @@ void main() {
     test(
       'broken protocol server exercises generic error handling',
       () async {
-        // Start a raw TCP server that immediately closes connections.
-        // This triggers a non-GrpcError (SocketException) in the gRPC client,
-        // exercising the generic catch block. Unlike an HTTP server that sends
-        // a non-gRPC response, closing immediately avoids HTTP/2 negotiation
-        // hangs that cause flaky timeouts.
-        final rawServer = await ServerSocket.bind('127.0.0.1', 0);
-        final port = rawServer.port;
-        rawServer.listen((socket) {
-          socket.destroy();
-        });
+        // Bind then immediately close a socket to reserve a port with NO
+        // listener, so the export gets a clean connection-refused
+        // (SocketException) — exercising the generic catch block. This
+        // replaces an earlier accept-then-destroy server: that adversarial
+        // trigger drove the gRPC client into a tight reconnect loop that
+        // floods the microtask queue and starves the event loop under CPU
+        // contention, so no Timer (gRPC deadline or the exporter's timeout)
+        // could fire and export() hung. Connection-refused fails fast.
+        final probe = await ServerSocket.bind('127.0.0.1', 0);
+        final port = probe.port;
+        await probe.close();
 
         final exporter = OtlpGrpcSpanExporter(
           OtlpGrpcExporterConfig(
@@ -410,18 +412,17 @@ void main() {
         );
         final span = _createTestSpan(name: 'broken-protocol-span');
 
-        // Should throw some kind of error (GrpcError or SocketException)
+        // Should throw some kind of error (GrpcError or SocketException) and
+        // return promptly rather than hang.
         await expectLater(() => exporter.export([span]), throwsA(anything));
 
         await exporter.shutdown();
-        await rawServer.close();
       },
-      // 90s, not 30s: the test passes locally in ~5s but has flaked
-      // multiple times on Linux GitHub Actions runners under load
-      // (PR #36, PR #41). The gRPC client's connect-error propagation
-      // is the slow path; bumping the test ceiling well above the
-      // 5s exporter timeout absorbs CI scheduling jitter.
-      timeout: const Timeout(Duration(seconds: 90)),
+      // A normal ceiling is fine now: connection-refused fails fast and does
+      // not spin the gRPC client into the reconnect churn that used to starve
+      // the event loop under load and forced a 90s workaround (PR #36, #41).
+      // If that regresses, this fails at 30s instead of hanging the suite.
+      timeout: const Timeout(Duration(seconds: 30)),
     );
 
     // -----------------------------------------------------------------------

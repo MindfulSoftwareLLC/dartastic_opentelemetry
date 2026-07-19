@@ -1,9 +1,11 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 library;
 
+import 'package:meta/meta.dart';
 import '../../dartastic_opentelemetry.dart';
+import 'logger.dart';
 
 part 'logger_provider_create.dart';
 
@@ -179,7 +181,7 @@ class LoggerProvider implements APILoggerProvider {
         if (resource != null) {
           OTelLog.debug('Resource attributes:');
           resource!.attributes.toList().forEach((attr) {
-            if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+            if (attr.key == 'service.name') {
               OTelLog.debug('  ${attr.key}: ${attr.value}');
             }
           });

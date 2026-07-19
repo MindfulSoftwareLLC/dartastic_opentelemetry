@@ -1,3 +1,6 @@
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
 // Web / non-`dart:io` stub for certificate utilities.
 //
 // Browsers do TLS themselves — there is no equivalent of `SecurityContext`

@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'env_constants.dart';
@@ -61,18 +61,17 @@ class OTelEnv {
       OTelLog.logFunction = print;
     }
 
-    // Enable metrics logging based on environment variable
-    if (_getEnvBool(otelLogMetrics) && OTelLog.metricLogFunction == null) {
+    // Dart-specific per-signal diagnostic sinks, named per the spec's
+    // language-specific env var convention (OTEL_{LANGUAGE}_{FEATURE}).
+    // The spec's self-diagnostics section leaves this to language
+    // conventions; OTEL_LOG_LEVEL governs only the internal logger level.
+    if (_getEnvBool(otelDartLogMetrics) && OTelLog.metricLogFunction == null) {
       OTelLog.metricLogFunction = print;
     }
-
-    // Enable spans logging based on environment variable
-    if (_getEnvBool(otelLogSpans) && OTelLog.spanLogFunction == null) {
+    if (_getEnvBool(otelDartLogSpans) && OTelLog.spanLogFunction == null) {
       OTelLog.spanLogFunction = print;
     }
-
-    // Enable export logging based on environment variable
-    if (_getEnvBool(otelLogExport) && OTelLog.exportLogFunction == null) {
+    if (_getEnvBool(otelDartLogExport) && OTelLog.exportLogFunction == null) {
       OTelLog.exportLogFunction = print;
     }
   }
@@ -385,6 +384,110 @@ class OTelEnv {
       default:
         return null;
     }
+  }
+
+  /// Reads `OTEL_<SIGNAL>_EXPORTER` as the spec's comma-separated list
+  /// (sdk-environment-variables.md, "Exporter Selection": "The
+  /// implementation MAY accept a comma-separated list to enable setting
+  /// multiple exporters"). Returns normalized (trimmed, lowercased,
+  /// deduplicated) names, or null when the variable is unset or empty.
+  static List<String>? getExporters({String signal = 'traces'}) {
+    final raw = getExporter(signal: signal);
+    if (raw == null) return null;
+    final names = <String>[];
+    for (final part in raw.split(',')) {
+      final name = part.trim().toLowerCase();
+      if (name.isNotEmpty && !names.contains(name)) {
+        names.add(name);
+      }
+    }
+    return names.isEmpty ? null : names;
+  }
+
+  /// Get Batch Span Processor (BSP) configuration from environment variables.
+  ///
+  /// Returns a map containing the BSP configuration read from environment variables.
+  /// Keys returned:
+  /// - 'scheduleDelay': Duration for the schedule delay
+  /// - 'exportTimeout': Duration for the export timeout
+  /// - 'maxQueueSize': int for maximum queue size
+  /// - 'maxExportBatchSize': int for maximum export batch size
+  static Map<String, dynamic> getBspConfig() {
+    final config = <String, dynamic>{};
+
+    // Get schedule delay
+    final scheduleDelay = _getEnv(otelBspScheduleDelay);
+    if (scheduleDelay != null) {
+      final delayMs = int.tryParse(scheduleDelay);
+      if (delayMs != null) {
+        config['scheduleDelay'] = Duration(milliseconds: delayMs);
+      } else {
+        if (OTelLog.isWarn()) {
+          OTelLog.warn('OTelEnv: Invalid OTEL_BSP_SCHEDULE_DELAY value '
+              '"$scheduleDelay", ignoring.');
+        }
+      }
+    }
+
+    // Get export timeout
+    final exportTimeout = _getEnv(otelBspExportTimeout);
+    if (exportTimeout != null) {
+      final timeoutMs = int.tryParse(exportTimeout);
+      if (timeoutMs != null) {
+        config['exportTimeout'] = Duration(milliseconds: timeoutMs);
+      } else {
+        if (OTelLog.isWarn()) {
+          OTelLog.warn('OTelEnv: Invalid OTEL_BSP_EXPORT_TIMEOUT value '
+              '"$exportTimeout", ignoring.');
+        }
+      }
+    }
+
+    // Get max queue size
+    final maxQueueSize = _getEnv(otelBspMaxQueueSize);
+    if (maxQueueSize != null) {
+      final size = int.tryParse(maxQueueSize);
+      if (size != null) {
+        config['maxQueueSize'] = size;
+      } else {
+        if (OTelLog.isWarn()) {
+          OTelLog.warn('OTelEnv: Invalid OTEL_BSP_MAX_QUEUE_SIZE value '
+              '"$maxQueueSize", ignoring.');
+        }
+      }
+    }
+
+    // Get max export batch size
+    final maxExportBatchSize = _getEnv(otelBspMaxExportBatchSize);
+    if (maxExportBatchSize != null) {
+      final size = int.tryParse(maxExportBatchSize);
+      if (size != null) {
+        config['maxExportBatchSize'] = size;
+      } else {
+        if (OTelLog.isWarn()) {
+          OTelLog.warn('OTelEnv: Invalid OTEL_BSP_MAX_EXPORT_BATCH_SIZE '
+              'value "$maxExportBatchSize", ignoring.');
+        }
+      }
+    }
+
+    return config;
+  }
+
+  /// Reads `OTEL_PROPAGATORS` (sdk-environment-variables.md, "General SDK
+  /// Configuration"): a comma-separated list of propagator names. Returns
+  /// the normalized (trimmed, lowercased) names, defaulting to the spec
+  /// default `[tracecontext, baggage]` when unset or empty.
+  static List<String> getPropagators() {
+    final raw = _getEnv(otelPropagators);
+    if (raw == null || raw.trim().isEmpty) {
+      return const ['tracecontext', 'baggage'];
+    }
+    return raw
+        .split(',')
+        .map((name) => name.trim().toLowerCase())
+        .where((name) => name.isNotEmpty)
+        .toList();
   }
 
   /// Get Batch LogRecord Processor (BLRP) configuration from environment variables.

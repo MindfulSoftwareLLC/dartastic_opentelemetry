@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 /// Regression test for the documented gap in `1.1.0-beta.1`'s fix for
 /// issue #33. That release shut down the *default* `LoggerProvider` in

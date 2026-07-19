@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
@@ -30,7 +30,6 @@ void main() async {
     serviceName: 'dartastic-examples',
     tracerName: 'otlp_grpc_example',
     tracerVersion: '1.0.0',
-    tenantId: 'my-valued-customer',
     // Always consult the OTel Semantic Conventions to find an existing
     // convention name for an attribute:
     // https://opentelemetry.io/docs/specs/semconv/general/attributes/
@@ -48,7 +47,7 @@ void main() async {
   // convention name for an attribute:
   // https://opentelemetry.io/docs/specs/semconv/general/attributes/
   tracer.attributes = OTel.attributesFromSemanticMap({
-    SourceCode.codeFunctionName: 'main',
+    Code.codeFunctionName: 'main',
   });
 
   // Create a new root span. Prefer typed enum keys over raw strings.

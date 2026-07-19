@@ -1,9 +1,9 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 // Helper script: prints JSON with boolean log function status after
 // OTelEnv.initializeLogging().
-// Run via subprocess with OTEL_LOG_METRICS, OTEL_LOG_SPANS, OTEL_LOG_EXPORT
+// Run via subprocess with OTEL_DART_LOG_METRICS, OTEL_DART_LOG_SPANS, OTEL_DART_LOG_EXPORT
 // env vars set.
 
 import 'dart:convert';

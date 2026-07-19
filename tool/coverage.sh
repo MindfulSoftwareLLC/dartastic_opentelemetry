@@ -3,10 +3,13 @@
 
 set -e  # Exit on any error
 
+# Always operate from the repo root, wherever the script is invoked from.
+cd "$(dirname "$0")/.." || exit 1
+
 # Parse command line arguments
 # Need trace logging for coverage of debug and trace logs
 LOG_LEVEL="trace"
-CONCURRENCY="20"
+CONCURRENCY="10"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -40,9 +43,9 @@ download_otelcol
 echo "Starting test coverage collection..."
 # Set environment variables to enable logging during tests
 export OTEL_LOG_LEVEL="$LOG_LEVEL"
-export OTEL_LOG_METRICS=true
-export OTEL_LOG_SPANS=true
-export OTEL_LOG_EXPORT=true
+export OTEL_DART_LOG_METRICS=true
+export OTEL_DART_LOG_SPANS=true
+export OTEL_DART_LOG_EXPORT=true
 # Environment variable to signal tests they are running in isolation
 export DART_OTEL_ISOLATED_TESTING=true
 
@@ -70,6 +73,12 @@ lcov --remove coverage/lcov.info '**/proto/**' '**/test/**' --ignore-errors unus
 
 # Generate HTML report
 genhtml coverage/lcov.info -o coverage/html
+
+# Open the report in the default browser on macOS (CI runs Linux, where
+# `open` does not exist and would fail the script under set -e).
+if [[ "$OSTYPE" == darwin* ]]; then
+  open coverage/html/index.html
+fi
 
 echo "Coverage process completed successfully"
 exit 0

@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 // Tests for environment configuration, resource detection, and OTel
 // initialization exercising error paths and edge cases.
@@ -17,6 +17,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry/src/resource/resource.dart';
 import 'package:test/test.dart';
 
 import '../../testing_utils/memory_log_record_exporter.dart';
@@ -72,6 +73,180 @@ class _FixedDetector implements ResourceDetector {
 }
 
 void main() {
+  // =========================================================================
+  // BatchSpanProcessorConfig - subprocess tests for fromEnvironment
+  // =========================================================================
+  group('BatchSpanProcessorConfig.fromEnvironment() (subprocess)', () {
+    test('uses defaults when no vars set', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_from_env.dart',
+        {},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['scheduleDelay_ms'], equals(5000));
+      expect(result['exportTimeout_ms'], equals(30000));
+      expect(result['maxQueueSize'], equals(2048));
+      expect(result['maxExportBatchSize'], equals(512));
+      expect(result['logs'], isEmpty);
+    });
+
+    test('honors scheduleDelay=0 (export ASAP)', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_from_env.dart',
+        {'OTEL_BSP_SCHEDULE_DELAY': '0'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['scheduleDelay_ms'], equals(0));
+      expect(result['logs'], isEmpty);
+    });
+
+    test('warns and defaults for scheduleDelay=-1', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_from_env.dart',
+        {'OTEL_BSP_SCHEDULE_DELAY': '-1'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['scheduleDelay_ms'], equals(5000));
+      final logs = result['logs'] as List<dynamic>;
+      expect(logs.length, equals(1));
+      expect(logs[0].toString(), contains('Negative OTEL_BSP_SCHEDULE_DELAY'));
+    });
+
+    test('honors exportTimeout=0 (no limit)', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_from_env.dart',
+        {'OTEL_BSP_EXPORT_TIMEOUT': '0'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['exportTimeout_ms'], equals(0x7FFFFFFF));
+      expect(result['logs'], isEmpty);
+    });
+
+    test('warns and defaults for exportTimeout=-1', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_from_env.dart',
+        {'OTEL_BSP_EXPORT_TIMEOUT': '-1'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['exportTimeout_ms'], equals(30000));
+      final logs = result['logs'] as List<dynamic>;
+      expect(logs.length, equals(1));
+      expect(logs[0].toString(), contains('Negative OTEL_BSP_EXPORT_TIMEOUT'));
+    });
+
+    test('clamps maxExportBatchSize to maxQueueSize', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_from_env.dart',
+        {
+          'OTEL_BSP_MAX_QUEUE_SIZE': '100',
+          'OTEL_BSP_MAX_EXPORT_BATCH_SIZE': '200',
+        },
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['maxQueueSize'], equals(100));
+      expect(result['maxExportBatchSize'], equals(100));
+      expect(result['logs'], isEmpty);
+    });
+
+    test('warns and defaults for non-positive queue size', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_from_env.dart',
+        {'OTEL_BSP_MAX_QUEUE_SIZE': '-5'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['maxQueueSize'], equals(2048));
+      final logs = result['logs'] as List<dynamic>;
+      expect(logs.length, equals(1));
+      expect(
+          logs[0].toString(), contains('Non-positive OTEL_BSP_MAX_QUEUE_SIZE'));
+    });
+  });
+  // =========================================================================
+  // OTelEnv - subprocess tests for getBspConfig
+  // =========================================================================
+  group('OTelEnv.getBspConfig (subprocess)', () {
+    test('reads scheduleDelay', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {'OTEL_BSP_SCHEDULE_DELAY': '2000'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['scheduleDelay_ms'], equals(2000));
+    });
+
+    test('reads exportTimeout', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {'OTEL_BSP_EXPORT_TIMEOUT': '30000'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['exportTimeout_ms'], equals(30000));
+    });
+
+    test('reads maxQueueSize', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {'OTEL_BSP_MAX_QUEUE_SIZE': '4096'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['maxQueueSize'], equals(4096));
+    });
+
+    test('reads maxExportBatchSize', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {'OTEL_BSP_MAX_EXPORT_BATCH_SIZE': '1024'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['maxExportBatchSize'], equals(1024));
+    });
+
+    test('ignores non-numeric scheduleDelay', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {'OTEL_BSP_SCHEDULE_DELAY': 'not-a-number'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result.containsKey('scheduleDelay_ms'), isFalse);
+    });
+
+    test('ignores non-numeric exportTimeout', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {'OTEL_BSP_EXPORT_TIMEOUT': 'abc'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result.containsKey('exportTimeout_ms'), isFalse);
+    });
+
+    test('ignores non-numeric maxQueueSize', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {'OTEL_BSP_MAX_QUEUE_SIZE': 'xyz'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result.containsKey('maxQueueSize'), isFalse);
+    });
+
+    test('ignores non-numeric maxExportBatchSize', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {'OTEL_BSP_MAX_EXPORT_BATCH_SIZE': 'foo'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result.containsKey('maxExportBatchSize'), isFalse);
+    });
+
+    test('returns empty map when no BSP env vars set', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_bsp_config.dart',
+        {},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result, isEmpty);
+    });
+  });
+
   // =========================================================================
   // OTelEnv - subprocess tests for getBlrpConfig
   // =========================================================================
@@ -874,6 +1049,67 @@ void main() {
   // =========================================================================
   // OTel - print interception methods
   // =========================================================================
+
+  // ==========================================================================
+  // OTEL_PROPAGATORS - subprocess tests for the global propagator install
+  // (context/api-propagators.md, "Global Propagators": the SDK configures
+  // the API's global propagator; the API default is no-op.)
+  // ==========================================================================
+  group('OTEL_PROPAGATORS (subprocess)', () {
+    const helper = 'test/unit/environment/helpers/check_propagators.dart';
+
+    test('default installs tracecontext + baggage composite', () async {
+      final output = await runWithEnv(helper, {});
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['type'], contains('CompositePropagator'));
+      expect(
+          result['fields'], equals(['baggage', 'traceparent', 'tracestate']));
+      expect(result['logs'], isEmpty);
+    });
+
+    test('tracecontext alone installs the W3C trace context propagator',
+        () async {
+      final output =
+          await runWithEnv(helper, {'OTEL_PROPAGATORS': 'tracecontext'});
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['type'], contains('W3CTraceContextPropagator'));
+      expect(result['fields'], equals(['traceparent', 'tracestate']));
+    });
+
+    test('baggage alone installs the W3C baggage propagator', () async {
+      final output = await runWithEnv(helper, {'OTEL_PROPAGATORS': 'baggage'});
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['type'], contains('W3CBaggagePropagator'));
+      expect(result['fields'], equals(['baggage']));
+    });
+
+    test('none leaves the spec-mandated no-op propagator', () async {
+      final output = await runWithEnv(helper, {'OTEL_PROPAGATORS': 'none'});
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['type'], contains('NoopTextMapPropagator'));
+      expect(result['fields'], isEmpty);
+    });
+
+    test('unsupported names warn and are ignored', () async {
+      final output = await runWithEnv(
+          helper, {'OTEL_PROPAGATORS': 'tracecontext,b3,xray'});
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['type'], contains('W3CTraceContextPropagator'));
+      final logs = result['logs'] as List<dynamic>;
+      expect(logs.length, equals(2));
+      expect(logs[0].toString(), contains('"b3" ignored'));
+      expect(logs[1].toString(), contains('"xray" ignored'));
+    });
+
+    test('only unsupported names keeps the no-op default and warns', () async {
+      final output = await runWithEnv(helper, {'OTEL_PROPAGATORS': 'jaeger'});
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['type'], contains('NoopTextMapPropagator'));
+      expect((result['logs'] as List<dynamic>).single.toString(),
+          contains('"jaeger" ignored'));
+    });
+  });
+
   group('OTel print interception', () {
     setUp(() async {
       await OTel.reset();
@@ -1216,68 +1452,6 @@ void main() {
       final attrs = OTel.defaultResource!.attributes.toList();
       final hasTenantId = attrs.any((a) => a.key == 'tenant_id');
       expect(hasTenantId, isFalse);
-    });
-
-    test('initialize with tenantId preserves it through platform detection',
-        () async {
-      await OTel.initialize(
-        serviceName: 'tenant-with-platform',
-        tenantId: 'my-tenant',
-        detectPlatformResources: true,
-        enableMetrics: false,
-        enableLogs: false,
-      );
-
-      expect(OTel.defaultResource, isNotNull);
-      final attrs = OTel.defaultResource!.attributes.toList();
-      final tenantAttr = attrs.firstWhere(
-        (a) => a.key == 'tenant_id',
-        orElse: () => throw StateError('tenant_id not found'),
-      );
-      expect(tenantAttr.value, equals('my-tenant'));
-    });
-
-    test('tenantId coexists with custom resource attributes', () async {
-      final customAttrs = OTel.attributesFromMap({
-        'custom.key': 'custom-value',
-        'deployment.environment': 'staging',
-      });
-
-      await OTel.initialize(
-        serviceName: 'tenant-with-custom',
-        tenantId: 'multi-tenant',
-        resourceAttributes: customAttrs,
-        detectPlatformResources: false,
-        enableMetrics: false,
-        enableLogs: false,
-      );
-
-      expect(OTel.defaultResource, isNotNull);
-      final attrs = OTel.defaultResource!.attributes.toList();
-
-      final tenantAttr = attrs.firstWhere(
-        (a) => a.key == 'tenant_id',
-        orElse: () => throw StateError('tenant_id not found'),
-      );
-      expect(tenantAttr.value, equals('multi-tenant'));
-
-      final customAttr = attrs.firstWhere(
-        (a) => a.key == 'custom.key',
-        orElse: () => throw StateError('custom.key not found'),
-      );
-      expect(customAttr.value, equals('custom-value'));
-    });
-
-    test('initialize with dartasticApiKey stores it', () async {
-      await OTel.initialize(
-        serviceName: 'api-key-test',
-        dartasticApiKey: 'test-api-key-123',
-        detectPlatformResources: false,
-        enableMetrics: false,
-        enableLogs: false,
-      );
-
-      expect(OTel.dartasticApiKey, equals('test-api-key-123'));
     });
   });
 

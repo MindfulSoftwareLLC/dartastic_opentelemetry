@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 /// Spec-compliance tests for SDK defaults and the OTEL_*_EXPORTER /
 /// OTEL_SDK_DISABLED env vars.
@@ -113,6 +113,41 @@ void main() {
       expect(processors.single, contains('ConsoleExporter'));
       expect(processors.single, isNot(contains('Otlp')));
     });
+
+    test(
+        '=otlp,console installs both via a CompositeExporter (spec list '
+        'form)', () async {
+      final snap =
+          await _runPipeline(const {'OTEL_TRACES_EXPORTER': 'otlp,console'});
+      final processors = _spanProcessors(snap);
+      expect(processors, hasLength(1));
+      expect(processors.single, contains('CompositeExporter'));
+      expect(processors.single, contains('OtlpHttpSpanExporter'));
+      expect(processors.single, contains('ConsoleExporter'));
+    });
+
+    test('unsupported values are ignored with the rest honored', () async {
+      final snap =
+          await _runPipeline(const {'OTEL_TRACES_EXPORTER': 'zipkin,console'});
+      final processors = _spanProcessors(snap);
+      expect(processors, hasLength(1));
+      expect(processors.single, contains('ConsoleExporter'));
+      expect(processors.single, isNot(contains('Composite')));
+    });
+
+    test('deprecated logging value falls back to the otlp default', () async {
+      final snap =
+          await _runPipeline(const {'OTEL_TRACES_EXPORTER': 'logging'});
+      final processors = _spanProcessors(snap);
+      expect(processors, hasLength(1));
+      expect(processors.single, contains('OtlpHttpSpanExporter'));
+    });
+
+    test('none wins over other values in a list', () async {
+      final snap =
+          await _runPipeline(const {'OTEL_TRACES_EXPORTER': 'console,none'});
+      expect(_spanProcessors(snap), isEmpty);
+    });
   });
 
   group('OTEL_METRICS_EXPORTER', () {
@@ -132,6 +167,38 @@ void main() {
       expect(readers.single, contains('ConsoleMetricExporter'));
       expect(readers.single, isNot(contains('Otlp')));
     });
+
+    test('=prometheus warns (no scrape server yet) and falls back to otlp',
+        () async {
+      final snap =
+          await _runPipeline(const {'OTEL_METRICS_EXPORTER': 'prometheus'});
+      final readers = _metricReaders(snap);
+      expect(readers, hasLength(1));
+      expect(readers.single, contains('OtlpHttpMetricExporter'));
+      expect(readers.single, isNot(contains('Prometheus')));
+    });
+
+    test('unknown metrics value warns and is ignored, not silently otlp',
+        () async {
+      final snap =
+          await _runPipeline(const {'OTEL_METRICS_EXPORTER': 'bogus,console'});
+      final readers = _metricReaders(snap);
+      expect(readers, hasLength(1));
+      expect(readers.single, contains('ConsoleMetricExporter'));
+      expect(readers.single, isNot(contains('Composite')));
+    });
+
+    test(
+        '=otlp,console installs both via a CompositeMetricExporter (spec '
+        'list form)', () async {
+      final snap =
+          await _runPipeline(const {'OTEL_METRICS_EXPORTER': 'otlp,console'});
+      final readers = _metricReaders(snap);
+      expect(readers, hasLength(1));
+      expect(readers.single, contains('CompositeMetricExporter'));
+      expect(readers.single, contains('OtlpHttpMetricExporter'));
+      expect(readers.single, contains('ConsoleMetricExporter'));
+    });
   });
 
   group('OTEL_LOGS_EXPORTER', () {
@@ -149,6 +216,17 @@ void main() {
       expect(processors, hasLength(1));
       expect(processors.single, contains('Console'));
       expect(processors.single, isNot(contains('Otlp')));
+    });
+
+    test(
+        '=otlp,console installs one processor per exporter (spec list '
+        'form)', () async {
+      final snap =
+          await _runPipeline(const {'OTEL_LOGS_EXPORTER': 'otlp,console'});
+      final processors = _logProcessors(snap);
+      expect(processors, hasLength(2));
+      expect(processors.join(','), contains('OtlpHttpLogRecordExporter'));
+      expect(processors.join(','), contains('ConsoleLogRecordExporter'));
     });
   });
 

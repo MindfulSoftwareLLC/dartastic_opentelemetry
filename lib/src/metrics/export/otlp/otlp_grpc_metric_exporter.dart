@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 import 'dart:async';
 
@@ -7,8 +7,6 @@ import 'package:grpc/grpc.dart';
 
 import '../../../../dartastic_opentelemetry.dart';
 import '../../../../proto/collector/metrics/v1/metrics_service.pbgrpc.dart';
-import '../../../../proto/common/v1/common.pb.dart' as common_proto;
-import '../../../../proto/metrics/v1/metrics.pb.dart' as proto;
 import '../../../trace/export/otlp/certificate_utils_io.dart';
 import 'metric_transformer.dart';
 
@@ -164,40 +162,15 @@ class OtlpGrpcMetricExporter implements MetricExporter {
     }
   }
 
-  /// Builds the export request from the given metrics data.
-  ExportMetricsServiceRequest _buildExportRequest(MetricData data) {
-    final request = ExportMetricsServiceRequest();
-    final resourceMetrics = proto.ResourceMetrics();
-
-    // Add resource
-    if (data.resource != null) {
-      resourceMetrics.resource = MetricTransformer.transformResource(
-        data.resource!,
+  /// Builds the export request from the given metrics data — via the
+  /// shared one-shot, which builds the same request this exporter used to
+  /// assemble inline (same scope constant, same OTel.resource(null)
+  /// fallback), so the wire output is unchanged.
+  ExportMetricsServiceRequest _buildExportRequest(MetricData data) =>
+      MetricTransformer.transformMetrics(
+        data,
+        fallbackResource: OTel.resource(null),
       );
-    } else {
-      // Create empty resource if none provided
-      resourceMetrics.resource = MetricTransformer.transformResource(
-        OTel.resource(null),
-      );
-    }
-
-    // Add scope metrics
-    final scopeMetrics = proto.ScopeMetrics();
-    scopeMetrics.metrics.addAll(
-      data.metrics.map(MetricTransformer.transformMetric),
-    );
-
-    // Add instrumentation scope (hardcoded for now)
-    final scope = common_proto.InstrumentationScope();
-    scope.name = '@dart/dartastic_opentelemetry';
-    scope.version = '1.0.0';
-    scopeMetrics.scope = scope;
-
-    resourceMetrics.scopeMetrics.add(scopeMetrics);
-    request.resourceMetrics.add(resourceMetrics);
-
-    return request;
-  }
 
   @override
   Future<bool> forceFlush() async {

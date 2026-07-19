@@ -1,3 +1,6 @@
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
 // OTLP/JSON id-encoding regression (Dartastic Cloud incident, 2026-07-10).
 //
 // OTLP/JSON is proto3-JSON PLUS the spec's deviations: traceId/spanId/

@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 part of 'tracer_provider.dart';
 
@@ -9,6 +9,7 @@ part of 'tracer_provider.dart';
 /// properly configured TracerProvider instances. It follows the factory
 /// pattern to separate the construction logic from the TracerProvider
 /// class itself.
+@internal
 class SDKTracerProviderCreate {
   /// Creates a new TracerProvider with the specified delegate and resource.
   ///

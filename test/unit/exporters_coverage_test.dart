@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 // Comprehensive test file targeting ~90 additional uncovered lines across
 // multiple source files to push overall coverage from 87.7% toward 90%.
@@ -372,23 +372,6 @@ void main() {
 
       final meterProviders = OTel.meterProviders();
       expect(meterProviders, isNotEmpty);
-    });
-
-    test('initialize with tenantId sets tenant_id on resource', () async {
-      await OTel.initialize(
-        serviceName: 'tenant-test',
-        serviceVersion: '1.0.0',
-        tenantId: 'test-tenant-123',
-        detectPlatformResources: false,
-        enableMetrics: false,
-      );
-
-      final resource = OTel.defaultResource;
-      expect(resource, isNotNull);
-
-      final attrs = resource!.attributes.toList();
-      final tenantAttr = attrs.where((a) => a.key == 'tenant_id');
-      expect(tenantAttr, isNotEmpty);
     });
 
     test('initialize logs environment variable usage with debug', () async {

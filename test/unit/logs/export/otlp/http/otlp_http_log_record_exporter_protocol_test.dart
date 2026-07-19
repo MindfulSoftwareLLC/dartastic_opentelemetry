@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 // Tests the `protocol` config on `OtlpHttpLogRecordExporter` — the
 // http/protobuf default keeps existing behaviour; opting into

@@ -6,7 +6,158 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.1.0-beta.7-wip]
+## [1.1.0-beta.10-wip]
+
+### Added
+- **Public `MetricTransformer.transformMetrics` one-shot** — the metrics
+  analogue of `OtlpLogRecordTransformer.transformLogRecords`: converts a
+  whole `MetricData` batch to a ready-to-serialize OTLP
+  `ExportMetricsServiceRequest` (`transformMetrics(data).writeToBuffer()`),
+  so alternative exporters and sinks can reuse the transform instead of
+  re-implementing the per-metric mapping. Both bundled OTLP metric
+  exporters (HTTP and gRPC) now build their requests through it, removing
+  two hand-rolled copies of the same assembly; wire output is unchanged
+  (same instrumentation-scope constant, same `OTel.resource(null)`
+  fallback, resolved by the caller so the transformer stays a pure leaf).
+
+## [1.1.0-beta.9] - 2026-07-18
+
+### Changed
+- Adopt `dartastic_opentelemetry_api` 1.0.0-rc.1 (constraint
+  `^1.0.0-rc.1`). No SDK code changes were needed: the SDK never used
+  the removed vendor/RUM enums, and it implements the now-abstract
+  `APIObservableResult` interface.
+- CI: self-hosted coverage badge built from lcov.info and published to
+  the `badges` branch; Codecov upload removed (uploads had failed since
+  branch protection was enabled). The README coverage badge is now live
+  data instead of a hardcoded percentage.
+
+## [1.1.0-beta.8] - 2026-07-18
+
+### Added
+- **`OTEL_PROPAGATORS` support and global propagator wiring.**
+  `OTel.initialize()` now installs the API's global `TextMapPropagator`
+  per the spec ("Global Propagators"): the default is the W3C
+  `tracecontext,baggage` composite; `none` (or no supported values)
+  leaves the API's spec-mandated no-op in place; unsupported names emit
+  an `OTelLog.warn` and are ignored. Supported values: `tracecontext`,
+  `baggage`, `none`. Instrumentation libraries can now obtain "the"
+  propagator via `OTelAPI.textMapPropagator` instead of being handed one
+  explicitly.
+- **`OTEL_BSP_*` environment variables** for configuring `BatchSpanProcessor`
+  (`OTEL_BSP_SCHEDULE_DELAY`, `OTEL_BSP_EXPORT_TIMEOUT`, `OTEL_BSP_MAX_QUEUE_SIZE`,
+  `OTEL_BSP_MAX_EXPORT_BATCH_SIZE`). Values are read by
+  `BatchSpanProcessorConfig.fromEnvironment()` which `OTel.initialize()` uses
+  by default. Invalid or out-of-range values now emit `OTelLog.warn` diagnostics.
+  `OTEL_BSP_EXPORT_TIMEOUT=0` is honored as "no limit" per spec.
+- **Comma-separated `OTEL_*_EXPORTER` lists.** The spec's "implementation
+  MAY accept a comma-separated list to enable setting multiple exporters"
+  is now supported for all three signals: `OTEL_TRACES_EXPORTER=otlp,console`
+  installs a `CompositeExporter`, metrics use a `CompositeMetricExporter`,
+  and logs install one processor per exporter. `none` in a list wins;
+  unsupported values (`zipkin`, the deprecated `logging`) emit an
+  `OTelLog.warn` and are ignored; a list with no usable values falls back
+  to the spec default `otlp`. Previously a list value silently installed
+  no exporter at all.
+- Unknown `OTEL_METRICS_EXPORTER` values now warn and are ignored
+  instead of silently becoming `otlp`; `prometheus` gets a dedicated
+  warning pointing at programmatic `PrometheusExporter` use and the
+  planned scrape server (#82) — auto-wiring it today would be a silent
+  no-op since the env-created exporter is unreachable by the app.
+
+### Removed
+
+- **Breaking: `OTel.initialize` no longer accepts `dartasticApiKey` or
+  `tenantId`, and the `OTel.dartasticApiKey` static is gone.** Both were
+  non-standard, vendor-specific parameters that predate the platform
+  layering: API keys belong in OTLP exporter headers
+  (`OTEL_EXPORTER_OTLP_HEADERS`) and tenant identity is platform-layer
+  context, not an SDK concern. The `tenant_id` resource-attribute
+  stamping and its debug-log special-casing are removed with them.
+- **Breaking: the non-standard `OTEL_*`-namespace extensions are renamed
+  or removed.** The per-signal diagnostic vars squatted the spec's core
+  namespace and are renamed to the spec's language-specific convention
+  (`OTEL_{LANGUAGE}_{FEATURE}`): `OTEL_LOG_SPANS` → `OTEL_DART_LOG_SPANS`,
+  `OTEL_LOG_METRICS` → `OTEL_DART_LOG_METRICS`, `OTEL_LOG_EXPORT` →
+  `OTEL_DART_LOG_EXPORT` (same semantics: enable the `OTelLog` per-signal
+  diagnostic sinks; programmatic setters unchanged). The
+  `OTEL_CONSOLE_EXPORTER` dart-define is removed — console output of the
+  telemetry itself uses the standard `OTEL_*_EXPORTER=console` (or the
+  comma-list form, e.g. `otlp,console`).
+
+### Changed
+- **Depends on `dartastic_opentelemetry_api` 1.0.0-beta.10** and re-exports
+  its surface: the Weaver-generated semantic-convention enums (90 registry
+  namespaces incl. entities/metrics/events), `NonRecordingSpan`, and the
+  global `TextMapPropagator`. SDK consumers referencing renamed semconv
+  enums through this package inherit the API's breaking renames — the
+  complete old→new tables are in the API package's 1.0.0-beta.10
+  CHANGELOG. SDK span creation is unaffected (the API's no-SDK span
+  behavior only applies without an SDK factory installed).
+- Examples and tests migrated to the new names (`Db`, `Server`, `Code`,
+  `Http.httpRequestMethod`/`httpResponseStatusCode`/`httpResponseBodySize`)
+  and off registry-deprecated keys: the database examples now emit
+  `db.system.name`, `db.namespace`, `db.operation.name`, and
+  `db.query.text` instead of the deprecated `db.system`/`db.name`/
+  `db.operation`/`db.statement`, and drop the deprecated `db.user`.
+- `CompositePropagator` is constructed via `OTelAPI.compositePropagator`
+  (its constructor is factory-only as of the API's beta.10).
+- **Default span batch schedule delay changed from 1 s to 5 s** (spec default).
+  The previous hard-coded `BatchSpanProcessorConfig(scheduleDelay: Duration(seconds: 1))`
+  in `OTel.initialize()` has been replaced by `BatchSpanProcessorConfig.fromEnvironment()`,
+  whose fallback is the spec-mandated 5000 ms. To restore the old behavior, set
+  `OTEL_BSP_SCHEDULE_DELAY=1000`.
+
+## [1.1.0-beta.7] - 2026-07-11
+
+### Fixed
+- **`OtlpGrpcSpanExporter.export()` gains a Dart-level timeout backstop.**
+  Previously the configured `timeout` was applied only via gRPC's `CallOptions`
+  deadline. A Dart-level `.timeout()` now also bounds the RPC and tears down the
+  channel on expiry, as defense-in-depth for real-world hangs where a collector
+  accepts a connection then stops responding. **Note (under review):** this does
+  NOT fix the concurrency test hang that prompted it — that was event-loop
+  starvation from the gRPC client's reconnect churn, which no Timer-based bound
+  can fix (see the PR discussion). Reviewers are deciding whether to keep this
+  backstop; if dropped, this entry goes with it.
+- **Debug logging no longer adds a `ConsoleExporter` to the trace pipeline.**
+  `OTel.initialize()` used to append a `ConsoleExporter` to the span exporters
+  whenever debug logging was enabled (e.g. `OTEL_LOG_LEVEL=debug`/`trace`),
+  silently changing the export pipeline shape. Per the OTel spec the default
+  exporter is `otlp` only — the same cleanup #49 applied to metrics. Console
+  output remains available explicitly: `OTEL_TRACES_EXPORTER=console`
+  (replaces the exporter) or the `OTEL_CONSOLE_EXPORTER` `--dart-define`
+  (adds one alongside). For span logging use `OTEL_LOG_SPANS=true`.
+
+### Added
+- **Configurable exception handling for `Tracer.withSpan` / `withSpanAsync`.** A new `SpanExceptionOptions` (with `recordException`, `setStatusOnException`, and an `exceptionSanitizer` callback returning a `SanitizedSpanException`) lets callers customize how a thrown exception is recorded and whether the span status is set. The defaults preserve the existing behavior (record the exception + set `SpanStatusCode.Error`), and the original exception is always rethrown. Configure globally via `OTel.initialize(spanExceptionOptions: ...)` (also available per `TracerProvider` and `OTel.addTracerProvider`) and override per call via the new `exceptionOptions:` parameter on `withSpan` / `withSpanAsync` / `startActiveSpan` / `startActiveSpanAsync` and `OTel.withSpan` / `OTel.withSpanAsync`. Per-call options are merged field-by-field over the global config (via `SpanExceptionOptions.mergeWith`), so overriding a single flag preserves a globally configured sanitizer. When a sanitizer is provided, only its returned type/message/stacktrace are recorded — the raw exception's details never leak — and if the sanitizer itself throws, the span is marked failed with a generic description. This enables SDKs and applications to redact PII before it is recorded. ([#51](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/51))
+
+### Fixed
+- **API-first usage no longer wedges SDK initialization (#50).** The API
+  package auto-installs its no-op `OTelAPIFactory` when API-only code runs
+  before the SDK initializes (per the OTel spec). Previously
+  `OTel.initialize()` then failed with "can only be initialized once", and
+  `OTel.tracerProvider()` crashed with an opaque
+  `APITracerProvider is not a subtype of TracerProvider` cast error.
+  `OTel.initialize()` now replaces exactly the auto-installed no-op API
+  factory — identified via `OTelFactory.isAPIFactory` (API ≥ beta.8), so real
+  factories are never silently replaced — and the SDK accessors
+  (`tracerProvider()`/`meterProvider()`/`loggerProvider()`/`addTracerProvider()`)
+  throw a clear `OTel.initialize() must be called first.` `StateError` before
+  initialization instead of the cast error. `OTelSDKFactory` now overrides
+  `isAPIFactory` to `false` per the API ≥ beta.8 contract. Note: API objects
+  handed out before `initialize()` remain no-ops — capture tracers after
+  initialize. Thanks @robert-northmind for the investigation in #53 and the
+  regression test suite adapted from it.
+
+### Changed
+- **Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.9`.** Beta.8 adds
+  `OTelFactory.isAPIFactory` (used by the fix above) and replaces the no-op
+  factory in `OTelAPI.initialize()`; beta.9 fixes pre-initialization lazy
+  no-op installs (`tracer()`, `logger()`, `instrumentationScope()`,
+  `TraceState.fromString`, the `fromJson`s) and makes `Context` re-read the
+  global factory so an SDK factory installed later actually takes effect.
+
 
 ## [1.1.0-beta.6] - 2026-05-18
 - **Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.7`.** Beta.7 fixes observable metrics and standard env var defaults.

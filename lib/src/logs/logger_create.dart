@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 part of 'logger.dart';
 
@@ -9,6 +9,7 @@ part of 'logger.dart';
 /// properly configured OTelLogger instances. It follows the factory
 /// pattern to separate the construction logic from the OTelLogger
 /// class itself.
+@internal
 class SDKLoggerCreate {
   /// Creates a new OTelLogger with the specified delegate and provider.
   ///

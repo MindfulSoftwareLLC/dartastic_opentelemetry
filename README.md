@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![OpenTelemetry Specification](https://img.shields.io/badge/OpenTelemetry-Specification-blueviolet)](https://opentelemetry.io/docs/specs/otel/)
-[![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen.svg)](https://dartastic.github.io/dartastic_opentelemetry/)
+[![Coverage](https://raw.githubusercontent.com/MindfulSoftwareLLC/dartastic_opentelemetry/badges/coverage.svg)](https://mindfulsoftwarellc.github.io/dartastic_opentelemetry/)
 
 Dartastic is an [OpenTelemetry](https://opentelemetry.io/) SDK to add standard observability to Dart applications.
 Dartastic can be used with any OTel backend since it's standards-compliant.
@@ -84,7 +84,7 @@ OpenTelemetry specification which separates API and the SDK.  All OpenTelemetry 
 Include this in your pubspec.yaml:
 ```
 dependencies:
-  dartastic_opentelemetry: ^1.1.0-beta.6
+  dartastic_opentelemetry: ^1.1.0-beta.9
 ```
 
 ## Usage
@@ -298,6 +298,51 @@ OTel.tracer().startActiveSpan(
   },
 );
 ```
+
+### Customizing exception handling — `SpanExceptionOptions`
+
+By default the `withSpan` family records a thrown exception as an
+`exception` event and sets the span status to `SpanStatusCode.Error`
+before rethrowing. `SpanExceptionOptions` lets you customize this —
+skip recording, skip the status update, or **sanitize** the exception
+before it is recorded (useful for stripping PII, tokens, or user IDs
+in RUM scenarios). The original exception is always rethrown.
+
+Configure a global default at initialization, override per call, or
+both — per-call options are merged field-by-field over the global
+config, so overriding one flag preserves a globally configured
+sanitizer:
+
+```dart
+// Global default, applied to every span created by the SDK.
+await OTel.initialize(
+  serviceName: 'my-service',
+  spanExceptionOptions: SpanExceptionOptions(
+    exceptionSanitizer: (error, stackTrace) => SanitizedSpanException(
+      type: error.runtimeType.toString(),
+      message: redactPii(error.toString()),
+      stackTrace: redactStackTrace(stackTrace), // null => no stacktrace
+      statusDescription: 'sanitized exception',
+    ),
+  ),
+);
+
+// Per-call override — keeps the global sanitizer, just disables the
+// status update for this one call.
+await tracer.withSpanAsync(
+  span,
+  () => doWork(),
+  exceptionOptions: const SpanExceptionOptions(setStatusOnException: false),
+);
+```
+
+When a sanitizer is provided, only its returned `type` / `message` /
+`stackTrace` are recorded — the raw exception's details never leak. If
+the sanitizer itself throws, the span is marked failed with a generic
+description and nothing sensitive is recorded. `exceptionOptions` is
+available on `Tracer.withSpan` / `withSpanAsync` /
+`startActiveSpan` / `startActiveSpanAsync` and the
+`OTel.withSpan` / `OTel.withSpanAsync` convenience methods.
 
 ### Span Attributes
 
@@ -927,7 +972,11 @@ Constants are defined for all 74 OpenTelemetry environment variables. See `lib/s
 | `otelServiceName`          | `OTEL_SERVICE_NAME`         | Sets the service name             | `my-dart-app`                           |
 | `otelResourceAttributes`   | `OTEL_RESOURCE_ATTRIBUTES`  | Additional resource attributes    | `environment=prod,region=us-west`       |
 | `otelLogLevel`             | `OTEL_LOG_LEVEL`            | SDK internal log level            | `INFO`, `DEBUG`, `WARN`, `ERROR`        |
+| `otelDartLogSpans`         | `OTEL_DART_LOG_SPANS`       | Diagnostic span logging (Dart-specific, spec `OTEL_{LANGUAGE}_{FEATURE}` pattern) | `true`/`false` |
+| `otelDartLogMetrics`       | `OTEL_DART_LOG_METRICS`     | Diagnostic metric logging (Dart-specific) | `true`/`false` |
+| `otelDartLogExport`        | `OTEL_DART_LOG_EXPORT`      | Diagnostic export logging (Dart-specific) | `true`/`false` |
 | `otelSdkDisabled`          | `OTEL_SDK_DISABLED`         | Global off-switch — when `true`, the SDK installs no span processors, metric readers, or log record processors (true no-op across all three signals, including explicit overrides) | `true` |
+| `otelPropagators`                     | `OTEL_PROPAGATORS`                      | Global propagators: `tracecontext`, `baggage`, `none` (comma-separated) | `tracecontext,baggage` |
 
 #### OTLP Exporter Configuration
 
@@ -941,7 +990,7 @@ Constants are defined for all 74 OpenTelemetry environment variables. See `lib/s
 
 #### Signal-Specific Configuration
 
-Per the OTel spec, the default exporter for every signal is `otlp` (HTTP/protobuf to `http://localhost:4318`). Each `OTEL_*_EXPORTER` env var accepts `otlp` (default), `console` (prints to stdout — useful for local debugging), or `none` (skips processor/reader installation for that signal entirely). `OTEL_SDK_DISABLED=true` silences all three signals globally and overrides everything else.
+Per the OTel spec, the default exporter for every signal is `otlp` (HTTP/protobuf to `http://localhost:4318`). Each `OTEL_*_EXPORTER` env var accepts `otlp` (default), `console` (prints to stdout — useful for local debugging), `none` (skips processor/reader installation for that signal entirely), or a comma-separated list to enable multiple exporters at once (e.g. `OTEL_TRACES_EXPORTER=otlp,console`); `none` in a list wins, and unsupported values (`zipkin`, the deprecated `logging`, …) are ignored with a warning. (Zipkin exporters are deprecated in the OTel spec — removal scheduled December 2026 — and not required for new SDKs; if you need the Zipkin format, route OTLP through the collector's zipkin exporter.) `OTEL_METRICS_EXPORTER=prometheus` is recognized but not auto-wired yet (the SDK has no scrape server — tracked in #82); construct `PrometheusExporter` programmatically and serve `prometheusData`, or route OTLP through the collector's prometheus exporter. `OTEL_SDK_DISABLED=true` silences all three signals globally and overrides everything else.
 
 ##### Traces
 
@@ -951,6 +1000,15 @@ Per the OTel spec, the default exporter for every signal is `otlp` (HTTP/protobu
 | `otelExporterOtlpTracesEndpoint`      | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`    | Traces-specific endpoint                                 |         |
 | `otelExporterOtlpTracesProtocol`      | `OTEL_EXPORTER_OTLP_TRACES_PROTOCOL`    | Traces-specific protocol                                 |         |
 | `otelExporterOtlpTracesHeaders`       | `OTEL_EXPORTER_OTLP_TRACES_HEADERS`     | Traces-specific headers                                  |         |
+
+##### Batch Span Processor (BSP)
+
+| Constant                         | Environment Variable              | Default  | Description                          |
+|----------------------------------|-----------------------------------|----------|------------------------------------- |
+| `otelBspScheduleDelay`           | `OTEL_BSP_SCHEDULE_DELAY`         | `5000`   | Delay between exports (milliseconds) |
+| `otelBspExportTimeout`           | `OTEL_BSP_EXPORT_TIMEOUT`         | `30000`  | Export timeout (milliseconds)        |
+| `otelBspMaxQueueSize`            | `OTEL_BSP_MAX_QUEUE_SIZE`         | `2048`   | Maximum queue size                   |
+| `otelBspMaxExportBatchSize`      | `OTEL_BSP_MAX_EXPORT_BATCH_SIZE`  | `512`    | Maximum batch size per export        |
 
 ##### Metrics
 

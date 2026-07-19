@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:fixnum/fixnum.dart';
@@ -45,7 +45,7 @@ class OtlpLogRecordTransformer {
       if (OTelLog.isDebug()) {
         OTelLog.debug('LogRecordTransformer: Extracting resource attributes:');
         resourceAttrs.toList().forEach((attr) {
-          if (attr.key == 'tenant_id' || attr.key == 'service.name') {
+          if (attr.key == 'service.name') {
             OTelLog.debug('  ${attr.key}: ${attr.value}');
           }
         });

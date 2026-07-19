@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 /// Example demonstrating W3C Trace Context Propagator usage
 ///
@@ -22,7 +22,7 @@ void main() async {
   print('=== W3C Trace Context Propagator Example ===\n');
 
   // Create a composite propagator that handles both trace context and baggage
-  final propagator = CompositePropagator<Map<String, String>, String>([
+  final propagator = OTelAPI.compositePropagator<Map<String, String>, String>([
     W3CTraceContextPropagator(),
     W3CBaggagePropagator(),
   ]);

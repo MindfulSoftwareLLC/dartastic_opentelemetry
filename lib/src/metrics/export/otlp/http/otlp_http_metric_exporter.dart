@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 import 'dart:async';
 import 'dart:convert';
@@ -9,9 +9,6 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
 import '../../../../../dartastic_opentelemetry.dart';
-import '../../../../../proto/collector/metrics/v1/metrics_service.pb.dart';
-import '../../../../../proto/common/v1/common.pb.dart' as common_pb;
-import '../../../../../proto/metrics/v1/metrics.pb.dart' as metrics_pb;
 import '../../../../export/otlp_json.dart';
 import '../../../../trace/export/otlp/http/http_client_factory.dart';
 import '../../../../util/zip/gzip.dart';
@@ -254,41 +251,13 @@ class OtlpHttpMetricExporter implements MetricExporter {
       OTelLog.debug('OtlpHttpMetricExporter: Transforming metrics');
     }
 
-    // Create the export request
-    final request = ExportMetricsServiceRequest();
-    final resourceMetrics = metrics_pb.ResourceMetrics();
-
-    // Add resource
-    if (metrics.resource != null) {
-      resourceMetrics.resource = MetricTransformer.transformResource(
-        metrics.resource!,
-      );
-    } else {
-      resourceMetrics.resource = MetricTransformer.transformResource(
-        OTel.resource(null),
-      );
-    }
-
-    // Create scope metrics
-    final scopeMetrics = metrics_pb.ScopeMetrics();
-
-    // Add instrumentation scope - create a new InstrumentationScope
-    // rather than mutating the frozen default returned by scopeMetrics.scope
-    scopeMetrics.scope = common_pb.InstrumentationScope(
-      name: '@dart/dartastic_opentelemetry',
-      version: '1.0.0',
+    // Create the export request — the shared one-shot builds the same
+    // request this exporter used to assemble inline (same scope constant,
+    // same OTel.resource(null) fallback), so the wire output is unchanged.
+    final request = MetricTransformer.transformMetrics(
+      metrics,
+      fallbackResource: OTel.resource(null),
     );
-
-    // Add metrics to scope
-    for (final metric in metrics.metrics) {
-      scopeMetrics.metrics.add(MetricTransformer.transformMetric(metric));
-    }
-
-    // Add scope metrics to resource metrics
-    resourceMetrics.scopeMetrics.add(scopeMetrics);
-
-    // Add resource metrics to request
-    request.resourceMetrics.add(resourceMetrics);
 
     if (OTelLog.isDebug()) {
       OTelLog.debug('OtlpHttpMetricExporter: Successfully transformed metrics');

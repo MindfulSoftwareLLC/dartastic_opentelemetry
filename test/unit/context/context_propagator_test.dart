@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry/src/otel.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
@@ -110,7 +110,7 @@ void main() {
 
     test('composite propagator combines multiple propagators', () {
       final context = Context.root;
-      final propagator = CompositePropagator([
+      final propagator = OTelAPI.compositePropagator([
         TestPropagator(),
         TestPropagator(),
       ]);
@@ -126,7 +126,7 @@ void main() {
     });
 
     test('returns all fields from propagators', () {
-      final propagator = CompositePropagator([
+      final propagator = OTelAPI.compositePropagator([
         TestPropagator(),
         TestPropagator(),
       ]);

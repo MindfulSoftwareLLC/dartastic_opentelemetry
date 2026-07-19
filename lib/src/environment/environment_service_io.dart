@@ -1,7 +1,9 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 import 'dart:io' as io;
+
+import 'package:meta/meta.dart';
 
 import 'env_constants.dart';
 import 'env_from_define.dart';
@@ -29,6 +31,14 @@ class EnvironmentService implements EnvironmentServiceInterface {
 
   EnvironmentService._();
 
+  /// Test-only replacement for the lookup sources. When non-null, values
+  /// come exclusively from this map (a missing key reads as unset) and
+  /// still flow through the semicolon-to-comma conversion, so tests get
+  /// deterministic, in-process control of the environment without
+  /// spawning subprocesses.
+  @visibleForTesting
+  static Map<String, String>? testOverrides;
+
   /// Gets the value of an environment variable.
   ///
   /// Returns the value from the first available source:
@@ -44,18 +54,23 @@ class EnvironmentService implements EnvironmentServiceInterface {
   /// @return The value of the environment variable, or null if not found
   @override
   String? getValue(String key) {
-    // Priority 1: String.fromEnvironment (--dart-define values)
-    // Only check if this is a known environment variable
     String? value;
-    if (supportedEnvVars.contains(key)) {
-      final fromEnvironment = getFromEnvironment(key);
-      if (fromEnvironment != null && fromEnvironment.isNotEmpty) {
-        value = fromEnvironment;
+    final overrides = testOverrides;
+    if (overrides != null) {
+      value = overrides[key];
+    } else {
+      // Priority 1: String.fromEnvironment (--dart-define values)
+      // Only check if this is a known environment variable
+      if (supportedEnvVars.contains(key)) {
+        final fromEnvironment = getFromEnvironment(key);
+        if (fromEnvironment != null && fromEnvironment.isNotEmpty) {
+          value = fromEnvironment;
+        }
       }
-    }
 
-    // Priority 2: Platform environment variables
-    value ??= io.Platform.environment[key];
+      // Priority 2: Platform environment variables
+      value ??= io.Platform.environment[key];
+    }
 
     // Handle comma-separated values for --define compatibility
     // The --define flag cannot handle commas in values, so we use semicolons

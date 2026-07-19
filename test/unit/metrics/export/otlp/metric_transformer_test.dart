@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/proto/metrics/v1/metrics.pb.dart'
@@ -269,6 +269,107 @@ void main() {
       expect(attributeMap['bool_key']!.boolValue, isTrue);
       expect(attributeMap['int_key']!.intValue, equals(Int64(42)));
       expect(attributeMap['double_key']!.doubleValue, equals(3.14));
+    });
+
+    group('transformMetrics one-shot', () {
+      Metric gauge(String name, double value) {
+        final now = DateTime.now();
+        return Metric(
+          name: name,
+          description: 'gauge $name',
+          unit: 'items',
+          type: MetricType.gauge,
+          points: [
+            MetricPoint.gauge(
+              attributes: {'dimension': 'value'}.toAttributes(),
+              startTime: now.subtract(const Duration(minutes: 5)),
+              time: now,
+              value: value,
+            ),
+          ],
+        );
+      }
+
+      test('builds a full request: resource, scope, all metrics', () {
+        final resource = OTel.resource(
+          Attributes.of({'service.name': 'one-shot-service'}),
+        );
+        final data = MetricData(
+          resource: resource,
+          metrics: [gauge('m.one', 1.0), gauge('m.two', 2.0)],
+        );
+
+        final request = MetricTransformer.transformMetrics(data);
+
+        expect(request.resourceMetrics.length, equals(1));
+        final rm = request.resourceMetrics.first;
+        final attributeMap = Map.fromEntries(
+          rm.resource.attributes.map((kv) => MapEntry(kv.key, kv.value)),
+        );
+        expect(
+          attributeMap['service.name']!.stringValue,
+          equals('one-shot-service'),
+        );
+        expect(rm.scopeMetrics.length, equals(1));
+        final sm = rm.scopeMetrics.first;
+        // Same scope constant the OTLP exporters have always stamped.
+        expect(sm.scope.name, equals('@dart/dartastic_opentelemetry'));
+        expect(sm.scope.version, equals('1.0.0'));
+        expect(sm.metrics.length, equals(2));
+        expect(sm.metrics.first.name, equals('m.one'));
+        expect(sm.metrics.last.name, equals('m.two'));
+        // The one-shot's output is directly serializable — the byte
+        // contract alternative sinks rely on.
+        expect(request.writeToBuffer(), isNotEmpty);
+      });
+
+      test('null MetricData.resource uses the caller fallback', () {
+        final fallback = OTel.resource(
+          Attributes.of({'service.name': 'fallback-service'}),
+        );
+        final data = MetricData(metrics: [gauge('m.fallback', 3.0)]);
+
+        final request = MetricTransformer.transformMetrics(
+          data,
+          fallbackResource: fallback,
+        );
+
+        final attributeMap = Map.fromEntries(
+          request.resourceMetrics.first.resource.attributes
+              .map((kv) => MapEntry(kv.key, kv.value)),
+        );
+        expect(
+          attributeMap['service.name']!.stringValue,
+          equals('fallback-service'),
+        );
+      });
+
+      test('null resource and null fallback emit an empty resource', () {
+        final data = MetricData(metrics: [gauge('m.bare', 4.0)]);
+
+        final request = MetricTransformer.transformMetrics(data);
+
+        expect(request.resourceMetrics.first.resource.attributes, isEmpty);
+        expect(
+          request.resourceMetrics.first.scopeMetrics.first.metrics.length,
+          equals(1),
+        );
+      });
+
+      test('empty metrics still produce the resource/scope envelope', () {
+        final data = MetricData(
+          resource: OTel.resource(Attributes.of({'service.name': 's'})),
+          metrics: const [],
+        );
+
+        final request = MetricTransformer.transformMetrics(data);
+
+        expect(request.resourceMetrics.length, equals(1));
+        expect(
+          request.resourceMetrics.first.scopeMetrics.first.metrics,
+          isEmpty,
+        );
+      });
     });
   });
 }

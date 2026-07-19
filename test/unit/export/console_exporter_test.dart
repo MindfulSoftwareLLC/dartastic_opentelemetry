@@ -1,3 +1,6 @@
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
+
 // Unit tests for ConsoleExporter that capture and verify console output
 // Tests the fix for: SimpleSpanProcessor.onEnd() is never called because Span.end()
 // doesn't notify span processors

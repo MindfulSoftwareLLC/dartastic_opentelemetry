@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
@@ -56,38 +56,61 @@ class LogsConfiguration {
       return logProvider;
     }
 
-    // Determine exporter type from environment or use provided exporter
-    final exporterType = OTelEnv.getExporter(signal: 'logs') ?? 'otlp';
+    // Explicitly provided exporter wins; otherwise read the env selection.
+    if (logRecordExporter != null) {
+      logProvider.addLogRecordProcessor(_createProcessor(logRecordExporter));
+      return logProvider;
+    }
 
-    if (exporterType == 'none') {
-      // No exporter configured - return provider without processor
-      if (OTelLog.isDebug()) {
+    // Spec "Exporter Selection": OTEL_LOGS_EXPORTER, default otlp; the
+    // comma-separated list form is supported. Known: otlp, console, none.
+    // Multiple exporters install one processor per exporter.
+    final requested = OTelEnv.getExporters(signal: 'logs') ?? ['otlp'];
+    if (requested.contains('none')) {
+      if (requested.length > 1 && OTelLog.isWarn()) {
+        OTelLog.warn("OTEL_LOGS_EXPORTER contains 'none' alongside other "
+            'values; installing no processor.');
+      } else if (OTelLog.isDebug()) {
         OTelLog.debug(
             'LogsConfiguration: OTEL_LOGS_EXPORTER=none, no processor added');
       }
       return logProvider;
     }
 
-    // Create exporter if not provided
-    logRecordExporter ??= _createExporter(exporterType, endpoint, secure);
-
-    if (logRecordExporter == null) {
-      if (OTelLog.isDebug()) {
-        OTelLog.debug(
-            'LogsConfiguration: No exporter created, no processor added');
+    final exporters = <LogRecordExporter>[];
+    for (final name in requested) {
+      if (name == 'logging') {
+        if (OTelLog.isWarn()) {
+          OTelLog.warn("OTEL_LOGS_EXPORTER value 'logging' is deprecated "
+              "in the spec and not supported; use 'console'.");
+        }
+        continue;
       }
-      return logProvider;
+      final created = _createExporter(name, endpoint, secure);
+      if (created != null) {
+        exporters.add(created);
+      } else if (OTelLog.isWarn()) {
+        OTelLog.warn("OTEL_LOGS_EXPORTER value '$name' is not supported; "
+            'ignoring. Supported: otlp, console, none.');
+      }
+    }
+    if (exporters.isEmpty) {
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('OTEL_LOGS_EXPORTER produced no usable exporter; '
+            'falling back to the default otlp exporter.');
+      }
+      final fallback = _createExporter('otlp', endpoint, secure);
+      if (fallback != null) {
+        exporters.add(fallback);
+      }
+    }
+    for (final exporter in exporters) {
+      logProvider.addLogRecordProcessor(_createProcessor(exporter));
     }
 
-    // Create processor with BLRP configuration from environment
-    final processor = _createProcessor(logRecordExporter);
-
-    // Add the processor
-    logProvider.addLogRecordProcessor(processor);
-
     if (OTelLog.isDebug()) {
-      OTelLog.debug(
-          'LogsConfiguration: Configured LoggerProvider with $exporterType exporter');
+      OTelLog.debug('LogsConfiguration: Configured LoggerProvider with '
+          '${exporters.length} exporter(s) from OTEL_LOGS_EXPORTER');
     }
 
     return logProvider;
