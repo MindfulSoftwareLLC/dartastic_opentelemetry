@@ -11,7 +11,6 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 void main() {
   OTelLog.logFunction = null;
   final config = OTelEnv.getLogRecordLimits();
-
   // Convert record to JSON-serializable map.
   final jsonConfig = <String, dynamic>{};
   if (config.attributeValueLengthLimit != null) {

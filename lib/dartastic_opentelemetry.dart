@@ -12,6 +12,7 @@ library;
 export 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 export 'src/context/propagation/w3c_baggage_propagator.dart';
+export 'src/environment/attribute_limits_config.dart';
 export 'src/environment/env_constants.dart';
 export 'src/environment/environment_service.dart';
 export 'src/environment/otel_env.dart';

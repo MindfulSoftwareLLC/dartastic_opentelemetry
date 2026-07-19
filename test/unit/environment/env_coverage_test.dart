@@ -1125,9 +1125,9 @@ void main() {
       expect(config, isA<LogRecordLimitsEnvironmentValues>());
     });
 
-    test('getAttributeLimits returns a Map<String, dynamic>', () {
+    test('getAttributeLimits returns an AttributeLimitsEnvironmentValues record', () {
       final config = OTelEnv.getAttributeLimits();
-      expect(config, isA<Map<String, dynamic>>());
+      expect(config, isA<AttributeLimitsEnvironmentValues>());
     });
 
     test('getExporter for metrics returns nullable result', () {
