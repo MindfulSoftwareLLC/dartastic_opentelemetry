@@ -9,7 +9,8 @@ import 'package:protobuf/protobuf.dart';
 
 import '../../proto/logs/v1/logs.pb.dart' show SeverityNumber;
 import '../../proto/metrics/v1/metrics.pb.dart' show AggregationTemporality;
-import '../../proto/trace/v1/trace.pb.dart' show Span_SpanKind, Status_StatusCode;
+import '../../proto/trace/v1/trace.pb.dart'
+    show Span_SpanKind, Status_StatusCode;
 
 /// OTLP/JSON encoding of an OTLP request message.
 ///

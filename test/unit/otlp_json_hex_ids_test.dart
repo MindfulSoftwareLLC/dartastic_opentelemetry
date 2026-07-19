@@ -150,8 +150,7 @@ void main() {
     expect((s['status'] as Map)['code'], 2);
   });
 
-  test('log severityNumber and metric aggregationTemporality are integers',
-      () {
+  test('log severityNumber and metric aggregationTemporality are integers', () {
     final logs = ExportLogsServiceRequest(resourceLogs: [
       pl.ResourceLogs(scopeLogs: [
         pl.ScopeLogs(logRecords: [
