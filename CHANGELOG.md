@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0-beta.10-wip]
 
 ### Fixed
+- **`W3CBaggagePropagator.extract` no longer discards the incoming
+  context when the `baggage` header is absent** (#87). It returned a
+  fresh context instead of the passed one, so in the spec-default
+  composite (tracecontext, then baggage) any request carrying
+  `traceparent` but no `baggage` header lost its just-extracted span
+  context — breaking traces at every service boundary unless callers
+  hand-ordered extraction. Per the Propagators API spec, extract now
+  returns the passed context unchanged when there is nothing to extract.
+- **OTLP endpoint schemes now determine TLS per the OTLP spec** (#88).
+  `http://` endpoints connect insecure and `https://` secure;
+  `OTEL_EXPORTER_OTLP_INSECURE` (and per-signal variants) applies only
+  to scheme-less endpoints, and an explicit programmatic `secure` still
+  wins. Previously `OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317`
+  attempted TLS and failed with a HandshakeException unless the
+  insecure flag was also set. Resolution is shared across all three
+  signals via `OTelEnv.resolveOtlpSecure`; metrics additionally now
+  honor `OTEL_EXPORTER_OTLP_METRICS_INSECURE`, which was parsed but
+  ignored.
+
+### Fixed
 - **OTLP/JSON enum fields are now encoded as integers per the OTLP spec**,
   not proto3-JSON's default enum names: span `kind`, status `code`, log
   `severityNumber`, metric `aggregationTemporality`. Same origin story as

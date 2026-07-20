@@ -140,6 +140,14 @@ class MetricsConfiguration {
 
     final otlpConfig = OTelEnv.getOtlpConfig(signal: 'metrics');
     final protocol = otlpConfig['protocol'] as String? ?? 'http/protobuf';
+    // Parity with logs_config: honor OTEL_EXPORTER_OTLP_METRICS_INSECURE
+    // (previously parsed and dropped) and the endpoint scheme per the
+    // OTLP spec, falling back to the resolved global setting.
+    final effectiveSecure = OTelEnv.resolveOtlpSecure(
+      envInsecure: otlpConfig['insecure'] as bool?,
+      endpoint: endpoint,
+      fallback: secure,
+    );
     final headers = otlpConfig['headers'] as Map<String, String>? ?? const {};
     final timeout =
         otlpConfig['timeout'] as Duration? ?? const Duration(seconds: 10);
@@ -156,7 +164,7 @@ class MetricsConfiguration {
       return OtlpGrpcMetricExporter(
         OtlpGrpcMetricExporterConfig(
           endpoint: endpoint,
-          insecure: !secure,
+          insecure: !effectiveSecure,
           headers: headers,
           timeoutMillis: timeout.inMilliseconds,
           compression: compression,
