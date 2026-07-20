@@ -85,7 +85,6 @@ Dartastic and Flutterrific OTel are made with 💙 by Michael Bushe at [Dartasti
   gskinner's Wonderous App with instrumentation for OpenTelemetry with [Flutterrific](https://pub.dev/packages/flutterrific_opentelemetry) . 
 
 
-
 ## Getting started
 
 Include this in your pubspec.yaml:

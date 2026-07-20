@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [1.1.0-beta.11-wip]
+### Changed
+- Doc only, README.md platform updates and clarity.
 
 ## [1.1.0-beta.10] - 2026-07-20
 
