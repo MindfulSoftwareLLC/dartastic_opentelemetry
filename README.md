@@ -62,14 +62,26 @@ Dartastic and Flutterrific OTel are made with 💙 by Michael Bushe at [Dartasti
 - 🐞 **Well Tested**: Very good test coverage (>90%). 
 - 📃 **Quality Documentation**: If it's not clearly documented, it's a bug. Extensive examples and best practices are
   provided. See the examples directory. 
-- 🎬 **Demo** The [Wonderous OpenTelemetry Demo](https://github.com/MindfulSoftwareLLC/wondrous_opentelemetry) demonstrates  
-  gskinner's Wonderous App with instrumentation for OpenTelemetry.
 - ✅ **Supported Telemetry Signals and Features**:
   - Tracing with span processors and samplers
   - Metrics collection and aggregation
   - Logs with log record processors and exporters
   - Context propagation
   - Baggage management and optional `BaggageSpanProcessor` to automatically copy baggage entries as span attributes
+
+## Demos 🎬
+
+-  **Dart OTel Reference Demo** The [Dart OpenTelemetry Reference Demo](https://github.com/Dartastic/dart-otel-reference-demo)
+   A reference implementation for use of this SDK demonstrating well-instrumented:
+    - Dart server applications,
+    - Dart CLIs
+    - Flutter apps
+    - Dart CloudRun functions
+    - Dart Cloud Functions (Firebase Functions in Dart)
+
+-  **Flutter Demo** The [Wonderous OpenTelemetry Demo](https://github.com/MindfulSoftwareLLC/wondrous_opentelemetry) demonstrates  
+  gskinner's Wonderous App with instrumentation for OpenTelemetry with [Flutterrific](https://pub.dev/packages/flutterrific_opentelemetry) . 
+
 
 [`dartastic_opentelemetry_api`](https://pub.dev/packages/dartastic_opentelemetry) is suitable for Dart backends, CLIs or any
 Dart application.
