@@ -4,15 +4,17 @@
 [![OpenTelemetry Specification](https://img.shields.io/badge/OpenTelemetry-Specification-blueviolet)](https://opentelemetry.io/docs/specs/otel/)
 [![Coverage](https://raw.githubusercontent.com/MindfulSoftwareLLC/dartastic_opentelemetry/badges/coverage.svg)](https://mindfulsoftwarellc.github.io/dartastic_opentelemetry/)
 
-Dartastic is an [OpenTelemetry](https://opentelemetry.io/) SDK to add standard observability to Dart applications.
+Dartastic is an [OpenTelemetry](https://opentelemetry.io/) SDK to add standard observability to Dart and Flutter applications.
 Dartastic can be used with any OTel backend since it's standards-compliant.
 
-Dartastic supports all Dart and Flutter targets including, mobile, desktop, web and wasm.
+Dartastic supports all Dart and Flutter targets including, mobile, desktop, web and wasm. (Windows needs validation.)
 
 The Dartastic OTel SDK is in the process of being [Donation to the CNCF](https://github.com/open-telemetry/community/issues/2718)
 to become the official standard for Dart OpenTelemetry.
 
-Flutter developers should use the [Flutterific OpenTelemetry SDK](https://pub.dev/packages/flutterrific_opentelemetry/) which builds on top of Dartastic OTel.
+Flutter developers can use the [Flutterrific OpenTelemetry SDK](https://pub.dev/packages/flutterrific_opentelemetry/) which builds on top of Dartastic OTel.
+Due to limitations in Dart, [Dartastic Native OTel](https://dartastic.io/otel) is the 
+best choice for production Flutter applications.
 
 Dartastic and Flutterrific OTel are made with 💙 by Michael Bushe at [Dartastic.io](https://dartastic.io)
 
@@ -83,13 +85,6 @@ Dartastic and Flutterrific OTel are made with 💙 by Michael Bushe at [Dartasti
   gskinner's Wonderous App with instrumentation for OpenTelemetry with [Flutterrific](https://pub.dev/packages/flutterrific_opentelemetry) . 
 
 
-[`dartastic_opentelemetry_api`](https://pub.dev/packages/dartastic_opentelemetry) is suitable for Dart backends, CLIs or any
-Dart application.
-
-[Dartastic OTel API](https://pub.dev/packages/dartastic_opentelemetry_api) is the API for the Dartastic OTel SDK.
-The `dartastic_opentelemetry_api` exists as a standalone library to strictly adhere to the
-OpenTelemetry specification which separates API and the SDK.  All OpenTelemetry API classes on in
-`dartastic_opentelemetry_api`.  Developers should use the SDK, not the API.
 
 ## Getting started
 
