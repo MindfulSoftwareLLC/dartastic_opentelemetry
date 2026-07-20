@@ -135,8 +135,8 @@ class ErrorSamplingCondition extends SamplingCondition {
     if (attributes == null) return false;
 
     // Check for error status
-    final statusCode = attributes.getString('otel.status_code');
-    final statusMessage = attributes.getString('otel.status_description');
+    final statusCode = attributes.getString(Otel.otelStatusCode.key);
+    final statusMessage = attributes.getString(Otel.otelStatusDescription.key);
 
     return statusCode == 'ERROR' ||
         (statusMessage != null && statusMessage.isNotEmpty);
