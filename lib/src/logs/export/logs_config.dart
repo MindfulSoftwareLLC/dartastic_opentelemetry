@@ -189,15 +189,14 @@ class LogsConfiguration {
 
   /// Creates a log record processor with BLRP configuration from environment.
   static LogRecordProcessor _createProcessor(LogRecordExporter exporter) {
-    final blrpConfig = OTelEnv.getBlrpConfig();
-    final processorConfig = buildBatchLogRecordProcessorConfig(blrpConfig);
-
+    final processorConfig = BatchLogRecordProcessorConfig.fromEnvironment();
     return BatchLogRecordProcessor(exporter, processorConfig);
   }
 
-  /// Builds [BatchLogRecordProcessorConfig] from BLRP environment config.
+  /// Builds [BatchLogRecordProcessorConfig] from a BLRP environment config map.
   ///
   /// Exposed for testing to validate normalization and spec-rule handling.
+  /// Prefer [BatchLogRecordProcessorConfig.fromEnvironment] for production use.
   static BatchLogRecordProcessorConfig buildBatchLogRecordProcessorConfig(
     Map<String, dynamic> blrpConfig,
   ) {

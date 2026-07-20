@@ -492,83 +492,43 @@ class OTelEnv {
 
   /// Get Batch LogRecord Processor (BLRP) configuration from environment variables.
   ///
-  /// Returns a map containing the BLRP configuration read from environment variables.
-  /// Keys returned:
+  /// Returns a map containing the raw parsed BLRP values from environment
+  /// variables. Domain-level defaults, validation, and clamping belong in
+  /// [BatchLogRecordProcessorConfig.fromEnvironment].
+  ///
+  /// Keys returned (only present when the env var is set and valid):
   /// - 'scheduleDelay': Duration for the schedule delay
   /// - 'exportTimeout': Duration for the export timeout
   /// - 'maxQueueSize': int for maximum queue size
   /// - 'maxExportBatchSize': int for maximum export batch size
-  ///
-  /// Validation rules:
-  /// - Numeric values must be positive integers
-  /// - `maxExportBatchSize` is clamped to `maxQueueSize` per OTel spec
-  /// - Defaults used for validation: queue=2048, batch=512
   static Map<String, dynamic> getBlrpConfig() {
     final config = <String, dynamic>{};
-    const defaultMaxQueueSize = 2048;
-    const defaultMaxExportBatchSize = 512;
 
-    // Get schedule delay
+    // Get schedule delay — 0 is valid ("export as fast as possible")
     final scheduleDelayMs =
-        _getPositiveIntEnv(otelBlrpScheduleDelay, minInclusive: 1);
+        _getPositiveIntEnv(otelBlrpScheduleDelay, minInclusive: 0);
     if (scheduleDelayMs != null) {
       config['scheduleDelay'] = Duration(milliseconds: scheduleDelayMs);
     }
 
-    // Get export timeout
+    // Get export timeout — 0 is valid ("no limit")
     final exportTimeoutMs =
-        _getPositiveIntEnv(otelBlrpExportTimeout, minInclusive: 1);
+        _getPositiveIntEnv(otelBlrpExportTimeout, minInclusive: 0);
     if (exportTimeoutMs != null) {
       config['exportTimeout'] = Duration(milliseconds: exportTimeoutMs);
     }
 
-    // Get queue and batch sizes.
-    final hasMaxQueueSizeEnv = _getEnv(otelBlrpMaxQueueSize) != null;
-    final hasMaxExportBatchSizeEnv =
-        _getEnv(otelBlrpMaxExportBatchSize) != null;
-
+    // Get queue and batch sizes — must be positive (>0)
     final parsedMaxQueueSize =
         _getPositiveIntEnv(otelBlrpMaxQueueSize, minInclusive: 1);
-    var effectiveMaxQueueSize = parsedMaxQueueSize ?? defaultMaxQueueSize;
-
     if (parsedMaxQueueSize != null) {
       config['maxQueueSize'] = parsedMaxQueueSize;
-    } else if (hasMaxQueueSizeEnv && OTelLog.isWarn()) {
-      OTelLog.warn(
-        'OTelEnv: Ignoring invalid $otelBlrpMaxQueueSize. Value must be a positive integer.',
-      );
     }
 
     final parsedMaxExportBatchSize =
         _getPositiveIntEnv(otelBlrpMaxExportBatchSize, minInclusive: 1);
-    var effectiveMaxExportBatchSize =
-        parsedMaxExportBatchSize ?? defaultMaxExportBatchSize;
-
     if (parsedMaxExportBatchSize != null) {
       config['maxExportBatchSize'] = parsedMaxExportBatchSize;
-    } else if (hasMaxExportBatchSizeEnv && OTelLog.isWarn()) {
-      OTelLog.warn(
-        'OTelEnv: Ignoring invalid $otelBlrpMaxExportBatchSize. Value must be a positive integer.',
-      );
-    }
-
-    // Per OTel spec, max export batch size must not exceed max queue size.
-    if (effectiveMaxExportBatchSize > effectiveMaxQueueSize) {
-      if (OTelLog.isWarn()) {
-        OTelLog.warn(
-          'OTelEnv: $otelBlrpMaxExportBatchSize ($effectiveMaxExportBatchSize) exceeds '
-          '$otelBlrpMaxQueueSize ($effectiveMaxQueueSize). Clamping batch size to queue size.',
-        );
-      }
-
-      effectiveMaxExportBatchSize = effectiveMaxQueueSize;
-      config['maxExportBatchSize'] = effectiveMaxExportBatchSize;
-
-      // Keep returned queue value internally consistent if batch forced us to clamp
-      // based on an explicitly provided queue value.
-      if (parsedMaxQueueSize != null) {
-        effectiveMaxQueueSize = parsedMaxQueueSize;
-      }
     }
 
     return config;
@@ -673,9 +633,11 @@ class OTelEnv {
     return null;
   }
 
-  /// Get a positive integer environment variable value.
+  /// Get a non-negative integer environment variable value.
   ///
   /// Returns null when not set, non-numeric, or outside the accepted range.
+  /// Warns via [OTelLog.warn] when the raw value is present but unusable
+  /// (non-numeric, below [minInclusive], or above [maxInclusive]).
   static int? _getPositiveIntEnv(
     String name, {
     required int minInclusive,
@@ -688,14 +650,26 @@ class OTelEnv {
 
     final value = int.tryParse(rawValue);
     if (value == null) {
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('OTelEnv: Illegal non-numeric value for $name: '
+            '"$rawValue", ignoring.');
+      }
       return null;
     }
 
     if (value < minInclusive) {
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('OTelEnv: Illegal value for $name: $value is below '
+            'minimum $minInclusive, ignoring.');
+      }
       return null;
     }
 
     if (maxInclusive != null && value > maxInclusive) {
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('OTelEnv: Illegal value for $name: $value exceeds '
+            'maximum $maxInclusive, ignoring.');
+      }
       return null;
     }
 
