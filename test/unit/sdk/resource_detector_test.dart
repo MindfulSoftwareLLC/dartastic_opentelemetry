@@ -58,7 +58,6 @@ void main() {
         expect(attrs.containsKey('process.command_line'), isTrue);
         expect(attrs.containsKey('process.runtime.name'), isTrue);
         expect(attrs.containsKey('process.runtime.version'), isTrue);
-        expect(attrs.containsKey('process.num_threads'), isTrue);
       });
 
       test('detect() includes process.executable.name', () async {
@@ -92,16 +91,6 @@ void main() {
         expect(version, equals(io.Platform.version));
       });
 
-      test('detect() includes process.num_threads as string', () async {
-        final detector = ProcessResourceDetector();
-        final resource = await detector.detect();
-        final attrs = resource.attributes.toMap();
-
-        final numThreads = attrs['process.num_threads']?.value;
-        expect(numThreads, isA<String>());
-        expect(numThreads, equals(io.Platform.numberOfProcessors.toString()));
-      });
-
       test('detect() includes process.command_line', () async {
         final detector = ProcessResourceDetector();
         final resource = await detector.detect();
@@ -125,10 +114,28 @@ void main() {
 
         expect(attrs, isNotEmpty);
         expect(attrs.containsKey('host.name'), isTrue);
+        // host.arch is a registry CPU-arch value, never the hostname (#90).
         expect(attrs.containsKey('host.arch'), isTrue);
-        expect(attrs.containsKey('host.processors'), isTrue);
-        expect(attrs.containsKey('host.os.name'), isTrue);
-        expect(attrs.containsKey('host.locale'), isTrue);
+        expect(
+          const {
+            'amd64',
+            'arm32',
+            'arm64',
+            'ia64',
+            'ppc32',
+            'ppc64',
+            'riscv32',
+            'riscv64',
+            's390x',
+            'x86'
+          },
+          contains(attrs['host.arch']?.value),
+          reason: 'host.arch must be a registry architecture, not the hostname',
+        );
+        expect(attrs['host.arch']?.value,
+            isNot(equals(io.Platform.localHostname)));
+        // os.name (registry), not the malformed 'host.os.name' (#90).
+        expect(attrs.containsKey('os.name'), isTrue);
         expect(attrs.containsKey('os.version'), isTrue);
       });
 
@@ -164,26 +171,15 @@ void main() {
         }
       });
 
-      test('detect() includes host.os.name', () async {
+      test('detect() includes os.name', () async {
         final detector = HostResourceDetector();
         final resource = await detector.detect();
         final attrs = resource.attributes.toMap();
 
-        final osName = attrs['host.os.name']?.value;
+        final osName = attrs['os.name']?.value;
         expect(osName, isA<String>());
         expect((osName as String).isNotEmpty, isTrue);
         expect(osName, equals(io.Platform.operatingSystem));
-      });
-
-      test('detect() includes host.processors as integer', () async {
-        final detector = HostResourceDetector();
-        final resource = await detector.detect();
-        final attrs = resource.attributes.toMap();
-
-        final processors = attrs['host.processors']?.value;
-        expect(processors, isA<int>());
-        expect(processors as int, greaterThan(0));
-        expect(processors, equals(io.Platform.numberOfProcessors));
       });
 
       test('detect() includes os.version', () async {
@@ -195,17 +191,6 @@ void main() {
         expect(osVersion, isA<String>());
         expect((osVersion as String).isNotEmpty, isTrue);
         expect(osVersion, equals(io.Platform.operatingSystemVersion));
-      });
-
-      test('detect() includes host.locale', () async {
-        final detector = HostResourceDetector();
-        final resource = await detector.detect();
-        final attrs = resource.attributes.toMap();
-
-        final locale = attrs['host.locale']?.value;
-        expect(locale, isA<String>());
-        expect((locale as String).isNotEmpty, isTrue);
-        expect(locale, equals(io.Platform.localeName));
       });
     });
 

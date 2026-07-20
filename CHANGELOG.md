@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.12-wip]
 
+### Fixed
+- **`host.arch` no longer reports the hostname** (#90). The IO resource
+  detector copy-pasted `Platform.localHostname` into `host.arch`; it now
+  resolves the real CPU architecture (`amd64`/`arm64`/`arm32`/`x86`/…)
+  from `Platform.version`, mapped to registry values, and omits the
+  attribute when it can't be parsed. Fixes downstream consumers that
+  select per-architecture artifacts (e.g. debug symbols) off the resource.
+- The IO detector now keys every attribute from the generated registry
+  enums (`Host.*`, `Os.*`, `ProcessAttributes.*`) instead of string
+  literals, so a mistyped key is a compile error — the class of bug that
+  caused #90. The malformed `host.os.name` is corrected to `os.name`.
+
+### Removed
+- The IO resource detector no longer emits `host.processors`,
+  `host.locale`, or `process.num_threads` — none are OpenTelemetry
+  registry attributes.
+
 ## [1.1.0-beta.11] - 2026-07-20
 ### Changed
 - Doc only, README.md platform updates and clarity.
