@@ -90,7 +90,7 @@ Dartastic and Flutterrific OTel are made with 💙 by Michael Bushe at [Dartasti
 Include this in your pubspec.yaml:
 ```
 dependencies:
-  dartastic_opentelemetry: ^1.1.0-beta.10
+  dartastic_opentelemetry: ^1.1.0-beta.11
 ```
 
 ## Usage
