@@ -167,13 +167,11 @@ class OTel {
     final envInsecure = secure == null ? otlpConfig['insecure'] as bool? : null;
 
     endpoint ??= envEndpoint;
-    if (secure == null) {
-      if (envInsecure != null) {
-        secure = !envInsecure;
-      } else {
-        secure = true;
-      }
-    }
+    secure = OTelEnv.resolveOtlpSecure(
+      explicitSecure: secure,
+      envInsecure: envInsecure,
+      endpoint: endpoint,
+    );
 
     // Apply defaults if still null
     serviceName ??= defaultServiceName;

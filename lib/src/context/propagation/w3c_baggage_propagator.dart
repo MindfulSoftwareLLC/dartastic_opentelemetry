@@ -37,8 +37,11 @@ class W3CBaggagePropagator
     final value = getter.get(_baggageHeader);
     OTelLog.debug('Extracting baggage: $value');
     if (value == null || value.isEmpty) {
-      // Return context with empty baggage instead of original context
-      return OTel.context();
+      // Propagators API spec: extract returns the passed context, updated
+      // with extracted values — and unchanged when there is nothing to
+      // extract. Returning a fresh context here would discard whatever an
+      // earlier propagator in a composite (e.g. tracecontext) extracted.
+      return context;
     }
 
     final entries = <String, BaggageEntry>{};

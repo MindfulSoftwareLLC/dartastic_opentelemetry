@@ -128,7 +128,11 @@ class LogsConfiguration {
     // Use env endpoint if available, otherwise use provided endpoint
     final effectiveEndpoint = otlpConfig['endpoint'] as String? ?? endpoint;
     final envInsecure = otlpConfig['insecure'] as bool?;
-    final effectiveSecure = envInsecure != null ? !envInsecure : secure;
+    final effectiveSecure = OTelEnv.resolveOtlpSecure(
+      envInsecure: envInsecure,
+      endpoint: effectiveEndpoint,
+      fallback: secure,
+    );
 
     if (exporterType == 'console') {
       if (OTelLog.isDebug()) {
