@@ -193,30 +193,42 @@ class LogsConfiguration {
 
   /// Creates a log record processor with BLRP configuration from environment.
   static LogRecordProcessor _createProcessor(LogRecordExporter exporter) {
-    final blrpConfig = OTelEnv.getBlrpConfig();
+    final processorConfig = BatchLogRecordProcessorConfig.fromEnvironment();
+    return BatchLogRecordProcessor(exporter, processorConfig);
+  }
 
+  /// Builds [BatchLogRecordProcessorConfig] from a BLRP environment config map.
+  ///
+  /// Exposed for testing to validate normalization and spec-rule handling.
+  /// Prefer [BatchLogRecordProcessorConfig.fromEnvironment] for production use.
+  static BatchLogRecordProcessorConfig buildBatchLogRecordProcessorConfig(
+    Map<String, dynamic> blrpConfig,
+  ) {
     if (blrpConfig.isEmpty) {
-      // Use defaults
-      return BatchLogRecordProcessor(
-        exporter,
-        const BatchLogRecordProcessorConfig(),
-      );
+      return const BatchLogRecordProcessorConfig();
     }
 
     // Build config from environment
     final scheduleDelay = blrpConfig['scheduleDelay'] as Duration?;
     final exportTimeout = blrpConfig['exportTimeout'] as Duration?;
-    final maxQueueSize = blrpConfig['maxQueueSize'] as int?;
-    final maxExportBatchSize = blrpConfig['maxExportBatchSize'] as int?;
+    final maxQueueSize = blrpConfig['maxQueueSize'] as int? ?? 2048;
+    var maxExportBatchSize = blrpConfig['maxExportBatchSize'] as int? ?? 512;
 
-    return BatchLogRecordProcessor(
-      exporter,
-      BatchLogRecordProcessorConfig(
-        scheduleDelay: scheduleDelay ?? const Duration(milliseconds: 1000),
-        exportTimeout: exportTimeout ?? const Duration(seconds: 30),
-        maxQueueSize: maxQueueSize ?? 2048,
-        maxExportBatchSize: maxExportBatchSize ?? 512,
-      ),
+    if (maxExportBatchSize > maxQueueSize) {
+      if (OTelLog.isWarn()) {
+        OTelLog.warn(
+          'LogsConfiguration: maxExportBatchSize ($maxExportBatchSize) exceeds '
+          'maxQueueSize ($maxQueueSize). Clamping batch size to queue size.',
+        );
+      }
+      maxExportBatchSize = maxQueueSize;
+    }
+
+    return BatchLogRecordProcessorConfig(
+      scheduleDelay: scheduleDelay ?? const Duration(milliseconds: 1000),
+      exportTimeout: exportTimeout ?? const Duration(seconds: 30),
+      maxQueueSize: maxQueueSize,
+      maxExportBatchSize: maxExportBatchSize,
     );
   }
 

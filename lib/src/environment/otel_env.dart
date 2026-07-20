@@ -474,14 +474,6 @@ class OTelEnv {
     return config;
   }
 
-  /// Get Batch LogRecord Processor (BLRP) configuration from environment variables.
-  ///
-  /// Returns a map containing the BLRP configuration read from environment variables.
-  /// Keys returned:
-  /// - 'scheduleDelay': Duration for the schedule delay
-  /// - 'exportTimeout': Duration for the export timeout
-  /// - 'maxQueueSize': int for maximum queue size
-  /// - 'maxExportBatchSize': int for maximum export batch size
   /// Reads `OTEL_PROPAGATORS` (sdk-environment-variables.md, "General SDK
   /// Configuration"): a comma-separated list of propagator names. Returns
   /// the normalized (trimmed, lowercased) names, defaulting to the spec
@@ -498,43 +490,45 @@ class OTelEnv {
         .toList();
   }
 
+  /// Get Batch LogRecord Processor (BLRP) configuration from environment variables.
+  ///
+  /// Returns a map containing the raw parsed BLRP values from environment
+  /// variables. Domain-level defaults, validation, and clamping belong in
+  /// [BatchLogRecordProcessorConfig.fromEnvironment].
+  ///
+  /// Keys returned (only present when the env var is set and valid):
+  /// - 'scheduleDelay': Duration for the schedule delay
+  /// - 'exportTimeout': Duration for the export timeout
+  /// - 'maxQueueSize': int for maximum queue size
+  /// - 'maxExportBatchSize': int for maximum export batch size
   static Map<String, dynamic> getBlrpConfig() {
     final config = <String, dynamic>{};
 
-    // Get schedule delay
-    final scheduleDelay = _getEnv(otelBlrpScheduleDelay);
-    if (scheduleDelay != null) {
-      final delayMs = int.tryParse(scheduleDelay);
-      if (delayMs != null) {
-        config['scheduleDelay'] = Duration(milliseconds: delayMs);
-      }
+    // Get schedule delay — 0 is valid ("export as fast as possible")
+    final scheduleDelayMs =
+        _getPositiveIntEnv(otelBlrpScheduleDelay, minInclusive: 0);
+    if (scheduleDelayMs != null) {
+      config['scheduleDelay'] = Duration(milliseconds: scheduleDelayMs);
     }
 
-    // Get export timeout
-    final exportTimeout = _getEnv(otelBlrpExportTimeout);
-    if (exportTimeout != null) {
-      final timeoutMs = int.tryParse(exportTimeout);
-      if (timeoutMs != null) {
-        config['exportTimeout'] = Duration(milliseconds: timeoutMs);
-      }
+    // Get export timeout — 0 is valid ("no limit")
+    final exportTimeoutMs =
+        _getPositiveIntEnv(otelBlrpExportTimeout, minInclusive: 0);
+    if (exportTimeoutMs != null) {
+      config['exportTimeout'] = Duration(milliseconds: exportTimeoutMs);
     }
 
-    // Get max queue size
-    final maxQueueSize = _getEnv(otelBlrpMaxQueueSize);
-    if (maxQueueSize != null) {
-      final size = int.tryParse(maxQueueSize);
-      if (size != null) {
-        config['maxQueueSize'] = size;
-      }
+    // Get queue and batch sizes — must be positive (>0)
+    final parsedMaxQueueSize =
+        _getPositiveIntEnv(otelBlrpMaxQueueSize, minInclusive: 1);
+    if (parsedMaxQueueSize != null) {
+      config['maxQueueSize'] = parsedMaxQueueSize;
     }
 
-    // Get max export batch size
-    final maxExportBatchSize = _getEnv(otelBlrpMaxExportBatchSize);
-    if (maxExportBatchSize != null) {
-      final size = int.tryParse(maxExportBatchSize);
-      if (size != null) {
-        config['maxExportBatchSize'] = size;
-      }
+    final parsedMaxExportBatchSize =
+        _getPositiveIntEnv(otelBlrpMaxExportBatchSize, minInclusive: 1);
+    if (parsedMaxExportBatchSize != null) {
+      config['maxExportBatchSize'] = parsedMaxExportBatchSize;
     }
 
     return config;
@@ -674,5 +668,48 @@ class OTelEnv {
     }
 
     return null;
+  }
+
+  /// Get a non-negative integer environment variable value.
+  ///
+  /// Returns null when not set, non-numeric, or outside the accepted range.
+  /// Warns via [OTelLog.warn] when the raw value is present but unusable
+  /// (non-numeric, below [minInclusive], or above [maxInclusive]).
+  static int? _getPositiveIntEnv(
+    String name, {
+    required int minInclusive,
+    int? maxInclusive,
+  }) {
+    final rawValue = _getEnv(name);
+    if (rawValue == null) {
+      return null;
+    }
+
+    final value = int.tryParse(rawValue);
+    if (value == null) {
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('OTelEnv: Illegal non-numeric value for $name: '
+            '"$rawValue", ignoring.');
+      }
+      return null;
+    }
+
+    if (value < minInclusive) {
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('OTelEnv: Illegal value for $name: $value is below '
+            'minimum $minInclusive, ignoring.');
+      }
+      return null;
+    }
+
+    if (maxInclusive != null && value > maxInclusive) {
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('OTelEnv: Illegal value for $name: $value exceeds '
+            'maximum $maxInclusive, ignoring.');
+      }
+      return null;
+    }
+
+    return value;
   }
 }

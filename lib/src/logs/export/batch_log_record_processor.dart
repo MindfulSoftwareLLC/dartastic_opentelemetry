@@ -7,6 +7,7 @@ import 'dart:collection';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:synchronized/synchronized.dart';
 
+import '../../environment/otel_env.dart';
 import '../log_record_processor.dart';
 import '../readable_log_record.dart';
 import 'log_record_exporter.dart';
@@ -16,6 +17,12 @@ import 'log_record_exporter.dart';
 /// This class configures how the batch log record processor behaves, including
 /// queue size limits, export scheduling, and batch size parameters.
 class BatchLogRecordProcessorConfig {
+  /// Stand-in for "no limit": `OTEL_BLRP_EXPORT_TIMEOUT=0` means no timeout
+  /// per spec, represented as the max milliseconds in a 32-bit integer
+  /// (~24.8 days). Web-safe and within Dart timer limits for
+  /// `Future.timeout()`.
+  static const Duration noLimit = Duration(milliseconds: 0x7FFFFFFF);
+
   /// The maximum queue size for log records. After this is reached,
   /// log records will be dropped.
   final int maxQueueSize;
@@ -41,6 +48,97 @@ class BatchLogRecordProcessorConfig {
     this.maxExportBatchSize = 512,
     this.exportTimeout = const Duration(seconds: 30),
   });
+
+  /// Creates a configuration by reading `OTEL_BLRP_*` environment variables
+  /// via [OTelEnv]. Falls back to standard OTel defaults if variables are
+  /// missing or invalid.
+  ///
+  /// | Environment Variable              | Type     | Default  | Notes                                                    |
+  /// |-----------------------------------|----------|----------|----------------------------------------------------------|
+  /// | `OTEL_BLRP_SCHEDULE_DELAY`        | Duration | `1000`   | Delay between exports (ms). 0 is valid (export ASAP).    |
+  /// | `OTEL_BLRP_EXPORT_TIMEOUT`        | Timeout  | `30000`  | Export timeout (ms). 0 means no limit.                   |
+  /// | `OTEL_BLRP_MAX_QUEUE_SIZE`        | Integer  | `2048`   | Maximum log record queue size.                           |
+  /// | `OTEL_BLRP_MAX_EXPORT_BATCH_SIZE` | Integer  | `512`    | Maximum batch size. Must be ≤ `MAX_QUEUE_SIZE`.          |
+  ///
+  /// Invalid or out-of-range values emit an [OTelLog.warn] diagnostic and
+  /// fall back to the spec default.
+  factory BatchLogRecordProcessorConfig.fromEnvironment() {
+    final env = OTelEnv.getBlrpConfig();
+
+    var queueSize = (env['maxQueueSize'] as int?) ?? 2048;
+    var batchSize = (env['maxExportBatchSize'] as int?) ?? 512;
+
+    // --- scheduleDelay ---
+    // Spec type: Duration. Zero is valid ("export as fast as possible").
+    // Negative values MUST warn and fall back to default.
+    Duration scheduleDelay;
+    if (env['scheduleDelay'] is Duration) {
+      final delay = env['scheduleDelay'] as Duration;
+      if (delay.inMilliseconds >= 0) {
+        scheduleDelay = delay;
+      } else {
+        if (OTelLog.isWarn()) {
+          OTelLog.warn('BatchLogRecordProcessorConfig: Negative '
+              'OTEL_BLRP_SCHEDULE_DELAY (${delay.inMilliseconds} ms) is '
+              'invalid per spec, using default 1000 ms.');
+        }
+        scheduleDelay = const Duration(milliseconds: 1000);
+      }
+    } else {
+      scheduleDelay = const Duration(milliseconds: 1000);
+    }
+
+    // --- exportTimeout ---
+    // Spec type: Timeout. Zero means "no limit" — substitute a very large
+    // duration. Negative values MUST warn and fall back to default.
+    Duration exportTimeout;
+    if (env['exportTimeout'] is Duration) {
+      final timeout = env['exportTimeout'] as Duration;
+      if (timeout.inMilliseconds == 0) {
+        exportTimeout = noLimit;
+      } else if (timeout.inMilliseconds > 0) {
+        exportTimeout = timeout;
+      } else {
+        if (OTelLog.isWarn()) {
+          OTelLog.warn('BatchLogRecordProcessorConfig: Negative '
+              'OTEL_BLRP_EXPORT_TIMEOUT (${timeout.inMilliseconds} ms) is '
+              'invalid per spec, using default 30000 ms.');
+        }
+        exportTimeout = const Duration(milliseconds: 30000);
+      }
+    } else {
+      exportTimeout = const Duration(milliseconds: 30000);
+    }
+
+    // --- Validation Logic ---
+    if (queueSize <= 0) {
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('BatchLogRecordProcessorConfig: Non-positive '
+            'OTEL_BLRP_MAX_QUEUE_SIZE ($queueSize) is invalid per spec, '
+            'using default 2048.');
+      }
+      queueSize = 2048;
+    }
+    if (batchSize <= 0) {
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('BatchLogRecordProcessorConfig: Non-positive '
+            'OTEL_BLRP_MAX_EXPORT_BATCH_SIZE ($batchSize) is invalid per '
+            'spec, using default 512.');
+      }
+      batchSize = 512;
+    }
+    // Spec rule: maxExportBatchSize must be less than or equal to maxQueueSize
+    if (batchSize > queueSize) {
+      batchSize = queueSize;
+    }
+
+    return BatchLogRecordProcessorConfig(
+      maxQueueSize: queueSize,
+      maxExportBatchSize: batchSize,
+      scheduleDelay: scheduleDelay,
+      exportTimeout: exportTimeout,
+    );
+  }
 }
 
 /// A LogRecordProcessor that batches log records before export.

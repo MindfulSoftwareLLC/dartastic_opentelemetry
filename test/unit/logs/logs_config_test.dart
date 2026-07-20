@@ -217,5 +217,19 @@ void main() {
       expect(config.maxExportBatchSize, equals(1024));
       expect(config.exportTimeout, equals(const Duration(seconds: 60)));
     });
+
+    test('LogsConfiguration clamps batch size to queue size', () {
+      final config = LogsConfiguration.buildBatchLogRecordProcessorConfig({
+        'maxQueueSize': 100,
+        'maxExportBatchSize': 200,
+        'scheduleDelay': const Duration(milliseconds: 1234),
+        'exportTimeout': const Duration(milliseconds: 5678),
+      });
+
+      expect(config.maxQueueSize, equals(100));
+      expect(config.maxExportBatchSize, equals(100));
+      expect(config.scheduleDelay, equals(const Duration(milliseconds: 1234)));
+      expect(config.exportTimeout, equals(const Duration(milliseconds: 5678)));
+    });
   });
 }
