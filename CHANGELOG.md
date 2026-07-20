@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.12-wip]
 
+### Changed
+- **Internal attribute keys now come from the generated registry enums**
+  (`Service.*`, `ExceptionAttributes.*`, `Otel.*`) instead of string
+  literals, across resource creation, exception recording, the
+  `package:logging` bridge, the OTLP span/log transformers, the sampler,
+  and the env resource-attribute parsing. A mistyped key is now a compile
+  error — the same hardening applied to the resource detector after #90.
+  No wire change: `Enum.key` resolves to the identical registry string.
+
 ## [1.1.0-beta.11] - 2026-07-20
 ### Changed
 - Doc only, README.md platform updates and clarity.

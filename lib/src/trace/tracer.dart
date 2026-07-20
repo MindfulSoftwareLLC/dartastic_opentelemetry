@@ -514,8 +514,8 @@ class Tracer implements APITracer {
           error,
           stackTrace: sanitized.stackTrace,
           attributes: OTel.attributesFromMap(<String, Object>{
-            'exception.type': sanitized.type,
-            'exception.message': sanitized.message,
+            ExceptionAttributes.exceptionType.key: sanitized.type,
+            ExceptionAttributes.exceptionMessage.key: sanitized.message,
           }),
         );
       }

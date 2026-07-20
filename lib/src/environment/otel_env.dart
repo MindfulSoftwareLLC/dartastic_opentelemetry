@@ -304,9 +304,9 @@ class OTelEnv {
           final key = pair.substring(0, equalIndex).trim();
           final value = pair.substring(equalIndex + 1).trim();
 
-          if (key == 'service.name') {
+          if (key == Service.serviceName.key) {
             config['serviceName'] = value;
-          } else if (key == 'service.version') {
+          } else if (key == Service.serviceVersion.key) {
             config['serviceVersion'] = value;
           }
         }

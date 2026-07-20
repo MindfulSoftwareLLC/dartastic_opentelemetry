@@ -181,13 +181,13 @@ class DartLogBridge {
     }
     if (error != null) {
       attributes.add(OTelAPI.attributeString(
-          'exception.type', error.runtimeType.toString()));
-      attributes
-          .add(OTelAPI.attributeString('exception.message', error.toString()));
+          ExceptionAttributes.exceptionType.key, error.runtimeType.toString()));
+      attributes.add(OTelAPI.attributeString(
+          ExceptionAttributes.exceptionMessage.key, error.toString()));
     }
     if (stackTrace != null) {
       attributes.add(OTelAPI.attributeString(
-          'exception.stacktrace', stackTrace.toString()));
+          ExceptionAttributes.exceptionStacktrace.key, stackTrace.toString()));
     }
 
     // Emit the log
