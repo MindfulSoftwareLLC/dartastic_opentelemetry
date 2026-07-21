@@ -414,6 +414,78 @@ void main() {
   });
 
   // =========================================================================
+  // OTelEnv - subprocess tests for getAttributeLimits
+  // =========================================================================
+  group('OTelEnv.getAttributeLimits (subprocess)', () {
+    test('reads attributeValueLengthLimit', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_attribute_limits.dart',
+        {'OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT': '4096'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['attributeValueLengthLimit'], equals(4096));
+    });
+
+    test('reads attributeCountLimit', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_attribute_limits.dart',
+        {'OTEL_ATTRIBUTE_COUNT_LIMIT': '64'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['attributeCountLimit'], equals(64));
+    });
+
+    test('reads both limits together', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_attribute_limits.dart',
+        {
+          'OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT': '1024',
+          'OTEL_ATTRIBUTE_COUNT_LIMIT': '128',
+        },
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['attributeValueLengthLimit'], equals(1024));
+      expect(result['attributeCountLimit'], equals(128));
+    });
+
+    test('reads spec default count limit value (128)', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_attribute_limits.dart',
+        {'OTEL_ATTRIBUTE_COUNT_LIMIT': '128'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['attributeCountLimit'], equals(128));
+    });
+
+    test('ignores non-numeric attributeValueLengthLimit', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_attribute_limits.dart',
+        {'OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT': 'not-a-number'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result.containsKey('attributeValueLengthLimit'), isFalse);
+    });
+
+    test('ignores non-numeric attributeCountLimit', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_attribute_limits.dart',
+        {'OTEL_ATTRIBUTE_COUNT_LIMIT': 'bad'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result.containsKey('attributeCountLimit'), isFalse);
+    });
+
+    test('returns empty map when no attribute limit env vars set', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_attribute_limits.dart',
+        {},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result, isEmpty);
+    });
+  });
+
+  // =========================================================================
   // OTelEnv - subprocess tests for _parseHeaders edge cases
   // =========================================================================
   group('OTelEnv._parseHeaders edge cases (subprocess)', () {
@@ -846,9 +918,14 @@ void main() {
       expect(config, isA<Map<String, dynamic>>());
     });
 
-    test('getLogRecordLimits returns a Map<String, dynamic>', () {
+    test('getLogRecordLimits returns an AttributeLimitsConfig', () {
       final config = OTelEnv.getLogRecordLimits();
-      expect(config, isA<Map<String, dynamic>>());
+      expect(config, isA<AttributeLimitsConfig>());
+    });
+
+    test('getAttributeLimits returns an AttributeLimitsConfig', () {
+      final config = OTelEnv.getAttributeLimits();
+      expect(config, isA<AttributeLimitsConfig>());
     });
 
     test('getExporter for metrics returns nullable result', () {

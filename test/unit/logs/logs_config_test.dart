@@ -188,9 +188,9 @@ void main() {
       // Config may be empty or have defaults depending on env
     });
 
-    test('getLogRecordLimits returns empty map when no env vars set', () {
+    test('getLogRecordLimits returns empty config when no env vars set', () {
       final config = OTelEnv.getLogRecordLimits();
-      expect(config, isA<Map<String, dynamic>>());
+      expect(config, isA<AttributeLimitsConfig>());
     });
   });
 
