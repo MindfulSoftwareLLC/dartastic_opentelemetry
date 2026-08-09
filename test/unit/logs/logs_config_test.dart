@@ -180,12 +180,13 @@ void main() {
   });
 
   group('OTelEnv BLRP config tests', () {
-    test('getBlrpConfig returns empty map when no env vars set', () {
-      // When no env vars are set (which is the case in tests),
-      // getBlrpConfig should return an empty map
+    test('getBlrpConfig returns record with null fields when no env vars set',
+        () {
       final config = OTelEnv.getBlrpConfig();
-      expect(config, isA<Map<String, dynamic>>());
-      // Config may be empty or have defaults depending on env
+      expect(config.scheduleDelay, isNull);
+      expect(config.exportTimeout, isNull);
+      expect(config.maxQueueSize, isNull);
+      expect(config.maxExportBatchSize, isNull);
     });
 
     test('getLogRecordLimits returns empty map when no env vars set', () {
@@ -198,10 +199,14 @@ void main() {
     test('default config values are correct per OTel spec', () {
       const config = BatchLogRecordProcessorConfig();
 
-      expect(config.maxQueueSize, equals(2048));
-      expect(config.scheduleDelay, equals(const Duration(milliseconds: 1000)));
-      expect(config.maxExportBatchSize, equals(512));
-      expect(config.exportTimeout, equals(const Duration(seconds: 30)));
+      expect(config.maxQueueSize,
+          equals(BatchLogRecordProcessorConfig.defaultMaxQueueSize));
+      expect(config.scheduleDelay,
+          equals(BatchLogRecordProcessorConfig.defaultScheduleDelay));
+      expect(config.maxExportBatchSize,
+          equals(BatchLogRecordProcessorConfig.defaultMaxExportBatchSize));
+      expect(config.exportTimeout,
+          equals(BatchLogRecordProcessorConfig.defaultExportTimeout));
     });
 
     test('custom config values are applied', () {
@@ -218,18 +223,116 @@ void main() {
       expect(config.exportTimeout, equals(const Duration(seconds: 60)));
     });
 
-    test('LogsConfiguration clamps batch size to queue size', () {
-      final config = LogsConfiguration.buildBatchLogRecordProcessorConfig({
-        'maxQueueSize': 100,
-        'maxExportBatchSize': 200,
-        'scheduleDelay': const Duration(milliseconds: 1234),
-        'exportTimeout': const Duration(milliseconds: 5678),
-      });
+    test('fromEnvironment uses defaults when no vars set', () {
+      EnvironmentService.testOverrides = {};
+      final config = BatchLogRecordProcessorConfig.fromEnvironment();
+
+      expect(config.maxQueueSize,
+          equals(BatchLogRecordProcessorConfig.defaultMaxQueueSize));
+      expect(config.scheduleDelay,
+          equals(BatchLogRecordProcessorConfig.defaultScheduleDelay));
+      expect(config.maxExportBatchSize,
+          equals(BatchLogRecordProcessorConfig.defaultMaxExportBatchSize));
+      expect(config.exportTimeout,
+          equals(BatchLogRecordProcessorConfig.defaultExportTimeout));
+      EnvironmentService.testOverrides = null;
+    });
+
+    test('fromEnvironment honors scheduleDelay=0 (export ASAP)', () {
+      EnvironmentService.testOverrides = {'OTEL_BLRP_SCHEDULE_DELAY': '0'};
+      final config = BatchLogRecordProcessorConfig.fromEnvironment();
+      expect(config.scheduleDelay, equals(const Duration(milliseconds: 0)));
+      EnvironmentService.testOverrides = null;
+    });
+
+    test('fromEnvironment warns and defaults for scheduleDelay=-1', () {
+      final logs = <String>[];
+      OTelLog.logFunction = logs.add;
+      OTelLog.currentLevel = LogLevel.warn;
+
+      EnvironmentService.testOverrides = {'OTEL_BLRP_SCHEDULE_DELAY': '-1'};
+      final config = BatchLogRecordProcessorConfig.fromEnvironment();
+
+      expect(config.scheduleDelay,
+          equals(BatchLogRecordProcessorConfig.defaultScheduleDelay));
+      expect(logs.join('\n'), contains('OTEL_BLRP_SCHEDULE_DELAY'));
+
+      EnvironmentService.testOverrides = null;
+      OTelLog.logFunction = null;
+    });
+
+    test('fromEnvironment honors exportTimeout=0 (no limit)', () {
+      EnvironmentService.testOverrides = {'OTEL_BLRP_EXPORT_TIMEOUT': '0'};
+      final config = BatchLogRecordProcessorConfig.fromEnvironment();
+      expect(
+          config.exportTimeout, equals(BatchLogRecordProcessorConfig.noLimit));
+      EnvironmentService.testOverrides = null;
+    });
+
+    test('fromEnvironment warns and defaults for exportTimeout=-1', () {
+      final logs = <String>[];
+      OTelLog.logFunction = logs.add;
+      OTelLog.currentLevel = LogLevel.warn;
+
+      EnvironmentService.testOverrides = {'OTEL_BLRP_EXPORT_TIMEOUT': '-1'};
+      final config = BatchLogRecordProcessorConfig.fromEnvironment();
+
+      expect(config.exportTimeout,
+          equals(BatchLogRecordProcessorConfig.defaultExportTimeout));
+      expect(logs.join('\n'), contains('OTEL_BLRP_EXPORT_TIMEOUT'));
+
+      EnvironmentService.testOverrides = null;
+      OTelLog.logFunction = null;
+    });
+
+    test('fromEnvironment warns and defaults for non-positive queue size', () {
+      final logs = <String>[];
+      OTelLog.logFunction = logs.add;
+      OTelLog.currentLevel = LogLevel.warn;
+
+      EnvironmentService.testOverrides = {'OTEL_BLRP_MAX_QUEUE_SIZE': '-5'};
+      final config = BatchLogRecordProcessorConfig.fromEnvironment();
+
+      expect(config.maxQueueSize,
+          equals(BatchLogRecordProcessorConfig.defaultMaxQueueSize));
+      expect(logs.join('\n'), contains('OTEL_BLRP_MAX_QUEUE_SIZE'));
+
+      EnvironmentService.testOverrides = null;
+      OTelLog.logFunction = null;
+    });
+
+    test(
+        'fromEnvironment clamps batch size to default maxQueueSize when queue unset',
+        () {
+      EnvironmentService.testOverrides = {
+        'OTEL_BLRP_MAX_EXPORT_BATCH_SIZE': '5000'
+      };
+      final config = BatchLogRecordProcessorConfig.fromEnvironment();
+
+      expect(config.maxQueueSize,
+          equals(BatchLogRecordProcessorConfig.defaultMaxQueueSize));
+      expect(config.maxExportBatchSize,
+          equals(BatchLogRecordProcessorConfig.defaultMaxQueueSize));
+
+      EnvironmentService.testOverrides = null;
+    });
+
+    test('fromEnvironment clamps batch size to queue size', () {
+      EnvironmentService.testOverrides = {
+        'OTEL_BLRP_MAX_QUEUE_SIZE': '100',
+        'OTEL_BLRP_MAX_EXPORT_BATCH_SIZE': '200',
+        'OTEL_BLRP_SCHEDULE_DELAY': '1234',
+        'OTEL_BLRP_EXPORT_TIMEOUT': '5678',
+      };
+
+      final config = BatchLogRecordProcessorConfig.fromEnvironment();
 
       expect(config.maxQueueSize, equals(100));
       expect(config.maxExportBatchSize, equals(100));
       expect(config.scheduleDelay, equals(const Duration(milliseconds: 1234)));
       expect(config.exportTimeout, equals(const Duration(milliseconds: 5678)));
+
+      EnvironmentService.testOverrides = null;
     });
   });
 }

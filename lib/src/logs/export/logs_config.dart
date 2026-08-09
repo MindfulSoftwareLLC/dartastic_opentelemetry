@@ -193,41 +193,6 @@ class LogsConfiguration {
     return BatchLogRecordProcessor(exporter, processorConfig);
   }
 
-  /// Builds [BatchLogRecordProcessorConfig] from a BLRP environment config map.
-  ///
-  /// Exposed for testing to validate normalization and spec-rule handling.
-  /// Prefer [BatchLogRecordProcessorConfig.fromEnvironment] for production use.
-  static BatchLogRecordProcessorConfig buildBatchLogRecordProcessorConfig(
-    Map<String, dynamic> blrpConfig,
-  ) {
-    if (blrpConfig.isEmpty) {
-      return const BatchLogRecordProcessorConfig();
-    }
-
-    // Build config from environment
-    final scheduleDelay = blrpConfig['scheduleDelay'] as Duration?;
-    final exportTimeout = blrpConfig['exportTimeout'] as Duration?;
-    final maxQueueSize = blrpConfig['maxQueueSize'] as int? ?? 2048;
-    var maxExportBatchSize = blrpConfig['maxExportBatchSize'] as int? ?? 512;
-
-    if (maxExportBatchSize > maxQueueSize) {
-      if (OTelLog.isWarn()) {
-        OTelLog.warn(
-          'LogsConfiguration: maxExportBatchSize ($maxExportBatchSize) exceeds '
-          'maxQueueSize ($maxQueueSize). Clamping batch size to queue size.',
-        );
-      }
-      maxExportBatchSize = maxQueueSize;
-    }
-
-    return BatchLogRecordProcessorConfig(
-      scheduleDelay: scheduleDelay ?? const Duration(milliseconds: 1000),
-      exportTimeout: exportTimeout ?? const Duration(seconds: 30),
-      maxQueueSize: maxQueueSize,
-      maxExportBatchSize: maxExportBatchSize,
-    );
-  }
-
   /// Creates a simple (synchronous) log record processor instead of batch.
   ///
   /// This is useful for development/debugging or when you want immediate export.

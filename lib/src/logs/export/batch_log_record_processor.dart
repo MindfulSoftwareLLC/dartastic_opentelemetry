@@ -23,6 +23,18 @@ class BatchLogRecordProcessorConfig {
   /// `Future.timeout()`.
   static const Duration noLimit = Duration(milliseconds: 0x7FFFFFFF);
 
+  /// Default maximum queue size per OTel spec.
+  static const int defaultMaxQueueSize = 2048;
+
+  /// Default maximum export batch size per OTel spec.
+  static const int defaultMaxExportBatchSize = 512;
+
+  /// Default schedule delay per OTel spec (1 second).
+  static const Duration defaultScheduleDelay = Duration(milliseconds: 1000);
+
+  /// Default export timeout per OTel spec (30 seconds).
+  static const Duration defaultExportTimeout = Duration(seconds: 30);
+
   /// The maximum queue size for log records. After this is reached,
   /// log records will be dropped.
   final int maxQueueSize;
@@ -43,10 +55,10 @@ class BatchLogRecordProcessorConfig {
   /// [maxExportBatchSize] The maximum batch size per export. Default is 512.
   /// [exportTimeout] The maximum time to wait for export. Default is 30 seconds.
   const BatchLogRecordProcessorConfig({
-    this.maxQueueSize = 2048,
-    this.scheduleDelay = const Duration(milliseconds: 1000),
-    this.maxExportBatchSize = 512,
-    this.exportTimeout = const Duration(seconds: 30),
+    this.maxQueueSize = defaultMaxQueueSize,
+    this.scheduleDelay = defaultScheduleDelay,
+    this.maxExportBatchSize = defaultMaxExportBatchSize,
+    this.exportTimeout = defaultExportTimeout,
   });
 
   /// Creates a configuration by reading `OTEL_BLRP_*` environment variables
@@ -65,35 +77,36 @@ class BatchLogRecordProcessorConfig {
   factory BatchLogRecordProcessorConfig.fromEnvironment() {
     final env = OTelEnv.getBlrpConfig();
 
-    var queueSize = (env['maxQueueSize'] as int?) ?? 2048;
-    var batchSize = (env['maxExportBatchSize'] as int?) ?? 512;
+    var queueSize = env.maxQueueSize ?? defaultMaxQueueSize;
+    var batchSize = env.maxExportBatchSize ?? defaultMaxExportBatchSize;
 
     // --- scheduleDelay ---
     // Spec type: Duration. Zero is valid ("export as fast as possible").
     // Negative values MUST warn and fall back to default.
     Duration scheduleDelay;
-    if (env['scheduleDelay'] is Duration) {
-      final delay = env['scheduleDelay'] as Duration;
+    if (env.scheduleDelay != null) {
+      final delay = env.scheduleDelay!;
       if (delay.inMilliseconds >= 0) {
         scheduleDelay = delay;
       } else {
         if (OTelLog.isWarn()) {
           OTelLog.warn('BatchLogRecordProcessorConfig: Negative '
               'OTEL_BLRP_SCHEDULE_DELAY (${delay.inMilliseconds} ms) is '
-              'invalid per spec, using default 1000 ms.');
+              'invalid per spec, using default '
+              '${defaultScheduleDelay.inMilliseconds} ms.');
         }
-        scheduleDelay = const Duration(milliseconds: 1000);
+        scheduleDelay = defaultScheduleDelay;
       }
     } else {
-      scheduleDelay = const Duration(milliseconds: 1000);
+      scheduleDelay = defaultScheduleDelay;
     }
 
     // --- exportTimeout ---
     // Spec type: Timeout. Zero means "no limit" — substitute a very large
     // duration. Negative values MUST warn and fall back to default.
     Duration exportTimeout;
-    if (env['exportTimeout'] is Duration) {
-      final timeout = env['exportTimeout'] as Duration;
+    if (env.exportTimeout != null) {
+      final timeout = env.exportTimeout!;
       if (timeout.inMilliseconds == 0) {
         exportTimeout = noLimit;
       } else if (timeout.inMilliseconds > 0) {
@@ -102,30 +115,31 @@ class BatchLogRecordProcessorConfig {
         if (OTelLog.isWarn()) {
           OTelLog.warn('BatchLogRecordProcessorConfig: Negative '
               'OTEL_BLRP_EXPORT_TIMEOUT (${timeout.inMilliseconds} ms) is '
-              'invalid per spec, using default 30000 ms.');
+              'invalid per spec, using default '
+              '${defaultExportTimeout.inMilliseconds} ms.');
         }
-        exportTimeout = const Duration(milliseconds: 30000);
+        exportTimeout = defaultExportTimeout;
       }
     } else {
-      exportTimeout = const Duration(milliseconds: 30000);
+      exportTimeout = defaultExportTimeout;
     }
 
-    // --- Validation Logic ---
+    // --- Domain validation (moved from OTelEnv) ---
     if (queueSize <= 0) {
       if (OTelLog.isWarn()) {
         OTelLog.warn('BatchLogRecordProcessorConfig: Non-positive '
             'OTEL_BLRP_MAX_QUEUE_SIZE ($queueSize) is invalid per spec, '
-            'using default 2048.');
+            'using default $defaultMaxQueueSize.');
       }
-      queueSize = 2048;
+      queueSize = defaultMaxQueueSize;
     }
     if (batchSize <= 0) {
       if (OTelLog.isWarn()) {
         OTelLog.warn('BatchLogRecordProcessorConfig: Non-positive '
             'OTEL_BLRP_MAX_EXPORT_BATCH_SIZE ($batchSize) is invalid per '
-            'spec, using default 512.');
+            'spec, using default $defaultMaxExportBatchSize.');
       }
-      batchSize = 512;
+      batchSize = defaultMaxExportBatchSize;
     }
     // Spec rule: maxExportBatchSize must be less than or equal to maxQueueSize
     if (batchSize > queueSize) {

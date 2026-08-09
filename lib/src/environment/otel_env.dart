@@ -5,6 +5,19 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'env_constants.dart';
 import 'environment_service.dart';
 
+/// Raw BLRP environment values parsed by [OTelEnv.getBlrpConfig].
+///
+/// All fields are nullable — `null` means the corresponding env var was
+/// unset or contained a non-numeric value (a warning is logged in that case).
+/// Domain-level validation (e.g. "queue size must be > 0") belongs in
+/// [BatchLogRecordProcessorConfig.fromEnvironment], not here.
+typedef BlrpEnvironmentValues = ({
+  Duration? scheduleDelay,
+  Duration? exportTimeout,
+  int? maxQueueSize,
+  int? maxExportBatchSize,
+});
+
 /// Utility class for handling OpenTelemetry environment variables.
 ///
 /// This class provides methods for reading standard OpenTelemetry environment
@@ -492,46 +505,37 @@ class OTelEnv {
 
   /// Get Batch LogRecord Processor (BLRP) configuration from environment variables.
   ///
-  /// Returns a map containing the raw parsed BLRP values from environment
-  /// variables. Domain-level defaults, validation, and clamping belong in
-  /// [BatchLogRecordProcessorConfig.fromEnvironment].
+  /// Returns a [BlrpEnvironmentValues] record containing the raw parsed BLRP
+  /// values from environment variables. Fields are `null` when the
+  /// corresponding env var is unset or contains a non-numeric value.
   ///
-  /// Keys returned (only present when the env var is set and valid):
-  /// - 'scheduleDelay': Duration for the schedule delay
-  /// - 'exportTimeout': Duration for the export timeout
-  /// - 'maxQueueSize': int for maximum queue size
-  /// - 'maxExportBatchSize': int for maximum export batch size
-  static Map<String, dynamic> getBlrpConfig() {
-    final config = <String, dynamic>{};
-
+  /// Domain-level defaults, validation, and clamping belong in
+  /// [BatchLogRecordProcessorConfig.fromEnvironment], not here.
+  static BlrpEnvironmentValues getBlrpConfig() {
     // Get schedule delay — 0 is valid ("export as fast as possible")
     final scheduleDelayMs =
-        _getPositiveIntEnv(otelBlrpScheduleDelay, minInclusive: 0);
-    if (scheduleDelayMs != null) {
-      config['scheduleDelay'] = Duration(milliseconds: scheduleDelayMs);
-    }
+        getPositiveIntEnv(otelBlrpScheduleDelay, minInclusive: 0);
 
     // Get export timeout — 0 is valid ("no limit")
     final exportTimeoutMs =
-        _getPositiveIntEnv(otelBlrpExportTimeout, minInclusive: 0);
-    if (exportTimeoutMs != null) {
-      config['exportTimeout'] = Duration(milliseconds: exportTimeoutMs);
-    }
+        getPositiveIntEnv(otelBlrpExportTimeout, minInclusive: 0);
 
-    // Get queue and batch sizes — must be positive (>0)
+    // Get queue and batch sizes — just parse, no domain validation here
     final parsedMaxQueueSize =
-        _getPositiveIntEnv(otelBlrpMaxQueueSize, minInclusive: 1);
-    if (parsedMaxQueueSize != null) {
-      config['maxQueueSize'] = parsedMaxQueueSize;
-    }
-
+        getPositiveIntEnv(otelBlrpMaxQueueSize, minInclusive: 0);
     final parsedMaxExportBatchSize =
-        _getPositiveIntEnv(otelBlrpMaxExportBatchSize, minInclusive: 1);
-    if (parsedMaxExportBatchSize != null) {
-      config['maxExportBatchSize'] = parsedMaxExportBatchSize;
-    }
+        getPositiveIntEnv(otelBlrpMaxExportBatchSize, minInclusive: 0);
 
-    return config;
+    return (
+      scheduleDelay: scheduleDelayMs != null
+          ? Duration(milliseconds: scheduleDelayMs)
+          : null,
+      exportTimeout: exportTimeoutMs != null
+          ? Duration(milliseconds: exportTimeoutMs)
+          : null,
+      maxQueueSize: parsedMaxQueueSize,
+      maxExportBatchSize: parsedMaxExportBatchSize,
+    );
   }
 
   /// Get LogRecord attribute limits from environment variables.
@@ -638,7 +642,7 @@ class OTelEnv {
   /// Returns null when not set, non-numeric, or outside the accepted range.
   /// Warns via [OTelLog.warn] when the raw value is present but unusable
   /// (non-numeric, below [minInclusive], or above [maxInclusive]).
-  static int? _getPositiveIntEnv(
+  static int? getPositiveIntEnv(
     String name, {
     required int minInclusive,
     int? maxInclusive,

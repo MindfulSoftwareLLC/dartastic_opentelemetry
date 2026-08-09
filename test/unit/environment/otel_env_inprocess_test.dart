@@ -294,12 +294,10 @@ void main() {
         'OTEL_BLRP_MAX_EXPORT_BATCH_SIZE': '64',
       });
       final config = OTelEnv.getBlrpConfig();
-      expect(
-          config['scheduleDelay'], equals(const Duration(milliseconds: 750)));
-      expect(
-          config['exportTimeout'], equals(const Duration(milliseconds: 1500)));
-      expect(config['maxQueueSize'], equals(256));
-      expect(config['maxExportBatchSize'], equals(64));
+      expect(config.scheduleDelay, equals(const Duration(milliseconds: 750)));
+      expect(config.exportTimeout, equals(const Duration(milliseconds: 1500)));
+      expect(config.maxQueueSize, equals(256));
+      expect(config.maxExportBatchSize, equals(64));
 
       env({
         'OTEL_BLRP_SCHEDULE_DELAY': 'x',
@@ -307,7 +305,11 @@ void main() {
         'OTEL_BLRP_MAX_QUEUE_SIZE': 'x',
         'OTEL_BLRP_MAX_EXPORT_BATCH_SIZE': 'x',
       });
-      expect(OTelEnv.getBlrpConfig(), isEmpty);
+      final invalid = OTelEnv.getBlrpConfig();
+      expect(invalid.scheduleDelay, isNull);
+      expect(invalid.exportTimeout, isNull);
+      expect(invalid.maxQueueSize, isNull);
+      expect(invalid.maxExportBatchSize, isNull);
     });
 
     test('getLogRecordLimits parses valid values and drops invalid ones', () {
