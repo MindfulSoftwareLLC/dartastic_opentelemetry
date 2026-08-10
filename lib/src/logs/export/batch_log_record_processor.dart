@@ -108,6 +108,11 @@ class BatchLogRecordProcessorConfig {
     if (env.exportTimeout != null) {
       final timeout = env.exportTimeout!;
       if (timeout.inMilliseconds == 0) {
+        if (OTelLog.isDebug()) {
+          OTelLog.debug('BatchLogRecordProcessorConfig: '
+              'OTEL_BLRP_EXPORT_TIMEOUT=0 means "no limit" per spec. '
+              'Substituting internal maximum duration.');
+        }
         exportTimeout = noLimit;
       } else if (timeout.inMilliseconds > 0) {
         exportTimeout = timeout;
@@ -124,7 +129,7 @@ class BatchLogRecordProcessorConfig {
       exportTimeout = defaultExportTimeout;
     }
 
-    // --- Domain validation (moved from OTelEnv) ---
+    // --- Domain validation ---
     if (queueSize <= 0) {
       if (OTelLog.isWarn()) {
         OTelLog.warn('BatchLogRecordProcessorConfig: Non-positive '

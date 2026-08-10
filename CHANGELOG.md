@@ -19,11 +19,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   two hand-rolled copies of the same assembly; wire output is unchanged
   (same instrumentation-scope constant, same `OTel.resource(null)`
   fallback, resolved by the caller so the transformer stays a pure leaf).
-- **`BatchLogRecordProcessorConfig.fromEnvironment()`** — new factory
-  constructor symmetric with `BatchSpanProcessorConfig.fromEnvironment()`.
-  Spec defaults and validation now live on the config class (Single
-  Responsibility), eliminating duplication across `OTelEnv`,
-  `LogsConfiguration`, and the constructor.
 
 ### Changed
 - **OTEL_BLRP_* env var validation now warns on invalid values** — previously,

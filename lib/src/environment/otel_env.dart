@@ -12,9 +12,16 @@ import 'environment_service.dart';
 /// Domain-level validation (e.g. "queue size must be > 0") belongs in
 /// [BatchLogRecordProcessorConfig.fromEnvironment], not here.
 typedef BlrpEnvironmentValues = ({
+  /// Parsed from `OTEL_BLRP_SCHEDULE_DELAY`
   Duration? scheduleDelay,
+
+  /// Parsed from `OTEL_BLRP_EXPORT_TIMEOUT`
   Duration? exportTimeout,
+
+  /// Parsed from `OTEL_BLRP_MAX_QUEUE_SIZE`
   int? maxQueueSize,
+
+  /// Parsed from `OTEL_BLRP_MAX_EXPORT_BATCH_SIZE`
   int? maxExportBatchSize,
 });
 
