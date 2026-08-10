@@ -167,13 +167,11 @@ class OTel {
     final envInsecure = secure == null ? otlpConfig['insecure'] as bool? : null;
 
     endpoint ??= envEndpoint;
-    if (secure == null) {
-      if (envInsecure != null) {
-        secure = !envInsecure;
-      } else {
-        secure = true;
-      }
-    }
+    secure = OTelEnv.resolveOtlpSecure(
+      explicitSecure: secure,
+      envInsecure: envInsecure,
+      endpoint: endpoint,
+    );
 
     // Apply defaults if still null
     serviceName ??= defaultServiceName;
@@ -278,8 +276,8 @@ class OTel {
     }
 
     final serviceResourceAttributes = {
-      'service.name': serviceName,
-      'service.version': serviceVersion,
+      Service.serviceName.key: serviceName,
+      Service.serviceVersion.key: serviceVersion,
     };
     // Create initial resource with service attributes
     var baseResource = OTel.resource(
@@ -297,7 +295,7 @@ class OTel {
       if (OTelLog.isDebug()) {
         OTelLog.debug('Resource after platform merge:');
         mergedResource.attributes.toList().forEach((attr) {
-          if (attr.key == 'service.name') {
+          if (attr.key == Service.serviceName.key) {
             OTelLog.debug('  ${attr.key}: ${attr.value}');
           }
         });
@@ -311,7 +309,7 @@ class OTel {
       if (OTelLog.isDebug()) {
         OTelLog.debug('Resource after user attributes merge:');
         mergedResource.attributes.toList().forEach((attr) {
-          if (attr.key == 'service.name') {
+          if (attr.key == Service.serviceName.key) {
             OTelLog.debug('  ${attr.key}: ${attr.value}');
           }
         });
@@ -576,7 +574,7 @@ class OTel {
         OTelLog.debug('OTel.tracerProvider: Setting resource from default');
         if (defaultResource != null) {
           defaultResource!.attributes.toList().forEach((attr) {
-            if (attr.key == 'service.name') {
+            if (attr.key == Service.serviceName.key) {
               OTelLog.debug('  ${attr.key}: ${attr.value}');
             }
           });

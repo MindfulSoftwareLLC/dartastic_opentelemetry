@@ -6,7 +6,71 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.1.0-beta.10-wip]
+## [1.1.0-beta.13-wip]
+
+## [1.1.0-beta.12] - 2026-07-20
+
+### Changed
+- **Internal attribute keys now come from the generated registry enums**
+  (`Service.*`, `ExceptionAttributes.*`, `Otel.*`) instead of string
+  literals, across resource creation, exception recording, the
+  `package:logging` bridge, the OTLP span/log transformers, the sampler,
+  and the env resource-attribute parsing. A mistyped key is now a compile
+  error — the same hardening applied to the resource detector after #90.
+  No wire change: `Enum.key` resolves to the identical registry string.
+  
+### Fixed
+- **`host.arch` no longer reports the hostname** (#90). The IO resource
+  detector copy-pasted `Platform.localHostname` into `host.arch`; it now
+  resolves the real CPU architecture (`amd64`/`arm64`/`arm32`/`x86`/…)
+  from `Platform.version`, mapped to registry values, and omits the
+  attribute when it can't be parsed. Fixes downstream consumers that
+  select per-architecture artifacts (e.g. debug symbols) off the resource.
+- The IO detector now keys every attribute from the generated registry
+  enums (`Host.*`, `Os.*`, `ProcessAttributes.*`) instead of string
+  literals, so a mistyped key is a compile error — the class of bug that
+  caused #90. The malformed `host.os.name` is corrected to `os.name`.
+
+### Removed
+- The IO resource detector no longer emits `host.processors`,
+  `host.locale`, or `process.num_threads` — none are OpenTelemetry
+  registry attributes.
+
+## [1.1.0-beta.11] - 2026-07-20
+### Changed
+- Doc only, README.md platform updates and clarity.
+
+## [1.1.0-beta.10] - 2026-07-20
+
+### Fixed
+- **`W3CBaggagePropagator.extract` no longer discards the incoming
+  context when the `baggage` header is absent** (#87). It returned a
+  fresh context instead of the passed one, so in the spec-default
+  composite (tracecontext, then baggage) any request carrying
+  `traceparent` but no `baggage` header lost its just-extracted span
+  context — breaking traces at every service boundary unless callers
+  hand-ordered extraction. Per the Propagators API spec, extract now
+  returns the passed context unchanged when there is nothing to extract.
+- **OTLP endpoint schemes now determine TLS per the OTLP spec** (#88).
+  `http://` endpoints connect insecure and `https://` secure;
+  `OTEL_EXPORTER_OTLP_INSECURE` (and per-signal variants) applies only
+  to scheme-less endpoints, and an explicit programmatic `secure` still
+  wins. Previously `OTEL_EXPORTER_OTLP_ENDPOINT=http://collector:4317`
+  attempted TLS and failed with a HandshakeException unless the
+  insecure flag was also set. Resolution is shared across all three
+  signals via `OTelEnv.resolveOtlpSecure`; metrics additionally now
+  honor `OTEL_EXPORTER_OTLP_METRICS_INSECURE`, which was parsed but
+  ignored.
+
+### Fixed
+- **OTLP/JSON enum fields are now encoded as integers per the OTLP spec**,
+  not proto3-JSON's default enum names: span `kind`, status `code`, log
+  `severityNumber`, metric `aggregationTemporality`. Same origin story as
+  the 1.1.0-beta.7 hex-id fix — `toProto3Json()`'s defaults deviate from
+  the OTLP spec, lenient receivers masked it, and a strict
+  cross-implementation check (the Dartastic engine wire-parity harness)
+  caught it. Conversion is field-keyed and prefix-guarded, so attribute
+  string values that merely resemble enum names are never touched.
 
 ### Added
 - **Public `MetricTransformer.transformMetrics` one-shot** — the metrics

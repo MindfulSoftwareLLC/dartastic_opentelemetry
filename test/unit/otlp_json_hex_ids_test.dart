@@ -13,6 +13,7 @@
 import 'package:dartastic_opentelemetry/proto/collector/logs/v1/logs_service.pb.dart';
 import 'package:dartastic_opentelemetry/proto/collector/metrics/v1/metrics_service.pb.dart';
 import 'package:dartastic_opentelemetry/proto/collector/trace/v1/trace_service.pb.dart';
+import 'package:dartastic_opentelemetry/proto/common/v1/common.pb.dart' as pc;
 import 'package:dartastic_opentelemetry/proto/logs/v1/logs.pb.dart' as pl;
 import 'package:dartastic_opentelemetry/proto/metrics/v1/metrics.pb.dart' as pm;
 import 'package:dartastic_opentelemetry/proto/trace/v1/trace.pb.dart' as pt;
@@ -120,5 +121,101 @@ void main() {
             .first as Map;
     expect(s['traceId'], IdGenerator.bytesToHex(genTrace));
     expect(s['spanId'], IdGenerator.bytesToHex(genSpan));
+  });
+
+  test('enum fields are integers, never proto3-JSON names', () {
+    final req = ExportTraceServiceRequest(resourceSpans: [
+      pt.ResourceSpans(scopeSpans: [
+        pt.ScopeSpans(spans: [
+          pt.Span(
+            traceId: traceId,
+            spanId: spanId,
+            name: 'GET /forecast',
+            kind: pt.Span_SpanKind.SPAN_KIND_SERVER,
+            status: pt.Status(
+              code: pt.Status_StatusCode.STATUS_CODE_ERROR,
+              message: 'boom',
+            ),
+          ),
+        ]),
+      ]),
+    ]);
+
+    final json = otlpProto3JsonWithHexIds(req) as Map<String, Object?>;
+    final s =
+        (((((json['resourceSpans'] as List).first as Map)['scopeSpans'] as List)
+                .first as Map)['spans'] as List)
+            .first as Map;
+    expect(s['kind'], 2, reason: 'OTLP/JSON requires integer enum values');
+    expect((s['status'] as Map)['code'], 2);
+  });
+
+  test('log severityNumber and metric aggregationTemporality are integers', () {
+    final logs = ExportLogsServiceRequest(resourceLogs: [
+      pl.ResourceLogs(scopeLogs: [
+        pl.ScopeLogs(logRecords: [
+          pl.LogRecord(
+            severityNumber: pl.SeverityNumber.SEVERITY_NUMBER_ERROR,
+            traceId: traceId,
+            spanId: spanId,
+          ),
+        ]),
+      ]),
+    ]);
+    final lj = otlpProto3JsonWithHexIds(logs) as Map<String, Object?>;
+    final lr =
+        (((((lj['resourceLogs'] as List).first as Map)['scopeLogs'] as List)
+                .first as Map)['logRecords'] as List)
+            .first as Map;
+    expect(lr['severityNumber'], 17);
+
+    final metrics = ExportMetricsServiceRequest(resourceMetrics: [
+      pm.ResourceMetrics(scopeMetrics: [
+        pm.ScopeMetrics(metrics: [
+          pm.Metric(
+            name: 'm',
+            sum: pm.Sum(
+              dataPoints: [pm.NumberDataPoint(asDouble: 1.0)],
+              aggregationTemporality:
+                  pm.AggregationTemporality.AGGREGATION_TEMPORALITY_DELTA,
+              isMonotonic: true,
+            ),
+          ),
+        ]),
+      ]),
+    ]);
+    final mj = otlpProto3JsonWithHexIds(metrics) as Map<String, Object?>;
+    final metric = (((((mj['resourceMetrics'] as List).first
+                as Map)['scopeMetrics'] as List)
+            .first as Map)['metrics'] as List)
+        .first as Map;
+    expect((metric['sum'] as Map)['aggregationTemporality'], 1);
+  });
+
+  test('attribute string values resembling enum names are never touched', () {
+    final req = ExportTraceServiceRequest(resourceSpans: [
+      pt.ResourceSpans(scopeSpans: [
+        pt.ScopeSpans(spans: [
+          pt.Span(
+            traceId: traceId,
+            spanId: spanId,
+            name: 'attr-collision',
+          )..attributes.add(
+              pc.KeyValue(
+                key: 'suspicious',
+                value: pc.AnyValue(stringValue: 'SPAN_KIND_SERVER'),
+              ),
+            ),
+        ]),
+      ]),
+    ]);
+    final json = otlpProto3JsonWithHexIds(req) as Map<String, Object?>;
+    final s =
+        (((((json['resourceSpans'] as List).first as Map)['scopeSpans'] as List)
+                .first as Map)['spans'] as List)
+            .first as Map;
+    final attr = (s['attributes'] as List).first as Map;
+    expect((attr['value'] as Map)['stringValue'], 'SPAN_KIND_SERVER',
+        reason: 'field-keyed conversion must never rewrite attribute values');
   });
 }

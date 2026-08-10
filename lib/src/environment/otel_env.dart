@@ -324,9 +324,9 @@ class OTelEnv {
           final key = pair.substring(0, equalIndex).trim();
           final value = pair.substring(equalIndex + 1).trim();
 
-          if (key == 'service.name') {
+          if (key == Service.serviceName.key) {
             config['serviceName'] = value;
-          } else if (key == 'service.version') {
+          } else if (key == Service.serviceVersion.key) {
             config['serviceVersion'] = value;
           }
         }
@@ -573,6 +573,43 @@ class OTelEnv {
     }
 
     return config;
+  }
+
+  /// Resolves whether an OTLP connection should use TLS, per the OTLP
+  /// exporter spec's precedence:
+  ///
+  /// 1. an explicit programmatic choice ([explicitSecure]) wins;
+  /// 2. otherwise the endpoint **scheme** decides — the spec states the
+  ///    scheme indicates the connection security, and that
+  ///    `OTEL_EXPORTER_OTLP_INSECURE` "only applies to OTLP/gRPC when an
+  ///    endpoint is provided without the http or https scheme";
+  /// 3. otherwise `OTEL_EXPORTER_OTLP_INSECURE` (or its per-signal
+  ///    variant, passed as [envInsecure]) applies;
+  /// 4. otherwise [fallback] (secure by default).
+  ///
+  /// Bare `host:port` endpoints parse with a bogus scheme (`host`), so
+  /// only exact `http`/`https` schemes participate in step 2.
+  static bool resolveOtlpSecure({
+    bool? explicitSecure,
+    bool? envInsecure,
+    String? endpoint,
+    bool fallback = true,
+  }) {
+    if (explicitSecure != null) {
+      return explicitSecure;
+    }
+    final scheme =
+        endpoint == null ? null : Uri.tryParse(endpoint)?.scheme.toLowerCase();
+    if (scheme == 'http') {
+      return false;
+    }
+    if (scheme == 'https') {
+      return true;
+    }
+    if (envInsecure != null) {
+      return !envInsecure;
+    }
+    return fallback;
   }
 
   /// Parse headers from the environment variable format.

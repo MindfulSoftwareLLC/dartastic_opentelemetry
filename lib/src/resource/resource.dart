@@ -95,7 +95,7 @@ class Resource {
     if (OTelLog.isDebug()) {
       OTelLog.debug('Resource merge result attributes:');
       result._attributes.toList().forEach((attr) {
-        if (attr.key == 'service.name') {
+        if (attr.key == Service.serviceName.key) {
           OTelLog.debug('  ${attr.key}: ${attr.value}');
         }
       });

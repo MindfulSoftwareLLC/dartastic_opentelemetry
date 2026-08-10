@@ -45,7 +45,7 @@ class OtlpLogRecordTransformer {
       if (OTelLog.isDebug()) {
         OTelLog.debug('LogRecordTransformer: Extracting resource attributes:');
         resourceAttrs.toList().forEach((attr) {
-          if (attr.key == 'service.name') {
+          if (attr.key == Service.serviceName.key) {
             OTelLog.debug('  ${attr.key}: ${attr.value}');
           }
         });
@@ -103,7 +103,7 @@ class OtlpLogRecordTransformer {
   /// Get service name from resource attributes.
   static String _getResourceServiceName(Attributes attributes) {
     for (final attr in attributes.toList()) {
-      if (attr.key == 'service.name') {
+      if (attr.key == Service.serviceName.key) {
         return attr.value.toString();
       }
     }

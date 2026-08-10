@@ -78,7 +78,7 @@ class ConsoleLogRecordExporter implements LogRecordExporter {
     // Format resource
     if (logRecord.resource != null) {
       final serviceName =
-          _getResourceAttribute(logRecord.resource!, 'service.name');
+          _getResourceAttribute(logRecord.resource!, Service.serviceName.key);
       if (serviceName != null) {
         buffer.write(' service=$serviceName');
       }

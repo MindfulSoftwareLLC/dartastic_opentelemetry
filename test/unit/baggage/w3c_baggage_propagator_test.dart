@@ -3,6 +3,7 @@
 
 import 'package:dartastic_opentelemetry/src/context/propagation/w3c_baggage_propagator.dart';
 import 'package:dartastic_opentelemetry/src/otel.dart';
+import 'package:dartastic_opentelemetry/src/trace/w3c_trace_context_propagator.dart';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:test/test.dart';
 
@@ -130,6 +131,48 @@ void main() {
 
       expect(extractedBaggage, isA<Baggage>());
       expect(extractedBaggage!.getAllEntries(), isEmpty);
+    });
+
+    test(
+        'extract without a baggage header returns the passed context'
+        ' unchanged', () {
+      // Propagators API spec: extract returns the passed context, updated
+      // with extracted values — unchanged when there is nothing to extract.
+      final sc = OTel.spanContext(
+        traceId: OTel.traceId(),
+        spanId: OTel.spanId(),
+      );
+      final incoming = OTel.context().withSpanContext(sc);
+      final getter = TestTextMapGetter(<String, String>{});
+
+      final extracted = propagator.extract(incoming, {}, getter);
+
+      expect(extracted, same(incoming),
+          reason: 'nothing to extract must not replace the context');
+      expect(extracted.spanContext, equals(sc),
+          reason: 'earlier propagators\' extractions must survive');
+    });
+
+    test(
+        'composite tracecontext-then-baggage extraction preserves the'
+        ' span context when no baggage header is present', () {
+      // Regression for #87: the spec-default composite order runs
+      // tracecontext first; the baggage stage used to discard its result.
+      final composite =
+          OTelAPI.compositePropagator<Map<String, String>, String>([
+        W3CTraceContextPropagator(),
+        W3CBaggagePropagator(),
+      ]);
+      const traceId = '0af7651916cd43dd8448eb211c80319c';
+      final carrier = {
+        'traceparent': '00-$traceId-b7ad6b7169203331-01',
+      };
+
+      final extracted = composite.extract(
+          OTel.context(), carrier, TestTextMapGetter(carrier));
+
+      expect(extracted.spanContext, isNotNull);
+      expect(extracted.spanContext!.traceId.hexString, equals(traceId));
     });
   });
 }

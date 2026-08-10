@@ -26,13 +26,16 @@ class ProcessResourceDetector implements ResourceDetector {
     if (OTelFactory.otelFactory == null) {
       throw StateError('OTel initialize must be called first.');
     }
+    // Keys come from the generated registry enums (never string literals),
+    // so a typo is a compile error — the class of bug that put the hostname
+    // in host.arch (#90).
     return ResourceCreate.create(
-      OTelFactory.otelFactory!.attributesFromMap({
-        'process.executable.name': io.Platform.executable,
-        'process.command_line': io.Platform.executableArguments.join(' '),
-        'process.runtime.name': 'dart',
-        'process.runtime.version': io.Platform.version,
-        'process.num_threads': io.Platform.numberOfProcessors.toString(),
+      OTelFactory.otelFactory!.attributesFromMap(<String, Object>{
+        ProcessAttributes.processExecutableName.key: io.Platform.executable,
+        ProcessAttributes.processCommandLine.key:
+            io.Platform.executableArguments.join(' '),
+        ProcessAttributes.processRuntimeName.key: 'dart',
+        ProcessAttributes.processRuntimeVersion.key: io.Platform.version,
       }),
     );
   }
@@ -53,29 +56,44 @@ class HostResourceDetector implements ResourceDetector {
       throw StateError('OTel initialize must be called first.');
     }
     final attributes = <String, Object>{
-      'host.name': io.Platform.localHostname,
-      'host.arch': io.Platform.localHostname,
-      'host.processors': io.Platform.numberOfProcessors,
-      'host.os.name': io.Platform.operatingSystem,
-      'host.locale': io.Platform.localeName,
+      Host.hostName.key: io.Platform.localHostname,
+      if (_hostArch() case final arch?) Host.hostArch.key: arch,
+      Os.osName.key: io.Platform.operatingSystem,
+      Os.osVersion.key: io.Platform.operatingSystemVersion,
     };
 
-    if (io.Platform.isLinux) {
-      attributes['os.type'] = 'linux';
-    } else if (io.Platform.isWindows) {
-      attributes['os.type'] = 'windows';
-    } else if (io.Platform.isMacOS) {
-      attributes['os.type'] = 'macos';
-    } else if (io.Platform.isAndroid) {
-      attributes['os.type'] = 'android';
-    } else if (io.Platform.isIOS) {
-      attributes['os.type'] = 'ios';
+    final osType = switch (io.Platform.operatingSystem) {
+      'linux' => 'linux',
+      'windows' => 'windows',
+      'macos' => 'macos',
+      'android' => 'android',
+      'ios' => 'ios',
+      _ => null,
+    };
+    if (osType != null) {
+      attributes[Os.osType.key] = osType;
     }
-
-    attributes['os.version'] = io.Platform.operatingSystemVersion;
 
     return ResourceCreate.create(
       OTelFactory.otelFactory!.attributesFromMap(attributes),
     );
   }
+}
+
+/// Resolves `host.arch` to a registry value (`amd64`, `arm64`, `arm32`,
+/// `x86`, `riscv64`, …) from the runtime's `Platform.version`, whose tail
+/// reads `on "<os>_<arch>"`. Pure Dart, no `dart:ffi`. Returns `null` when
+/// the token can't be parsed, so the attribute is simply omitted.
+String? _hostArch() {
+  final match =
+      RegExp(r'on "[a-z0-9]+_([a-z0-9]+)"').firstMatch(io.Platform.version);
+  return switch (match?.group(1)) {
+    'arm64' => 'arm64',
+    'arm' => 'arm32',
+    'x64' => 'amd64',
+    'ia32' => 'x86',
+    'riscv64' => 'riscv64',
+    'riscv32' => 'riscv32',
+    final other => other, // pass through unknown tokens; null omits it
+  };
 }
