@@ -473,6 +473,30 @@ void main() {
       expect(result.containsKey('key'), isFalse);
     });
 
+    test('does not log the raw header string, which carries the token',
+        () async {
+      // The per-header loop redacts the Authorization value, but the line above
+      // it used to log the whole raw env var, which defeated that redaction.
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_header_logging.dart',
+        {
+          'OTEL_EXPORTER_OTLP_HEADERS':
+              'authorization=Bearer s3cr3t-token-value,x-api=notasecret',
+        },
+      );
+      final lines = (jsonDecode(output.trim()) as List).cast<String>();
+
+      expect(lines, isNotEmpty,
+          reason: 'debug logging should have produced output to inspect');
+      expect(lines.any((l) => l.contains('s3cr3t-token-value')), isFalse,
+          reason: 'the Authorization value must never reach the log');
+      expect(lines.any((l) => l.contains('REDACTED')), isTrue,
+          reason: 'the Authorization header should still be reported, redacted');
+      expect(lines.any((l) => l.contains('notasecret')), isTrue,
+          reason: 'non-secret headers are still logged, so the diagnostic '
+              'value of the debug output is unchanged');
+    });
+
     test('handles header with no equals sign', () async {
       final output = await runWithEnv(
         'test/unit/environment/helpers/check_parse_headers.dart',

@@ -161,7 +161,9 @@ class OTelEnv {
     }
     if (headers != null) {
       if (OTelLog.isDebug()) {
-        OTelLog.debug('OTelEnv: Parsing $signal headers from env: $headers');
+        // The raw value is not logged: it carries the Authorization header,
+        // which the per-header loop below is careful to redact.
+        OTelLog.debug('OTelEnv: Parsing $signal headers from env');
       }
       final parsedHeaders = _parseHeaders(headers);
       if (OTelLog.isDebug()) {
