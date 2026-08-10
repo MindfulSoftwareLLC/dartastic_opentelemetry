@@ -193,31 +193,8 @@ class LogsConfiguration {
 
   /// Creates a log record processor with BLRP configuration from environment.
   static LogRecordProcessor _createProcessor(LogRecordExporter exporter) {
-    final blrpConfig = OTelEnv.getBlrpConfig();
-
-    if (blrpConfig.isEmpty) {
-      // Use defaults
-      return BatchLogRecordProcessor(
-        exporter,
-        const BatchLogRecordProcessorConfig(),
-      );
-    }
-
-    // Build config from environment
-    final scheduleDelay = blrpConfig['scheduleDelay'] as Duration?;
-    final exportTimeout = blrpConfig['exportTimeout'] as Duration?;
-    final maxQueueSize = blrpConfig['maxQueueSize'] as int?;
-    final maxExportBatchSize = blrpConfig['maxExportBatchSize'] as int?;
-
-    return BatchLogRecordProcessor(
-      exporter,
-      BatchLogRecordProcessorConfig(
-        scheduleDelay: scheduleDelay ?? const Duration(milliseconds: 1000),
-        exportTimeout: exportTimeout ?? const Duration(seconds: 30),
-        maxQueueSize: maxQueueSize ?? 2048,
-        maxExportBatchSize: maxExportBatchSize ?? 512,
-      ),
-    );
+    final processorConfig = BatchLogRecordProcessorConfig.fromEnvironment();
+    return BatchLogRecordProcessor(exporter, processorConfig);
   }
 
   /// Creates a simple (synchronous) log record processor instead of batch.

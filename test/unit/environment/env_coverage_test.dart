@@ -340,6 +340,77 @@ void main() {
       expect(result.containsKey('maxExportBatchSize'), isFalse);
     });
 
+    test('accepts scheduleDelay=0 (export ASAP)', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_blrp_config.dart',
+        {'OTEL_BLRP_SCHEDULE_DELAY': '0'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['scheduleDelay_ms'], equals(0));
+    });
+
+    test('accepts exportTimeout=0 (no limit)', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_blrp_config.dart',
+        {'OTEL_BLRP_EXPORT_TIMEOUT': '0'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['exportTimeout_ms'], equals(0));
+    });
+
+    test('ignores negative exportTimeout', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_blrp_config.dart',
+        {'OTEL_BLRP_EXPORT_TIMEOUT': '-1'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result.containsKey('exportTimeout_ms'), isFalse);
+    });
+
+    test('accepts zero maxQueueSize (domain validation in fromEnvironment)',
+        () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_blrp_config.dart',
+        {'OTEL_BLRP_MAX_QUEUE_SIZE': '0'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      // 0 is now accepted by OTelEnv (just type-checked); domain validation
+      // (> 0) belongs in BatchLogRecordProcessorConfig.fromEnvironment().
+      expect(result['maxQueueSize'], equals(0));
+    });
+
+    test('ignores negative maxQueueSize', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_blrp_config.dart',
+        {'OTEL_BLRP_MAX_QUEUE_SIZE': '-1'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result.containsKey('maxQueueSize'), isFalse);
+    });
+
+    test('ignores non-positive maxExportBatchSize', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_blrp_config.dart',
+        {'OTEL_BLRP_MAX_EXPORT_BATCH_SIZE': '-10'},
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result.containsKey('maxExportBatchSize'), isFalse);
+    });
+
+    test('returns both queue and batch without clamping', () async {
+      // getBlrpConfig no longer clamps; that's fromEnvironment()'s job
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_blrp_config.dart',
+        {
+          'OTEL_BLRP_MAX_QUEUE_SIZE': '100',
+          'OTEL_BLRP_MAX_EXPORT_BATCH_SIZE': '200',
+        },
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result['maxQueueSize'], equals(100));
+      expect(result['maxExportBatchSize'], equals(200));
+    });
+
     test('returns empty map when no BLRP env vars set', () async {
       final output = await runWithEnv(
         'test/unit/environment/helpers/check_blrp_config.dart',
@@ -841,9 +912,9 @@ void main() {
   // (these read from actual env, but test the method call and return type)
   // =========================================================================
   group('OTelEnv in-process', () {
-    test('getBlrpConfig returns a Map<String, dynamic>', () {
+    test('getBlrpConfig returns a BlrpEnvironmentValues record', () {
       final config = OTelEnv.getBlrpConfig();
-      expect(config, isA<Map<String, dynamic>>());
+      expect(config, isA<BlrpEnvironmentValues>());
     });
 
     test('getLogRecordLimits returns a Map<String, dynamic>', () {

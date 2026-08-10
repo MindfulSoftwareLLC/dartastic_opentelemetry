@@ -84,6 +84,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (same instrumentation-scope constant, same `OTel.resource(null)`
   fallback, resolved by the caller so the transformer stays a pure leaf).
 
+### Changed
+- **OTEL_BLRP_* env var validation now warns on invalid values** — previously,
+  invalid `OTEL_BLRP_SCHEDULE_DELAY` and `OTEL_BLRP_EXPORT_TIMEOUT` values
+  were silently ignored; they now emit `OTelLog.warn` diagnostics consistent
+  with BSP behavior. `OTEL_BLRP_SCHEDULE_DELAY=0` is now accepted as valid
+  (meaning "export as fast as possible"), and `OTEL_BLRP_EXPORT_TIMEOUT=0`
+  means "no limit", mirroring BSP semantics.
+- **`OTelEnv._getPositiveIntEnv` now warns on unusable values** — non-numeric,
+  below-minimum, and above-maximum values all emit `OTelLog.warn`, giving
+  consistent diagnostics to every caller without per-site bookkeeping.
+- **`OTelEnv.getBlrpConfig()` simplified to raw env reading** — domain-level
+  defaults, validation, and batch-to-queue clamping moved to
+  `BatchLogRecordProcessorConfig.fromEnvironment()`.
+
 ## [1.1.0-beta.9] - 2026-07-18
 
 ### Changed

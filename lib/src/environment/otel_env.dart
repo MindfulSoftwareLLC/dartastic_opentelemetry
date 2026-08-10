@@ -5,6 +5,26 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'env_constants.dart';
 import 'environment_service.dart';
 
+/// Raw BLRP environment values parsed by [OTelEnv.getBlrpConfig].
+///
+/// All fields are nullable — `null` means the corresponding env var was
+/// unset or contained a non-numeric value (a warning is logged in that case).
+/// Domain-level validation (e.g. "queue size must be > 0") belongs in
+/// [BatchLogRecordProcessorConfig.fromEnvironment], not here.
+typedef BlrpEnvironmentValues = ({
+  /// Parsed from `OTEL_BLRP_SCHEDULE_DELAY`
+  Duration? scheduleDelay,
+
+  /// Parsed from `OTEL_BLRP_EXPORT_TIMEOUT`
+  Duration? exportTimeout,
+
+  /// Parsed from `OTEL_BLRP_MAX_QUEUE_SIZE`
+  int? maxQueueSize,
+
+  /// Parsed from `OTEL_BLRP_MAX_EXPORT_BATCH_SIZE`
+  int? maxExportBatchSize,
+});
+
 /// Utility class for handling OpenTelemetry environment variables.
 ///
 /// This class provides methods for reading standard OpenTelemetry environment
@@ -474,14 +494,6 @@ class OTelEnv {
     return config;
   }
 
-  /// Get Batch LogRecord Processor (BLRP) configuration from environment variables.
-  ///
-  /// Returns a map containing the BLRP configuration read from environment variables.
-  /// Keys returned:
-  /// - 'scheduleDelay': Duration for the schedule delay
-  /// - 'exportTimeout': Duration for the export timeout
-  /// - 'maxQueueSize': int for maximum queue size
-  /// - 'maxExportBatchSize': int for maximum export batch size
   /// Reads `OTEL_PROPAGATORS` (sdk-environment-variables.md, "General SDK
   /// Configuration"): a comma-separated list of propagator names. Returns
   /// the normalized (trimmed, lowercased) names, defaulting to the spec
@@ -498,46 +510,39 @@ class OTelEnv {
         .toList();
   }
 
-  static Map<String, dynamic> getBlrpConfig() {
-    final config = <String, dynamic>{};
+  /// Get Batch LogRecord Processor (BLRP) configuration from environment variables.
+  ///
+  /// Returns a [BlrpEnvironmentValues] record containing the raw parsed BLRP
+  /// values from environment variables. Fields are `null` when the
+  /// corresponding env var is unset or contains a non-numeric value.
+  ///
+  /// Domain-level defaults, validation, and clamping belong in
+  /// [BatchLogRecordProcessorConfig.fromEnvironment], not here.
+  static BlrpEnvironmentValues getBlrpConfig() {
+    // Get schedule delay — 0 is valid ("export as fast as possible")
+    final scheduleDelayMs =
+        getPositiveIntEnv(otelBlrpScheduleDelay, minInclusive: 0);
 
-    // Get schedule delay
-    final scheduleDelay = _getEnv(otelBlrpScheduleDelay);
-    if (scheduleDelay != null) {
-      final delayMs = int.tryParse(scheduleDelay);
-      if (delayMs != null) {
-        config['scheduleDelay'] = Duration(milliseconds: delayMs);
-      }
-    }
+    // Get export timeout — 0 is valid ("no limit")
+    final exportTimeoutMs =
+        getPositiveIntEnv(otelBlrpExportTimeout, minInclusive: 0);
 
-    // Get export timeout
-    final exportTimeout = _getEnv(otelBlrpExportTimeout);
-    if (exportTimeout != null) {
-      final timeoutMs = int.tryParse(exportTimeout);
-      if (timeoutMs != null) {
-        config['exportTimeout'] = Duration(milliseconds: timeoutMs);
-      }
-    }
+    // Get queue and batch sizes — just parse, no domain validation here
+    final parsedMaxQueueSize =
+        getPositiveIntEnv(otelBlrpMaxQueueSize, minInclusive: 0);
+    final parsedMaxExportBatchSize =
+        getPositiveIntEnv(otelBlrpMaxExportBatchSize, minInclusive: 0);
 
-    // Get max queue size
-    final maxQueueSize = _getEnv(otelBlrpMaxQueueSize);
-    if (maxQueueSize != null) {
-      final size = int.tryParse(maxQueueSize);
-      if (size != null) {
-        config['maxQueueSize'] = size;
-      }
-    }
-
-    // Get max export batch size
-    final maxExportBatchSize = _getEnv(otelBlrpMaxExportBatchSize);
-    if (maxExportBatchSize != null) {
-      final size = int.tryParse(maxExportBatchSize);
-      if (size != null) {
-        config['maxExportBatchSize'] = size;
-      }
-    }
-
-    return config;
+    return (
+      scheduleDelay: scheduleDelayMs != null
+          ? Duration(milliseconds: scheduleDelayMs)
+          : null,
+      exportTimeout: exportTimeoutMs != null
+          ? Duration(milliseconds: exportTimeoutMs)
+          : null,
+      maxQueueSize: parsedMaxQueueSize,
+      maxExportBatchSize: parsedMaxExportBatchSize,
+    );
   }
 
   /// Get LogRecord attribute limits from environment variables.
@@ -674,5 +679,48 @@ class OTelEnv {
     }
 
     return null;
+  }
+
+  /// Get a non-negative integer environment variable value.
+  ///
+  /// Returns null when not set, non-numeric, or outside the accepted range.
+  /// Warns via [OTelLog.warn] when the raw value is present but unusable
+  /// (non-numeric, below [minInclusive], or above [maxInclusive]).
+  static int? getPositiveIntEnv(
+    String name, {
+    required int minInclusive,
+    int? maxInclusive,
+  }) {
+    final rawValue = _getEnv(name);
+    if (rawValue == null) {
+      return null;
+    }
+
+    final value = int.tryParse(rawValue);
+    if (value == null) {
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('OTelEnv: Illegal non-numeric value for $name: '
+            '"$rawValue", ignoring.');
+      }
+      return null;
+    }
+
+    if (value < minInclusive) {
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('OTelEnv: Illegal value for $name: $value is below '
+            'minimum $minInclusive, ignoring.');
+      }
+      return null;
+    }
+
+    if (maxInclusive != null && value > maxInclusive) {
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('OTelEnv: Illegal value for $name: $value exceeds '
+            'maximum $maxInclusive, ignoring.');
+      }
+      return null;
+    }
+
+    return value;
   }
 }
