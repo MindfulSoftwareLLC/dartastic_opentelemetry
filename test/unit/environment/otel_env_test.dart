@@ -8,17 +8,6 @@ import 'package:test/test.dart';
 
 import 'helpers/subprocess_env.dart';
 
-/// Runs a Dart script in a subprocess with specific environment variables set.
-///
-/// Returns the stdout output as a string.
-/// This is the only reliable way to test code that reads from
-/// Platform.environment, since Platform.environment is an unmodifiable map.
-Future<String> runWithEnv(
-  String scriptPath,
-  Map<String, String> envVars,
-) =>
-    runScriptWithEnv(scriptPath, envVars);
-
 void main() {
   group('OTelEnv', () {
     // Save and restore OTelLog state around each test.

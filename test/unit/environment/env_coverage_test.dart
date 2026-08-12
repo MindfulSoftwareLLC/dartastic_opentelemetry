@@ -22,16 +22,6 @@ import 'package:test/test.dart';
 import '../../testing_utils/memory_log_record_exporter.dart';
 import 'helpers/subprocess_env.dart';
 
-/// Runs a Dart script in a subprocess with specific environment variables set.
-/// Returns the stdout output as a string.
-///
-/// Any ambient `OTEL_` variables are cleared so the child sees only [envVars].
-Future<String> runWithEnv(
-  String scriptPath,
-  Map<String, String> envVars,
-) =>
-    runScriptWithEnv(scriptPath, envVars, clearOtelVars: true);
-
 /// A detector that throws a non-Exception type to exercise
 /// the catch block in CompositeResourceDetector.
 class _StringThrowingDetector implements ResourceDetector {
@@ -1015,7 +1005,12 @@ void main() {
 
     test('EnvVarResourceDetector returns empty resource when no env var set',
         () async {
-      // The default env in tests typically has no OTEL_RESOURCE_ATTRIBUTES
+      // Pin an empty environment rather than assuming the ambient one has no
+      // OTEL_RESOURCE_ATTRIBUTES. This runs in-process, so an exported
+      // OTEL_RESOURCE_ATTRIBUTES would otherwise fail it locally while CI,
+      // which has a clean environment, stayed green.
+      EnvironmentService.testOverrides = {};
+      addTearDown(() => EnvironmentService.testOverrides = null);
       final detector = EnvVarResourceDetector();
       final resource = await detector.detect();
       expect(resource.attributes.isEmpty, isTrue);

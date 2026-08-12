@@ -40,26 +40,31 @@ Future<String> packageRoot() async {
 /// reliable way to test code that reads `Platform.environment`, since that
 /// map is unmodifiable in-process.
 ///
-/// When [clearOtelVars] is true, `OTEL_`-prefixed variables inherited from
-/// the ambient environment are dropped before [envVars] is applied, so the
-/// child sees only the variables the test asked for.
+/// `OTEL_`-prefixed variables inherited from the ambient environment are
+/// dropped before [envVars] is applied, so the child sees exactly the
+/// variables the test asked for and nothing else. Without that, a developer
+/// with `OTEL_` variables exported gets failures CI never reproduces.
+///
+/// Note [Process.run]'s `includeParentEnvironment` must be false for that
+/// removal to mean anything: it defaults to true, which merges `environment`
+/// *on top of* the parent's, so dropping a key from the map leaves the
+/// parent's value visible to the child. `env` below is a full copy of the
+/// parent environment, so the child still gets `PATH`, `HOME` and the rest.
 ///
 /// Throws if the script exits non-zero, including its stdout and stderr.
-Future<String> runScriptWithEnv(
+Future<String> runWithEnv(
   String scriptPath,
-  Map<String, String> envVars, {
-  bool clearOtelVars = false,
-}) async {
+  Map<String, String> envVars,
+) async {
   final root = await packageRoot();
-  final env = Map<String, String>.from(Platform.environment);
-  if (clearOtelVars) {
-    env.removeWhere((key, _) => key.startsWith('OTEL_'));
-  }
-  env.addAll(envVars);
+  final env = Map<String, String>.from(Platform.environment)
+    ..removeWhere((key, _) => key.startsWith('OTEL_'))
+    ..addAll(envVars);
   final result = await Process.run(
     Platform.executable,
     ['run', File.fromUri(Directory(root).uri.resolve(scriptPath)).path],
     environment: env,
+    includeParentEnvironment: false,
     workingDirectory: root,
   );
   if (result.exitCode != 0) {
