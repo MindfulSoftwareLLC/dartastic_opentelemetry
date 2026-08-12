@@ -13,7 +13,7 @@ import 'composite_metric_exporter.dart';
 import 'metrics_sdk_config.dart';
 import 'otlp/http/otlp_http_metric_exporter.dart';
 import 'otlp/http/otlp_http_metric_exporter_config.dart';
-import 'otlp/metric_transformer.dart';
+
 import 'otlp/otlp_grpc_metric_exporter.dart';
 import 'otlp/otlp_grpc_metric_exporter_config.dart';
 
@@ -47,7 +47,6 @@ class MetricsConfiguration {
     }
 
     final metricsSdkConfig = MetricsSdkConfig.fromEnvironment();
-    MetricTransformer.setExemplarFilter(metricsSdkConfig.exemplarFilter);
 
     // Honor OTEL_METRICS_EXPORTER, but only when the caller did not pass an
     // explicit exporter/reader — explicit args are an unambiguous opt-in and

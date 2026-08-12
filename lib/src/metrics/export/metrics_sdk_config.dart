@@ -81,34 +81,36 @@ class MetricsSdkConfig {
 
     var interval = defaultExportInterval;
     if (env.exportInterval != null) {
-      final ms = int.tryParse(env.exportInterval!);
-      if (ms == null || ms < 0) {
+      final t = env.exportInterval!;
+      if (t.inMilliseconds < 0) {
         if (OTelLog.isWarn()) {
-          OTelLog.warn('MetricsSdkConfig: Invalid OTEL_METRIC_EXPORT_INTERVAL '
-              'value "${env.exportInterval}", using default (${defaultExportInterval.inMilliseconds} ms).');
+          OTelLog.warn('MetricsSdkConfig: Negative OTEL_METRIC_EXPORT_INTERVAL '
+              '(${t.inMilliseconds} ms) is invalid per spec, using default '
+              '(${defaultExportInterval.inMilliseconds} ms).');
         }
       } else {
-        interval = Duration(milliseconds: ms);
+        interval = t;
       }
     }
 
     var timeout = defaultExportTimeout;
     if (env.exportTimeout != null) {
-      final ms = int.tryParse(env.exportTimeout!);
-      if (ms == null || ms < 0) {
-        if (OTelLog.isWarn()) {
-          OTelLog.warn('MetricsSdkConfig: Invalid OTEL_METRIC_EXPORT_TIMEOUT '
-              'value "${env.exportTimeout}", using default (${defaultExportTimeout.inMilliseconds} ms).');
-        }
-      } else if (ms == 0) {
+      final t = env.exportTimeout!;
+      if (t.inMilliseconds == 0) {
         // Spec defines 0 as no limit for timeouts
         timeout = const Duration(days: 365);
         if (OTelLog.isDebug()) {
           OTelLog.debug(
               'MetricsSdkConfig: OTEL_METRIC_EXPORT_TIMEOUT set to 0 (no limit). Switched to a large number internally.');
         }
+      } else if (t.inMilliseconds < 0) {
+        if (OTelLog.isWarn()) {
+          OTelLog.warn('MetricsSdkConfig: Negative OTEL_METRIC_EXPORT_TIMEOUT '
+              '(${t.inMilliseconds} ms) is invalid per spec, using default '
+              '(${defaultExportTimeout.inMilliseconds} ms).');
+        }
       } else {
-        timeout = Duration(milliseconds: ms);
+        timeout = t;
       }
     }
 

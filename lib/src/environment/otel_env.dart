@@ -126,10 +126,10 @@ typedef MetricsEnvironmentValues = ({
   String? exemplarFilter,
 
   /// Parsed from `OTEL_METRIC_EXPORT_INTERVAL`
-  String? exportInterval,
+  Duration? exportInterval,
 
   /// Parsed from `OTEL_METRIC_EXPORT_TIMEOUT`
-  String? exportTimeout,
+  Duration? exportTimeout,
 });
 
 /// Utility class for handling OpenTelemetry environment variables.
@@ -695,6 +695,24 @@ class OTelEnv {
     );
   }
 
+  /// Get metrics SDK configuration from environment variables.
+  static MetricsEnvironmentValues getMetricsConfig() {
+    final exportIntervalMs =
+        getPositiveIntEnv(otelMetricExportInterval, minInclusive: 0);
+    final exportTimeoutMs =
+        getPositiveIntEnv(otelMetricExportTimeout, minInclusive: 0);
+
+    return (
+      exemplarFilter: _getEnv(otelMetricsExemplarFilter),
+      exportInterval: exportIntervalMs != null
+          ? Duration(milliseconds: exportIntervalMs)
+          : null,
+      exportTimeout: exportTimeoutMs != null
+          ? Duration(milliseconds: exportTimeoutMs)
+          : null,
+    );
+  }
+
   /// Resolves whether an OTLP connection should use TLS, per the OTLP
   /// exporter spec's precedence:
   ///
@@ -730,15 +748,6 @@ class OTelEnv {
       return !envInsecure;
     }
     return fallback;
-  }
-
-  /// Get metrics SDK configuration from environment variables.
-  static MetricsEnvironmentValues getMetricsConfig() {
-    return (
-      exemplarFilter: _getEnv(otelMetricsExemplarFilter),
-      exportInterval: _getEnv(otelMetricExportInterval),
-      exportTimeout: _getEnv(otelMetricExportTimeout),
-    );
   }
 
   /// Parse headers from the environment variable format.

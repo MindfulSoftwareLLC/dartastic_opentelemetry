@@ -293,6 +293,14 @@ class MetricTransformer {
         protoExemplar.spanId = exemplar.spanId!.bytes;
       }
 
+      if (!exemplar.filteredAttributes.isEmpty) {
+        protoExemplar.filteredAttributes.addAll(
+          exemplar.filteredAttributes.toMap().entries.map(
+                (entry) => _createKeyValue(entry.key, entry.value.value),
+              ),
+        );
+      }
+
       return protoExemplar;
     }).toList(growable: false);
   }

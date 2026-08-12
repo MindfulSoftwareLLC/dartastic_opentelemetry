@@ -1,5 +1,5 @@
-// Licensed under the Apache License, Version 2.0
-// Copyright 2025, Michael Bushe, All rights reserved.
+// Copyright The OpenTelemetry Authors
+// SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/src/metrics/export/metrics_sdk_config.dart';
@@ -23,8 +23,8 @@ void main() {
     test('parses valid values', () {
       final config = MetricsSdkConfig.fromEnvironment((
         exemplarFilter: 'always_on',
-        exportInterval: '1500',
-        exportTimeout: '2500',
+        exportInterval: const Duration(milliseconds: 1500),
+        exportTimeout: const Duration(milliseconds: 2500),
       ));
 
       expect(config.exemplarFilter, equals(MetricsExemplarFilter.alwaysOn));
@@ -41,8 +41,9 @@ void main() {
     test('falls back to defaults for invalid values', () {
       final config = MetricsSdkConfig.fromEnvironment((
         exemplarFilter: 'invalid_value',
-        exportInterval: 'not-a-number',
-        exportTimeout: '-1',
+        exportInterval:
+            null, // OTelEnv parser handles non-numeric and converts to null
+        exportTimeout: const Duration(milliseconds: -1),
       ));
 
       expect(config.exemplarFilter, equals(MetricsExemplarFilter.traceBased));
@@ -54,7 +55,7 @@ void main() {
       final config = MetricsSdkConfig.fromEnvironment((
         exemplarFilter: null,
         exportInterval: null,
-        exportTimeout: '0',
+        exportTimeout: Duration.zero,
       ));
 
       expect(config.exportTimeout, equals(const Duration(days: 365)));
