@@ -144,10 +144,15 @@ class OTel {
     bool detectPlatformResources = true,
     bool logPrint = false,
     String logPrintLoggerName = 'dart.print',
+    List<String>? otlpHeaderLogAllowlist,
     TimeProvider? timeProvider,
     OTelFactoryCreationFunction? oTelFactoryCreationFunction =
         otelSDKFactoryFactoryFunction,
   }) async {
+    // Before anything reads or logs OTLP headers: an explicit list wins over
+    // DAR_OTLP_HEADER_LOG_ALLOWLIST, and with neither set no value is logged.
+    OTelEnv.applyHeaderLogAllowlist(otlpHeaderLogAllowlist);
+
     // Apply environment variables only if parameters are not provided
     final envServiceName = serviceName == null
         ? OTelEnv.getServiceConfig()['serviceName'] as String?

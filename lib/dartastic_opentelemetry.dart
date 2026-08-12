@@ -94,3 +94,4 @@ export 'src/trace/span_processor.dart';
 export 'src/trace/tracer.dart' hide SDKTracerCreate;
 export 'src/trace/tracer_provider.dart' hide SDKTracerProviderCreate;
 export 'src/trace/w3c_trace_context_propagator.dart';
+export 'src/util/header_redaction.dart';

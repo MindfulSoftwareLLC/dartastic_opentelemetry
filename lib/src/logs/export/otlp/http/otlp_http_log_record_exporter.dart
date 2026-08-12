@@ -13,6 +13,7 @@ import 'package:http/http.dart' as http;
 import '../../../../export/otlp_http_protocol.dart';
 import '../../../../export/otlp_json.dart';
 import '../../../../trace/export/otlp/http/http_client_factory.dart';
+import '../../../../util/header_redaction.dart';
 import '../../../../util/zip/gzip.dart';
 import '../../../readable_log_record.dart';
 import '../../log_record_exporter.dart';
@@ -44,11 +45,7 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
       OTelLog.debug(
           'OtlpHttpLogRecordExporter: Configured headers count: ${_config.headers.length}');
       _config.headers.forEach((key, value) {
-        if (key.toLowerCase() == 'authorization') {
-          OTelLog.debug('  $key: [REDACTED - length: ${value.length}]');
-        } else {
-          OTelLog.debug('  $key: $value');
-        }
+        OTelLog.debug('  ${formatHeaderForLog(key, value)}');
       });
     }
     _client = _createHttpClient();
@@ -134,11 +131,7 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
           'OtlpHttpLogRecordExporter: Sending export request to $endpointUrl');
       OTelLog.debug('OtlpHttpLogRecordExporter: Request headers:');
       headers.forEach((key, value) {
-        if (key.toLowerCase() == 'authorization') {
-          OTelLog.debug('  $key: [REDACTED - length: ${value.length}]');
-        } else {
-          OTelLog.debug('  $key: $value');
-        }
+        OTelLog.debug('  ${formatHeaderForLog(key, value)}');
       });
     }
 

@@ -491,10 +491,82 @@ void main() {
       expect(lines.any((l) => l.contains('s3cr3t-token-value')), isFalse,
           reason: 'the Authorization value must never reach the log');
       expect(lines.any((l) => l.contains('REDACTED')), isTrue,
-          reason: 'the Authorization header should still be reported, redacted');
-      expect(lines.any((l) => l.contains('notasecret')), isTrue,
-          reason: 'non-secret headers are still logged, so the diagnostic '
-              'value of the debug output is unchanged');
+          reason:
+              'the Authorization header should still be reported, redacted');
+      expect(lines.any((l) => l.contains('x-api')), isTrue,
+          reason: 'header names are still logged, so the debug output still '
+              'says which headers are configured');
+    });
+
+    test('redacts every header value when no allowlist is configured',
+        () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_header_allowlist_logging.dart',
+        {
+          'OTEL_EXPORTER_OTLP_HEADERS':
+              'authorization=Bearer s3cr3t,x-api-key=key-value,x-trace-id=t-1',
+        },
+      );
+      final lines = (jsonDecode(output.trim()) as List).cast<String>();
+
+      expect(lines.any((l) => l.contains('s3cr3t')), isFalse);
+      expect(lines.any((l) => l.contains('key-value')), isFalse,
+          reason: 'the default fails closed, so a header nobody thought to '
+              'name is redacted too');
+      expect(lines.any((l) => l.contains('t-1')), isFalse);
+      expect(lines, anyElement(contains('x-api-key: [REDACTED]')),
+          reason: 'names are still logged so the output still says which '
+              'headers are configured');
+      expect(lines, anyElement(contains('OTelEnv: Parsed 3 header(s)')));
+    });
+
+    test('logs the value of an allowlisted header only', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_header_allowlist_logging.dart',
+        {
+          'OTEL_EXPORTER_OTLP_HEADERS':
+              'authorization=Bearer s3cr3t,x-api-key=key-value,x-trace-id=t-1',
+          'DAR_OTLP_HEADER_LOG_ALLOWLIST': 'x-trace-id',
+        },
+      );
+      final lines = (jsonDecode(output.trim()) as List).cast<String>();
+
+      expect(lines, anyElement(contains('x-trace-id: t-1')));
+      expect(lines, anyElement(contains('x-api-key: [REDACTED]')));
+      expect(lines, anyElement(contains('authorization: [REDACTED]')));
+      expect(lines.any((l) => l.contains('s3cr3t')), isFalse);
+    });
+
+    test('authorization stays redacted even when the env var names it',
+        () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_header_allowlist_logging.dart',
+        {
+          'OTEL_EXPORTER_OTLP_HEADERS': 'authorization=Bearer s3cr3t',
+          'DAR_OTLP_HEADER_LOG_ALLOWLIST': 'authorization',
+        },
+      );
+      final lines = (jsonDecode(output.trim()) as List).cast<String>();
+
+      expect(lines.any((l) => l.contains('s3cr3t')), isFalse);
+      expect(lines, anyElement(contains('authorization: [REDACTED]')));
+    });
+
+    test('an explicit allowlist replaces the environment variable', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_header_allowlist_logging.dart',
+        {
+          'OTEL_EXPORTER_OTLP_HEADERS': 'x-api-key=key-value,x-trace-id=t-1',
+          'DAR_OTLP_HEADER_LOG_ALLOWLIST': 'x-api-key',
+        },
+        args: ['x-trace-id'],
+      );
+      final lines = (jsonDecode(output.trim()) as List).cast<String>();
+
+      expect(lines, anyElement(contains('x-trace-id: t-1')),
+          reason: 'code wins over configuration');
+      expect(lines, anyElement(contains('x-api-key: [REDACTED]')),
+          reason: 'the two lists are not combined');
     });
 
     test('handles header with no equals sign', () async {
