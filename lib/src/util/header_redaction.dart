@@ -3,21 +3,19 @@
 
 /// Redaction of header values written to the debug log.
 ///
-/// OTLP headers carry credentials, and which header name holds one depends on
-/// the backend (`authorization`, `x-api-key`, `x-honeycomb-team`, `dd-api-key`,
-/// and whatever the next vendor invents). A list of names to hide therefore
-/// fails open on anything nobody thought of, so this is an allowlist of names
-/// whose values are safe to print, and everything else is redacted.
+/// Which OTLP header holds a credential depends on the backend
+/// (`authorization`, `x-api-key`, `x-honeycomb-team`, `dd-api-key`), so a list
+/// of names to hide leaks anything not on it. This is the other way round: an
+/// allowlist of names whose values are safe to print, everything else redacted.
 ///
-/// The allowlist opts in *values* only. Header names and the header count are
-/// always logged, so an empty allowlist (the default) still shows which headers
-/// are configured, just not what is in them.
+/// Only values are opted in. Header names and the header count are always
+/// logged, so the default empty allowlist still shows which headers are
+/// configured.
 library;
 
 /// Written in place of a header value that is not allowed to be logged.
 ///
-/// The value length is deliberately not included: it narrows the search space
-/// for the token behind it.
+/// Without the value length, which would narrow the search space for the token.
 const String redactedHeaderPlaceholder = '[REDACTED]';
 
 /// Header names whose values are never logged, whatever the allowlist says.
@@ -33,13 +31,11 @@ Set<String> _allowedHeaderNames = const <String>{};
 /// Lowercased, and never contains a name in [alwaysRedactedHeaderNames].
 Set<String> get allowedHeaderLogNames => _allowedHeaderNames;
 
-/// Sets the header names whose values may be logged.
+/// Sets the header names whose values may be logged, replacing any previous
+/// allowlist rather than adding to it.
 ///
-/// Names are lowercased once here so that [redactHeaderValue] only has to
-/// lowercase the header it is given. Passing null or an empty iterable restores
-/// the default, which redacts every value.
-///
-/// This replaces any previous allowlist rather than adding to it.
+/// Names are lowercased here so [redactHeaderValue] only has to lowercase its
+/// argument. Null or empty restores the default of redacting every value.
 void configureHeaderLogAllowlist(Iterable<String>? headerNames) {
   if (headerNames == null) {
     _allowedHeaderNames = const <String>{};

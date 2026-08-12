@@ -1,7 +1,7 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry/src/util/header_redaction.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -37,7 +37,7 @@ void main() {
     test('matching is exact, not by prefix', () {
       configureHeaderLogAllowlist(['x-trace']);
 
-      // the reason prefixes are not supported: 'x-' would opt in 'x-api-key'
+      // 'x-' as a prefix would opt in 'x-api-key'
       expect(redactHeaderValue('x-trace-id', 'abc123'), '[REDACTED]');
       expect(redactHeaderValue('x-trace', 'abc123'), 'abc123');
     });
