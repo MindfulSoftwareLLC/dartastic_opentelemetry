@@ -4,7 +4,7 @@
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/proto/metrics/v1/metrics.pb.dart'
     as proto;
-import 'package:dartastic_opentelemetry/src/metrics/export/metrics_sdk_config.dart';
+
 import 'package:dartastic_opentelemetry/src/metrics/export/otlp/metric_transformer.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:test/test.dart';

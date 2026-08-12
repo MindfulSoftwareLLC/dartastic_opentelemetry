@@ -270,13 +270,31 @@ class MetricTransformer {
         case MetricsExemplarFilter.alwaysOff:
           return false;
         case MetricsExemplarFilter.traceBased:
-          return exemplar.traceId != null || exemplar.spanId != null;
+          return exemplar.traceId != null &&
+              exemplar.traceId!.isValid &&
+              exemplar.spanId != null &&
+              exemplar.spanId!.isValid;
       }
     }).map((exemplar) {
-      return proto.Exemplar(
+      final protoExemplar = proto.Exemplar(
         timeUnixNano: Int64(exemplar.timestamp.microsecondsSinceEpoch * 1000),
-        asDouble: exemplar.value.toDouble(),
       );
+
+      final val = exemplar.value;
+      if (val is int) {
+        protoExemplar.asInt = Int64(val);
+      } else {
+        protoExemplar.asDouble = val.toDouble();
+      }
+
+      if (exemplar.traceId != null && exemplar.traceId!.isValid) {
+        protoExemplar.traceId = exemplar.traceId!.bytes;
+      }
+      if (exemplar.spanId != null && exemplar.spanId!.isValid) {
+        protoExemplar.spanId = exemplar.spanId!.bytes;
+      }
+
+      return protoExemplar;
     }).toList(growable: false);
   }
 }

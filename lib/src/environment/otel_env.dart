@@ -116,6 +116,22 @@ typedef LogRecordLimitsEnvironmentValues = ({
   int? attributeCountLimit,
 });
 
+/// Raw metrics environment values parsed by [OTelEnv.getMetricsConfig].
+///
+/// All fields are nullable — `null` means the corresponding env var was
+/// unset. Domain-level validation and defaults belong in
+/// [MetricsSdkConfig.fromEnvironment], not here.
+typedef MetricsEnvironmentValues = ({
+  /// Parsed from `OTEL_METRICS_EXEMPLAR_FILTER`
+  String? exemplarFilter,
+
+  /// Parsed from `OTEL_METRIC_EXPORT_INTERVAL`
+  String? exportInterval,
+
+  /// Parsed from `OTEL_METRIC_EXPORT_TIMEOUT`
+  String? exportTimeout,
+});
+
 /// Utility class for handling OpenTelemetry environment variables.
 ///
 /// This class provides methods for reading standard OpenTelemetry environment
@@ -717,71 +733,12 @@ class OTelEnv {
   }
 
   /// Get metrics SDK configuration from environment variables.
-  static MetricsSdkConfig getMetricsSdkConfig() {
-    return parseMetricsSdkConfig(
+  static MetricsEnvironmentValues getMetricsConfig() {
+    return (
       exemplarFilter: _getEnv(otelMetricsExemplarFilter),
       exportInterval: _getEnv(otelMetricExportInterval),
       exportTimeout: _getEnv(otelMetricExportTimeout),
     );
-  }
-
-  /// Parse metrics SDK configuration values.
-  static MetricsSdkConfig parseMetricsSdkConfig({
-    String? exemplarFilter,
-    String? exportInterval,
-    String? exportTimeout,
-  }) {
-    return MetricsSdkConfig(
-      exemplarFilter: _parseMetricsExemplarFilter(exemplarFilter),
-      exportInterval: _parseDurationMilliseconds(
-        exportInterval,
-        const Duration(seconds: 60),
-      ),
-      exportTimeout: _parseDurationMilliseconds(
-        exportTimeout,
-        const Duration(seconds: 30),
-      ),
-    );
-  }
-
-  static MetricsExemplarFilter _parseMetricsExemplarFilter(String? value) {
-    switch (value?.toLowerCase()) {
-      case 'always_on':
-        return MetricsExemplarFilter.alwaysOn;
-      case 'always_off':
-        return MetricsExemplarFilter.alwaysOff;
-      case null:
-      case 'trace_based':
-        return MetricsExemplarFilter.traceBased;
-      default:
-        if (OTelLog.isDebug()) {
-          OTelLog.debug(
-            'OTelEnv: Invalid OTEL_METRICS_EXEMPLAR_FILTER value "$value", using trace_based',
-          );
-        }
-        return MetricsExemplarFilter.traceBased;
-    }
-  }
-
-  static Duration _parseDurationMilliseconds(
-    String? value,
-    Duration defaultValue,
-  ) {
-    if (value == null) {
-      return defaultValue;
-    }
-
-    final milliseconds = int.tryParse(value);
-    if (milliseconds == null || milliseconds < 0) {
-      if (OTelLog.isDebug()) {
-        OTelLog.debug(
-          'OTelEnv: Invalid duration value "$value", using $defaultValue',
-        );
-      }
-      return defaultValue;
-    }
-
-    return Duration(milliseconds: milliseconds);
   }
 
   /// Parse headers from the environment variable format.

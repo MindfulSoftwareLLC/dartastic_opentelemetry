@@ -10,6 +10,7 @@ import '../meter_provider.dart';
 import '../metric_exporter.dart';
 import '../metric_reader.dart';
 import 'composite_metric_exporter.dart';
+import 'metrics_sdk_config.dart';
 import 'otlp/http/otlp_http_metric_exporter.dart';
 import 'otlp/http/otlp_http_metric_exporter_config.dart';
 import 'otlp/metric_transformer.dart';
@@ -45,7 +46,7 @@ class MetricsConfiguration {
       meterProvider.resource = resource;
     }
 
-    final metricsSdkConfig = OTelEnv.getMetricsSdkConfig();
+    final metricsSdkConfig = MetricsSdkConfig.fromEnvironment();
     MetricTransformer.setExemplarFilter(metricsSdkConfig.exemplarFilter);
 
     // Honor OTEL_METRICS_EXPORTER, but only when the caller did not pass an
