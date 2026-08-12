@@ -19,7 +19,6 @@ import '../metrics_sdk_config.dart';
 /// Utility class for transforming metric data to OTLP protobuf format.
 class MetricTransformer {
   /// Convert a whole [MetricData] batch to an OTLP
-  /// [ExportMetricsServiceRequest] — the metrics analogue of
   /// `OtlpLogRecordTransformer.transformLogRecords`.
   ///
   /// This is exactly the request the OTLP metric exporters build before
