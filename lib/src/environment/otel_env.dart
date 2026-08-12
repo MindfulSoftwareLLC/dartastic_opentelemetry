@@ -99,20 +99,20 @@ class OTelEnv {
 
   /// Applies the OTLP header log allowlist.
   ///
-  /// [headerNames] is the value passed to `OTel.initialize`. When it is null
-  /// the `DAR_OTLP_HEADER_LOG_ALLOWLIST` environment variable is used instead;
-  /// code overrides configuration, and the two are never combined. When neither
-  /// is set no header value is logged.
+  /// [headerNames] comes from `OTel.initialize`. When null,
+  /// `OTEL_DART_HEADER_LOG_ALLOWLIST` is read instead; code wins over
+  /// configuration and the two are never combined. With neither set, no header
+  /// value is logged.
   ///
-  /// Call this before anything that logs headers, since the allowlist is read
-  /// at log time.
+  /// The allowlist is read at log time, so call this before anything logs
+  /// headers.
   static void applyHeaderLogAllowlist([Iterable<String>? headerNames]) {
     if (headerNames != null) {
       configureHeaderLogAllowlist(headerNames);
       return;
     }
     configureHeaderLogAllowlist(
-      parseHeaderLogAllowlist(_getEnv(darOtlpHeaderLogAllowlist)),
+      parseHeaderLogAllowlist(_getEnv(otelDartHeaderLogAllowlist)),
     );
   }
 
@@ -181,8 +181,7 @@ class OTelEnv {
     }
     if (headers != null) {
       if (OTelLog.isDebug()) {
-        // The raw value is not logged: it carries the Authorization header,
-        // which the per-header loop below is careful to redact.
+        // The raw value holds the Authorization header the loop below redacts.
         OTelLog.debug('OTelEnv: Parsing $signal headers from env');
       }
       final parsedHeaders = _parseHeaders(headers);

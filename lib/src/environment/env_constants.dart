@@ -110,6 +110,14 @@ const String otelDartLogSpans = 'OTEL_DART_LOG_SPANS';
 /// Default: false
 const String otelDartLogExport = 'OTEL_DART_LOG_EXPORT';
 
+/// Comma separated OTLP header names whose values may appear in the debug log
+/// (Dart-specific). Names are matched case insensitively, and `authorization`
+/// and `proxy-authorization` are redacted even when listed.
+///
+/// Type: String (comma-separated header names)
+/// Default: none, every header value is redacted
+const String otelDartHeaderLogAllowlist = 'OTEL_DART_HEADER_LOG_ALLOWLIST';
+
 // =============================================================================
 // General OTLP Exporter Configuration
 // =============================================================================
@@ -124,18 +132,6 @@ const String otelDartLogExport = 'OTEL_DART_LOG_EXPORT';
 ///
 /// Type: String (URL)
 /// Default: "http://localhost:4318" (HTTP) or "http://localhost:4317" (gRPC)
-/// Comma separated list of OTLP header names whose values may be written to the
-/// debug log.
-///
-/// Not an `OTEL_` name because it is not in the OpenTelemetry specification.
-/// Names are matched exactly, case insensitively. `authorization` and
-/// `proxy-authorization` are never logged even if listed. Any header not listed
-/// has its value replaced with `[REDACTED]`; the name and the header count are
-/// still logged.
-///
-/// Example: `DAR_OTLP_HEADER_LOG_ALLOWLIST=x-trace-id,x-tenant`
-const String darOtlpHeaderLogAllowlist = 'DAR_OTLP_HEADER_LOG_ALLOWLIST';
-
 const String otelExporterOtlpEndpoint = 'OTEL_EXPORTER_OTLP_ENDPOINT';
 
 /// Transport protocol for the OTLP exporter.

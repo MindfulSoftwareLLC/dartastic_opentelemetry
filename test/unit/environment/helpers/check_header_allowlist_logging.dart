@@ -1,14 +1,11 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
-// Helper script: prints a JSON array of every log line emitted while
-// OTelEnv.getOtlpConfig() parses OTEL_EXPORTER_OTLP_HEADERS at debug level,
-// after the header log allowlist has been applied.
-//
-// Run via subprocess with OTEL_EXPORTER_OTLP_HEADERS set, and optionally
-// DAR_OTLP_HEADER_LOG_ALLOWLIST. Passing names as command line arguments
-// stands in for the OTel.initialize parameter, so that the precedence between
-// the two can be tested.
+// Helper script: prints JSON of the debug log lines emitted while
+// getOtlpConfig() parses OTEL_EXPORTER_OTLP_HEADERS, with the allowlist applied.
+// Run via subprocess with OTEL_EXPORTER_OTLP_HEADERS and optionally
+// OTEL_DART_HEADER_LOG_ALLOWLIST set. Command line arguments stand in for the
+// OTel.initialize parameter, so the precedence between the two can be tested.
 
 import 'dart:convert';
 

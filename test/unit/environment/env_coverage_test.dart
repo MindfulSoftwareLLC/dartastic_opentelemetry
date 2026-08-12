@@ -473,10 +473,9 @@ void main() {
       expect(result.containsKey('key'), isFalse);
     });
 
-    test('does not log the raw header string, which carries the token',
-        () async {
-      // The per-header loop redacts the Authorization value, but the line above
-      // it used to log the whole raw env var, which defeated that redaction.
+    test('does not log the raw header string', () async {
+      // The per-header loop redacted the Authorization value, but the line
+      // above it logged the whole raw env var, which undid that.
       final output = await runWithEnv(
         'test/unit/environment/helpers/check_header_logging.dart',
         {
@@ -486,16 +485,10 @@ void main() {
       );
       final lines = (jsonDecode(output.trim()) as List).cast<String>();
 
-      expect(lines, isNotEmpty,
-          reason: 'debug logging should have produced output to inspect');
-      expect(lines.any((l) => l.contains('s3cr3t-token-value')), isFalse,
-          reason: 'the Authorization value must never reach the log');
-      expect(lines.any((l) => l.contains('REDACTED')), isTrue,
-          reason:
-              'the Authorization header should still be reported, redacted');
-      expect(lines.any((l) => l.contains('x-api')), isTrue,
-          reason: 'header names are still logged, so the debug output still '
-              'says which headers are configured');
+      expect(lines, isNotEmpty);
+      expect(lines.any((l) => l.contains('s3cr3t-token-value')), isFalse);
+      expect(lines.any((l) => l.contains('REDACTED')), isTrue);
+      expect(lines.any((l) => l.contains('x-api')), isTrue);
     });
 
     test('redacts every header value when no allowlist is configured',
@@ -510,13 +503,9 @@ void main() {
       final lines = (jsonDecode(output.trim()) as List).cast<String>();
 
       expect(lines.any((l) => l.contains('s3cr3t')), isFalse);
-      expect(lines.any((l) => l.contains('key-value')), isFalse,
-          reason: 'the default fails closed, so a header nobody thought to '
-              'name is redacted too');
+      expect(lines.any((l) => l.contains('key-value')), isFalse);
       expect(lines.any((l) => l.contains('t-1')), isFalse);
-      expect(lines, anyElement(contains('x-api-key: [REDACTED]')),
-          reason: 'names are still logged so the output still says which '
-              'headers are configured');
+      expect(lines, anyElement(contains('x-api-key: [REDACTED]')));
       expect(lines, anyElement(contains('OTelEnv: Parsed 3 header(s)')));
     });
 
@@ -526,7 +515,7 @@ void main() {
         {
           'OTEL_EXPORTER_OTLP_HEADERS':
               'authorization=Bearer s3cr3t,x-api-key=key-value,x-trace-id=t-1',
-          'DAR_OTLP_HEADER_LOG_ALLOWLIST': 'x-trace-id',
+          'OTEL_DART_HEADER_LOG_ALLOWLIST': 'x-trace-id',
         },
       );
       final lines = (jsonDecode(output.trim()) as List).cast<String>();
@@ -543,7 +532,7 @@ void main() {
         'test/unit/environment/helpers/check_header_allowlist_logging.dart',
         {
           'OTEL_EXPORTER_OTLP_HEADERS': 'authorization=Bearer s3cr3t',
-          'DAR_OTLP_HEADER_LOG_ALLOWLIST': 'authorization',
+          'OTEL_DART_HEADER_LOG_ALLOWLIST': 'authorization',
         },
       );
       final lines = (jsonDecode(output.trim()) as List).cast<String>();
@@ -557,16 +546,14 @@ void main() {
         'test/unit/environment/helpers/check_header_allowlist_logging.dart',
         {
           'OTEL_EXPORTER_OTLP_HEADERS': 'x-api-key=key-value,x-trace-id=t-1',
-          'DAR_OTLP_HEADER_LOG_ALLOWLIST': 'x-api-key',
+          'OTEL_DART_HEADER_LOG_ALLOWLIST': 'x-api-key',
         },
         args: ['x-trace-id'],
       );
       final lines = (jsonDecode(output.trim()) as List).cast<String>();
 
-      expect(lines, anyElement(contains('x-trace-id: t-1')),
-          reason: 'code wins over configuration');
-      expect(lines, anyElement(contains('x-api-key: [REDACTED]')),
-          reason: 'the two lists are not combined');
+      expect(lines, anyElement(contains('x-trace-id: t-1')));
+      expect(lines, anyElement(contains('x-api-key: [REDACTED]')));
     });
 
     test('handles header with no equals sign', () async {

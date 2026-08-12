@@ -993,7 +993,7 @@ Constants are defined for all 74 OpenTelemetry environment variables. See `lib/s
 | `otelExporterOtlpHeaders`     | `OTEL_EXPORTER_OTLP_HEADERS`   | Headers (key=value,...)  | None                   | `api-key=secret,tenant=acme`     |
 | `otelExporterOtlpTimeout`     | `OTEL_EXPORTER_OTLP_TIMEOUT`   | Timeout in milliseconds  | `10000`                | `5000`                           |
 | `otelExporterOtlpCompression` | `OTEL_EXPORTER_OTLP_COMPRESSION` | Compression algorithm  | None                   | `gzip`                           |
-| `darOtlpHeaderLogAllowlist`   | `DAR_OTLP_HEADER_LOG_ALLOWLIST` | Header names whose values may be written to the debug log (comma-separated) | None (every value redacted) | `x-trace-id,x-tenant` |
+| `otelDartHeaderLogAllowlist`  | `OTEL_DART_HEADER_LOG_ALLOWLIST` | Header names whose values may be written to the debug log (comma-separated) | None (every value redacted) | `x-trace-id,x-tenant` |
 
 #### Header Value Redaction in Debug Logs
 
@@ -1015,7 +1015,7 @@ holds a credential depends on the backend (`x-api-key`, `x-honeycomb-team`,
 would leak anything nobody thought of.
 
 ```sh
-export DAR_OTLP_HEADER_LOG_ALLOWLIST=x-trace-id,x-tenant
+export OTEL_DART_HEADER_LOG_ALLOWLIST=x-trace-id,x-tenant
 ```
 
 or in code, which overrides the environment variable rather than adding to it:
@@ -1034,8 +1034,6 @@ Details worth knowing:
 - `authorization` and `proxy-authorization` are **never** logged, even if you
   list them. If you really need one, log it yourself.
 - Entries are trimmed and deduplicated, and empty entries are ignored.
-- The name is `DAR_`-prefixed rather than `OTEL_` because it is not part of the
-  OpenTelemetry specification.
 
 #### Signal-Specific Configuration
 

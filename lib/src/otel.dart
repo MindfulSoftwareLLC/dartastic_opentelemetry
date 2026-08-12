@@ -149,8 +149,7 @@ class OTel {
     OTelFactoryCreationFunction? oTelFactoryCreationFunction =
         otelSDKFactoryFactoryFunction,
   }) async {
-    // Before anything reads or logs OTLP headers: an explicit list wins over
-    // DAR_OTLP_HEADER_LOG_ALLOWLIST, and with neither set no value is logged.
+    // Has to run before anything logs OTLP headers.
     OTelEnv.applyHeaderLogAllowlist(otlpHeaderLogAllowlist);
 
     // Apply environment variables only if parameters are not provided
