@@ -12,18 +12,24 @@ void main() {
     late HttpServer server;
     late int port;
     late List<HttpRequest> receivedRequests;
+    late List<List<int>> receivedBodies;
 
     setUp(() async {
       await OTel.reset();
       receivedRequests = [];
+      receivedBodies = [];
       server = await HttpServer.bind('localhost', 0);
       port = server.port;
       server.listen((request) async {
         receivedRequests.add(request);
-        // Drain the request body so the connection completes properly
-        await request.fold<List<int>>(
-          [],
-          (bytes, chunk) => bytes..addAll(chunk),
+        // Drain the request body so the connection completes properly, and
+        // keep it: a test that asserts on the wire format reads it from here
+        // rather than rebinding the server on the same port.
+        receivedBodies.add(
+          await request.fold<List<int>>(
+            [],
+            (bytes, chunk) => bytes..addAll(chunk),
+          ),
         );
         request.response.statusCode = 200;
         await request.response.close();
@@ -89,19 +95,6 @@ void main() {
         ),
       );
 
-      // Capture the request body for shape validation.
-      var capturedBody = <int>[];
-      receivedRequests.clear();
-      await server.close(force: true);
-      server = await HttpServer.bind('localhost', port);
-      server.listen((request) async {
-        receivedRequests.add(request);
-        capturedBody = await request
-            .fold<List<int>>([], (bytes, chunk) => bytes..addAll(chunk));
-        request.response.statusCode = 200;
-        await request.response.close();
-      });
-
       final spans = createTestSpans();
       await exporter.export(spans);
 
@@ -114,7 +107,7 @@ void main() {
       // The body must be valid JSON that decodes to a Map shaped like a
       // proto3-JSON `ExportTraceServiceRequest` — the top-level key
       // `resourceSpans` is the spec-defined field name.
-      final decoded = jsonDecode(utf8.decode(capturedBody));
+      final decoded = jsonDecode(utf8.decode(receivedBodies.first));
       expect(decoded, isA<Map<String, dynamic>>());
       expect((decoded as Map).containsKey('resourceSpans'), isTrue);
       expect(decoded['resourceSpans'], isA<List>());
