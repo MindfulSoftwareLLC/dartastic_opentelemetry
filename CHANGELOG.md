@@ -26,10 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   config. Treat any debug logs collected from an affected build as containing that
   credential and rotate it.
 
-  Tracked as [GHSA-4rh6-c2v5-374w][ghsa] (CWE-532). Affects `>= 1.0.0-alpha` on this
-  line and `>= 0.9.0` on the stable channel; see the 0.9.8 entry.
-
-[ghsa]: https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/security/advisories/GHSA-4rh6-c2v5-374w
+  Tracked as [GHSA-4rh6-c2v5-374w](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/security/advisories/GHSA-4rh6-c2v5-374w)
+  (CWE-532). Affects `>= 1.0.0-alpha` on this line and `>= 0.9.0` on the stable
+  channel; see the 0.9.8 entry.
 
 ### Added
 
@@ -411,12 +410,13 @@ Stable-channel republication of `1.1.0-beta.13`. Depends on
 
 ### Security
 
-- **Fixes the OTLP debug-log credential leak, [GHSA-4rh6-c2v5-374w][ghsa] (CWE-532).**
-  Every `0.9.x` release from `0.9.0` through `0.9.7` is affected: with debug logging
-  enabled, OTLP header values — including `Authorization`, `api-key`, and whatever
-  name your backend uses — were written to the log. This is the first release on the
-  stable channel that redacts them. See the `1.1.0-beta.13-wip` entry above for the
-  mechanism and for the `OTEL_DART_HEADER_LOG_ALLOWLIST` opt-in.
+- **Fixes the OTLP debug-log credential leak,
+  [GHSA-4rh6-c2v5-374w](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/security/advisories/GHSA-4rh6-c2v5-374w)
+  (CWE-532).** Every `0.9.x` release from `0.9.0` through `0.9.7` is affected: with
+  debug logging enabled, OTLP header values — including `Authorization`, `api-key`,
+  and whatever name your backend uses — were written to the log. This is the first
+  release on the stable channel that redacts them. See the `1.1.0-beta.13` entry
+  above for the mechanism and for the `OTEL_DART_HEADER_LOG_ALLOWLIST` opt-in.
 
   **If you ran any 0.9.x release with debug logging enabled and a credential in an
   OTLP header, rotate that credential.** Upgrading alone does not undo the exposure.
