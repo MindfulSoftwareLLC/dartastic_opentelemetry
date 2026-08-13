@@ -18,27 +18,45 @@ best choice for production Flutter applications.
 
 Dartastic and Flutterrific OTel are made with 💙 by Michael Bushe at [Dartastic.io](https://dartastic.io)
 
-## Commercial Support
+## Commercial: Dartastic.io - Pro OpenTelemetry
 
-[Dartastic.io](https://dartastic.io) tools and services for Dart and Flutter teams shipping to production.
-* **Dartastic Pro OTel Runtime**
-  * Native OTel runtime that takes OTel of the UI thread or server threads.
-    * Detects native crashes
-    * Identifies the janky widget
+[Dartastic.io](https://dartastic.io) provides tools and services for Dart and Flutter, focused on OpenTelemetry.
+* **[Dartastic Native OTel](https://dartastic.io/otel/)**
+  * A native Rust OTel runtime.
+    * Dozens of attributes beyond the spec that work with [Dartastic Observatory](https://dartastic.io/observatory/) or your OTel backend.
+    * Moves OTel onto native threads.
+    * Detects native crashes.
+    * Identifies the janky widget.
     * Strips PII out of your data on the fly.
-    * Sends source code lines with error spans with Symbolizer.
-    * Metrics from iOS, Android and Linux, standard and beyond the standard. 
+    * Metrics from iOS, Android and Linux, standard and beyond the standard.
     * Use with any o11y backend.
-  * Professionally supported version of this open source dartastic_opentelemetry package and dartastic_opentelemetry_api - and their future CNCF equivalents.
-  * Over 50 OSS OpenTelemetry integration libraries for Dart and Flutter - dio, shelf, logger...
-  * Over 600 Pro OpenTelemetry integration libraries for Dart and Flutter - anthropic, aws, azure, stripe...
-* **Dartastic Pub** [pub.dartastic.io](pub.dartastic.io) Privately share your packages and plugins with your team,
-  partners and customers.
-* **Dartastic Symbolizer** [symbolizer.dartastic.io](symbolizer.dartastic.io) Turn production errors into
-  source code lines with a Web API call. Squash Dart and Flutter bugs fast and keep your source code artifacts private.
-* **Dartastic Hosted** - spin up a private observability ecosystem customized for Flutter and Dart - private pub server, private unlimited Symbolizer, custom dashboards for Dart and Flutter.
+    * Passes the same tests as dartastic_opentelemetry.
+* **[Dartastic Observatory](https://dartastic.io/observatory/)** - live in minutes 
+  * An observability backend with first class support for Flutter and Dart.
+  * Flutter App Health Dashboard.
+  * Mobile Release Health Dashboard.
+  * Crash tracking - track crashes per release and platform.
+  * Cloud Observatory - low cost, shared infrastructure.
+  * Hosted Observatory - your private observability box that scales.
+* **[Dartastic Pub](https://dartastic.io/pub/)**
+  * Your private Dart/Flutter package registry.
+  * Publish and consume with your team, partners, and customers.
+  * Fine-grained access controls with quick revocations.
+* **[Dartastic Symbolizer](https://dartastic.io/symbolizer/)**
+  * Get source code lines from binary data in error spans.
+  * Integrated with Dartastic Observatory.
+  * Build your own integration with the Dartastic Symbolizer Web API.
+* **[Dartastic Labs](https://dartastic.io/otel/#labs)**
+    * Over 50 OSS OpenTelemetry integration libraries for Dart and Flutter - dio, shelf, logger...
+    * Over 600 Pro OpenTelemetry integration libraries for Dart and Flutter - anthropic, aws, azure, stripe...
+* **[Professional Support](https://dartastic.io/support/)**
+  * Professional support for Dart and Flutter OpenTelemetry.
+  * Support for [Dartastic Native OTel](https://dartastic.io/otel/) and [Dartastic Observatory](https://dartastic.io/observatory/).
+  * Support for `dartastic_opentelemetry` and its future CNCF equivalents.
+  * Priority bug fixes.
+  * Support SLAs.
 
-## Features
+## Features of `dartastic_opentelemetry` 
 
 - 🚀 **Friendly API**: An easy to use, discoverable, immutable, typesafe API that feels familiar to Dart developers.
 - 📐 **Standards Compliant**: Complies with the [OpenTelemetry specification](https://opentelemetry.io/docs/specs/)

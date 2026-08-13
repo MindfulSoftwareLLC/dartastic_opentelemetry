@@ -3,6 +3,7 @@
 # Parse command line arguments
 LOG_LEVEL="info"
 CONCURRENCY="20"
+FAIL_FAST="false"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -14,11 +15,18 @@ while [[ $# -gt 0 ]]; do
       CONCURRENCY="$2"
       shift 2
       ;;
+    --fail-fast)
+      FAIL_FAST="true"
+      shift
+      ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 [--log LEVEL] [--concurrency N]"
+      echo "Usage: $0 [--log LEVEL] [--concurrency N] [--fail-fast]"
       echo "  --log LEVEL        Set log level (trace, debug, info, warn, error, fatal)"
       echo "  --concurrency N    Set test concurrency (default: auto)"
+      echo "  --fail-fast        Stop after the first failing test. Suites already"
+      echo "                     in flight still report, so pair with"
+      echo "                     --concurrency 1 to stop at exactly one failure."
       exit 1
       ;;
   esac
@@ -57,6 +65,11 @@ TEST_CMD="dart test ./test"
 if [ -n "$CONCURRENCY" ]; then
   TEST_CMD="$TEST_CMD --concurrency=$CONCURRENCY"
   echo "Setting concurrency to: $CONCURRENCY"
+fi
+
+if [ "$FAIL_FAST" = "true" ]; then
+  TEST_CMD="$TEST_CMD --fail-fast"
+  echo "Stopping after the first failure"
 fi
 
 # Run all tests
