@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../../export/otlp_http_protocol.dart';
 import '../../../../export/otlp_json.dart';
+import '../../../../util/header_redaction.dart';
 import '../../../../util/zip/gzip.dart';
 import '../../../span.dart';
 import '../../../span_logger.dart';
@@ -47,11 +48,7 @@ class OtlpHttpSpanExporter implements SpanExporter {
         'OtlpHttpSpanExporter: Configured headers count: ${_config.headers.length}',
       );
       _config.headers.forEach((key, value) {
-        if (key.toLowerCase() == 'authorization') {
-          OTelLog.debug('  $key: [REDACTED - length: ${value.length}]');
-        } else {
-          OTelLog.debug('  $key: $value');
-        }
+        OTelLog.debug('  ${formatHeaderForLog(key, value)}');
       });
     }
     _client = _createHttpClient();
@@ -156,11 +153,7 @@ class OtlpHttpSpanExporter implements SpanExporter {
       OTelLog.debug('OtlpHttpSpanExporter: Request headers:');
       headers.forEach((key, value) {
         // Mask authorization header value for security, but show it exists
-        if (key.toLowerCase() == 'authorization') {
-          OTelLog.debug('  $key: [REDACTED - length: ${value.length}]');
-        } else {
-          OTelLog.debug('  $key: $value');
-        }
+        OTelLog.debug('  ${formatHeaderForLog(key, value)}');
       });
     }
 

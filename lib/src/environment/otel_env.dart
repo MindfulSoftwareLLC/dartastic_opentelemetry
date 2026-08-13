@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+import '../util/header_redaction.dart';
 import 'env_constants.dart';
 import 'environment_service.dart';
 
@@ -96,6 +97,25 @@ class OTelEnv {
     }
   }
 
+  /// Applies the OTLP header log allowlist.
+  ///
+  /// [headerNames] comes from `OTel.initialize`. When null,
+  /// `OTEL_DART_HEADER_LOG_ALLOWLIST` is read instead; code wins over
+  /// configuration and the two are never combined. With neither set, no header
+  /// value is logged.
+  ///
+  /// The allowlist is read at log time, so call this before anything logs
+  /// headers.
+  static void applyHeaderLogAllowlist([Iterable<String>? headerNames]) {
+    if (headerNames != null) {
+      configureHeaderLogAllowlist(headerNames);
+      return;
+    }
+    configureHeaderLogAllowlist(
+      parseHeaderLogAllowlist(_getEnv(otelDartHeaderLogAllowlist)),
+    );
+  }
+
   /// Get OTLP configuration from environment variables.
   ///
   /// Returns a map containing the OTLP configuration read from environment variables.
@@ -161,17 +181,14 @@ class OTelEnv {
     }
     if (headers != null) {
       if (OTelLog.isDebug()) {
-        OTelLog.debug('OTelEnv: Parsing $signal headers from env: $headers');
+        // The raw value holds the Authorization header the loop below redacts.
+        OTelLog.debug('OTelEnv: Parsing $signal headers from env');
       }
       final parsedHeaders = _parseHeaders(headers);
       if (OTelLog.isDebug()) {
         OTelLog.debug('OTelEnv: Parsed ${parsedHeaders.length} header(s)');
         parsedHeaders.forEach((key, value) {
-          if (key.toLowerCase() == 'authorization') {
-            OTelLog.debug('  $key: [REDACTED - length: ${value.length}]');
-          } else {
-            OTelLog.debug('  $key: $value');
-          }
+          OTelLog.debug('  ${formatHeaderForLog(key, value)}');
         });
       }
       config['headers'] = parsedHeaders;

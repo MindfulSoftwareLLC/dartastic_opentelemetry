@@ -993,6 +993,47 @@ Constants are defined for all 74 OpenTelemetry environment variables. See `lib/s
 | `otelExporterOtlpHeaders`     | `OTEL_EXPORTER_OTLP_HEADERS`   | Headers (key=value,...)  | None                   | `api-key=secret,tenant=acme`     |
 | `otelExporterOtlpTimeout`     | `OTEL_EXPORTER_OTLP_TIMEOUT`   | Timeout in milliseconds  | `10000`                | `5000`                           |
 | `otelExporterOtlpCompression` | `OTEL_EXPORTER_OTLP_COMPRESSION` | Compression algorithm  | None                   | `gzip`                           |
+| `otelDartHeaderLogAllowlist`  | `OTEL_DART_HEADER_LOG_ALLOWLIST` | Header names whose values may be written to the debug log (comma-separated) | None (every value redacted) | `x-trace-id,x-tenant` |
+
+#### Header Value Redaction in Debug Logs
+
+OTLP headers carry credentials, so at debug level the SDK **redacts every header
+value by default**. Header names and the header count are still logged, so the
+output still tells you which headers are configured:
+
+```
+OTelEnv: Parsed 3 header(s)
+  authorization: [REDACTED]
+  x-api-key: [REDACTED]
+  x-trace-id: [REDACTED]
+```
+
+If redaction hides something you need while debugging, opt that header in by
+name. This is an allowlist rather than a list of names to hide: which header
+holds a credential depends on the backend (`x-api-key`, `x-honeycomb-team`,
+`dd-api-key`, and whatever the next vendor invents), so a list of names to hide
+would leak anything nobody thought of.
+
+```sh
+export OTEL_DART_HEADER_LOG_ALLOWLIST=x-trace-id,x-tenant
+```
+
+or in code, which overrides the environment variable rather than adding to it:
+
+```dart
+await OTel.initialize(
+  otlpHeaderLogAllowlist: ['x-trace-id', 'x-tenant'],
+);
+```
+
+Details worth knowing:
+
+- The allowlist opts in **values** only. Nothing you do hides a header name.
+- Names are matched **exactly**, case insensitively. Prefixes and globs are not
+  supported on purpose: `x-*` would opt in `x-api-key`.
+- `authorization` and `proxy-authorization` are **never** logged, even if you
+  list them. If you really need one, log it yourself.
+- Entries are trimmed and deduplicated, and empty entries are ignored.
 
 #### Signal-Specific Configuration
 

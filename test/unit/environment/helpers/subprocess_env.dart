@@ -40,6 +40,9 @@ Future<String> packageRoot() async {
 /// reliable way to test code that reads `Platform.environment`, since that
 /// map is unmodifiable in-process.
 ///
+/// [args] is passed to the script after its path, for helpers that take the
+/// value under test as an argument rather than an environment variable.
+///
 /// `OTEL_`-prefixed variables inherited from the ambient environment are
 /// dropped before [envVars] is applied, so the child sees exactly the
 /// variables the test asked for and nothing else. Without that, a developer
@@ -54,15 +57,20 @@ Future<String> packageRoot() async {
 /// Throws if the script exits non-zero, including its stdout and stderr.
 Future<String> runWithEnv(
   String scriptPath,
-  Map<String, String> envVars,
-) async {
+  Map<String, String> envVars, {
+  List<String> args = const <String>[],
+}) async {
   final root = await packageRoot();
   final env = Map<String, String>.from(Platform.environment)
     ..removeWhere((key, _) => key.startsWith('OTEL_'))
     ..addAll(envVars);
   final result = await Process.run(
     Platform.executable,
-    ['run', File.fromUri(Directory(root).uri.resolve(scriptPath)).path],
+    [
+      'run',
+      File.fromUri(Directory(root).uri.resolve(scriptPath)).path,
+      ...args,
+    ],
     environment: env,
     includeParentEnvironment: false,
     workingDirectory: root,
