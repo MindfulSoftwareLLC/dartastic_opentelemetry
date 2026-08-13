@@ -403,7 +403,7 @@ identical to the beta it names; only the version stamp and the
 `dartastic_opentelemetry_api` constraint differ. Prefer the `1.1.0-beta.x` line if
 your pubspec allows prereleases — it is what these entries point at.
 
-## [0.9.8] - unreleased
+## [0.9.8] - 2026-08-13
 Stable-channel republication of `1.1.0-beta.13`. Depends on
 `dartastic_opentelemetry_api: ^0.9.1`.
 
