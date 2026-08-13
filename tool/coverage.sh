@@ -10,6 +10,7 @@ cd "$(dirname "$0")/.." || exit 1
 # Need trace logging for coverage of debug and trace logs
 LOG_LEVEL="trace"
 CONCURRENCY="10"
+FAIL_FAST="false"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -21,11 +22,19 @@ while [[ $# -gt 0 ]]; do
       CONCURRENCY="$2"
       shift 2
       ;;
+    --fail-fast)
+      FAIL_FAST="true"
+      shift
+      ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 [--log LEVEL] [--concurrency N]"
+      echo "Usage: $0 [--log LEVEL] [--concurrency N] [--fail-fast]"
       echo "  --log LEVEL        Set log level (trace, debug, info, warn, error, fatal)"
       echo "  --concurrency N    Set test concurrency (default: 10 for coverage)"
+      echo "  --fail-fast        Stop after the first failing test. Suites already"
+      echo "                     in flight still report, so pair with"
+      echo "                     --concurrency 1 to stop at exactly one failure."
+      echo "                     The coverage report is skipped when tests fail."
       exit 1
       ;;
   esac
@@ -63,7 +72,12 @@ mkdir -p coverage
 # `test/web/` are tagged `@TestOn('browser')` and are skipped on the VM
 # target.
 echo "Running tests with coverage..."
-dart test --chain-stack-traces --coverage=coverage --concurrency="$CONCURRENCY" --exclude-tags="fail" ./test
+FAIL_FAST_FLAG=""
+if [ "$FAIL_FAST" = "true" ]; then
+  FAIL_FAST_FLAG="--fail-fast"
+  echo "Stopping after the first failure"
+fi
+dart test --chain-stack-traces --coverage=coverage --concurrency="$CONCURRENCY" --exclude-tags="fail" $FAIL_FAST_FLAG ./test
 
 # Generate LCOV coverage report, excluding certain directories
 dart run coverage:format_coverage  --in=./coverage --package=./lib --report-on=lib/ --lcov --out=coverage/lcov.info --check-ignore
