@@ -14,39 +14,13 @@
 //      addMeterProvider, addLoggerProvider
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/src/resource/resource.dart';
 import 'package:test/test.dart';
 
 import '../../testing_utils/memory_log_record_exporter.dart';
-
-/// Runs a Dart script in a subprocess with specific environment variables set.
-/// Returns the stdout output as a string.
-Future<String> runWithEnv(
-  String scriptPath,
-  Map<String, String> envVars,
-) async {
-  final env = Map<String, String>.from(Platform.environment);
-  // Clear any existing OTEL env vars that might interfere
-  env.removeWhere((key, _) => key.startsWith('OTEL_'));
-  env.addAll(envVars);
-  final result = await Process.run(
-    Platform.executable,
-    ['run', scriptPath],
-    environment: env,
-    workingDirectory: Directory.current.path,
-  );
-  if (result.exitCode != 0) {
-    throw Exception(
-      'Script failed with exit code ${result.exitCode}:\n'
-      'stdout: ${result.stdout}\n'
-      'stderr: ${result.stderr}',
-    );
-  }
-  return result.stdout as String;
-}
+import 'helpers/subprocess_env.dart';
 
 /// A detector that throws a non-Exception type to exercise
 /// the catch block in CompositeResourceDetector.
@@ -1031,7 +1005,12 @@ void main() {
 
     test('EnvVarResourceDetector returns empty resource when no env var set',
         () async {
-      // The default env in tests typically has no OTEL_RESOURCE_ATTRIBUTES
+      // Pin an empty environment rather than assuming the ambient one has no
+      // OTEL_RESOURCE_ATTRIBUTES. This runs in-process, so an exported
+      // OTEL_RESOURCE_ATTRIBUTES would otherwise fail it locally while CI,
+      // which has a clean environment, stayed green.
+      EnvironmentService.testOverrides = {};
+      addTearDown(() => EnvironmentService.testOverrides = null);
       final detector = EnvVarResourceDetector();
       final resource = await detector.detect();
       expect(resource.attributes.isEmpty, isTrue);
