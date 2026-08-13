@@ -200,8 +200,20 @@ class OTel {
     // Get otlpConfig for exporter creation later
     final otlpConfigForExporter = OTelEnv.getOtlpConfig(signal: 'traces');
 
-    // Get resource attributes from environment and merge with provided ones
-    final envResourceAttrs = OTelEnv.getResourceAttributes();
+    // Get resource attributes from environment and merge with provided ones.
+    //
+    // service.name and service.version are deliberately excluded here. They
+    // were already resolved into serviceName/serviceVersion above by
+    // getServiceConfig(), which applies the spec precedence -- OTEL_SERVICE_NAME
+    // outranks service.name in OTEL_RESOURCE_ATTRIBUTES -- and an explicit
+    // argument outranks both. These attributes are merged last, at the highest
+    // precedence, so leaving the service keys in would let
+    // OTEL_RESOURCE_ATTRIBUTES override the resolved values and silently beat
+    // programmatic configuration.
+    final envResourceAttrs =
+        Map<String, Object>.from(OTelEnv.getResourceAttributes())
+          ..remove(Service.serviceName.key)
+          ..remove(Service.serviceVersion.key);
     if (envResourceAttrs.isNotEmpty) {
       if (resourceAttributes != null) {
         // Merge with provided attributes - provided ones take precedence

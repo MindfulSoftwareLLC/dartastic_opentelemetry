@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.13-wip]
 
+### Fixed
+- **`OTEL_RESOURCE_ATTRIBUTES` no longer overrides `service.name` set by
+  higher-precedence sources** (#103). `OTel.initialize` applied that
+  variable twice: once through `EnvVarResourceDetector`, correctly ranked
+  below the service resource, and once folded into `resourceAttributes`
+  and merged last at the highest precedence. The second copy overrode
+  everything above it, so `OTEL_SERVICE_NAME` lost to `service.name` in
+  `OTEL_RESOURCE_ATTRIBUTES` (contradicting the spec, and the behaviour
+  `OTelEnv.getServiceConfig` already implemented correctly), and — more
+  seriously — an explicit `serviceName:` argument silently lost to an
+  environment variable. The precedence is now, highest first: explicit
+  argument, `OTEL_SERVICE_NAME`, `service.name` in
+  `OTEL_RESOURCE_ATTRIBUTES`, default. `service.version` follows the same
+  ordering. Non-service attributes from `OTEL_RESOURCE_ATTRIBUTES` are
+  unaffected and keep their existing precedence.
+
 ## [1.1.0-beta.12] - 2026-07-20
 
 ### Changed

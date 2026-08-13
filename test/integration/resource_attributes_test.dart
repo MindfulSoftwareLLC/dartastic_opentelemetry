@@ -22,6 +22,9 @@ void main() {
 
         // Test only runs if OTEL_RESOURCE_ATTRIBUTES is set
         if (resourceAttrs != null && resourceAttrs.isNotEmpty) {
+          // detect() requires an installed factory; without this the body
+          // throws StateError the moment the guard above is satisfied.
+          await OTel.initialize();
           final detector = EnvVarResourceDetector(envService);
           final resource = await detector.detect();
           final attrs = resource.attributes.toMap();
@@ -38,6 +41,9 @@ void main() {
 
       // This test expects: OTEL_RESOURCE_ATTRIBUTES="key3=value%20with%20spaces"
       if (resourceAttrs != null && resourceAttrs.contains('%20')) {
+        // detect() requires an installed factory; without this the body
+        // throws StateError the moment the guard above is satisfied.
+        await OTel.initialize();
         final detector = EnvVarResourceDetector(envService);
         final resource = await detector.detect();
         final attrs = resource.attributes.toMap();
@@ -56,6 +62,9 @@ void main() {
 
       // This test expects: OTEL_RESOURCE_ATTRIBUTES="key1=value1\\,part2"
       if (resourceAttrs != null && resourceAttrs.contains('\\,')) {
+        // detect() requires an installed factory; without this the body
+        // throws StateError the moment the guard above is satisfied.
+        await OTel.initialize();
         final detector = EnvVarResourceDetector(envService);
         final resource = await detector.detect();
         final attrs = resource.attributes.toMap();
