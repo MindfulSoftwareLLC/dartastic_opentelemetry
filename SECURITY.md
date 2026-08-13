@@ -4,10 +4,15 @@
 
 Below are the versions of the OpenTelemetry SDK for Dart that are currently supported with security updates:
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.8.x   | :white_check_mark: |
-| < 0.8.0 | :x:                |
+| Version           | Supported          |
+| ----------------- | ------------------ |
+| 1.1.0-beta.x      | :white_check_mark: |
+| 0.9.x             | :white_check_mark: |
+| 0.8.x and earlier | :x:                |
+
+The `0.9.x` line is not separate development. Each `0.9.x` release is the current
+`1.1.0-beta.x` code republished under a `0.9.x` version, so that users who have not
+opted into prereleases still receive fixes. A security fix lands on both lines.
 
 ## Reporting a Vulnerability
 
