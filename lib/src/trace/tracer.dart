@@ -79,7 +79,8 @@ class Tracer implements APITracer {
   set attributes(Attributes? attributes) => _delegate.attributes = attributes;
 
   @override
-  bool get enabled => _enabled;
+  bool get enabled =>
+      _enabled && _provider.spanProcessors.isNotEmpty;
 
   @override
   APISpan? get currentSpan => _delegate.currentSpan;
