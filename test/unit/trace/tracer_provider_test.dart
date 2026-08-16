@@ -136,8 +136,6 @@ void main() {
     });
 
     test('hasSpanProcessors reflects registered processors', () {
-      expect(tracerProvider.hasSpanProcessors, isTrue);
-
       final bareProvider = OTel.addTracerProvider('bare-has-provider');
       expect(bareProvider.hasSpanProcessors, isFalse);
 

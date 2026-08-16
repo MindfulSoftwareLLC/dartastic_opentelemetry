@@ -219,7 +219,7 @@ class TracerProvider implements APITracerProvider {
   /// Whether any span processors are registered.
   ///
   /// Unlike [spanProcessors], this does not allocate a new unmodifiable list,
-  /// making it suitable for hot paths such as [SDKTracer.enabled].
+  /// making it suitable for hot paths such as [Tracer.enabled].
   bool get hasSpanProcessors => _spanProcessors.isNotEmpty;
 
   /// Ensures the resource for this provider is properly set.
