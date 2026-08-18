@@ -133,6 +133,21 @@ void main() {
       expect(extractedBaggage!.getAllEntries(), isEmpty);
     });
 
+    test('unparseable baggage header preserves existing baggage', () {
+      final existingBaggage = OTel.baggage({'test': OTel.baggageEntry('value')});
+      final contextWithExisting = context.withBaggage(existingBaggage);
+
+      final carrier = {'baggage': 'invalid_format'};
+      final getter = TestTextMapGetter(carrier);
+
+      final extractedContext = propagator.extract(contextWithExisting, carrier, getter);
+      final extractedBaggage = extractedContext.baggage;
+
+      expect(extractedContext, same(contextWithExisting));
+      expect(extractedBaggage, isNotNull);
+      expect(extractedBaggage!.getEntry('test')?.value, equals('value'));
+    });
+
     test(
         'extract without a baggage header returns the passed context'
         ' unchanged', () {

@@ -66,6 +66,8 @@ class W3CBaggagePropagator
       entries[key] = OTel.baggageEntry(value, metadata);
     }
 
+    if (entries.isEmpty) return context;
+
     final baggage = OTel.baggage(entries);
     return context.withBaggage(baggage);
   }
