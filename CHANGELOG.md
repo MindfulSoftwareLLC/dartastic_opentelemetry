@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.14-wip]
 
+### Added
+
+- `TracerProvider.hasSpanProcessors` — allocation-free check for registered
+  span processors.
+
+### Fixed
+
+- `Tracer.enabled` now returns `false` when `TracerProvider` has no span
+  processor(s) registered, per the Trace SDK spec, sparing span-creation cost
+  when nothing is listening. Thanks to @abidiahmedcom (#138, #175).
+
 ## [1.1.0-beta.13] - 2026-08-13
 
 ### Security

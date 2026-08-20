@@ -353,7 +353,8 @@ Future<void> main(List<String> args) async {
 // ---------------------------------------------------------------------------
 
 bool _tagExists(String tag) =>
-    Process.runSync('git', ['rev-parse', '--verify', '--quiet', 'refs/tags/$tag'])
+    Process.runSync(
+            'git', ['rev-parse', '--verify', '--quiet', 'refs/tags/$tag'])
         .exitCode ==
     0;
 
@@ -413,7 +414,8 @@ String _previousStableApiConstraint() {
 Future<void> _warnIfAlreadyPublished(String version) async {
   final name = _readPackageName();
   try {
-    final client = HttpClient()..connectionTimeout = const Duration(seconds: 10);
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 10);
     final req =
         await client.getUrl(Uri.parse('https://pub.dev/api/packages/$name'));
     final res = await req.close();

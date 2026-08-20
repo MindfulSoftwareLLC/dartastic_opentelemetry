@@ -216,6 +216,12 @@ class TracerProvider implements APITracerProvider {
   /// @return An unmodifiable list of all span processors
   List<SpanProcessor> get spanProcessors => List.unmodifiable(_spanProcessors);
 
+  /// Whether any span processors are registered.
+  ///
+  /// Unlike [spanProcessors], this does not allocate a new unmodifiable list,
+  /// making it suitable for hot paths such as [Tracer.enabled].
+  bool get hasSpanProcessors => _spanProcessors.isNotEmpty;
+
   /// Ensures the resource for this provider is properly set.
   ///
   /// If no resource has been set, the default resource will be used.
