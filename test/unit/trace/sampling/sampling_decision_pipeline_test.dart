@@ -153,4 +153,63 @@ void main() {
       });
     }
   });
+
+  group('DROP decision (#120)', () {
+    setUp(() async {
+      await initWith(sampler: const AlwaysOffSampler());
+    });
+
+    test('creates a non-recording span', () {
+      final span = OTel.tracer().startSpan('dropped');
+      expect(span.isRecording, isFalse);
+      expect(span.spanContext.traceFlags.isSampled, isFalse);
+      span.end();
+    });
+
+    test('every mutation is a no-op', () {
+      final span = OTel.tracer().startSpan('dropped');
+      span.setStringAttribute<String>('string.key', 'value');
+      span.setBoolAttribute('bool.key', true);
+      span.setIntAttribute('int.key', 7);
+      span.setDoubleAttribute('double.key', 1.5);
+      span.addAttributes(OTel.attributesFromMap({'more.key': 'v'}));
+      span.attributes = OTel.attributesFromMap({'replaced.key': 'v'});
+      span.addEventNow('event-1');
+      span.addEvents({'event-2': null});
+      span.recordException(Exception('boom'));
+      span.setStatus(SpanStatusCode.Error, 'failed');
+      span.updateName('renamed');
+      span.addSpanLink(
+        OTel.spanLink(
+          OTel.spanContext(traceId: OTel.traceId(), spanId: OTel.spanId()),
+        ),
+      );
+
+      expect(span.attributes.toList(), isEmpty);
+      expect(span.spanEvents ?? const <SpanEvent>[], isEmpty);
+      expect(span.spanLinks ?? const <SpanLink>[], isEmpty);
+      expect(span.name, equals('dropped'));
+      expect(span.status, isNot(equals(SpanStatusCode.Error)));
+      span.end();
+    });
+
+    test('processors never see the span and nothing is exported', () async {
+      final span = OTel.tracer().startSpan('dropped');
+      span.end();
+      await OTel.tracerProvider().forceFlush();
+
+      expect(recorder.started, isEmpty);
+      expect(recorder.ended, isEmpty);
+      expect(recorder.nameUpdates, isEmpty);
+      expect(exporter.spans, isEmpty);
+    });
+
+    test('isRecording: true cannot resurrect a dropped span', () {
+      final span = OTel.tracer().startSpan('dropped', isRecording: true);
+      expect(span.isRecording, isFalse);
+      span.end();
+      expect(recorder.started, isEmpty);
+      expect(recorder.ended, isEmpty);
+    });
+  });
 }

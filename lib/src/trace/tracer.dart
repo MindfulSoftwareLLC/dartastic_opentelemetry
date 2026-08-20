@@ -219,7 +219,7 @@ class Tracer implements APITracer {
     List<SpanLink>? links,
     List<SpanEvent>? spanEvents,
     DateTime? startTime,
-    bool? isRecording = true,
+    bool? isRecording,
     Context? context,
   }) {
     if (OTelLog.isDebug()) {
@@ -242,6 +242,12 @@ class Tracer implements APITracer {
     return SDKSpanCreate.create(delegateSpan: delegateSpan, sdkTracer: this);
   }
 
+  /// Starts a new span.
+  ///
+  /// [isRecording] defaults to null, which means the sampler's decision
+  /// determines whether the span records. Passing false forces a
+  /// non-recording span; passing true cannot resurrect a span the
+  /// sampler decided to drop.
   @override
   Span startSpan(
     String name, {
@@ -251,7 +257,7 @@ class Tracer implements APITracer {
     SpanKind kind = SpanKind.internal,
     Attributes? attributes,
     List<SpanLink>? links,
-    bool? isRecording = true,
+    bool? isRecording,
   }) {
     if (OTelLog.isDebug()) {
       OTelLog.debug('Tracer: Starting span with name: $name, kind: $kind');
@@ -367,6 +373,7 @@ class Tracer implements APITracer {
 
     // Apply sampling decision if we have a sampler
     var shouldRecord = true;
+    bool? sampled; // null: no sampler configured, keep inherited flags
     if (sampler != null) {
       final samplingResult = sampler!.shouldSample(
         parentContext: effectiveContext,
@@ -382,7 +389,6 @@ class Tracer implements APITracer {
       //   DROP              -> IsRecording false, Sampled MUST NOT be set
       //   RECORD_ONLY       -> IsRecording true,  Sampled MUST NOT be set
       //   RECORD_AND_SAMPLE -> IsRecording true,  Sampled MUST be set
-      bool sampled;
       switch (samplingResult.decision) {
         case SamplingDecision.drop:
           shouldRecord = false;
@@ -394,12 +400,6 @@ class Tracer implements APITracer {
           shouldRecord = true;
           sampled = true;
       }
-
-      // The Sampled trace flag reflects the sampling decision only —
-      // RECORD_ONLY records without setting the flag.
-      traceFlags = OTel.traceFlags(
-        sampled ? TraceFlags.SAMPLED_FLAG : TraceFlags.NONE_FLAG,
-      );
 
       // Add sampler attributes if provided
       if (samplingResult.attributes != null) {
@@ -417,6 +417,19 @@ class Tracer implements APITracer {
           'Sampling decision for span $name: ${samplingResult.decision}',
         );
       }
+    }
+
+    // The sampler owns the recording decision. A caller may pass
+    // isRecording: false to force a non-recording span, but can never
+    // resurrect a dropped one (spec: DROP => IsRecording will be false).
+    final recording = shouldRecord && (isRecording ?? true);
+
+    if (sampled != null) {
+      // The Sampled trace flag reflects the sampling decision only —
+      // RECORD_ONLY records without setting the flag.
+      traceFlags = OTel.traceFlags(
+        sampled ? TraceFlags.SAMPLED_FLAG : TraceFlags.NONE_FLAG,
+      );
     }
 
     // Always create a new span context with a new span ID
@@ -443,19 +456,22 @@ class Tracer implements APITracer {
       links: links,
       spanEvents: spanEvents,
       startTime: startTime,
-      isRecording: isRecording ?? shouldRecord,
+      isRecording: recording,
     );
 
     // Wrap it in our SDK span which will handle processing
     final sdkSpan = SDKSpanCreate.create(
       delegateSpan: delegateSpan,
       sdkTracer: this,
-      isRecording: isRecording ?? shouldRecord,
+      isRecording: recording,
     );
 
-    // Notify processors
-    for (final processor in _provider.spanProcessors) {
-      processor.onStart(sdkSpan, context);
+    // Notify processors. Per the Trace SDK spec (Sampling), span
+    // processors MUST receive only spans with IsRecording == true.
+    if (recording) {
+      for (final processor in _provider.spanProcessors) {
+        processor.onStart(sdkSpan, context);
+      }
     }
 
     return sdkSpan;
