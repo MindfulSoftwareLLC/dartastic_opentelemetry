@@ -14,11 +14,14 @@ class SDKSpanCreate {
   ///
   /// @param delegateSpan The API Span implementation to delegate to
   /// @param sdkTracer The SDK Tracer that created this Span
+  /// @param isRecording Whether the span records data, per the sampling
+  ///   decision made at creation time (see the Trace SDK spec, ShouldSample).
   /// @return A new Span instance
   static Span create({
     required APISpan delegateSpan,
     required Tracer sdkTracer,
+    bool isRecording = true,
   }) {
-    return Span._(delegateSpan, sdkTracer);
+    return Span._(delegateSpan, sdkTracer, isRecording: isRecording);
   }
 }

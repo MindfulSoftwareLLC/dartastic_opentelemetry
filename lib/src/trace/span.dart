@@ -33,13 +33,22 @@ class Span implements APISpan {
   final APISpan _delegate;
   final Tracer _sdkTracer;
 
+  /// The recording state decided by the sampler at creation time.
+  ///
+  /// Per the Trace SDK spec (ShouldSample), a DROP decision creates a span
+  /// with `IsRecording == false`; the delegate APISpan does not carry this
+  /// state, so the SDK span holds it.
+  final bool _isRecording;
+
   /// Private constructor for creating Span instances.
   ///
   /// @param delegate The API Span implementation to delegate to
   /// @param sdkTracer The SDK Tracer that created this Span
-  Span._(APISpan delegate, Tracer sdkTracer)
+  /// @param isRecording Whether this span records data (sampling decision)
+  Span._(APISpan delegate, Tracer sdkTracer, {bool isRecording = true})
       : _delegate = delegate,
-        _sdkTracer = sdkTracer {
+        _sdkTracer = sdkTracer,
+        _isRecording = isRecording {
     if (OTelLog.isDebug()) {
       OTelLog.debug('SDKSpan: Created new span with name ${delegate.name}');
     }
@@ -140,7 +149,7 @@ class Span implements APISpan {
   bool get isEnded => _delegate.isEnded;
 
   @override
-  bool get isRecording => _delegate.isRecording;
+  bool get isRecording => _isRecording && _delegate.isRecording;
 
   @override
   SpanKind get kind => _delegate.kind;

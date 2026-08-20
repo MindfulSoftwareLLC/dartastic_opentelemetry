@@ -257,6 +257,34 @@ class Tracer implements APITracer {
       OTelLog.debug('Tracer: Starting span with name: $name, kind: $kind');
     }
 
+    return _startSpanInternal(
+      name: name,
+      context: context,
+      spanContext: spanContext,
+      parentSpan: parentSpan,
+      kind: kind,
+      attributes: attributes,
+      links: links,
+      isRecording: isRecording,
+    );
+  }
+
+  /// Shared SDK span-creation pipeline, per the Trace SDK spec
+  /// ("SDK Span creation"): resolve the parent, generate a new SpanId,
+  /// query the sampler's ShouldSample, create the span according to the
+  /// decision, and notify the span processors.
+  Span _startSpanInternal({
+    required String name,
+    Context? context,
+    SpanContext? spanContext,
+    APISpan? parentSpan,
+    SpanKind kind = SpanKind.internal,
+    Attributes? attributes,
+    List<SpanLink>? links,
+    List<SpanEvent>? spanEvents,
+    DateTime? startTime,
+    bool? isRecording,
+  }) {
     // Get parent context from either the passed context or parent span.
     // Use a content-based check rather than `effectiveContext != Context.root`
     // — Context.root can carry the propagated context inside an isolate
@@ -393,15 +421,20 @@ class Tracer implements APITracer {
       traceFlags: traceFlags,
     );
 
-    // Create the delegate span with our newly created span context
-    final delegateSpan = _delegate.startSpan(
-      name,
+    // Create the delegate span with our newly created span context.
+    // (The API's startSpan forwards verbatim to createSpan; calling
+    // createSpan directly also lets this pipeline carry spanEvents and
+    // an explicit startTime.)
+    final delegateSpan = _delegate.createSpan(
+      name: name,
       context: effectiveContext,
       spanContext: newSpanContext,
       parentSpan: effectiveParentSpan,
       kind: kind,
       attributes: attributes,
       links: links,
+      spanEvents: spanEvents,
+      startTime: startTime,
       isRecording: isRecording ?? shouldRecord,
     );
 
@@ -409,6 +442,7 @@ class Tracer implements APITracer {
     final sdkSpan = SDKSpanCreate.create(
       delegateSpan: delegateSpan,
       sdkTracer: this,
+      isRecording: isRecording ?? shouldRecord,
     );
 
     // Notify processors
