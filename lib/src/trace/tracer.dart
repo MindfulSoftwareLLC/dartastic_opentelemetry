@@ -209,6 +209,16 @@ class Tracer implements APITracer {
     }
   }
 
+  /// Creates a span without making it active in any context.
+  ///
+  /// Per the Trace SDK spec (SDK Span creation), this goes through the
+  /// same pipeline as [startSpan]: the sampler is queried and the span
+  /// processors are notified. Unlike [startSpan], an explicitly provided
+  /// [spanContext] is used verbatim as the new span's SpanContext
+  /// (identity, flags, and TraceState) rather than only donating its
+  /// trace ID — the sampler still controls IsRecording and processor
+  /// delivery, and the forbidden Sampled==true with IsRecording==false
+  /// combination is corrected by clearing the Sampled flag.
   @override
   Span createSpan({
     required String name,
@@ -226,20 +236,19 @@ class Tracer implements APITracer {
       OTelLog.debug('Tracer: Creating span with name: $name, kind: $kind');
     }
 
-    final delegateSpan = _delegate.createSpan(
+    return _startSpanInternal(
       name: name,
+      context: context,
       spanContext: spanContext,
       parentSpan: parentSpan,
       kind: kind,
       attributes: attributes,
       links: links,
-      startTime: startTime,
       spanEvents: spanEvents,
+      startTime: startTime,
       isRecording: isRecording,
-      context: context,
+      honorExplicitSpanContext: true,
     );
-
-    return SDKSpanCreate.create(delegateSpan: delegateSpan, sdkTracer: this);
   }
 
   /// Starts a new span.
@@ -280,6 +289,12 @@ class Tracer implements APITracer {
   /// ("SDK Span creation"): resolve the parent, generate a new SpanId,
   /// query the sampler's ShouldSample, create the span according to the
   /// decision, and notify the span processors.
+  ///
+  /// When [honorExplicitSpanContext] is true (the [createSpan] path) and
+  /// [spanContext] is provided, that SpanContext is used verbatim for
+  /// the new span instead of minting a new SpanId and deriving flags
+  /// from the sampling decision; the decision still governs IsRecording
+  /// and processor delivery.
   Span _startSpanInternal({
     required String name,
     Context? context,
@@ -291,6 +306,7 @@ class Tracer implements APITracer {
     List<SpanEvent>? spanEvents,
     DateTime? startTime,
     bool? isRecording,
+    bool honorExplicitSpanContext = false,
   }) {
     // Get parent context from either the passed context or parent span.
     // Use a content-based check rather than `effectiveContext != Context.root`
@@ -463,16 +479,34 @@ class Tracer implements APITracer {
       traceFlags = OTel.traceFlags(TraceFlags.NONE_FLAG);
     }
 
-    // Always create a new span context with a new span ID
-    // For root spans, ensure we set an invalid parent span ID (zeros)
-    final newSpanContext = OTel.spanContext(
-      traceId: traceId,
-      spanId: OTel.spanId(), // Always generate a new span ID
-      parentSpanId: parentSpanId ??
-          OTel.spanIdInvalid(), // Use invalid span ID for root spans
-      traceFlags: traceFlags,
-      traceState: parentTraceState,
-    );
+    final SpanContext newSpanContext;
+    if (honorExplicitSpanContext && spanContext != null) {
+      // createSpan contract: an explicitly provided SpanContext is used
+      // verbatim. Only the forbidden Sampled==true with
+      // IsRecording==false combination is corrected (Trace SDK spec,
+      // Sampling: the SDK MUST NOT allow it).
+      newSpanContext = (!recording && spanContext.traceFlags.isSampled)
+          ? OTel.spanContext(
+              traceId: spanContext.traceId,
+              spanId: spanContext.spanId,
+              parentSpanId: spanContext.parentSpanId,
+              traceFlags: OTel.traceFlags(TraceFlags.NONE_FLAG),
+              traceState: spanContext.traceState,
+              isRemote: spanContext.isRemote,
+            )
+          : spanContext;
+    } else {
+      // Always create a new span context with a new span ID
+      // For root spans, ensure we set an invalid parent span ID (zeros)
+      newSpanContext = OTel.spanContext(
+        traceId: traceId,
+        spanId: OTel.spanId(), // Always generate a new span ID
+        parentSpanId: parentSpanId ??
+            OTel.spanIdInvalid(), // Use invalid span ID for root spans
+        traceFlags: traceFlags,
+        traceState: parentTraceState,
+      );
+    }
 
     // Create the delegate span with our newly created span context.
     // (The API's startSpan forwards verbatim to createSpan; calling

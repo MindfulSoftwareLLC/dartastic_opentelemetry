@@ -582,4 +582,72 @@ void main() {
       });
     }
   });
+
+  group('createSpan goes through the sampling pipeline (#129)', () {
+    test('createSpan queries the sampler - a DROP span is inert', () async {
+      await initWith(sampler: const AlwaysOffSampler());
+      final span = OTel.tracer().createSpan(name: 'created-dropped');
+
+      expect(span.isRecording, isFalse);
+      expect(span.spanContext.traceFlags.isSampled, isFalse);
+      span.setStringAttribute<String>('key', 'value');
+      expect(span.attributes.toList(), isEmpty);
+
+      span.end();
+      expect(recorder.started, isEmpty);
+      expect(recorder.ended, isEmpty);
+      expect(exporter.spans, isEmpty);
+    });
+
+    test('createSpan notifies processors and exports sampled spans',
+        () async {
+      await initWith();
+      final span = OTel.tracer().createSpan(name: 'created-sampled');
+
+      expect(span.isRecording, isTrue);
+      expect(span.spanContext.traceFlags.isSampled, isTrue);
+      expect(recorder.started, hasLength(1),
+          reason: 'processors must see createSpan spans start');
+
+      span.end();
+      await OTel.tracerProvider().forceFlush();
+      expect(recorder.ended, hasLength(1));
+      expect(exporter.spans.map((s) => s.name), contains('created-sampled'));
+    });
+
+    test('createSpan RECORD_ONLY reaches processors but not exporters',
+        () async {
+      await initWith(
+        sampler: FixedDecisionSampler(SamplingDecision.recordOnly),
+      );
+      final span = OTel.tracer().createSpan(name: 'created-record-only');
+      expect(span.isRecording, isTrue);
+      expect(span.spanContext.traceFlags.isSampled, isFalse);
+      span.end();
+      await OTel.tracerProvider().forceFlush();
+
+      expect(recorder.started, hasLength(1));
+      expect(recorder.ended, hasLength(1));
+      expect(exporter.spans, isEmpty);
+    });
+
+    test('an explicit spanContext is honored verbatim', () async {
+      await initWith();
+      final explicit = OTel.spanContext(
+        traceId: OTel.traceIdFrom('00112233445566778899aabbccddeeff'),
+        spanId: OTel.spanIdFrom('0011223344556677'),
+      );
+      final span = OTel.tracer().createSpan(
+            name: 'created-explicit',
+            spanContext: explicit,
+          );
+
+      expect(span.spanContext.traceId, equals(explicit.traceId));
+      expect(span.spanContext.spanId, equals(explicit.spanId));
+      // The sampler still ran and the processors saw the span.
+      expect(span.isRecording, isTrue);
+      expect(recorder.started, hasLength(1));
+      span.end();
+    });
+  });
 }
