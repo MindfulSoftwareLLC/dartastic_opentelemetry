@@ -518,4 +518,68 @@ void main() {
       span.end();
     });
   });
+
+  group('default sampler is ParentBased(root=AlwaysOn) (#126)', () {
+    /// Initializes without a sampler argument so the SDK default applies.
+    Future<void> initWithDefaults() async {
+      await OTel.reset();
+      exporter = InMemorySpanExporter();
+      recorder = RecordingSpanProcessor();
+      await OTel.initialize(
+        serviceName: 'sampling-pipeline-test',
+        spanProcessor: SimpleSpanProcessor(exporter),
+        enableMetrics: false,
+        enableLogs: false,
+      );
+      OTel.tracerProvider().addSpanProcessor(recorder);
+    }
+
+    test('the default sampler is ParentBased with an AlwaysOn root',
+        () async {
+      await initWithDefaults();
+      final sampler = OTel.tracerProvider().sampler;
+      expect(sampler, isA<ParentBasedSampler>());
+      expect(sampler!.description, 'ParentBased{root=AlwaysOnSampler}');
+    });
+
+    test('root spans are sampled', () async {
+      await initWithDefaults();
+      final span = OTel.tracer().startSpan('root');
+      expect(span.spanContext.traceFlags.isSampled, isTrue);
+      expect(span.isRecording, isTrue);
+      span.end();
+      expect(exporter.spans.map((s) => s.name), contains('root'));
+    });
+
+    // The ParentBased decision table, end to end through startSpan:
+    // remote/local x sampled/unsampled.
+    for (final isRemote in [true, false]) {
+      final kindDesc = isRemote ? 'remote' : 'local';
+
+      test('child of a $kindDesc sampled parent is sampled', () async {
+        await initWithDefaults();
+        final span = OTel.tracer().startSpan(
+              'child-$kindDesc-sampled',
+              context: parentContextWith(sampled: true, isRemote: isRemote),
+            );
+        expect(span.spanContext.traceFlags.isSampled, isTrue);
+        expect(span.isRecording, isTrue);
+        span.end();
+        expect(exporter.spans, hasLength(1));
+      });
+
+      test('child of a $kindDesc unsampled parent is dropped', () async {
+        await initWithDefaults();
+        final span = OTel.tracer().startSpan(
+              'child-$kindDesc-unsampled',
+              context: parentContextWith(sampled: false, isRemote: isRemote),
+            );
+        expect(span.spanContext.traceFlags.isSampled, isFalse);
+        expect(span.isRecording, isFalse);
+        span.end();
+        expect(recorder.started, isEmpty);
+        expect(exporter.spans, isEmpty);
+      });
+    }
+  });
 }
