@@ -480,9 +480,12 @@ class Tracer implements APITracer {
 
     // Notify processors. Per the Trace SDK spec (Sampling), span
     // processors MUST receive only spans with IsRecording == true.
+    // OnStart receives "the parent Context of the span that the SDK
+    // determined", so pass the resolved effectiveContext, never the raw
+    // (possibly null) context argument.
     if (recording) {
       for (final processor in _provider.spanProcessors) {
-        processor.onStart(sdkSpan, context);
+        processor.onStart(sdkSpan, effectiveContext);
       }
     }
 

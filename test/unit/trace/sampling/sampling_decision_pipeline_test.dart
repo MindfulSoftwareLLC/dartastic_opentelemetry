@@ -248,6 +248,18 @@ void main() {
       expect(exporter.spans, isEmpty);
     });
 
+    test('reaction table row (false, true) is unreachable', () async {
+      // The spec marks IsRecording==false with Sampled==true "Not
+      // allowed"; the sweep below plus the dedicated tests above pin it.
+      await initWith(sampler: const AlwaysOffSampler());
+      final span = OTel.tracer().startSpan('unreachable-row');
+      expect(
+        !span.isRecording && span.spanContext.traceFlags.isSampled,
+        isFalse,
+      );
+      span.end();
+    });
+
     test('no default path produces the forbidden combination', () async {
       for (final decision in SamplingDecision.values) {
         await initWith(sampler: FixedDecisionSampler(decision));
@@ -264,6 +276,105 @@ void main() {
           span.end();
         }
       }
+    });
+  });
+
+  group('recording/sampled reaction table (#122)', () {
+    // Trace SDK spec, Sampling:
+    // | IsRecording | Sampled | Processor receives? | Exporter receives? |
+    // | true        | true    | true                | true               |
+    // | true        | false   | true                | false              |
+    // | false       | true    | Not allowed         | Not allowed        |
+    // | false       | false   | false               | false              |
+
+    test('RECORD_AND_SAMPLE: processors and exporters receive the span',
+        () async {
+      await initWith(
+        sampler: FixedDecisionSampler(SamplingDecision.recordAndSample),
+      );
+      final span = OTel.tracer().startSpan('row-true-true');
+      span.end();
+      await OTel.tracerProvider().forceFlush();
+
+      expect(recorder.started, hasLength(1));
+      expect(recorder.ended, hasLength(1));
+      expect(exporter.spans.map((s) => s.name), contains('row-true-true'));
+    });
+
+    test('RECORD_ONLY: processors receive the span, exporters do not',
+        () async {
+      await initWith(
+        sampler: FixedDecisionSampler(SamplingDecision.recordOnly),
+      );
+      final span = OTel.tracer().startSpan('row-true-false');
+      expect(span.isRecording, isTrue);
+      expect(span.spanContext.traceFlags.isSampled, isFalse);
+      span.end();
+      await OTel.tracerProvider().forceFlush();
+
+      expect(recorder.started, hasLength(1));
+      expect(recorder.ended, hasLength(1));
+      expect(exporter.spans, isEmpty,
+          reason: 'exporters SHOULD NOT receive unsampled spans');
+    });
+
+    test('DROP: neither processors nor exporters receive the span', () async {
+      await initWith(sampler: FixedDecisionSampler(SamplingDecision.drop));
+      final span = OTel.tracer().startSpan('row-false-false');
+      span.end();
+      await OTel.tracerProvider().forceFlush();
+
+      expect(recorder.started, isEmpty);
+      expect(recorder.ended, isEmpty);
+      expect(exporter.spans, isEmpty);
+    });
+
+    test('BatchSpanProcessor also gates unsampled spans off the exporter',
+        () async {
+      await OTel.reset();
+      final batchExporter = InMemorySpanExporter();
+      await OTel.initialize(
+        serviceName: 'sampling-pipeline-test',
+        spanProcessor: BatchSpanProcessor(
+          batchExporter,
+          const BatchSpanProcessorConfig(
+            scheduleDelay: Duration(milliseconds: 20),
+          ),
+        ),
+        sampler: FixedDecisionSampler(SamplingDecision.recordOnly),
+        enableMetrics: false,
+        enableLogs: false,
+      );
+
+      OTel.tracer().startSpan('batch-unsampled').end();
+      await OTel.tracerProvider().forceFlush();
+      expect(batchExporter.spans, isEmpty);
+
+      // Sanity check: a sampled span does flow through the same pipeline.
+      OTel.tracerProvider().sampler =
+          FixedDecisionSampler(SamplingDecision.recordAndSample);
+      OTel.tracer().startSpan('batch-sampled').end();
+      await OTel.tracerProvider().forceFlush();
+      expect(batchExporter.spans.map((s) => s.name), contains('batch-sampled'));
+    });
+
+    test('onStart receives the resolved parent context, never null', () async {
+      await initWith();
+      final parentContext = parentContextWith(sampled: true);
+      final span = OTel.tracer().startSpan('ctx-check', context: parentContext);
+      expect(recorder.startContexts, hasLength(1));
+      expect(recorder.startContexts.single, isNotNull);
+      expect(
+        recorder.startContexts.single!.spanContext,
+        equals(parentContext.spanContext),
+      );
+      span.end();
+
+      // With no explicit context the resolved Context.current is passed.
+      recorder.startContexts.clear();
+      final rootSpan = OTel.tracer().startSpan('ctx-check-root');
+      expect(recorder.startContexts.single, isNotNull);
+      rootSpan.end();
     });
   });
 }
