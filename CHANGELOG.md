@@ -8,17 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.14-wip]
 
+### Added
+
+- `TracerProvider.hasSpanProcessors` — allocation-free check for registered
+  span processors.
+
 ### Fixed
 
-- `Tracer.enabled` now returns `false` when its `TracerProvider` has no span
-  processors registered, per the OpenTelemetry Trace SDK spec: "Enabled MUST
-  return false when there are no registered SpanProcessors." Previously the
-  getter reflected only the tracer's own enabled flag, so instrumentation paid
-  the full cost of span creation for telemetry that reached nothing.
-  **Behavior change:** `tracer.enabled` read before any span processor is
-  registered now reports `false`; it becomes `true` once a processor is added.
-  Also adds `TracerProvider.hasSpanProcessors`, an allocation-free check
-  suitable for hot paths. Thanks to @abidiahmedcom (#138, #175).
+- `Tracer.enabled` now returns `false` when `TracerProvider` has no span
+  processor(s) registered, per the Trace SDK spec, sparing span-creation cost
+  when nothing is listening. Thanks to @abidiahmedcom (#138, #175).
 
 ## [1.1.0-beta.13] - 2026-08-13
 
