@@ -246,8 +246,9 @@ class Tracer implements APITracer {
   ///
   /// [isRecording] defaults to null, which means the sampler's decision
   /// determines whether the span records. Passing false forces a
-  /// non-recording span; passing true cannot resurrect a span the
-  /// sampler decided to drop.
+  /// non-recording span and clears the Sampled flag (the SDK MUST NOT
+  /// produce Sampled == true with IsRecording == false); passing true
+  /// cannot resurrect a span the sampler decided to drop.
   @override
   Span startSpan(
     String name, {
@@ -424,12 +425,23 @@ class Tracer implements APITracer {
     // resurrect a dropped one (spec: DROP => IsRecording will be false).
     final recording = shouldRecord && (isRecording ?? true);
 
+    // The SDK MUST NOT allow Sampled == true with IsRecording == false
+    // (Trace SDK spec, Sampling — the combination causes gaps in the
+    // distributed trace). A forced non-recording span is never sampled.
+    if (!recording) {
+      sampled = false;
+    }
+
     if (sampled != null) {
       // The Sampled trace flag reflects the sampling decision only —
       // RECORD_ONLY records without setting the flag.
       traceFlags = OTel.traceFlags(
         sampled ? TraceFlags.SAMPLED_FLAG : TraceFlags.NONE_FLAG,
       );
+    } else if (!recording && (traceFlags?.isSampled ?? false)) {
+      // No sampler configured and flags inherited from the parent:
+      // still clear Sampled on a forced non-recording span.
+      traceFlags = OTel.traceFlags(TraceFlags.NONE_FLAG);
     }
 
     // Always create a new span context with a new span ID

@@ -212,4 +212,58 @@ void main() {
       expect(recorder.ended, isEmpty);
     });
   });
+
+  group('Sampled=true with IsRecording=false is forbidden (#123)', () {
+    test('forced non-recording span clears Sampled (sampler path)', () async {
+      await initWith(
+        sampler: FixedDecisionSampler(SamplingDecision.recordAndSample),
+      );
+      final span = OTel.tracer().startSpan('forced-off', isRecording: false);
+
+      expect(span.isRecording, isFalse);
+      expect(span.spanContext.traceFlags.isSampled, isFalse,
+          reason: 'The SDK MUST NOT allow Sampled==true with '
+              'IsRecording==false');
+      span.end();
+      expect(recorder.started, isEmpty);
+      expect(recorder.ended, isEmpty);
+      expect(exporter.spans, isEmpty);
+    });
+
+    test('forced non-recording span clears inherited Sampled (no sampler)',
+        () async {
+      await initWith();
+      // Remove the sampler so trace flags are inherited from the parent.
+      OTel.tracerProvider().sampler = null;
+
+      final span = OTel.tracer().startSpan(
+            'forced-off',
+            context: parentContextWith(sampled: true),
+            isRecording: false,
+          );
+
+      expect(span.isRecording, isFalse);
+      expect(span.spanContext.traceFlags.isSampled, isFalse);
+      span.end();
+      expect(exporter.spans, isEmpty);
+    });
+
+    test('no default path produces the forbidden combination', () async {
+      for (final decision in SamplingDecision.values) {
+        await initWith(sampler: FixedDecisionSampler(decision));
+        for (final forced in <bool?>[null, true, false]) {
+          final span = OTel.tracer().startSpan(
+                'combination-check',
+                isRecording: forced,
+              );
+          final forbidden =
+              span.spanContext.traceFlags.isSampled && !span.isRecording;
+          expect(forbidden, isFalse,
+              reason: 'decision=$decision isRecording=$forced produced '
+                  'Sampled==true with IsRecording==false');
+          span.end();
+        }
+      }
+    });
+  });
 }
