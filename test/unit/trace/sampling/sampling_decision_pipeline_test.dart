@@ -377,4 +377,39 @@ void main() {
       rootSpan.end();
     });
   });
+
+  group('TraceState inheritance (#124)', () {
+    test('child spans inherit the parent TraceState', () async {
+      await initWith();
+      final traceState = OTel.traceState({'vendor': 'value', 'ot': 'th:0'});
+
+      // Remote parent (e.g. extracted from W3C headers).
+      final remoteCtx = parentContextWith(
+        sampled: true,
+        isRemote: true,
+        traceState: traceState,
+      );
+      final childOfRemote =
+          OTel.tracer().startSpan('child-of-remote', context: remoteCtx);
+      expect(childOfRemote.spanContext.traceState?.get('vendor'), 'value');
+      expect(childOfRemote.spanContext.traceState?.get('ot'), 'th:0');
+
+      // Local parent: the child of childOfRemote inherits transitively.
+      final grandChild = OTel.tracer().startSpan(
+            'grandchild',
+            parentSpan: childOfRemote,
+          );
+      expect(grandChild.spanContext.traceState?.get('vendor'), 'value');
+      grandChild.end();
+      childOfRemote.end();
+    });
+
+    test('span without a parent has no inherited TraceState', () async {
+      await initWith();
+      final root = OTel.tracer().startSpan('root');
+      expect(root.spanContext.traceState?.entries ?? const <String, String>{},
+          isEmpty);
+      root.end();
+    });
+  });
 }

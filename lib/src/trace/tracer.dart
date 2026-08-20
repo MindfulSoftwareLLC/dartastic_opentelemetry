@@ -353,14 +353,23 @@ class Tracer implements APITracer {
       parentSpanId = parentContext.spanId;
     }
 
-    // Inherit trace flags from parent — explicit parentSpan wins over context
-    // for consistency with traceId resolution above.
+    // Inherit trace flags and TraceState from parent — explicit parentSpan
+    // wins over context for consistency with traceId resolution above.
+    // Per the Trace API spec (Span creation), "the child span MUST inherit
+    // all TraceState values of its parent by default"; this applies to
+    // local and remote parents alike.
     TraceFlags? traceFlags;
+    TraceState? parentTraceState;
     if (parentSpan != null && parentSpan.spanContext.isValid) {
       traceFlags = parentSpan.spanContext.traceFlags;
+      parentTraceState = parentSpan.spanContext.traceState;
     } else if (parentContext != null && parentContext.isValid) {
       traceFlags = parentContext.traceFlags;
+      parentTraceState = parentContext.traceState;
     }
+    // An explicit spanContext argument can also donate a TraceState when
+    // no parent supplied one (it already donates the traceId above).
+    parentTraceState ??= spanContext?.traceState;
 
     if (OTelLog.isDebug()) {
       if (parentSpanId != null) {
@@ -452,6 +461,7 @@ class Tracer implements APITracer {
       parentSpanId: parentSpanId ??
           OTel.spanIdInvalid(), // Use invalid span ID for root spans
       traceFlags: traceFlags,
+      traceState: parentTraceState,
     );
 
     // Create the delegate span with our newly created span context.
