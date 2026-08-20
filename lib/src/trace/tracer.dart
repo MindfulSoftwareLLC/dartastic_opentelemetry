@@ -411,6 +411,16 @@ class Tracer implements APITracer {
           sampled = true;
       }
 
+      // Per the Trace SDK spec (ShouldSample), the Tracestate returned
+      // by the sampler is associated with the Span through the new
+      // SpanContext. An explicitly empty TraceState clears it; null
+      // means the sampler has no opinion (samplers written before
+      // SamplingResult.traceState existed keep parent inheritance).
+      final samplerTraceState = samplingResult.traceState;
+      if (samplerTraceState != null) {
+        parentTraceState = samplerTraceState.isEmpty ? null : samplerTraceState;
+      }
+
       // Add sampler attributes if provided
       if (samplingResult.attributes != null) {
         if (attributes == null) {

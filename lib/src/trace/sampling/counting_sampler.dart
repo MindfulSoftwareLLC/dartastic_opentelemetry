@@ -43,9 +43,10 @@ class CountingSampler implements Sampler {
         spanKind: spanKind,
         attributes: attributes,
       )) {
-        return const SamplingResult(
+        return SamplingResult(
           decision: SamplingDecision.recordAndSample,
           source: SamplingDecisionSource.tracerConfig,
+          traceState: parentContext.spanContext?.traceState,
         );
       }
     }
@@ -59,6 +60,7 @@ class CountingSampler implements Sampler {
           ? SamplingDecision.recordAndSample
           : SamplingDecision.drop,
       source: SamplingDecisionSource.tracerConfig,
+      traceState: parentContext.spanContext?.traceState,
     );
   }
 }
@@ -98,6 +100,7 @@ abstract class SamplingCondition implements Sampler {
           ? SamplingDecision.recordAndSample
           : SamplingDecision.drop,
       source: SamplingDecisionSource.tracerConfig,
+      traceState: parentContext.spanContext?.traceState,
     );
   }
 }

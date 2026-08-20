@@ -44,9 +44,12 @@ class AlwaysOnSampler implements Sampler {
     required Attributes? attributes,
     required List<SpanLink>? links,
   }) {
-    return const SamplingResult(
+    return SamplingResult(
       decision: SamplingDecision.recordAndSample,
       source: SamplingDecisionSource.tracerConfig,
+      // Spec: samplers SHOULD return the passed-in Tracestate unchanged
+      // when they do not intend to modify it.
+      traceState: parentContext.spanContext?.traceState,
     );
   }
 }

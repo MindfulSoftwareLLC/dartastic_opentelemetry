@@ -15,7 +15,7 @@ import 'package:test/test.dart';
 import '../../../testing_utils/in_memory_span_exporter.dart';
 
 /// A sampler that always returns a fixed decision (optionally with a fixed
-/// TraceState or attributes).
+/// TraceState).
 class FixedDecisionSampler implements Sampler {
   final SamplingDecision decision;
 
@@ -36,6 +36,35 @@ class FixedDecisionSampler implements Sampler {
     return SamplingResult(
       decision: decision,
       source: SamplingDecisionSource.tracerConfig,
+    );
+  }
+}
+
+/// A spec-conformant custom sampler that rewrites the TraceState, in the
+/// style of a consistent-probability sampler writing `ot=th:...`.
+class TraceStateWritingSampler implements Sampler {
+  /// When null, returns an empty TraceState (which clears the span's).
+  final Map<String, String> Function(TraceState? parent)? rewrite;
+
+  TraceStateWritingSampler({this.rewrite});
+
+  @override
+  String get description => 'TraceStateWritingSampler';
+
+  @override
+  SamplingResult shouldSample({
+    required Context parentContext,
+    required String traceId,
+    required String name,
+    required SpanKind spanKind,
+    required Attributes? attributes,
+    required List<SpanLink>? links,
+  }) {
+    final parent = parentContext.spanContext?.traceState;
+    return SamplingResult(
+      decision: SamplingDecision.recordAndSample,
+      source: SamplingDecisionSource.tracerConfig,
+      traceState: OTel.traceState(rewrite?.call(parent) ?? const {}),
     );
   }
 }
@@ -410,6 +439,83 @@ void main() {
       expect(root.spanContext.traceState?.entries ?? const <String, String>{},
           isEmpty);
       root.end();
+    });
+  });
+
+  group('SamplingResult.traceState (#125)', () {
+    test('built-in samplers return the passed-in TraceState unchanged', () {
+      final parentTraceState = OTel.traceState({'vendor': 'value'});
+      final parentContext =
+          parentContextWith(sampled: true, traceState: parentTraceState);
+
+      final samplers = <Sampler>[
+        const AlwaysOnSampler(),
+        const AlwaysOffSampler(),
+        ParentBasedSampler(const AlwaysOnSampler()),
+        TraceIdRatioSampler(1.0),
+        ProbabilitySampler(1.0),
+        CountingSampler(1),
+        const CompositeSampler.and([AlwaysOnSampler()]),
+      ];
+      for (final sampler in samplers) {
+        final result = sampler.shouldSample(
+          parentContext: parentContext,
+          traceId: OTel.traceId().toString(),
+          name: 'span',
+          spanKind: SpanKind.internal,
+          attributes: null,
+          links: null,
+        );
+        expect(result.traceState?.get('vendor'), 'value',
+            reason: '${sampler.description} must return the passed-in '
+                'TraceState');
+      }
+    });
+
+    test('the sampler-returned TraceState lands on the new SpanContext',
+        () async {
+      await initWith(
+        sampler: TraceStateWritingSampler(
+          rewrite: (parent) => {...?parent?.entries, 'ot': 'th:8'},
+        ),
+      );
+      final parentCtx = parentContextWith(
+        sampled: true,
+        traceState: OTel.traceState({'vendor': 'value'}),
+      );
+      final span = OTel.tracer().startSpan('rewritten', context: parentCtx);
+
+      expect(span.spanContext.traceState?.get('ot'), 'th:8');
+      expect(span.spanContext.traceState?.get('vendor'), 'value');
+      span.end();
+    });
+
+    test('an empty returned TraceState clears the inherited one', () async {
+      await initWith(sampler: TraceStateWritingSampler());
+      final parentCtx = parentContextWith(
+        sampled: true,
+        traceState: OTel.traceState({'vendor': 'value'}),
+      );
+      final span = OTel.tracer().startSpan('cleared', context: parentCtx);
+
+      expect(span.spanContext.traceState?.entries ?? const <String, String>{},
+          isEmpty);
+      span.end();
+    });
+
+    test('a null traceState (legacy sampler) keeps parent inheritance',
+        () async {
+      await initWith(
+        sampler: FixedDecisionSampler(SamplingDecision.recordAndSample),
+      );
+      final parentCtx = parentContextWith(
+        sampled: true,
+        traceState: OTel.traceState({'vendor': 'value'}),
+      );
+      final span = OTel.tracer().startSpan('inherited', context: parentCtx);
+
+      expect(span.spanContext.traceState?.get('vendor'), 'value');
+      span.end();
     });
   });
 }
