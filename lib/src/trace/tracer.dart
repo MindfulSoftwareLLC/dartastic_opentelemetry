@@ -377,21 +377,29 @@ class Tracer implements APITracer {
         links: links,
       );
 
-      // Update the isRecording flag based on the sampling decision
-      shouldRecord = samplingResult.decision != SamplingDecision.drop;
-
-      // Update trace flags based on sampling decision
-      if (traceFlags == null) {
-        traceFlags = OTel.traceFlags(
-          shouldRecord ? TraceFlags.SAMPLED_FLAG : TraceFlags.NONE_FLAG,
-        );
-      } else if (shouldRecord && !traceFlags.isSampled) {
-        // Upgrade to sampled if necessary
-        traceFlags = OTel.traceFlags(TraceFlags.SAMPLED_FLAG);
-      } else if (!shouldRecord && traceFlags.isSampled) {
-        // Downgrade to not sampled if necessary
-        traceFlags = OTel.traceFlags(TraceFlags.NONE_FLAG);
+      // Map the decision onto the (IsRecording, Sampled) pair, per the
+      // Trace SDK spec (ShouldSample):
+      //   DROP              -> IsRecording false, Sampled MUST NOT be set
+      //   RECORD_ONLY       -> IsRecording true,  Sampled MUST NOT be set
+      //   RECORD_AND_SAMPLE -> IsRecording true,  Sampled MUST be set
+      bool sampled;
+      switch (samplingResult.decision) {
+        case SamplingDecision.drop:
+          shouldRecord = false;
+          sampled = false;
+        case SamplingDecision.recordOnly:
+          shouldRecord = true;
+          sampled = false;
+        case SamplingDecision.recordAndSample:
+          shouldRecord = true;
+          sampled = true;
       }
+
+      // The Sampled trace flag reflects the sampling decision only —
+      // RECORD_ONLY records without setting the flag.
+      traceFlags = OTel.traceFlags(
+        sampled ? TraceFlags.SAMPLED_FLAG : TraceFlags.NONE_FLAG,
+      );
 
       // Add sampler attributes if provided
       if (samplingResult.attributes != null) {
