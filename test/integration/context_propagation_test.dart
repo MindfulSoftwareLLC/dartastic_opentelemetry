@@ -8,7 +8,7 @@ import 'dart:math';
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:test/test.dart';
 
-import '../../testing_utils/real_collector.dart';
+import '../testing_utils/real_collector.dart';
 
 // Check if we're running in isolated mode
 final bool isIsolatedRun =
