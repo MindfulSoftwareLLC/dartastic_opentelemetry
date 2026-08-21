@@ -25,8 +25,11 @@ part 'tracer_create.dart';
 /// implementation while adding SDK-specific behaviors like sampling and
 /// span processor notification.
 ///
-/// Note: Per [OTEP 0265](https://opentelemetry.io/docs/specs/semconv/general/events/),
-/// span events are being deprecated and will be replaced by the Logging API in future versions.
+/// Note: Per [OTEP 0265: Event Vision](https://github.com/open-telemetry/opentelemetry-specification/blob/main/oteps/0265-event-vision.md)
+/// and [OTEP 4430: Span Event API deprecation plan](https://github.com/open-telemetry/opentelemetry-specification/blob/main/oteps/4430-span-event-api-deprecation-plan.md),
+/// span events are planned for deprecation in favor of log-based events
+/// emitted via the Logs API; SDKs will provide options to render log-based
+/// events as span events for compatibility.
 ///
 /// More information:
 /// https://opentelemetry.io/docs/specs/otel/trace/sdk/
