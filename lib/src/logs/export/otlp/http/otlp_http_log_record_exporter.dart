@@ -12,7 +12,9 @@ import 'package:http/http.dart' as http;
 
 import '../../../../export/otlp_http_protocol.dart';
 import '../../../../export/otlp_json.dart';
+import '../../../../export/otlp_user_agent.dart';
 import '../../../../trace/export/otlp/http/http_client_factory.dart';
+import '../../../../util/header_redaction.dart';
 import '../../../../util/zip/gzip.dart';
 import '../../../readable_log_record.dart';
 import '../../log_record_exporter.dart';
@@ -44,11 +46,7 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
       OTelLog.debug(
           'OtlpHttpLogRecordExporter: Configured headers count: ${_config.headers.length}');
       _config.headers.forEach((key, value) {
-        if (key.toLowerCase() == 'authorization') {
-          OTelLog.debug('  $key: [REDACTED - length: ${value.length}]');
-        } else {
-          OTelLog.debug('  $key: $value');
-        }
+        OTelLog.debug('  ${formatHeaderForLog(key, value)}');
       });
     }
     _client = _createHttpClient();
@@ -104,6 +102,15 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
     // protobuf (default) or JSON via proto3-JSON mapping. See
     // `OtlpHttpProtocol` for the conformance rationale.
     final headers = Map<String, String>.from(_config.headers);
+    // Default User-Agent per the OTLP exporter spec ("User agent"): the
+    // exporter's default string is always present. A caller-supplied value
+    // (typically a distribution identifier) is prepended to it, e.g.
+    // "MyDistribution/1.0 OTel-OTLP-Exporter-Dart/1.1.0-beta.14-wip".
+    // `headers` is a copy, and http's header map is case-insensitive, so the
+    // User-Agent assignment below overrides the copied user-agent entry.
+    final userAgent = _config.headers['user-agent'];
+    headers['User-Agent'] =
+        userAgent == null ? otlpUserAgent : '$userAgent $otlpUserAgent';
     Uint8List messageBytes;
     if (_config.protocol == OtlpHttpProtocol.httpJson) {
       headers['Content-Type'] = 'application/json';
@@ -134,11 +141,7 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
           'OtlpHttpLogRecordExporter: Sending export request to $endpointUrl');
       OTelLog.debug('OtlpHttpLogRecordExporter: Request headers:');
       headers.forEach((key, value) {
-        if (key.toLowerCase() == 'authorization') {
-          OTelLog.debug('  $key: [REDACTED - length: ${value.length}]');
-        } else {
-          OTelLog.debug('  $key: $value');
-        }
+        OTelLog.debug('  ${formatHeaderForLog(key, value)}');
       });
     }
 

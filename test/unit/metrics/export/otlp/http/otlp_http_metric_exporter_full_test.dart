@@ -5,6 +5,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry/src/export/otlp_user_agent.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -12,18 +13,24 @@ void main() {
     late HttpServer server;
     late int port;
     late List<HttpRequest> receivedRequests;
+    late List<List<int>> receivedBodies;
 
     setUp(() async {
       await OTel.reset();
       receivedRequests = [];
+      receivedBodies = [];
       server = await HttpServer.bind('localhost', 0);
       port = server.port;
       server.listen((request) async {
         receivedRequests.add(request);
-        // Drain the request body so the connection completes properly
-        await request.fold<List<int>>(
-          [],
-          (bytes, chunk) => bytes..addAll(chunk),
+        // Drain the request body so the connection completes properly, and
+        // keep it: a test that asserts on the wire format reads it from here
+        // rather than rebinding the server on the same port.
+        receivedBodies.add(
+          await request.fold<List<int>>(
+            [],
+            (bytes, chunk) => bytes..addAll(chunk),
+          ),
         );
         request.response.statusCode = 200;
         await request.response.close();
@@ -85,19 +92,6 @@ void main() {
     test(
         'export with httpJson protocol sends application/json + proto3-JSON body',
         () async {
-      // Rebind the server so we can capture the request body for this test.
-      await server.close(force: true);
-      receivedRequests = [];
-      var capturedBody = <int>[];
-      server = await HttpServer.bind('localhost', port);
-      server.listen((request) async {
-        receivedRequests.add(request);
-        capturedBody = await request
-            .fold<List<int>>([], (bytes, chunk) => bytes..addAll(chunk));
-        request.response.statusCode = 200;
-        await request.response.close();
-      });
-
       final exporter = OtlpHttpMetricExporter(
         OtlpHttpMetricExporterConfig(
           endpoint: 'http://localhost:$port',
@@ -116,7 +110,7 @@ void main() {
 
       // Body must decode to a Map with the proto3-JSON top-level
       // `resourceMetrics` key.
-      final decoded = jsonDecode(utf8.decode(capturedBody));
+      final decoded = jsonDecode(utf8.decode(receivedBodies.first));
       expect(decoded, isA<Map<String, dynamic>>());
       expect((decoded as Map).containsKey('resourceMetrics'), isTrue);
       expect(decoded['resourceMetrics'], isA<List>());
@@ -171,6 +165,43 @@ void main() {
       expect(
         receivedRequests.first.headers.value('x-custom'),
         equals('test-value'),
+      );
+      await exporter.shutdown();
+    });
+
+    test('export sends the OTLP default User-Agent header (issue #228)',
+        () async {
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:$port'),
+      );
+
+      final metricData = createTestMetricData();
+      await exporter.export(metricData);
+
+      expect(receivedRequests, hasLength(1));
+      expect(
+        receivedRequests.first.headers.value('user-agent'),
+        equals(otlpUserAgent),
+      );
+      await exporter.shutdown();
+    });
+
+    test('user-supplied User-Agent is prepended to the default (issue #228)',
+        () async {
+      final exporter = OtlpHttpMetricExporter(
+        OtlpHttpMetricExporterConfig(
+          endpoint: 'http://localhost:$port',
+          headers: {'user-agent': 'my-distribution/1.0'},
+        ),
+      );
+
+      final metricData = createTestMetricData();
+      await exporter.export(metricData);
+
+      expect(receivedRequests, hasLength(1));
+      expect(
+        receivedRequests.first.headers.value('user-agent'),
+        equals('my-distribution/1.0 $otlpUserAgent'),
       );
       await exporter.shutdown();
     });

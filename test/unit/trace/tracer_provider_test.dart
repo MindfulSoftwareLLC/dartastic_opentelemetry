@@ -135,6 +135,17 @@ void main() {
       expect(() => processors.add(MockSpanProcessor()), throwsUnsupportedError);
     });
 
+    test('hasSpanProcessors reflects registered processors', () {
+      final bareProvider = OTel.addTracerProvider('bare-has-provider');
+      expect(bareProvider.hasSpanProcessors, isFalse);
+
+      final mockProcessor3 = MockSpanProcessor();
+      bareProvider.addSpanProcessor(mockProcessor3);
+      expect(bareProvider.hasSpanProcessors, isTrue);
+
+      bareProvider.shutdown();
+    });
+
     test('ensureResourceIsSet sets resource if null', () {
       // Initially resource is default from OTel.initialize
       expect(tracerProvider.resource, isNotNull);

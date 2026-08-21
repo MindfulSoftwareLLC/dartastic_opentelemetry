@@ -4,22 +4,34 @@
 
 Below are the versions of the OpenTelemetry SDK for Dart that are currently supported with security updates:
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.8.x   | :white_check_mark: |
-| < 0.8.0 | :x:                |
+| Version           | Supported          |
+| ----------------- | ------------------ |
+| 1.1.0-beta.x      | :white_check_mark: |
+| 0.9.x             | :white_check_mark: |
+| 0.8.x and earlier | :x:                |
+
+The `0.9.x` line is not separate development. Each `0.9.x` release is the current
+`1.1.0-beta.x` code republished under a `0.9.x` version, so that users who have not
+opted into prereleases still receive fixes. A security fix lands on both lines.
 
 ## Reporting a Vulnerability
 
 We take the security of OpenTelemetry SDK for Dart seriously. If you believe you have found a security vulnerability, please follow these steps:
 
-1. **Do not disclose the vulnerability publicly**
-2. **Contact the maintainers privately** - Email security@dartastic.io with details of the vulnerability
+1. **Do not disclose the vulnerability publicly** - please do not open a public issue or
+   pull request describing it. That makes the vulnerability public before a fix exists.
+2. **Report it privately**, by either route:
+   - **Preferred:** [open a private report on GitHub][report]. Private vulnerability
+     reporting is enabled on this repository, so the report is visible only to the
+     maintainers and stays attached to the advisory that fixes it.
+   - Or email security@dartastic.io.
 3. **Provide sufficient information** to reproduce the issue, including:
    - Description of the vulnerability
    - Steps to reproduce
    - Potential impact
    - Suggested mitigation if available
+
+[report]: https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/security/advisories/new
 
 ## What to Expect
 

@@ -6,7 +6,82 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.1.0-beta.13-wip]
+## [1.1.0-beta.14-wip]
+
+### Added
+
+- `TracerProvider.hasSpanProcessors` — allocation-free check for registered
+  span processors.
+
+- **OTLP exporters send an identifying `User-Agent` header.** Per the OTLP
+  spec, OTLP requests SHOULD identify the exporter, language, and version.
+  Every OTLP request now carries `OTel-OTLP-Exporter-Dart/<version>` (HTTP
+  headers on the HTTP exporters; `ChannelOptions.userAgent` on the gRPC
+  exporters). A user-supplied `user-agent` header is prepended to the default
+  rather than replacing it (#228).
+
+- **`OTel.defaultGrpcEndpoint`** (`http://localhost:4317`), the OTLP/gRPC
+  default endpoint. The endpoint default is now picked per signal after the
+  protocol is resolved instead of defaulting everything to the HTTP port
+  4318 (#220).
+
+### Fixed
+
+- `Tracer.enabled` now returns `false` when `TracerProvider` has no span
+  processor(s) registered, per the Trace SDK spec, sparing span-creation cost
+  when nothing is listening. Thanks to @abidiahmedcom (#138, #175).
+
+- **OTLP/gRPC exporters now default to port 4317, not 4318.** The OTLP spec
+  defaults the endpoint to `http://localhost:4317` for OTLP/gRPC and
+  `http://localhost:4318` for the two HTTP protocols. Previously a single
+  4318 default was applied before the protocol was known, so gRPC-only
+  deployments silently exported to the wrong port (#220).
+
+- **An empty environment variable value is treated as unset.** Per the spec,
+  an empty value of an environment variable MUST be interpreted the same way
+  as when the variable is unset. `EnvironmentService.getValue` now normalizes
+  empty strings to `null`, so every consumer (endpoint, protocol, service
+  name, log level, …) reads an empty value as unset (#213).
+
+Thanks to @abidiahmedcom; reported by @yuzurihaaa (#213, #220, #228).
+
+## [1.1.0-beta.13] - 2026-08-13
+
+### Security
+
+- **OTLP header values are no longer written to the debug log.** Two leaks are fixed:
+  - Debug logging logged the raw values of all `OTEL_EXPORTER_OTLP_HEADERS` and the 
+    signal-specific `OTEL_EXPORTER_OTLP_{TRACES,METRICS,LOGS}_HEADERS`. The message was
+    emitted above the per-header loop that redacts `Authorization`, so the credential
+    reached the log regardless of that redaction. Thanks to @arpitjain099 (#100).
+  - `OtlpHttpSpanExporter` and `OtlpHttpLogRecordExporter` printed every header value
+    except `Authorization`, at construction and on each export request — including
+    headers configured in code, which never pass through an environment variable.
+
+  **Who is affected:** applications running with `OTEL_LOG_LEVEL=DEBUG` (or `OTelLog` at
+  debug) and a credential in an OTLP header, from the environment or from exporter
+  config. Treat any debug logs collected from an affected build as containing that
+  credential and rotate it.
+
+  Tracked as [GHSA-4rh6-c2v5-374w](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/security/advisories/GHSA-4rh6-c2v5-374w)
+  (CWE-532). Affects `>= 1.0.0-alpha` on this line and `>= 0.9.0` on the stable
+  channel; see the 0.9.8 entry.
+
+### Added
+
+- **`OTEL_DART_HEADER_LOG_ALLOWLIST`**, and `OTel.initialize(otlpHeaderLogAllowlist:)`,
+  name the OTLP headers whose values may appear in the debug log (#96). 
+  Names match exactly, case insensitively; the code parameter replaces
+  the environment variable rather than adding to it; `authorization` and
+  `proxy-authorization` are never logged even when listed. Thanks to @arpitjain099 (#101).
+
+### Changed
+
+- Debug logs now print `name: [REDACTED]` for any header value not on the allowlist,
+  replacing `Authorization: [REDACTED - length: N]` — the length is dropped on purpose,
+  since it narrows the search space for the token. Header names and the header count are
+  still logged. A header value you relied on seeing at debug level now has to be listed
+  in `OTEL_DART_HEADER_LOG_ALLOWLIST`.
 
 ### Fixed
 - **`OTEL_RESOURCE_ATTRIBUTES` no longer overrides `service.name` set by
@@ -372,6 +447,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Log Signal SDK implementation
 - Upgraded to dartastic_opentelemetry_api: ^1.0.0-alpha with Log Signal API
+
+## The 0.9.x stable channel
+
+`0.9.4` and up are not a separate line of development. Each one is the current
+`1.1.0-beta.x` code republished under a `0.9.x` version so that users who have not
+opted into prereleases still get the fixes before the v1 release. The code is
+identical to the beta it names; only the version stamp and the
+`dartastic_opentelemetry_api` constraint differ. Prefer the `1.1.0-beta.x` line if
+your pubspec allows prereleases — it is what these entries point at.
+
+## [0.9.8] - 2026-08-13
+Stable-channel republication of `1.1.0-beta.13`. Depends on
+`dartastic_opentelemetry_api: ^0.9.1`.
+
+### Security
+
+- **Fixes the OTLP debug-log credential leak,
+  [GHSA-4rh6-c2v5-374w](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/security/advisories/GHSA-4rh6-c2v5-374w)
+  (CWE-532).** Every `0.9.x` release from `0.9.0` through `0.9.7` is affected: with
+  debug logging enabled, OTLP header values — including `Authorization`, `api-key`,
+  and whatever name your backend uses — were written to the log. This is the first
+  release on the stable channel that redacts them. See the `1.1.0-beta.13` entry
+  above for the mechanism and for the `OTEL_DART_HEADER_LOG_ALLOWLIST` opt-in.
+
+  **If you ran any 0.9.x release with debug logging enabled and a credential in an
+  OTLP header, rotate that credential.** Upgrading alone does not undo the exposure.
+
+### Also in this release
+
+The `1.1.0-beta.12` changes, which never reached this channel: the `host.arch` fix
+(#90), registry-enum attribute keys throughout, and the removal of the non-registry
+`host.processors`, `host.locale`, and `process.num_threads` resource attributes.
+Read the `1.1.0-beta.12` entry as well before upgrading from 0.9.7.
+
+## [0.9.7] - 2026-07-20
+Stable-channel republication of `1.1.0-beta.11` — docs only over 0.9.6. Depends on
+`dartastic_opentelemetry_api: ^0.9.1`.
+
+Adds the `1.1.0-beta.10` fixes over 0.9.6: baggage extraction preserving context and
+endpoint scheme determining TLS (#89), OTLP/JSON enum fields encoded as integers per
+spec (#86), and public `MetricTransformer.transformMetrics` (#85).
+
+## [0.9.6] - 2026-07-18
+Stable-channel republication of `1.1.0-beta.9`. Depends on
+`dartastic_opentelemetry_api: ^0.9.1`, itself the republication of api `1.0.0-rc.1`
+— note the api constraint moved off the `1.0.0-beta.x` range that 0.9.5 used.
+
+Covers everything from `1.1.0-beta.1` through `1.1.0-beta.9`; see those entries for
+the detail. Highlights for anyone coming from 0.9.5: `OTEL_PROPAGATORS` support (#42,
+#76), BatchSpanProcessor environment variables (#59), comma-separated
+`OTEL_*_EXPORTER` lists (#79), OTLP/HTTP-JSON wire format (#45), OTLP/JSON trace and
+span ids encoded as hex per spec (#60), `LoggerProvider` shutdown fixes (#33, #41),
+web/wasm safety (#36), and the removal of the non-standard `dartasticApiKey` and
+`tenantId` (#78).
+
+## [0.9.5] - 2026-05-09
+Stable-channel republication of `1.1.0-beta` — the first of these. Depends on
+`dartastic_opentelemetry_api: ^1.0.0-beta.2`. Covers `1.0.0-alpha` through
+`1.1.0-beta` for users still on 0.9.3, most notably the Log signal SDK.
+
+`0.9.4` was stamped in git a minute before 0.9.5 with the same code but never published to
+pub.dev; there is no 0.9.4 release.
 
 ## [0.9.3] - 2025-10-25
 ### Added

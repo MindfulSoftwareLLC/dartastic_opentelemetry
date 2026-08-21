@@ -14,39 +14,13 @@
 //      addMeterProvider, addLoggerProvider
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/src/resource/resource.dart';
 import 'package:test/test.dart';
 
 import '../../testing_utils/memory_log_record_exporter.dart';
-
-/// Runs a Dart script in a subprocess with specific environment variables set.
-/// Returns the stdout output as a string.
-Future<String> runWithEnv(
-  String scriptPath,
-  Map<String, String> envVars,
-) async {
-  final env = Map<String, String>.from(Platform.environment);
-  // Clear any existing OTEL env vars that might interfere
-  env.removeWhere((key, _) => key.startsWith('OTEL_'));
-  env.addAll(envVars);
-  final result = await Process.run(
-    Platform.executable,
-    ['run', scriptPath],
-    environment: env,
-    workingDirectory: Directory.current.path,
-  );
-  if (result.exitCode != 0) {
-    throw Exception(
-      'Script failed with exit code ${result.exitCode}:\n'
-      'stdout: ${result.stdout}\n'
-      'stderr: ${result.stderr}',
-    );
-  }
-  return result.stdout as String;
-}
+import 'helpers/subprocess_env.dart';
 
 /// A detector that throws a non-Exception type to exercise
 /// the catch block in CompositeResourceDetector.
@@ -497,6 +471,89 @@ void main() {
       // "key=" has equalIndex at position 3, but equalIndex < pair.length - 1
       // is false (3 < 3 is false), so it should be skipped
       expect(result.containsKey('key'), isFalse);
+    });
+
+    test('does not log the raw header string', () async {
+      // The per-header loop redacted the Authorization value, but the line
+      // above it logged the whole raw env var, which undid that.
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_header_logging.dart',
+        {
+          'OTEL_EXPORTER_OTLP_HEADERS':
+              'authorization=Bearer s3cr3t-token-value,x-api=notasecret',
+        },
+      );
+      final lines = (jsonDecode(output.trim()) as List).cast<String>();
+
+      expect(lines, isNotEmpty);
+      expect(lines.any((l) => l.contains('s3cr3t-token-value')), isFalse);
+      expect(lines.any((l) => l.contains('REDACTED')), isTrue);
+      expect(lines.any((l) => l.contains('x-api')), isTrue);
+    });
+
+    test('redacts every header value when no allowlist is configured',
+        () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_header_allowlist_logging.dart',
+        {
+          'OTEL_EXPORTER_OTLP_HEADERS':
+              'authorization=Bearer s3cr3t,x-api-key=key-value,x-trace-id=t-1',
+        },
+      );
+      final lines = (jsonDecode(output.trim()) as List).cast<String>();
+
+      expect(lines.any((l) => l.contains('s3cr3t')), isFalse);
+      expect(lines.any((l) => l.contains('key-value')), isFalse);
+      expect(lines.any((l) => l.contains('t-1')), isFalse);
+      expect(lines, anyElement(contains('x-api-key: [REDACTED]')));
+      expect(lines, anyElement(contains('OTelEnv: Parsed 3 header(s)')));
+    });
+
+    test('logs the value of an allowlisted header only', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_header_allowlist_logging.dart',
+        {
+          'OTEL_EXPORTER_OTLP_HEADERS':
+              'authorization=Bearer s3cr3t,x-api-key=key-value,x-trace-id=t-1',
+          'OTEL_DART_HEADER_LOG_ALLOWLIST': 'x-trace-id',
+        },
+      );
+      final lines = (jsonDecode(output.trim()) as List).cast<String>();
+
+      expect(lines, anyElement(contains('x-trace-id: t-1')));
+      expect(lines, anyElement(contains('x-api-key: [REDACTED]')));
+      expect(lines, anyElement(contains('authorization: [REDACTED]')));
+      expect(lines.any((l) => l.contains('s3cr3t')), isFalse);
+    });
+
+    test('authorization stays redacted even when the env var names it',
+        () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_header_allowlist_logging.dart',
+        {
+          'OTEL_EXPORTER_OTLP_HEADERS': 'authorization=Bearer s3cr3t',
+          'OTEL_DART_HEADER_LOG_ALLOWLIST': 'authorization',
+        },
+      );
+      final lines = (jsonDecode(output.trim()) as List).cast<String>();
+
+      expect(lines.any((l) => l.contains('s3cr3t')), isFalse);
+      expect(lines, anyElement(contains('authorization: [REDACTED]')));
+    });
+
+    test('an explicit allowlist replaces the environment variable', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_header_allowlist_logging.dart',
+        {
+          'OTEL_EXPORTER_OTLP_HEADERS': 'x-api-key=key-value,x-trace-id=t-1',
+          'OTEL_DART_HEADER_LOG_ALLOWLIST': 'x-api-key',
+        },
+        args: ['x-trace-id'],
+      );
+      final lines = (jsonDecode(output.trim()) as List).cast<String>();
+
+      expect(lines, anyElement(contains('x-trace-id: t-1')));
+      expect(lines, anyElement(contains('x-api-key: [REDACTED]')));
     });
 
     test('handles header with no equals sign', () async {
@@ -1031,7 +1088,12 @@ void main() {
 
     test('EnvVarResourceDetector returns empty resource when no env var set',
         () async {
-      // The default env in tests typically has no OTEL_RESOURCE_ATTRIBUTES
+      // Pin an empty environment rather than assuming the ambient one has no
+      // OTEL_RESOURCE_ATTRIBUTES. This runs in-process, so an exported
+      // OTEL_RESOURCE_ATTRIBUTES would otherwise fail it locally while CI,
+      // which has a clean environment, stayed green.
+      EnvironmentService.testOverrides = {};
+      addTearDown(() => EnvironmentService.testOverrides = null);
       final detector = EnvVarResourceDetector();
       final resource = await detector.detect();
       expect(resource.attributes.isEmpty, isTrue);

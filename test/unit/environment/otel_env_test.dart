@@ -2,37 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:test/test.dart';
 
-/// Runs a Dart script in a subprocess with specific environment variables set.
-///
-/// Returns the stdout output as a string.
-/// This is the only reliable way to test code that reads from
-/// Platform.environment, since Platform.environment is an unmodifiable map.
-Future<String> runWithEnv(
-  String scriptPath,
-  Map<String, String> envVars,
-) async {
-  final env = Map<String, String>.from(Platform.environment);
-  env.addAll(envVars);
-  final result = await Process.run(
-    Platform.executable,
-    ['run', scriptPath],
-    environment: env,
-    workingDirectory: Directory.current.path,
-  );
-  if (result.exitCode != 0) {
-    throw Exception(
-      'Script failed with exit code ${result.exitCode}:\n'
-      'stdout: ${result.stdout}\n'
-      'stderr: ${result.stderr}',
-    );
-  }
-  return result.stdout as String;
-}
+import 'helpers/subprocess_env.dart';
 
 void main() {
   group('OTelEnv', () {

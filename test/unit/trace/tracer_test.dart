@@ -4,6 +4,8 @@
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:test/test.dart';
 
+import '../../testing_utils/in_memory_span_exporter.dart';
+
 void main() {
   group('Tracer', () {
     late TracerProvider tracerProvider;
@@ -24,6 +26,21 @@ void main() {
     test('has correct properties', () {
       expect(tracer.name, equals('test-tracer'));
       expect(tracer.enabled, isTrue);
+    });
+
+    test('enabled is false when no span processors are registered', () {
+      final bareProvider = OTel.addTracerProvider('bare-provider');
+      final bareTracer = bareProvider.getTracer('bare-tracer');
+
+      expect(bareTracer.enabled, isFalse);
+
+      final exporter = InMemorySpanExporter();
+      final processor = SimpleSpanProcessor(exporter);
+      bareProvider.addSpanProcessor(processor);
+
+      expect(bareTracer.enabled, isTrue);
+
+      bareProvider.shutdown();
     });
 
     test('creates spans correctly', () {

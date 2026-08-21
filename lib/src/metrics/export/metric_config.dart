@@ -29,8 +29,12 @@ class MetricsConfiguration {
   ///
   /// An explicit [metricExporter] or [metricReader] always wins over the
   /// env-var selection so programmatic configuration is unsurprising.
+  ///
+  /// When [endpoint] is null (or unset), the exporter default depends on the
+  /// resolved protocol (issue #220): `OTel.defaultGrpcEndpoint` for gRPC,
+  /// `OTel.defaultEndpoint` for the HTTP protocols.
   static MeterProvider configureMeterProvider({
-    String endpoint = 'http://localhost:4318',
+    String? endpoint,
     bool secure = false,
     MetricExporter? metricExporter,
     MetricReader? metricReader,
@@ -121,7 +125,7 @@ class MetricsConfiguration {
   /// Returns null for unknown values.
   static MetricExporter? _createExporter(
     String exporterType,
-    String endpoint,
+    String? endpoint,
     bool secure,
   ) {
     if (exporterType == 'console') {
@@ -140,12 +144,16 @@ class MetricsConfiguration {
 
     final otlpConfig = OTelEnv.getOtlpConfig(signal: 'metrics');
     final protocol = otlpConfig['protocol'] as String? ?? 'http/protobuf';
+    // The default endpoint depends on the protocol (issue #220): OTLP/gRPC
+    // uses port 4317, the HTTP protocols use port 4318.
+    final effectiveEndpoint = endpoint ??
+        (protocol == 'grpc' ? OTel.defaultGrpcEndpoint : OTel.defaultEndpoint);
     // Parity with logs_config: honor OTEL_EXPORTER_OTLP_METRICS_INSECURE
     // (previously parsed and dropped) and the endpoint scheme per the
     // OTLP spec, falling back to the resolved global setting.
     final effectiveSecure = OTelEnv.resolveOtlpSecure(
       envInsecure: otlpConfig['insecure'] as bool?,
-      endpoint: endpoint,
+      endpoint: effectiveEndpoint,
       fallback: secure,
     );
     final headers = otlpConfig['headers'] as Map<String, String>? ?? const {};
@@ -159,11 +167,11 @@ class MetricsConfiguration {
     if (protocol == 'grpc') {
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-            'MetricsConfiguration: Creating OtlpGrpcMetricExporter for $endpoint');
+            'MetricsConfiguration: Creating OtlpGrpcMetricExporter for $effectiveEndpoint');
       }
       return OtlpGrpcMetricExporter(
         OtlpGrpcMetricExporterConfig(
-          endpoint: endpoint,
+          endpoint: effectiveEndpoint,
           insecure: !effectiveSecure,
           headers: headers,
           timeoutMillis: timeout.inMilliseconds,
@@ -177,11 +185,11 @@ class MetricsConfiguration {
 
     if (OTelLog.isDebug()) {
       OTelLog.debug(
-          'MetricsConfiguration: Creating OtlpHttpMetricExporter for $endpoint');
+          'MetricsConfiguration: Creating OtlpHttpMetricExporter for $effectiveEndpoint');
     }
     return OtlpHttpMetricExporter(
       OtlpHttpMetricExporterConfig(
-        endpoint: endpoint,
+        endpoint: effectiveEndpoint,
         headers: headers,
         timeout: timeout,
         compression: compression,
