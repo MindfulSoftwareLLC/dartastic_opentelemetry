@@ -10,8 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-### Added
-
 - `TracerProvider.hasSpanProcessors` — allocation-free check for registered
   span processors.
 

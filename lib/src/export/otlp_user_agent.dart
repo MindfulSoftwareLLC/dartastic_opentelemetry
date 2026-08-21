@@ -12,8 +12,8 @@
 /// user-supplied map.
 library;
 
-/// Hand-synced with the package version in pubspec.yaml.
-const String packageVersion = '1.1.0-beta.14-wip';
+import '../version.dart';
 
-/// The default User-Agent value, e.g. `OTel-OTLP-Exporter-Dart/1.1.0-beta.14-wip`.
+/// The default User-Agent value, e.g. `OTel-OTLP-Exporter-Dart/1.1.0-beta.14`.
+/// The version is [packageVersion], stamped by the release tooling (#249).
 const String otlpUserAgent = 'OTel-OTLP-Exporter-Dart/$packageVersion';
