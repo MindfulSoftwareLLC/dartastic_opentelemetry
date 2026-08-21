@@ -127,10 +127,9 @@ void main() {
       final getter = TestTextMapGetter(carrier);
 
       final extractedContext = propagator.extract(context, carrier, getter);
-      final extractedBaggage = extractedContext.baggage;
 
-      expect(extractedBaggage, isA<Baggage>());
-      expect(extractedBaggage!.getAllEntries(), isEmpty);
+      expect(extractedContext, same(context));
+      expect(extractedContext.baggage, isNull);
     });
 
     test('unparseable baggage header preserves existing baggage', () {
