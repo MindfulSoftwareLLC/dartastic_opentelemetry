@@ -29,14 +29,15 @@ class LogsConfiguration {
   /// - A processor (BatchLogRecordProcessor with BLRP env var config)
   /// - Sets up resources on the LoggerProvider
   ///
-  /// @param endpoint The endpoint URL for the exporter
+  /// @param endpoint The endpoint URL for the exporter (null to use the
+  ///   protocol-dependent default, issue #220)
   /// @param secure Whether to use TLS for gRPC connections
   /// @param logRecordExporter Optional custom exporter (overrides env var)
   /// @param logRecordProcessor Optional custom processor (overrides env var)
   /// @param resource Optional resource for the LoggerProvider
   /// @return The configured LoggerProvider
   static LoggerProvider configureLoggerProvider({
-    String endpoint = 'http://localhost:4318',
+    String? endpoint,
     bool secure = false,
     LogRecordExporter? logRecordExporter,
     LogRecordProcessor? logRecordProcessor,
@@ -119,14 +120,19 @@ class LogsConfiguration {
   /// Creates a log record exporter based on the exporter type.
   static LogRecordExporter? _createExporter(
     String exporterType,
-    String endpoint,
+    String? endpoint,
     bool secure,
   ) {
     // Get OTLP config for logs signal
     final otlpConfig = OTelEnv.getOtlpConfig(signal: 'logs');
+    final protocol = otlpConfig['protocol'] as String? ?? 'http/protobuf';
 
-    // Use env endpoint if available, otherwise use provided endpoint
-    final effectiveEndpoint = otlpConfig['endpoint'] as String? ?? endpoint;
+    // Use env endpoint if available, otherwise use provided endpoint. The
+    // default endpoint depends on the protocol (issue #220): OTLP/gRPC uses
+    // port 4317, the HTTP protocols use port 4318.
+    final effectiveEndpoint = otlpConfig['endpoint'] as String? ??
+        endpoint ??
+        (protocol == 'grpc' ? OTel.defaultGrpcEndpoint : OTel.defaultEndpoint);
     final envInsecure = otlpConfig['insecure'] as bool?;
     final effectiveSecure = OTelEnv.resolveOtlpSecure(
       envInsecure: envInsecure,
@@ -142,9 +148,6 @@ class LogsConfiguration {
     }
 
     if (exporterType == 'otlp') {
-      // Determine protocol - default to http/protobuf
-      final protocol = otlpConfig['protocol'] as String? ?? 'http/protobuf';
-
       if (protocol == 'grpc') {
         if (OTelLog.isDebug()) {
           OTelLog.debug(

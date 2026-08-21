@@ -72,9 +72,18 @@ class OTel {
   /// Default OTEL endpoint.
   ///
   /// Defaults to the OTLP/HTTP port (4318) since http/protobuf is the default
-  /// protocol per the OpenTelemetry specification. When using gRPC, override
-  /// this with port 4317.
+  /// protocol per the OpenTelemetry specification. When using gRPC, this is
+  /// replaced by [defaultGrpcEndpoint] (port 4317).
   static const defaultEndpoint = 'http://localhost:4318';
+
+  /// Default OTLP/gRPC endpoint.
+  ///
+  /// Per the OpenTelemetry specification
+  /// (specification/protocol/exporter.md#configuration-options), the default
+  /// endpoint is `http://localhost:4317` for OTLP/gRPC and
+  /// `http://localhost:4318` for the two HTTP protocols. The endpoint default
+  /// is picked per signal after the protocol is resolved (issue #220).
+  static const defaultGrpcEndpoint = 'http://localhost:4317';
 
   /// Default tracer name used if none is provided.
   static const String _defaultTracerName = 'dartastic';
@@ -177,10 +186,13 @@ class OTel {
       endpoint: endpoint,
     );
 
-    // Apply defaults if still null
+    // Apply defaults if still null. The endpoint stays nullable here and is
+    // resolved per signal after the protocol is known (issue #220): the OTLP
+    // spec default is http://localhost:4317 for gRPC and http://localhost:4318
+    // for the HTTP protocols, so a single 4318 default must not be applied
+    // before the protocol is resolved.
     serviceName ??= defaultServiceName;
     serviceVersion ??= '1.0.0';
-    endpoint ??= defaultEndpoint;
     // secure is guaranteed non-null from above
 
     // Log environment variable usage
@@ -234,7 +246,7 @@ class OTel {
       );
     }
 
-    if (endpoint.isEmpty) {
+    if (endpoint != null && endpoint.isEmpty) {
       throw ArgumentError(
         'endpoint must not be the empty string.',
       ); //TODO validate url
@@ -257,7 +269,7 @@ class OTel {
     initializeLogging();
 
     final createdFactory = factoryFactory(
-      apiEndpoint: endpoint,
+      apiEndpoint: endpoint ?? defaultEndpoint,
       apiServiceName: serviceName,
       apiServiceVersion: serviceVersion,
     );
@@ -274,8 +286,12 @@ class OTel {
     _installGlobalPropagator();
 
     if (OTelLog.isDebug()) {
+      final traceProtocol =
+          otlpConfigForExporter['protocol'] as String? ?? 'http/protobuf';
       OTelLog.debug(
-        'OTel initialized with endpoint: $endpoint, service: $serviceName',
+        'OTel initialized with endpoint: '
+        '${endpoint ?? (traceProtocol == 'grpc' ? defaultGrpcEndpoint : defaultEndpoint)}, '
+        'service: $serviceName',
       );
     }
 
@@ -347,9 +363,19 @@ class OTel {
             otlpConfigForExporter['protocol'] as String? ?? 'http/protobuf';
 
         // Capture the resolved values: promotion of the nullable
-        // parameters does not carry into the closure.
-        final resolvedEndpoint = endpoint;
-        final resolvedSecure = secure;
+        // parameters does not carry into the closure. The endpoint default is
+        // protocol-dependent (issue #220): gRPC uses port 4317, the HTTP
+        // protocols use port 4318. The secure setting is likewise re-resolved
+        // against the resolved endpoint so an http:// scheme (including the
+        // gRPC default http://localhost:4317) yields an insecure connection,
+        // matching the metrics/logs paths.
+        final resolvedEndpoint = endpoint ??
+            (protocol == 'grpc' ? defaultGrpcEndpoint : defaultEndpoint);
+        final resolvedSecure = OTelEnv.resolveOtlpSecure(
+          envInsecure: otlpConfigForExporter['insecure'] as bool?,
+          endpoint: resolvedEndpoint,
+          fallback: secure,
+        );
         SpanExporter buildOtlpExporter() {
           // Create appropriate exporter based on protocol
           if (protocol == 'grpc') {

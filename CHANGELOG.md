@@ -13,11 +13,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `TracerProvider.hasSpanProcessors` — allocation-free check for registered
   span processors.
 
+- **OTLP exporters send an identifying `User-Agent` header.** Per the OTLP
+  spec, OTLP requests SHOULD identify the exporter, language, and version.
+  Every OTLP request now carries `OTel-OTLP-Exporter-Dart/<version>` (HTTP
+  headers on the HTTP exporters; `ChannelOptions.userAgent` on the gRPC
+  exporters). A user-supplied `user-agent` header is prepended to the default
+  rather than replacing it (#228).
+
+- **`OTel.defaultGrpcEndpoint`** (`http://localhost:4317`), the OTLP/gRPC
+  default endpoint. The endpoint default is now picked per signal after the
+  protocol is resolved instead of defaulting everything to the HTTP port
+  4318 (#220).
+
 ### Fixed
 
 - `Tracer.enabled` now returns `false` when `TracerProvider` has no span
   processor(s) registered, per the Trace SDK spec, sparing span-creation cost
   when nothing is listening. Thanks to @abidiahmedcom (#138, #175).
+
+- **OTLP/gRPC exporters now default to port 4317, not 4318.** The OTLP spec
+  defaults the endpoint to `http://localhost:4317` for OTLP/gRPC and
+  `http://localhost:4318` for the two HTTP protocols. Previously a single
+  4318 default was applied before the protocol was known, so gRPC-only
+  deployments silently exported to the wrong port (#220).
+
+- **An empty environment variable value is treated as unset.** Per the spec,
+  an empty value of an environment variable MUST be interpreted the same way
+  as when the variable is unset. `EnvironmentService.getValue` now normalizes
+  empty strings to `null`, so every consumer (endpoint, protocol, service
+  name, log level, …) reads an empty value as unset (#213).
+
+Thanks to @abidiahmedcom; reported by @yuzurihaaa (#213, #220, #228).
 
 ## [1.1.0-beta.13] - 2026-08-13
 

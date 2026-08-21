@@ -7,6 +7,7 @@ import 'package:grpc/grpc.dart';
 
 import '../../../../dartastic_opentelemetry.dart';
 import '../../../../proto/collector/metrics/v1/metrics_service.pbgrpc.dart';
+import '../../../export/otlp_user_agent.dart';
 import '../../../trace/export/otlp/certificate_utils_io.dart';
 import 'metric_transformer.dart';
 
@@ -72,6 +73,7 @@ class OtlpGrpcMetricExporter implements MetricExporter {
   ) {
     final channelOptions = ChannelOptions(
       credentials: _createChannelCredentials(config),
+      userAgent: otlpUserAgent,
       codecRegistry: CodecRegistry(codecs: const [GzipCodec()]),
     );
 
