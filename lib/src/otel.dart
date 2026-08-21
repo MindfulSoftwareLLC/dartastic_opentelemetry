@@ -160,6 +160,10 @@ class OTel {
   }) async {
     // Has to run before anything logs OTLP headers.
     OTelEnv.applyHeaderLogAllowlist(otlpHeaderLogAllowlist);
+    // Apply OTEL_LOG_LEVEL before the env parsing below emits its debug
+    // output — otherwise an env-configured debug level misses exactly the
+    // lines that diagnose env configuration.
+    initializeLogging();
 
     // Apply environment variables only if parameters are not provided
     final envServiceName = serviceName == null
@@ -277,8 +281,6 @@ class OTel {
     _defaultTimeProvider = timeProvider;
     OTel.defaultTracerName = tracerName ?? _defaultTracerName;
     OTel.defaultTracerVersion = tracerVersion ?? defaultTracerVersion;
-    // Initialize logging from environment variables if needed
-    initializeLogging();
 
     final createdFactory = factoryFactory(
       apiEndpoint: endpoint ?? defaultEndpoint,
