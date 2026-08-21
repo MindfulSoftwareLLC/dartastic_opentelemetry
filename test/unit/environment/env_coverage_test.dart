@@ -56,7 +56,7 @@ void main() {
         'test/unit/environment/helpers/check_bsp_from_env.dart',
         {},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['scheduleDelay_ms'], equals(5000));
       expect(result['exportTimeout_ms'], equals(30000));
       expect(result['maxQueueSize'], equals(2048));
@@ -69,7 +69,7 @@ void main() {
         'test/unit/environment/helpers/check_bsp_from_env.dart',
         {'OTEL_BSP_SCHEDULE_DELAY': '0'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['scheduleDelay_ms'], equals(0));
       expect(result['logs'], isEmpty);
     });
@@ -79,7 +79,7 @@ void main() {
         'test/unit/environment/helpers/check_bsp_from_env.dart',
         {'OTEL_BSP_SCHEDULE_DELAY': '-1'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['scheduleDelay_ms'], equals(5000));
       final logs = result['logs'] as List<dynamic>;
       expect(logs.length, equals(1));
@@ -91,7 +91,7 @@ void main() {
         'test/unit/environment/helpers/check_bsp_from_env.dart',
         {'OTEL_BSP_EXPORT_TIMEOUT': '0'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['exportTimeout_ms'], equals(0x7FFFFFFF));
       expect(result['logs'], isEmpty);
     });
@@ -101,7 +101,7 @@ void main() {
         'test/unit/environment/helpers/check_bsp_from_env.dart',
         {'OTEL_BSP_EXPORT_TIMEOUT': '-1'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['exportTimeout_ms'], equals(30000));
       final logs = result['logs'] as List<dynamic>;
       expect(logs.length, equals(1));
@@ -116,7 +116,7 @@ void main() {
           'OTEL_BSP_MAX_EXPORT_BATCH_SIZE': '200',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['maxQueueSize'], equals(100));
       expect(result['maxExportBatchSize'], equals(100));
       expect(result['logs'], isEmpty);
@@ -127,7 +127,7 @@ void main() {
         'test/unit/environment/helpers/check_bsp_from_env.dart',
         {'OTEL_BSP_MAX_QUEUE_SIZE': '-5'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['maxQueueSize'], equals(2048));
       final logs = result['logs'] as List<dynamic>;
       expect(logs.length, equals(1));
@@ -144,7 +144,7 @@ void main() {
         'test/unit/environment/helpers/check_bsp_config.dart',
         {'OTEL_BSP_SCHEDULE_DELAY': '2000'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['scheduleDelay_ms'], equals(2000));
     });
 
@@ -153,7 +153,7 @@ void main() {
         'test/unit/environment/helpers/check_bsp_config.dart',
         {'OTEL_BSP_EXPORT_TIMEOUT': '30000'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['exportTimeout_ms'], equals(30000));
     });
 
@@ -162,7 +162,7 @@ void main() {
         'test/unit/environment/helpers/check_bsp_config.dart',
         {'OTEL_BSP_MAX_QUEUE_SIZE': '4096'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['maxQueueSize'], equals(4096));
     });
 
@@ -171,7 +171,7 @@ void main() {
         'test/unit/environment/helpers/check_bsp_config.dart',
         {'OTEL_BSP_MAX_EXPORT_BATCH_SIZE': '1024'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['maxExportBatchSize'], equals(1024));
     });
 
@@ -180,7 +180,7 @@ void main() {
         'test/unit/environment/helpers/check_bsp_config.dart',
         {'OTEL_BSP_SCHEDULE_DELAY': 'not-a-number'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result.containsKey('scheduleDelay_ms'), isFalse);
     });
 
@@ -189,7 +189,7 @@ void main() {
         'test/unit/environment/helpers/check_bsp_config.dart',
         {'OTEL_BSP_EXPORT_TIMEOUT': 'abc'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result.containsKey('exportTimeout_ms'), isFalse);
     });
 
@@ -198,7 +198,7 @@ void main() {
         'test/unit/environment/helpers/check_bsp_config.dart',
         {'OTEL_BSP_MAX_QUEUE_SIZE': 'xyz'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result.containsKey('maxQueueSize'), isFalse);
     });
 
@@ -207,7 +207,7 @@ void main() {
         'test/unit/environment/helpers/check_bsp_config.dart',
         {'OTEL_BSP_MAX_EXPORT_BATCH_SIZE': 'foo'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result.containsKey('maxExportBatchSize'), isFalse);
     });
 
@@ -216,7 +216,7 @@ void main() {
         'test/unit/environment/helpers/check_bsp_config.dart',
         {},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result, isEmpty);
     });
   });
@@ -230,7 +230,7 @@ void main() {
         'test/unit/environment/helpers/check_blrp_config.dart',
         {'OTEL_BLRP_SCHEDULE_DELAY': '2000'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['scheduleDelay_ms'], equals(2000));
     });
 
@@ -239,7 +239,7 @@ void main() {
         'test/unit/environment/helpers/check_blrp_config.dart',
         {'OTEL_BLRP_EXPORT_TIMEOUT': '30000'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['exportTimeout_ms'], equals(30000));
     });
 
@@ -248,7 +248,7 @@ void main() {
         'test/unit/environment/helpers/check_blrp_config.dart',
         {'OTEL_BLRP_MAX_QUEUE_SIZE': '4096'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['maxQueueSize'], equals(4096));
     });
 
@@ -257,7 +257,7 @@ void main() {
         'test/unit/environment/helpers/check_blrp_config.dart',
         {'OTEL_BLRP_MAX_EXPORT_BATCH_SIZE': '1024'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['maxExportBatchSize'], equals(1024));
     });
 
@@ -271,7 +271,7 @@ void main() {
           'OTEL_BLRP_MAX_EXPORT_BATCH_SIZE': '512',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['scheduleDelay_ms'], equals(1000));
       expect(result['exportTimeout_ms'], equals(5000));
       expect(result['maxQueueSize'], equals(2048));
@@ -283,7 +283,7 @@ void main() {
         'test/unit/environment/helpers/check_blrp_config.dart',
         {'OTEL_BLRP_SCHEDULE_DELAY': 'not-a-number'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result.containsKey('scheduleDelay_ms'), isFalse);
     });
 
@@ -292,7 +292,7 @@ void main() {
         'test/unit/environment/helpers/check_blrp_config.dart',
         {'OTEL_BLRP_EXPORT_TIMEOUT': 'abc'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result.containsKey('exportTimeout_ms'), isFalse);
     });
 
@@ -301,7 +301,7 @@ void main() {
         'test/unit/environment/helpers/check_blrp_config.dart',
         {'OTEL_BLRP_MAX_QUEUE_SIZE': 'xyz'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result.containsKey('maxQueueSize'), isFalse);
     });
 
@@ -310,7 +310,7 @@ void main() {
         'test/unit/environment/helpers/check_blrp_config.dart',
         {'OTEL_BLRP_MAX_EXPORT_BATCH_SIZE': 'foo'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result.containsKey('maxExportBatchSize'), isFalse);
     });
 
@@ -319,7 +319,7 @@ void main() {
         'test/unit/environment/helpers/check_blrp_config.dart',
         {'OTEL_BLRP_SCHEDULE_DELAY': '0'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['scheduleDelay_ms'], equals(0));
     });
 
@@ -328,7 +328,7 @@ void main() {
         'test/unit/environment/helpers/check_blrp_config.dart',
         {'OTEL_BLRP_EXPORT_TIMEOUT': '0'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['exportTimeout_ms'], equals(0));
     });
 
@@ -337,7 +337,7 @@ void main() {
         'test/unit/environment/helpers/check_blrp_config.dart',
         {'OTEL_BLRP_EXPORT_TIMEOUT': '-1'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result.containsKey('exportTimeout_ms'), isFalse);
     });
 
@@ -347,7 +347,7 @@ void main() {
         'test/unit/environment/helpers/check_blrp_config.dart',
         {'OTEL_BLRP_MAX_QUEUE_SIZE': '0'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       // 0 is now accepted by OTelEnv (just type-checked); domain validation
       // (> 0) belongs in BatchLogRecordProcessorConfig.fromEnvironment().
       expect(result['maxQueueSize'], equals(0));
@@ -358,7 +358,7 @@ void main() {
         'test/unit/environment/helpers/check_blrp_config.dart',
         {'OTEL_BLRP_MAX_QUEUE_SIZE': '-1'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result.containsKey('maxQueueSize'), isFalse);
     });
 
@@ -367,7 +367,7 @@ void main() {
         'test/unit/environment/helpers/check_blrp_config.dart',
         {'OTEL_BLRP_MAX_EXPORT_BATCH_SIZE': '-10'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result.containsKey('maxExportBatchSize'), isFalse);
     });
 
@@ -380,7 +380,7 @@ void main() {
           'OTEL_BLRP_MAX_EXPORT_BATCH_SIZE': '200',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['maxQueueSize'], equals(100));
       expect(result['maxExportBatchSize'], equals(200));
     });
@@ -390,7 +390,7 @@ void main() {
         'test/unit/environment/helpers/check_blrp_config.dart',
         {},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result, isEmpty);
     });
   });
@@ -404,7 +404,7 @@ void main() {
         'test/unit/environment/helpers/check_logrecord_limits.dart',
         {'OTEL_LOGRECORD_ATTRIBUTE_VALUE_LENGTH_LIMIT': '256'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['attributeValueLengthLimit'], equals(256));
     });
 
@@ -413,7 +413,7 @@ void main() {
         'test/unit/environment/helpers/check_logrecord_limits.dart',
         {'OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT': '64'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['attributeCountLimit'], equals(64));
     });
 
@@ -425,7 +425,7 @@ void main() {
           'OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT': '128',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['attributeValueLengthLimit'], equals(512));
       expect(result['attributeCountLimit'], equals(128));
     });
@@ -435,7 +435,7 @@ void main() {
         'test/unit/environment/helpers/check_logrecord_limits.dart',
         {'OTEL_LOGRECORD_ATTRIBUTE_VALUE_LENGTH_LIMIT': 'not-a-number'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result.containsKey('attributeValueLengthLimit'), isFalse);
     });
 
@@ -444,7 +444,7 @@ void main() {
         'test/unit/environment/helpers/check_logrecord_limits.dart',
         {'OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT': 'bad'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result.containsKey('attributeCountLimit'), isFalse);
     });
 
@@ -453,7 +453,7 @@ void main() {
         'test/unit/environment/helpers/check_logrecord_limits.dart',
         {},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result, isEmpty);
     });
   });
@@ -467,7 +467,7 @@ void main() {
         'test/unit/environment/helpers/check_parse_headers.dart',
         {'OTEL_EXPORTER_OTLP_HEADERS': 'key='},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       // "key=" has equalIndex at position 3, but equalIndex < pair.length - 1
       // is false (3 < 3 is false), so it should be skipped
       expect(result.containsKey('key'), isFalse);
@@ -483,7 +483,7 @@ void main() {
               'authorization=Bearer s3cr3t-token-value,x-api=notasecret',
         },
       );
-      final lines = (jsonDecode(output.trim()) as List).cast<String>();
+      final lines = (jsonDecode(output.trim().split('\n').last.trim()) as List).cast<String>();
 
       expect(lines, isNotEmpty);
       expect(lines.any((l) => l.contains('s3cr3t-token-value')), isFalse);
@@ -500,7 +500,7 @@ void main() {
               'authorization=Bearer s3cr3t,x-api-key=key-value,x-trace-id=t-1',
         },
       );
-      final lines = (jsonDecode(output.trim()) as List).cast<String>();
+      final lines = (jsonDecode(output.trim().split('\n').last.trim()) as List).cast<String>();
 
       expect(lines.any((l) => l.contains('s3cr3t')), isFalse);
       expect(lines.any((l) => l.contains('key-value')), isFalse);
@@ -518,7 +518,7 @@ void main() {
           'OTEL_DART_HEADER_LOG_ALLOWLIST': 'x-trace-id',
         },
       );
-      final lines = (jsonDecode(output.trim()) as List).cast<String>();
+      final lines = (jsonDecode(output.trim().split('\n').last.trim()) as List).cast<String>();
 
       expect(lines, anyElement(contains('x-trace-id: t-1')));
       expect(lines, anyElement(contains('x-api-key: [REDACTED]')));
@@ -535,7 +535,7 @@ void main() {
           'OTEL_DART_HEADER_LOG_ALLOWLIST': 'authorization',
         },
       );
-      final lines = (jsonDecode(output.trim()) as List).cast<String>();
+      final lines = (jsonDecode(output.trim().split('\n').last.trim()) as List).cast<String>();
 
       expect(lines.any((l) => l.contains('s3cr3t')), isFalse);
       expect(lines, anyElement(contains('authorization: [REDACTED]')));
@@ -550,7 +550,7 @@ void main() {
         },
         args: ['x-trace-id'],
       );
-      final lines = (jsonDecode(output.trim()) as List).cast<String>();
+      final lines = (jsonDecode(output.trim().split('\n').last.trim()) as List).cast<String>();
 
       expect(lines, anyElement(contains('x-trace-id: t-1')));
       expect(lines, anyElement(contains('x-api-key: [REDACTED]')));
@@ -561,7 +561,7 @@ void main() {
         'test/unit/environment/helpers/check_parse_headers.dart',
         {'OTEL_EXPORTER_OTLP_HEADERS': 'noequalssign'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result, isEmpty);
     });
 
@@ -570,7 +570,7 @@ void main() {
         'test/unit/environment/helpers/check_parse_headers.dart',
         {'OTEL_EXPORTER_OTLP_HEADERS': '=value'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       // equalIndex is 0, which is not > 0, so it should be skipped
       expect(result, isEmpty);
     });
@@ -583,7 +583,7 @@ void main() {
               'authorization=Basic dXNlcjpwYXNz==,x-api=val',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['authorization'], equals('Basic dXNlcjpwYXNz=='));
       expect(result['x-api'], equals('val'));
     });
@@ -593,7 +593,7 @@ void main() {
         'test/unit/environment/helpers/check_parse_headers.dart',
         {'OTEL_EXPORTER_OTLP_HEADERS': ' key1 = value1 , key2 = value2 '},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['key1'], equals('value1'));
       expect(result['key2'], equals('value2'));
     });
@@ -603,7 +603,7 @@ void main() {
         'test/unit/environment/helpers/check_parse_headers.dart',
         {'OTEL_EXPORTER_OTLP_HEADERS': 'single=header'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['single'], equals('header'));
     });
 
@@ -612,7 +612,7 @@ void main() {
         'test/unit/environment/helpers/check_parse_headers.dart',
         {'OTEL_EXPORTER_OTLP_HEADERS': 'good=val,bad,=nokey,also-good=yes'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['good'], equals('val'));
       expect(result['also-good'], equals('yes'));
       expect(result.containsKey('bad'), isFalse);
@@ -634,7 +634,7 @@ void main() {
           'CHECK_SIGNAL': 'metrics',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['insecure'], isTrue);
     });
 
@@ -647,7 +647,7 @@ void main() {
           'CHECK_SIGNAL': 'logs',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['insecure'], isFalse);
     });
 
@@ -660,7 +660,7 @@ void main() {
           'CHECK_SIGNAL': 'metrics',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['protocol'], equals('http/protobuf'));
     });
 
@@ -673,7 +673,7 @@ void main() {
           'CHECK_SIGNAL': 'logs',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['protocol'], equals('http/json'));
     });
 
@@ -686,7 +686,7 @@ void main() {
           'CHECK_SIGNAL': 'metrics',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['timeout_ms'], equals(5000));
     });
 
@@ -699,7 +699,7 @@ void main() {
           'CHECK_SIGNAL': 'logs',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['timeout_ms'], equals(8000));
     });
 
@@ -712,7 +712,7 @@ void main() {
           'CHECK_SIGNAL': 'metrics',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['compression'], equals('gzip'));
     });
 
@@ -725,7 +725,7 @@ void main() {
           'CHECK_SIGNAL': 'metrics',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['certificate'], equals('/metrics/cert.pem'));
     });
 
@@ -738,7 +738,7 @@ void main() {
           'CHECK_SIGNAL': 'logs',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['certificate'], equals('/logs/cert.pem'));
     });
 
@@ -751,7 +751,7 @@ void main() {
           'CHECK_SIGNAL': 'metrics',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['clientKey'], equals('/metrics/key.pem'));
     });
 
@@ -764,7 +764,7 @@ void main() {
           'CHECK_SIGNAL': 'logs',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['clientKey'], equals('/logs/key.pem'));
     });
 
@@ -778,7 +778,7 @@ void main() {
           'CHECK_SIGNAL': 'metrics',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['clientCertificate'], equals('/metrics/client.pem'));
     });
 
@@ -798,7 +798,7 @@ void main() {
           'CHECK_SIGNAL': 'metrics',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['endpoint'], equals('http://metrics:4318'));
       expect(result['protocol'], equals('http/protobuf'));
       expect(result['insecure'], isTrue);
@@ -827,7 +827,7 @@ void main() {
           'CHECK_SIGNAL': 'logs',
         },
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['endpoint'], equals('http://logs:4318'));
       expect(result['protocol'], equals('http/json'));
       expect(result['insecure'], isFalse);
@@ -846,31 +846,31 @@ void main() {
   // (tested indirectly through insecure settings)
   // =========================================================================
   group('OTelEnv._getEnvBoolNullable edge cases (subprocess)', () {
-    test('insecure "1" is true', () async {
+    test('insecure "1" is false', () async {
       final output = await runWithEnv(
         'test/unit/environment/helpers/check_otlp_config.dart',
         {'OTEL_EXPORTER_OTLP_INSECURE': '1'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
-      expect(result['insecure'], isTrue);
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
+      expect(result['insecure'], isFalse);
     });
 
-    test('insecure "yes" is true', () async {
+    test('insecure "yes" is false', () async {
       final output = await runWithEnv(
         'test/unit/environment/helpers/check_otlp_config.dart',
         {'OTEL_EXPORTER_OTLP_INSECURE': 'yes'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
-      expect(result['insecure'], isTrue);
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
+      expect(result['insecure'], isFalse);
     });
 
-    test('insecure "on" is true', () async {
+    test('insecure "on" is false', () async {
       final output = await runWithEnv(
         'test/unit/environment/helpers/check_otlp_config.dart',
         {'OTEL_EXPORTER_OTLP_INSECURE': 'on'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
-      expect(result['insecure'], isTrue);
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
+      expect(result['insecure'], isFalse);
     });
 
     test('insecure "0" is false', () async {
@@ -878,7 +878,7 @@ void main() {
         'test/unit/environment/helpers/check_otlp_config.dart',
         {'OTEL_EXPORTER_OTLP_INSECURE': '0'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['insecure'], isFalse);
     });
 
@@ -887,7 +887,7 @@ void main() {
         'test/unit/environment/helpers/check_otlp_config.dart',
         {'OTEL_EXPORTER_OTLP_INSECURE': 'no'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['insecure'], isFalse);
     });
 
@@ -896,7 +896,7 @@ void main() {
         'test/unit/environment/helpers/check_otlp_config.dart',
         {'OTEL_EXPORTER_OTLP_INSECURE': 'off'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['insecure'], isFalse);
     });
 
@@ -905,7 +905,7 @@ void main() {
         'test/unit/environment/helpers/check_otlp_config.dart',
         {'OTEL_EXPORTER_OTLP_INSECURE': 'FALSE'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['insecure'], isFalse);
     });
 
@@ -914,18 +914,17 @@ void main() {
         'test/unit/environment/helpers/check_otlp_config.dart',
         {'OTEL_EXPORTER_OTLP_INSECURE': 'TRUE'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['insecure'], isTrue);
     });
 
-    test('insecure with unrecognized value returns null (no insecure key)',
-        () async {
+    test('insecure with unrecognized value returns false', () async {
       final output = await runWithEnv(
         'test/unit/environment/helpers/check_otlp_config.dart',
         {'OTEL_EXPORTER_OTLP_INSECURE': 'maybe'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
-      expect(result.containsKey('insecure'), isFalse);
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
+      expect(result['insecure'], isFalse);
     });
   });
 
@@ -1001,7 +1000,7 @@ void main() {
         'test/unit/environment/helpers/check_envvar_resource_detector.dart',
         {'OTEL_RESOURCE_ATTRIBUTES': 'key1=value1,key2=value2'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['key1'], equals('value1'));
       expect(result['key2'], equals('value2'));
     });
@@ -1011,7 +1010,7 @@ void main() {
         'test/unit/environment/helpers/check_envvar_resource_detector.dart',
         {'OTEL_RESOURCE_ATTRIBUTES': 'path=/usr%2Flocal%2Fbin'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['path'], equals('/usr/local/bin'));
     });
 
@@ -1020,7 +1019,7 @@ void main() {
         'test/unit/environment/helpers/check_envvar_resource_detector.dart',
         {'OTEL_RESOURCE_ATTRIBUTES': ''},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result, isEmpty);
     });
 
@@ -1029,7 +1028,7 @@ void main() {
         'test/unit/environment/helpers/check_envvar_resource_detector.dart',
         {'OTEL_RESOURCE_ATTRIBUTES': 'service.name=my-app'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['service.name'], equals('my-app'));
     });
 
@@ -1038,7 +1037,7 @@ void main() {
         'test/unit/environment/helpers/check_envvar_resource_detector.dart',
         {'OTEL_RESOURCE_ATTRIBUTES': 'good=val,badentry,also-good=yes'},
       );
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['good'], equals('val'));
       expect(result['also-good'], equals('yes'));
       expect(result.containsKey('badentry'), isFalse);
@@ -1121,7 +1120,7 @@ void main() {
 
     test('default installs tracecontext + baggage composite', () async {
       final output = await runWithEnv(helper, {});
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['type'], contains('CompositePropagator'));
       expect(
           result['fields'], equals(['baggage', 'traceparent', 'tracestate']));
@@ -1132,21 +1131,21 @@ void main() {
         () async {
       final output =
           await runWithEnv(helper, {'OTEL_PROPAGATORS': 'tracecontext'});
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['type'], contains('W3CTraceContextPropagator'));
       expect(result['fields'], equals(['traceparent', 'tracestate']));
     });
 
     test('baggage alone installs the W3C baggage propagator', () async {
       final output = await runWithEnv(helper, {'OTEL_PROPAGATORS': 'baggage'});
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['type'], contains('W3CBaggagePropagator'));
       expect(result['fields'], equals(['baggage']));
     });
 
     test('none leaves the spec-mandated no-op propagator', () async {
       final output = await runWithEnv(helper, {'OTEL_PROPAGATORS': 'none'});
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['type'], contains('NoopTextMapPropagator'));
       expect(result['fields'], isEmpty);
     });
@@ -1154,7 +1153,7 @@ void main() {
     test('unsupported names warn and are ignored', () async {
       final output = await runWithEnv(
           helper, {'OTEL_PROPAGATORS': 'tracecontext,b3,xray'});
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['type'], contains('W3CTraceContextPropagator'));
       final logs = result['logs'] as List<dynamic>;
       expect(logs.length, equals(2));
@@ -1164,7 +1163,7 @@ void main() {
 
     test('only unsupported names keeps the no-op default and warns', () async {
       final output = await runWithEnv(helper, {'OTEL_PROPAGATORS': 'jaeger'});
-      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      final result = jsonDecode(output.trim().split('\n').last.trim()) as Map<String, dynamic>;
       expect(result['type'], contains('NoopTextMapPropagator'));
       expect((result['logs'] as List<dynamic>).single.toString(),
           contains('"jaeger" ignored'));

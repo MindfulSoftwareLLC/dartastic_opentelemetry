@@ -756,32 +756,48 @@ class OTelEnv {
   /// @param name The name of the environment variable
   /// @return true if the environment variable has a truthy value, false otherwise
   static bool _getEnvBool(String name) {
-    final value = _getEnv(name)?.toLowerCase();
-    return value == '1' || value == 'true' || value == 'yes' || value == 'on';
+    final rawValue = _getEnv(name);
+    if (rawValue == null || rawValue.isEmpty) return false;
+
+    final value = rawValue.toLowerCase();
+    if (value == 'true') {
+      return true;
+    } else if (value == 'false') {
+      return false;
+    } else {
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('OTelEnv: Invalid boolean value for $name: "$rawValue". '
+            'Expected "true" or "false". Treating as false.');
+      }
+      return false;
+    }
   }
 
   /// Get boolean environment variable value that can be null.
   ///
   /// This method converts an environment variable value to a boolean.
-  /// Values of '1', 'true', 'yes', and 'on' (case-insensitive) are considered true.
-  /// Values of '0', 'false', 'no', and 'off' (case-insensitive) are considered false.
+  /// Only the case-insensitive string 'true' is considered true.
+  /// All other values are considered false.
+  /// Returns null only when the variable is unset or empty.
   ///
   /// @param name The name of the environment variable
-  /// @return true/false if the environment variable has a valid boolean value, null otherwise
+  /// @return true/false if the environment variable is set, null otherwise
   static bool? _getEnvBoolNullable(String name) {
-    final value = _getEnv(name)?.toLowerCase();
-    if (value == null) return null;
+    final rawValue = _getEnv(name);
+    if (rawValue == null || rawValue.isEmpty) return null;
 
-    if (value == '1' || value == 'true' || value == 'yes' || value == 'on') {
+    final value = rawValue.toLowerCase();
+    if (value == 'true') {
       return true;
-    } else if (value == '0' ||
-        value == 'false' ||
-        value == 'no' ||
-        value == 'off') {
+    } else if (value == 'false') {
+      return false;
+    } else {
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('OTelEnv: Invalid boolean value for $name: "$rawValue". '
+            'Expected "true" or "false". Treating as false.');
+      }
       return false;
     }
-
-    return null;
   }
 
   /// Get a non-negative integer environment variable value.

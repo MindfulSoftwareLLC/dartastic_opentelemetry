@@ -71,8 +71,8 @@ void main() {
     test('OTEL_DART_LOG_* enable per-signal sinks when unset', () {
       env({
         'OTEL_DART_LOG_METRICS': 'true',
-        'OTEL_DART_LOG_SPANS': '1',
-        'OTEL_DART_LOG_EXPORT': 'yes',
+        'OTEL_DART_LOG_SPANS': 'true',
+        'OTEL_DART_LOG_EXPORT': 'true',
       });
       OTelEnv.initializeLogging();
       expect(OTelLog.metricLogFunction, isNotNull);
@@ -136,13 +136,13 @@ void main() {
       expect(OTelEnv.getOtlpConfig().timeout, isNull);
     });
 
-    test('invalid insecure value is dropped', () {
+    test('invalid insecure value is treated as false', () {
       env({'OTEL_EXPORTER_OTLP_TRACES_INSECURE': 'sorta'});
-      expect(OTelEnv.getOtlpConfig().insecure, isNull);
+      expect(OTelEnv.getOtlpConfig().insecure, isFalse);
     });
 
-    test('insecure accepts the documented false spellings', () {
-      for (final falsy in ['0', 'false', 'no', 'off']) {
+    test('insecure treats non-true spellings as false', () {
+      for (final falsy in ['0', 'false', 'no', 'off', '1', 'yes', 'on']) {
         env({'OTEL_EXPORTER_OTLP_TRACES_INSECURE': falsy});
         expect(OTelEnv.getOtlpConfig().insecure, isFalse,
             reason: '"$falsy" should read as false');
@@ -213,13 +213,15 @@ void main() {
   });
 
   group('sdk flags and exporters', () {
-    test('isSdkDisabled truthy spellings', () {
-      for (final truthy in ['1', 'true', 'YES', 'on']) {
+    test('isSdkDisabled only accepts true spelling', () {
+      for (final truthy in ['true', 'TRUE', 'True']) {
         env({'OTEL_SDK_DISABLED': truthy});
         expect(OTelEnv.isSdkDisabled(), isTrue, reason: '"$truthy"');
       }
-      env({'OTEL_SDK_DISABLED': 'false'});
-      expect(OTelEnv.isSdkDisabled(), isFalse);
+      for (final falsy in ['1', 'YES', 'on', 'false', '0']) {
+        env({'OTEL_SDK_DISABLED': falsy});
+        expect(OTelEnv.isSdkDisabled(), isFalse, reason: '"$falsy"');
+      }
       env({});
       expect(OTelEnv.isSdkDisabled(), isFalse);
     });
