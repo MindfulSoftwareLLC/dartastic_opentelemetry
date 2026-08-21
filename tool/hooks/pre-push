@@ -1,0 +1,113 @@
+#!/bin/bash
+# Pre-push hook: fail the push if the analyzer reports issues, tests fail,
+# or line coverage drops below the published coverage badge.
+#
+# First-time contributors' CI runs need maintainer approval before they
+# execute, so this hook may be the only check that runs before review —
+# it mirrors what CI enforces. Bypass in an emergency with
+# `git push --no-verify` (CI will still hold the line).
+
+# Floor used when the published badge can't be fetched (e.g. offline).
+FALLBACK_MIN_COVERAGE=80
+
+# Check if dart is available on PATH
+if ! command -v dart &> /dev/null; then
+    echo "Error: dart not found on PATH"
+    echo "Please ensure Dart/Flutter is installed and on your PATH"
+    exit 1
+fi
+
+# Change to the repository root
+cd "$(git rev-parse --show-toplevel)"
+
+echo "========================================"
+echo "Running analyzer before push..."
+echo "========================================"
+
+dart analyze
+
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "========================================"
+    echo "ERROR: Analyzer found issues! Push aborted."
+    echo "Please fix all analyzer warnings/errors before pushing."
+    echo "========================================"
+    exit 1
+fi
+
+echo ""
+echo "========================================"
+echo "Analyzer passed. Running tests with coverage"
+echo "(tool/coverage.sh — this takes a few minutes"
+echo "and uses a local otel collector)..."
+echo "========================================"
+
+./tool/coverage.sh
+
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "========================================"
+    echo "ERROR: Tests failed! Push aborted."
+    echo "Please fix the failing tests before pushing."
+    echo "========================================"
+    exit 1
+fi
+
+if [ ! -f coverage/lcov.info ]; then
+    echo "ERROR: coverage/lcov.info not found after tool/coverage.sh."
+    exit 1
+fi
+
+# Line coverage straight from lcov.info — no lcov CLI needed.
+COVERAGE_PCT=$(awk -F: '/^LF:/{lf+=$2} /^LH:/{lh+=$2} END{if (lf>0) printf "%.1f", 100*lh/lf}' coverage/lcov.info)
+
+if [ -z "$COVERAGE_PCT" ]; then
+    echo "ERROR: could not compute coverage from coverage/lcov.info."
+    exit 1
+fi
+
+# Baseline: the published badge — coverage must go up, or at least not down.
+BASELINE=$FALLBACK_MIN_COVERAGE
+BASELINE_SOURCE="fallback floor"
+if git fetch -q origin badges 2>/dev/null; then
+    BADGE_PCT=$(git show origin/badges:coverage.svg 2>/dev/null \
+        | grep -o '[0-9][0-9.]*%' | head -1 | tr -d '%')
+    if [ -n "$BADGE_PCT" ]; then
+        BASELINE=$BADGE_PCT
+        BASELINE_SOURCE="published badge"
+    fi
+fi
+
+echo ""
+echo "========================================"
+echo "Line coverage: ${COVERAGE_PCT}%"
+echo "Required:      >= ${BASELINE}% (${BASELINE_SOURCE})"
+echo "========================================"
+
+if command -v bc &> /dev/null; then
+    COVERAGE_OK=$(echo "$COVERAGE_PCT >= $BASELINE" | bc -l)
+else
+    COVERAGE_INT=${COVERAGE_PCT%.*}
+    BASELINE_INT=${BASELINE%.*}
+    if [ "$COVERAGE_INT" -ge "$BASELINE_INT" ]; then
+        COVERAGE_OK=1
+    else
+        COVERAGE_OK=0
+    fi
+fi
+
+if [ "$COVERAGE_OK" != "1" ]; then
+    echo ""
+    echo "========================================"
+    echo "ERROR: Coverage ${COVERAGE_PCT}% is below ${BASELINE}%! Push aborted."
+    echo "Coverage should go up, not down — please add tests."
+    echo "Report: open coverage/html/index.html"
+    echo "========================================"
+    exit 1
+fi
+
+echo ""
+echo "========================================"
+echo "All checks passed. Proceeding with push."
+echo "========================================"
+exit 0
