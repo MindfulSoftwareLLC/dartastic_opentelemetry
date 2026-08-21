@@ -11,8 +11,8 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:grpc/grpc.dart' as grpc;
 import 'package:test/test.dart';
 
-import '../../../../testing_utils/network_proxy.dart';
-import '../../../../testing_utils/real_collector.dart';
+import '../testing_utils/network_proxy.dart';
+import '../testing_utils/real_collector.dart';
 
 // Helper function to create a test span using OTel factory methods
 Span createTestSpan({
