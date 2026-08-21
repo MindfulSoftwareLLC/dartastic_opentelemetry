@@ -6,6 +6,9 @@
 // and the metrics gRPC exporter in otlp_grpc_metric_exporter_full_test;
 // this closes the logs gap.
 
+@Timeout(Duration(seconds: 60))
+library;
+
 import 'dart:async';
 import 'dart:io';
 

@@ -5,6 +5,9 @@
 // shutdown-during-retry, forceFlush with pending exports, and
 // flush/export after shutdown.
 
+@Timeout(Duration(seconds: 60))
+library;
+
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
