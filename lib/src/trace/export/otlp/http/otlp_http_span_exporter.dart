@@ -12,6 +12,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../../export/otlp_http_protocol.dart';
 import '../../../../export/otlp_json.dart';
+import '../../../../export/otlp_user_agent.dart';
 import '../../../../util/header_redaction.dart';
 import '../../../../util/zip/gzip.dart';
 import '../../../span.dart';
@@ -121,6 +122,15 @@ class OtlpHttpSpanExporter implements SpanExporter {
     // being hex-encoded (not base64) trace/span ids. Strict receivers
     // (OTel Collector ≥ ~0.15x) reject base64 ids with HTTP 400.
     final headers = Map<String, String>.from(_config.headers);
+    // Default User-Agent per the OTLP exporter spec ("User agent"): the
+    // exporter's default string is always present. A caller-supplied value
+    // (typically a distribution identifier) is prepended to it, e.g.
+    // "MyDistribution/1.0 OTel-OTLP-Exporter-Dart/1.1.0-beta.14-wip".
+    // `headers` is a copy, and http's header map is case-insensitive, so the
+    // User-Agent assignment below overrides the copied user-agent entry.
+    final userAgent = _config.headers['user-agent'];
+    headers['User-Agent'] =
+        userAgent == null ? otlpUserAgent : '$userAgent $otlpUserAgent';
     Uint8List messageBytes;
     if (_config.protocol == OtlpHttpProtocol.httpJson) {
       headers['Content-Type'] = 'application/json';

@@ -8,9 +8,6 @@ import '../../dartastic_opentelemetry.dart' show OTelLog, Span;
 /// This utility function logs span information for debugging purposes.
 /// It includes a timestamp and formats the span information in a consistent way.
 ///
-/// Note: Per [OTEP 0265](https://opentelemetry.io/docs/specs/semconv/general/events/),
-/// span events are being deprecated and will be replaced by the Logging API in future versions.
-///
 /// @param span The span to log
 /// @param message Optional message to include with the span log
 void logSpan(Span span, [String? message]) {
@@ -25,9 +22,6 @@ void logSpan(Span span, [String? message]) {
 ///
 /// This utility function logs information about multiple spans for debugging purposes.
 /// It includes a timestamp and formats the spans information in a consistent way.
-///
-/// Note: Per [OTEP 0265](https://opentelemetry.io/docs/specs/semconv/general/events/),
-/// span events are being deprecated and will be replaced by the Logging API in future versions.
 ///
 /// @param spans The list of spans to log
 /// @param message Optional message to include with the spans log

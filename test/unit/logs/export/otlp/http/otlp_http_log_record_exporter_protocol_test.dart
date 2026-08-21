@@ -10,6 +10,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry/src/export/otlp_user_agent.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -93,6 +94,41 @@ void main() {
       expect((decoded as Map).containsKey('resourceLogs'), isTrue);
       expect(decoded['resourceLogs'], isA<List>());
 
+      await exporter.shutdown();
+    });
+
+    test('export sends the OTLP default User-Agent header (issue #228)',
+        () async {
+      final exporter = OtlpHttpLogRecordExporter(
+        OtlpHttpLogRecordExporterConfig(endpoint: 'http://localhost:$port'),
+      );
+
+      await exporter.export([createTestLogRecord()]);
+
+      expect(receivedRequests, hasLength(1));
+      expect(
+        receivedRequests.first.headers.value('user-agent'),
+        equals(otlpUserAgent),
+      );
+      await exporter.shutdown();
+    });
+
+    test('user-supplied User-Agent is prepended to the default (issue #228)',
+        () async {
+      final exporter = OtlpHttpLogRecordExporter(
+        OtlpHttpLogRecordExporterConfig(
+          endpoint: 'http://localhost:$port',
+          headers: {'user-agent': 'my-distribution/1.0'},
+        ),
+      );
+
+      await exporter.export([createTestLogRecord()]);
+
+      expect(receivedRequests, hasLength(1));
+      expect(
+        receivedRequests.first.headers.value('user-agent'),
+        equals('my-distribution/1.0 $otlpUserAgent'),
+      );
       await exporter.shutdown();
     });
   });

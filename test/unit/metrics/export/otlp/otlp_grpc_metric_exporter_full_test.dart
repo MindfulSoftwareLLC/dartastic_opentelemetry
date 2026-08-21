@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart'
     hide Server;
 import 'package:dartastic_opentelemetry/proto/collector/metrics/v1/metrics_service.pbgrpc.dart';
+import 'package:dartastic_opentelemetry/src/export/otlp_user_agent.dart';
 import 'package:grpc/grpc.dart';
 import 'package:test/test.dart';
 
@@ -19,6 +20,9 @@ class MockMetricsService extends MetricsServiceBase {
   List<ExportMetricsServiceRequest> requests = [];
   int? errorCode;
 
+  /// The `user-agent` HTTP/2 header seen on the last call.
+  String? lastUserAgent;
+
   @override
   Future<ExportMetricsServiceResponse> export(
     ServiceCall call,
@@ -26,6 +30,7 @@ class MockMetricsService extends MetricsServiceBase {
   ) async {
     exportCount++;
     requests.add(request);
+    lastUserAgent = call.clientMetadata?['user-agent'];
     if (errorCode != null) {
       throw GrpcError.custom(errorCode!, 'Mock metrics error');
     }
@@ -129,6 +134,17 @@ void main() {
       // Verify the request has resource metrics
       final request = mockService.requests.first;
       expect(request.resourceMetrics, isNotEmpty);
+
+      await exporter.shutdown();
+    });
+
+    test('export sends the OTLP default User-Agent (issue #228)', () async {
+      final exporter = _createExporter(port);
+
+      final result = await exporter.export(_createTestMetricData());
+
+      expect(result, isTrue);
+      expect(mockService.lastUserAgent, equals(otlpUserAgent));
 
       await exporter.shutdown();
     });

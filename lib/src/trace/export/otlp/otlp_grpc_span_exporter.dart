@@ -9,6 +9,7 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
 import 'package:grpc/grpc.dart';
 
 import '../../../../proto/opentelemetry_proto_dart.dart' as proto;
+import '../../../export/otlp_user_agent.dart';
 import '../../span.dart';
 import '../../span_logger.dart';
 import '../span_exporter.dart';
@@ -207,6 +208,7 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         port: port,
         options: ChannelOptions(
           credentials: _createChannelCredentials(),
+          userAgent: otlpUserAgent,
           connectTimeout: const Duration(seconds: 5),
           // Keep connection alive better
           idleTimeout: const Duration(seconds: 30),

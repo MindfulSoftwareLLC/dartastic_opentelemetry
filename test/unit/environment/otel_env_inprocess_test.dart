@@ -328,4 +328,47 @@ void main() {
       expect(OTelEnv.getLogRecordLimits(), isEmpty);
     });
   });
+
+  group('parsing empty values (issue #213)', () {
+    test('an empty value reads as unset from getValue', () {
+      env({'OTEL_SERVICE_NAME': ''});
+      expect(EnvironmentService.instance.getValue('OTEL_SERVICE_NAME'), isNull);
+    });
+
+    test('an empty endpoint reads as unset', () {
+      env({'OTEL_EXPORTER_OTLP_ENDPOINT': ''});
+      expect(OTelEnv.getOtlpConfig()['endpoint'], isNull);
+    });
+
+    test('an empty signal endpoint falls back to the generic endpoint', () {
+      env({
+        'OTEL_EXPORTER_OTLP_ENDPOINT': 'http://collector:4318',
+        'OTEL_EXPORTER_OTLP_TRACES_ENDPOINT': '',
+      });
+      expect(
+        OTelEnv.getOtlpConfig(signal: 'traces')['endpoint'],
+        equals('http://collector:4318'),
+      );
+    });
+
+    test('an empty protocol reads as unset', () {
+      env({'OTEL_EXPORTER_OTLP_PROTOCOL': ''});
+      expect(OTelEnv.getOtlpConfig()['protocol'], isNull);
+    });
+
+    test('an empty service name does not override resource attributes', () {
+      env({
+        'OTEL_SERVICE_NAME': '',
+        'OTEL_RESOURCE_ATTRIBUTES': 'service.name=my-service',
+      });
+      expect(OTelEnv.getServiceConfig()['serviceName'], equals('my-service'));
+    });
+
+    test('an empty log level leaves logging unchanged', () {
+      OTelLog.enableDebugLogging();
+      env({'OTEL_LOG_LEVEL': ''});
+      OTelEnv.initializeLogging();
+      expect(OTelLog.currentLevel, equals(LogLevel.debug));
+    });
+  });
 }

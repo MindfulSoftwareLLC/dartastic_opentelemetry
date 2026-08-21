@@ -19,9 +19,6 @@ part 'resource_create.dart';
 ///
 /// More information:
 /// https://opentelemetry.io/docs/specs/otel/resource/sdk/
-///
-/// Note: Per [OTEP 0265](https://github.com/open-telemetry/opentelemetry-specification/blob/main/oteps/0265-event-vision.md),
-/// span events are being deprecated and will be replaced by the Logging API.
 @immutable
 class Resource {
   final Attributes _attributes;
