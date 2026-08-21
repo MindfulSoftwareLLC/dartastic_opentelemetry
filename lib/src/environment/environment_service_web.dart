@@ -80,7 +80,11 @@ class EnvironmentService implements EnvironmentServiceInterface {
       }
     }
 
-    return value;
+    // Per the OpenTelemetry specification (configuration.md), an empty value
+    // of an environment variable MUST be interpreted the same way as when the
+    // variable is unset. Normalize empty strings to null here so every
+    // consumer reads an empty value as unset (issue #213).
+    return (value == null || value.isEmpty) ? null : value;
   }
 
   /// Gets a value from String.fromEnvironment.

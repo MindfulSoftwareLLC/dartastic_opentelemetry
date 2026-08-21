@@ -60,6 +60,7 @@ import 'package:pubspec_parse/pubspec_parse.dart';
 const _wipSuffix = '-wip';
 const _pubspecPath = 'pubspec.yaml';
 const _changelogPath = 'CHANGELOG.md';
+const _versionFilePath = 'lib/src/version.dart';
 
 Future<void> main(List<String> args) async {
   final flags = _Flags.parse(args);
@@ -104,6 +105,7 @@ Future<void> main(List<String> args) async {
   try {
     // ---- release commit ----
     _replaceVersionLine(from: current, to: release);
+    _replaceVersionConst(to: release);
     _replaceChangelogSection(
       from: current,
       newHeader: '## [$release] - ${_today()}',
@@ -139,6 +141,7 @@ Future<void> main(List<String> args) async {
       'add',
       _pubspecPath,
       _changelogPath,
+      _versionFilePath,
       if (readmeRefs > 0) _readmePath,
     ]);
     _runOrThrow('git', ['commit', '-m', 'Release $release']);
@@ -147,8 +150,9 @@ Future<void> main(List<String> args) async {
 
     // ---- next-wip commit ----
     _replaceVersionLine(from: release, to: nextWip);
+    _replaceVersionConst(to: nextWip);
     _injectChangelogSectionAbove(existingHeader: release, newSection: nextWip);
-    _runOrThrow('git', ['add', _pubspecPath, _changelogPath]);
+    _runOrThrow('git', ['add', _pubspecPath, _changelogPath, _versionFilePath]);
     _runOrThrow('git', ['commit', '-m', 'Bump to $nextWip']);
   } catch (e) {
     stderr
@@ -499,6 +503,29 @@ void _replaceVersionLine({required String from, required String to}) {
   }
   // readAsLinesSync drops line terminators; rejoin with \n and add a
   // trailing newline so we don't end the file abruptly.
+  f.writeAsStringSync('${lines.join('\n')}\n');
+}
+
+/// Rewrites the stamped `packageVersion` const in lib/src/version.dart
+/// (see issue #249 — Dart has no runtime API for a package's own version).
+/// Line-precise like [_replaceVersionLine]; throws if the line is missing
+/// so a moved or hand-edited file fails the release loudly.
+void _replaceVersionConst({required String to}) {
+  final f = File(_versionFilePath);
+  final lines = f.readAsLinesSync();
+  final re = RegExp(r"^const String packageVersion = '.*';$");
+  var replaced = false;
+  for (var i = 0; i < lines.length; i++) {
+    if (!re.hasMatch(lines[i])) continue;
+    lines[i] = "const String packageVersion = '$to';";
+    replaced = true;
+    break;
+  }
+  if (!replaced) {
+    throw StateError(
+      'did not find the packageVersion const in $_versionFilePath',
+    );
+  }
   f.writeAsStringSync('${lines.join('\n')}\n');
 }
 

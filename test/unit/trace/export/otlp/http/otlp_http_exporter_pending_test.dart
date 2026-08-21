@@ -5,6 +5,9 @@
 // exports, exports failing while flush/shutdown wait on them, and the
 // unexpected-error retry tail (connection refused with retries left).
 
+@Timeout(Duration(seconds: 60))
+library;
+
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
