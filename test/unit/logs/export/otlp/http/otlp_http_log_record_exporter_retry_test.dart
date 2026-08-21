@@ -4,6 +4,9 @@
 // Retry and error handling for OtlpHttpLogRecordExporter, mirroring the
 // span exporter's retry suite.
 
+@Timeout(Duration(seconds: 60))
+library;
+
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';

@@ -9,6 +9,9 @@
 // implementation, from the issues and OTel spec v1.60.0, during review of
 // PR #238; each test was verified red on the pre-fix SDK.
 
+@Timeout(Duration(seconds: 60))
+library;
+
 import 'dart:async';
 import 'dart:io';
 

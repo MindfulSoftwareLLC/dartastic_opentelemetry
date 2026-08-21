@@ -6,6 +6,9 @@
 // `OtlpHttpProtocol.httpJson` switches the Content-Type to
 // `application/json` and the body to proto3-JSON.
 
+@Timeout(Duration(seconds: 60))
+library;
+
 import 'dart:convert';
 import 'dart:io';
 
