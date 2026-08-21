@@ -26,6 +26,95 @@ typedef BlrpEnvironmentValues = ({
   int? maxExportBatchSize,
 });
 
+/// Raw OTLP environment values parsed by [OTelEnv.getOtlpConfig].
+///
+/// All fields are nullable — `null` means the corresponding env var was
+/// unset or unparseable. Signal-specific variables take precedence over
+/// general ones per the OTel specification.
+typedef OtlpEnvironmentValues = ({
+  /// Parsed from `OTEL_EXPORTER_OTLP_{SIGNAL}_ENDPOINT` or
+  /// `OTEL_EXPORTER_OTLP_ENDPOINT`
+  String? endpoint,
+
+  /// Parsed from `OTEL_EXPORTER_OTLP_{SIGNAL}_PROTOCOL` or
+  /// `OTEL_EXPORTER_OTLP_PROTOCOL`
+  String? protocol,
+
+  /// Parsed from `OTEL_EXPORTER_OTLP_{SIGNAL}_HEADERS` or
+  /// `OTEL_EXPORTER_OTLP_HEADERS`
+  Map<String, String>? headers,
+
+  /// Parsed from `OTEL_EXPORTER_OTLP_{SIGNAL}_INSECURE` or
+  /// `OTEL_EXPORTER_OTLP_INSECURE`
+  bool? insecure,
+
+  /// Parsed from `OTEL_EXPORTER_OTLP_{SIGNAL}_TIMEOUT` or
+  /// `OTEL_EXPORTER_OTLP_TIMEOUT`
+  Duration? timeout,
+
+  /// Parsed from `OTEL_EXPORTER_OTLP_{SIGNAL}_COMPRESSION` or
+  /// `OTEL_EXPORTER_OTLP_COMPRESSION`
+  String? compression,
+
+  /// Parsed from `OTEL_EXPORTER_OTLP_{SIGNAL}_CERTIFICATE` or
+  /// `OTEL_EXPORTER_OTLP_CERTIFICATE`
+  String? certificate,
+
+  /// Parsed from `OTEL_EXPORTER_OTLP_{SIGNAL}_CLIENT_KEY` or
+  /// `OTEL_EXPORTER_OTLP_CLIENT_KEY`
+  String? clientKey,
+
+  /// Parsed from `OTEL_EXPORTER_OTLP_{SIGNAL}_CLIENT_CERTIFICATE` or
+  /// `OTEL_EXPORTER_OTLP_CLIENT_CERTIFICATE`
+  String? clientCertificate,
+});
+
+/// Raw BSP environment values parsed by [OTelEnv.getBspConfig].
+///
+/// All fields are nullable — `null` means the corresponding env var was
+/// unset or contained a non-numeric value (a warning is logged in that case).
+/// Domain-level validation belongs in
+/// [BatchSpanProcessorConfig.fromEnvironment], not here.
+typedef BspEnvironmentValues = ({
+  /// Parsed from `OTEL_BSP_SCHEDULE_DELAY`
+  Duration? scheduleDelay,
+
+  /// Parsed from `OTEL_BSP_EXPORT_TIMEOUT`
+  Duration? exportTimeout,
+
+  /// Parsed from `OTEL_BSP_MAX_QUEUE_SIZE`
+  int? maxQueueSize,
+
+  /// Parsed from `OTEL_BSP_MAX_EXPORT_BATCH_SIZE`
+  int? maxExportBatchSize,
+});
+
+/// Raw service environment values parsed by [OTelEnv.getServiceConfig].
+///
+/// All fields are nullable — `null` means the corresponding env var was
+/// unset. `OTEL_SERVICE_NAME` takes precedence over `service.name` in
+/// `OTEL_RESOURCE_ATTRIBUTES` per the spec.
+typedef ServiceEnvironmentValues = ({
+  /// Parsed from `OTEL_SERVICE_NAME` or `service.name` in
+  /// `OTEL_RESOURCE_ATTRIBUTES`
+  String? serviceName,
+
+  /// Parsed from `service.version` in `OTEL_RESOURCE_ATTRIBUTES`
+  String? serviceVersion,
+});
+
+/// Raw log record limit values parsed by [OTelEnv.getLogRecordLimits].
+///
+/// All fields are nullable — `null` means the corresponding env var was
+/// unset or contained a non-numeric value.
+typedef LogRecordLimitsEnvironmentValues = ({
+  /// Parsed from `OTEL_LOGRECORD_ATTRIBUTE_VALUE_LENGTH_LIMIT`
+  int? attributeValueLengthLimit,
+
+  /// Parsed from `OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT`
+  int? attributeCountLimit,
+});
+
 /// Utility class for handling OpenTelemetry environment variables.
 ///
 /// This class provides methods for reading standard OpenTelemetry environment
@@ -118,11 +207,10 @@ class OTelEnv {
 
   /// Get OTLP configuration from environment variables.
   ///
-  /// Returns a map containing the OTLP configuration read from environment variables.
-  /// Signal-specific variables take precedence over general ones.
-  static Map<String, dynamic> getOtlpConfig({String signal = 'traces'}) {
-    final config = <String, dynamic>{};
-
+  /// Returns an [OtlpEnvironmentValues] record containing the OTLP
+  /// configuration read from environment variables. Signal-specific
+  /// variables take precedence over general ones.
+  static OtlpEnvironmentValues getOtlpConfig({String signal = 'traces'}) {
     // Get endpoint (signal-specific takes precedence)
     String? endpoint;
     switch (signal) {
@@ -138,9 +226,6 @@ class OTelEnv {
         endpoint = _getEnv(otelExporterOtlpLogsEndpoint) ??
             _getEnv(otelExporterOtlpEndpoint);
         break;
-    }
-    if (endpoint != null) {
-      config['endpoint'] = endpoint;
     }
 
     // Get protocol (signal-specific takes precedence)
@@ -159,39 +244,36 @@ class OTelEnv {
             _getEnv(otelExporterOtlpProtocol);
         break;
     }
-    if (protocol != null) {
-      config['protocol'] = protocol;
-    }
 
     // Get headers (signal-specific takes precedence)
-    String? headers;
+    Map<String, String>? parsedHeaders;
+    String? rawHeaders;
     switch (signal) {
       case 'traces':
-        headers = _getEnv(otelExporterOtlpTracesHeaders) ??
+        rawHeaders = _getEnv(otelExporterOtlpTracesHeaders) ??
             _getEnv(otelExporterOtlpHeaders);
         break;
       case 'metrics':
-        headers = _getEnv(otelExporterOtlpMetricsHeaders) ??
+        rawHeaders = _getEnv(otelExporterOtlpMetricsHeaders) ??
             _getEnv(otelExporterOtlpHeaders);
         break;
       case 'logs':
-        headers = _getEnv(otelExporterOtlpLogsHeaders) ??
+        rawHeaders = _getEnv(otelExporterOtlpLogsHeaders) ??
             _getEnv(otelExporterOtlpHeaders);
         break;
     }
-    if (headers != null) {
+    if (rawHeaders != null) {
       if (OTelLog.isDebug()) {
         // The raw value holds the Authorization header the loop below redacts.
         OTelLog.debug('OTelEnv: Parsing $signal headers from env');
       }
-      final parsedHeaders = _parseHeaders(headers);
+      parsedHeaders = _parseHeaders(rawHeaders);
       if (OTelLog.isDebug()) {
         OTelLog.debug('OTelEnv: Parsed ${parsedHeaders.length} header(s)');
         parsedHeaders.forEach((key, value) {
           OTelLog.debug('  ${formatHeaderForLog(key, value)}');
         });
       }
-      config['headers'] = parsedHeaders;
     }
 
     // Get insecure setting (signal-specific takes precedence)
@@ -210,30 +292,28 @@ class OTelEnv {
             _getEnvBoolNullable(otelExporterOtlpInsecure);
         break;
     }
-    if (insecure != null) {
-      config['insecure'] = insecure;
-    }
 
     // Get timeout (signal-specific takes precedence)
-    String? timeout;
+    Duration? parsedTimeout;
+    String? rawTimeout;
     switch (signal) {
       case 'traces':
-        timeout = _getEnv(otelExporterOtlpTracesTimeout) ??
+        rawTimeout = _getEnv(otelExporterOtlpTracesTimeout) ??
             _getEnv(otelExporterOtlpTimeout);
         break;
       case 'metrics':
-        timeout = _getEnv(otelExporterOtlpMetricsTimeout) ??
+        rawTimeout = _getEnv(otelExporterOtlpMetricsTimeout) ??
             _getEnv(otelExporterOtlpTimeout);
         break;
       case 'logs':
-        timeout = _getEnv(otelExporterOtlpLogsTimeout) ??
+        rawTimeout = _getEnv(otelExporterOtlpLogsTimeout) ??
             _getEnv(otelExporterOtlpTimeout);
         break;
     }
-    if (timeout != null) {
-      final timeoutMs = int.tryParse(timeout);
+    if (rawTimeout != null) {
+      final timeoutMs = int.tryParse(rawTimeout);
       if (timeoutMs != null) {
-        config['timeout'] = Duration(milliseconds: timeoutMs);
+        parsedTimeout = Duration(milliseconds: timeoutMs);
       }
     }
 
@@ -253,9 +333,6 @@ class OTelEnv {
             _getEnv(otelExporterOtlpCompression);
         break;
     }
-    if (compression != null) {
-      config['compression'] = compression;
-    }
 
     // Get certificate (signal-specific takes precedence)
     String? certificate;
@@ -272,9 +349,6 @@ class OTelEnv {
         certificate = _getEnv(otelExporterOtlpLogsCertificate) ??
             _getEnv(otelExporterOtlpCertificate);
         break;
-    }
-    if (certificate != null) {
-      config['certificate'] = certificate;
     }
 
     // Get client key (signal-specific takes precedence)
@@ -293,9 +367,6 @@ class OTelEnv {
             _getEnv(otelExporterOtlpClientKey);
         break;
     }
-    if (clientKey != null) {
-      config['clientKey'] = clientKey;
-    }
 
     // Get client certificate (signal-specific takes precedence)
     String? clientCertificate;
@@ -313,23 +384,32 @@ class OTelEnv {
             _getEnv(otelExporterOtlpClientCertificate);
         break;
     }
-    if (clientCertificate != null) {
-      config['clientCertificate'] = clientCertificate;
-    }
 
-    return config;
+    return (
+      endpoint: endpoint,
+      protocol: protocol,
+      headers: parsedHeaders,
+      insecure: insecure,
+      timeout: parsedTimeout,
+      compression: compression,
+      certificate: certificate,
+      clientKey: clientKey,
+      clientCertificate: clientCertificate,
+    );
   }
 
   /// Get service configuration from environment variables.
   ///
-  /// Returns a map containing the service configuration read from environment variables.
+  /// Returns a [ServiceEnvironmentValues] record containing the service
+  /// configuration read from environment variables.
   ///
   /// Handles the spec precedence rules:
   /// - If `service.name` is in OTEL_RESOURCE_ATTRIBUTES, it's used as the base value
   /// - OTEL_SERVICE_NAME takes precedence over `service.name` in OTEL_RESOURCE_ATTRIBUTES
   /// - `service.version` comes from OTEL_RESOURCE_ATTRIBUTES only
-  static Map<String, dynamic> getServiceConfig() {
-    final config = <String, dynamic>{};
+  static ServiceEnvironmentValues getServiceConfig() {
+    String? parsedServiceName;
+    String? parsedServiceVersion;
 
     // First, parse service.name and service.version from OTEL_RESOURCE_ATTRIBUTES
     final resourceStr = _getEnv(otelResourceAttributes);
@@ -342,9 +422,9 @@ class OTelEnv {
           final value = pair.substring(equalIndex + 1).trim();
 
           if (key == Service.serviceName.key) {
-            config['serviceName'] = value;
+            parsedServiceName = value;
           } else if (key == Service.serviceVersion.key) {
-            config['serviceVersion'] = value;
+            parsedServiceVersion = value;
           }
         }
       }
@@ -353,10 +433,13 @@ class OTelEnv {
     // OTEL_SERVICE_NAME takes precedence over service.name from resource attributes
     final serviceName = _getEnv(otelServiceName);
     if (serviceName != null) {
-      config['serviceName'] = serviceName;
+      parsedServiceName = serviceName;
     }
 
-    return config;
+    return (
+      serviceName: parsedServiceName,
+      serviceVersion: parsedServiceVersion,
+    );
   }
 
   /// Get resource attributes from environment variables.
@@ -443,21 +526,20 @@ class OTelEnv {
 
   /// Get Batch Span Processor (BSP) configuration from environment variables.
   ///
-  /// Returns a map containing the BSP configuration read from environment variables.
-  /// Keys returned:
-  /// - 'scheduleDelay': Duration for the schedule delay
-  /// - 'exportTimeout': Duration for the export timeout
-  /// - 'maxQueueSize': int for maximum queue size
-  /// - 'maxExportBatchSize': int for maximum export batch size
-  static Map<String, dynamic> getBspConfig() {
-    final config = <String, dynamic>{};
-
+  /// Returns a [BspEnvironmentValues] record containing the raw parsed BSP
+  /// values from environment variables. Fields are `null` when the
+  /// corresponding env var is unset or contains a non-numeric value.
+  ///
+  /// Domain-level defaults, validation, and clamping belong in
+  /// [BatchSpanProcessorConfig.fromEnvironment], not here.
+  static BspEnvironmentValues getBspConfig() {
     // Get schedule delay
+    Duration? parsedScheduleDelay;
     final scheduleDelay = _getEnv(otelBspScheduleDelay);
     if (scheduleDelay != null) {
       final delayMs = int.tryParse(scheduleDelay);
       if (delayMs != null) {
-        config['scheduleDelay'] = Duration(milliseconds: delayMs);
+        parsedScheduleDelay = Duration(milliseconds: delayMs);
       } else {
         if (OTelLog.isWarn()) {
           OTelLog.warn('OTelEnv: Invalid OTEL_BSP_SCHEDULE_DELAY value '
@@ -467,11 +549,12 @@ class OTelEnv {
     }
 
     // Get export timeout
+    Duration? parsedExportTimeout;
     final exportTimeout = _getEnv(otelBspExportTimeout);
     if (exportTimeout != null) {
       final timeoutMs = int.tryParse(exportTimeout);
       if (timeoutMs != null) {
-        config['exportTimeout'] = Duration(milliseconds: timeoutMs);
+        parsedExportTimeout = Duration(milliseconds: timeoutMs);
       } else {
         if (OTelLog.isWarn()) {
           OTelLog.warn('OTelEnv: Invalid OTEL_BSP_EXPORT_TIMEOUT value '
@@ -481,11 +564,12 @@ class OTelEnv {
     }
 
     // Get max queue size
+    int? parsedMaxQueueSize;
     final maxQueueSize = _getEnv(otelBspMaxQueueSize);
     if (maxQueueSize != null) {
       final size = int.tryParse(maxQueueSize);
       if (size != null) {
-        config['maxQueueSize'] = size;
+        parsedMaxQueueSize = size;
       } else {
         if (OTelLog.isWarn()) {
           OTelLog.warn('OTelEnv: Invalid OTEL_BSP_MAX_QUEUE_SIZE value '
@@ -495,11 +579,12 @@ class OTelEnv {
     }
 
     // Get max export batch size
+    int? parsedMaxExportBatchSize;
     final maxExportBatchSize = _getEnv(otelBspMaxExportBatchSize);
     if (maxExportBatchSize != null) {
       final size = int.tryParse(maxExportBatchSize);
       if (size != null) {
-        config['maxExportBatchSize'] = size;
+        parsedMaxExportBatchSize = size;
       } else {
         if (OTelLog.isWarn()) {
           OTelLog.warn('OTelEnv: Invalid OTEL_BSP_MAX_EXPORT_BATCH_SIZE '
@@ -508,7 +593,12 @@ class OTelEnv {
       }
     }
 
-    return config;
+    return (
+      scheduleDelay: parsedScheduleDelay,
+      exportTimeout: parsedExportTimeout,
+      maxQueueSize: parsedMaxQueueSize,
+      maxExportBatchSize: parsedMaxExportBatchSize,
+    );
   }
 
   /// Reads `OTEL_PROPAGATORS` (sdk-environment-variables.md, "General SDK
@@ -564,32 +654,28 @@ class OTelEnv {
 
   /// Get LogRecord attribute limits from environment variables.
   ///
-  /// Returns a map containing the log record attribute limits.
-  /// Keys returned:
-  /// - 'attributeValueLengthLimit': int for max attribute value length
-  /// - 'attributeCountLimit': int for max number of attributes
-  static Map<String, dynamic> getLogRecordLimits() {
-    final config = <String, dynamic>{};
-
+  /// Returns a [LogRecordLimitsEnvironmentValues] record containing the
+  /// log record attribute limits. Fields are `null` when the corresponding
+  /// env var is unset or contains a non-numeric value.
+  static LogRecordLimitsEnvironmentValues getLogRecordLimits() {
     // Get attribute value length limit
+    int? parsedValueLengthLimit;
     final valueLengthLimit = _getEnv(otelLogrecordAttributeValueLengthLimit);
     if (valueLengthLimit != null) {
-      final limit = int.tryParse(valueLengthLimit);
-      if (limit != null) {
-        config['attributeValueLengthLimit'] = limit;
-      }
+      parsedValueLengthLimit = int.tryParse(valueLengthLimit);
     }
 
     // Get attribute count limit
+    int? parsedCountLimit;
     final countLimit = _getEnv(otelLogrecordAttributeCountLimit);
     if (countLimit != null) {
-      final limit = int.tryParse(countLimit);
-      if (limit != null) {
-        config['attributeCountLimit'] = limit;
-      }
+      parsedCountLimit = int.tryParse(countLimit);
     }
 
-    return config;
+    return (
+      attributeValueLengthLimit: parsedValueLengthLimit,
+      attributeCountLimit: parsedCountLimit,
+    );
   }
 
   /// Resolves whether an OTLP connection should use TLS, per the OTLP

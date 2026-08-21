@@ -14,15 +14,25 @@ void main() {
   final signal = Platform.environment['CHECK_SIGNAL'] ?? 'traces';
   final config = OTelEnv.getOtlpConfig(signal: signal);
 
-  // Convert Duration to milliseconds for JSON serialization
+  // Convert record to JSON-serializable map
   final jsonConfig = <String, dynamic>{};
-  config.forEach((key, value) {
-    if (value is Duration) {
-      jsonConfig['${key}_ms'] = value.inMilliseconds;
-    } else {
-      jsonConfig[key] = value;
-    }
-  });
+  if (config.endpoint != null) jsonConfig['endpoint'] = config.endpoint;
+  if (config.protocol != null) jsonConfig['protocol'] = config.protocol;
+  if (config.headers != null) jsonConfig['headers'] = config.headers;
+  if (config.insecure != null) jsonConfig['insecure'] = config.insecure;
+  if (config.timeout != null) {
+    jsonConfig['timeout_ms'] = config.timeout!.inMilliseconds;
+  }
+  if (config.compression != null) {
+    jsonConfig['compression'] = config.compression;
+  }
+  if (config.certificate != null) {
+    jsonConfig['certificate'] = config.certificate;
+  }
+  if (config.clientKey != null) jsonConfig['clientKey'] = config.clientKey;
+  if (config.clientCertificate != null) {
+    jsonConfig['clientCertificate'] = config.clientCertificate;
+  }
 
   print(jsonEncode(jsonConfig));
 }

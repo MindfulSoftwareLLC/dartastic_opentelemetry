@@ -162,22 +162,20 @@ class OTel {
     OTelEnv.applyHeaderLogAllowlist(otlpHeaderLogAllowlist);
 
     // Apply environment variables only if parameters are not provided
-    final envServiceName = serviceName == null
-        ? OTelEnv.getServiceConfig()['serviceName'] as String?
-        : null;
-    final envServiceVersion = serviceVersion == null
-        ? OTelEnv.getServiceConfig()['serviceVersion'] as String?
-        : null;
+    final envServiceConfig = OTelEnv.getServiceConfig();
+    final envServiceName =
+        serviceName == null ? envServiceConfig.serviceName : null;
+    final envServiceVersion =
+        serviceVersion == null ? envServiceConfig.serviceVersion : null;
 
     serviceName ??= envServiceName;
     serviceVersion ??= envServiceVersion;
 
     final otlpConfig = (endpoint == null || secure == null)
         ? OTelEnv.getOtlpConfig(signal: 'traces')
-        : <String, dynamic>{};
-    final envEndpoint =
-        endpoint == null ? otlpConfig['endpoint'] as String? : null;
-    final envInsecure = secure == null ? otlpConfig['insecure'] as bool? : null;
+        : null;
+    final envEndpoint = endpoint == null ? otlpConfig?.endpoint : null;
+    final envInsecure = secure == null ? otlpConfig?.insecure : null;
 
     endpoint ??= envEndpoint;
     secure = OTelEnv.resolveOtlpSecure(
@@ -286,8 +284,7 @@ class OTel {
     _installGlobalPropagator();
 
     if (OTelLog.isDebug()) {
-      final traceProtocol =
-          otlpConfigForExporter['protocol'] as String? ?? 'http/protobuf';
+      final traceProtocol = otlpConfigForExporter.protocol ?? 'http/protobuf';
       OTelLog.debug(
         'OTel initialized with endpoint: '
         '${endpoint ?? (traceProtocol == 'grpc' ? defaultGrpcEndpoint : defaultEndpoint)}, '
@@ -359,8 +356,7 @@ class OTel {
         // spanProcessor remains null and no processor is added.
       } else {
         // Determine protocol - default to http/protobuf if not set
-        final protocol =
-            otlpConfigForExporter['protocol'] as String? ?? 'http/protobuf';
+        final protocol = otlpConfigForExporter.protocol ?? 'http/protobuf';
 
         // Capture the resolved values: promotion of the nullable
         // parameters does not carry into the closure. The endpoint default is
@@ -372,7 +368,7 @@ class OTel {
         final resolvedEndpoint = endpoint ??
             (protocol == 'grpc' ? defaultGrpcEndpoint : defaultEndpoint);
         final resolvedSecure = OTelEnv.resolveOtlpSecure(
-          envInsecure: otlpConfigForExporter['insecure'] as bool?,
+          envInsecure: otlpConfigForExporter.insecure,
           endpoint: resolvedEndpoint,
           fallback: secure,
         );
@@ -383,16 +379,13 @@ class OTel {
               OtlpGrpcExporterConfig(
                 endpoint: resolvedEndpoint,
                 insecure: !resolvedSecure,
-                headers:
-                    otlpConfigForExporter['headers'] as Map<String, String>? ??
-                        {},
-                timeout: otlpConfigForExporter['timeout'] as Duration? ??
+                headers: otlpConfigForExporter.headers ?? {},
+                timeout: otlpConfigForExporter.timeout ??
                     const Duration(seconds: 10),
-                compression: otlpConfigForExporter['compression'] == 'gzip',
-                certificate: otlpConfigForExporter['certificate'] as String?,
-                clientKey: otlpConfigForExporter['clientKey'] as String?,
-                clientCertificate:
-                    otlpConfigForExporter['clientCertificate'] as String?,
+                compression: otlpConfigForExporter.compression == 'gzip',
+                certificate: otlpConfigForExporter.certificate,
+                clientKey: otlpConfigForExporter.clientKey,
+                clientCertificate: otlpConfigForExporter.clientCertificate,
               ),
             );
           } else {
@@ -404,16 +397,13 @@ class OTel {
             return OtlpHttpSpanExporter(
               OtlpHttpExporterConfig(
                 endpoint: resolvedEndpoint,
-                headers:
-                    otlpConfigForExporter['headers'] as Map<String, String>? ??
-                        {},
-                timeout: otlpConfigForExporter['timeout'] as Duration? ??
+                headers: otlpConfigForExporter.headers ?? {},
+                timeout: otlpConfigForExporter.timeout ??
                     const Duration(seconds: 10),
-                compression: otlpConfigForExporter['compression'] == 'gzip',
-                certificate: otlpConfigForExporter['certificate'] as String?,
-                clientKey: otlpConfigForExporter['clientKey'] as String?,
-                clientCertificate:
-                    otlpConfigForExporter['clientCertificate'] as String?,
+                compression: otlpConfigForExporter.compression == 'gzip',
+                certificate: otlpConfigForExporter.certificate,
+                clientKey: otlpConfigForExporter.clientKey,
+                clientCertificate: otlpConfigForExporter.clientCertificate,
                 protocol: httpProtocol,
               ),
             );

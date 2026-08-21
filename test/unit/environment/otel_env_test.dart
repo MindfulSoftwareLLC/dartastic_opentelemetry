@@ -186,31 +186,36 @@ void main() {
       test('returns empty map for traces when no env vars set', () {
         final config = OTelEnv.getOtlpConfig(signal: 'traces');
         // Config may have entries if env vars are set externally
-        expect(config, isA<Map<String, dynamic>>());
+        expect(config, isA<OtlpEnvironmentValues>());
       });
 
       test('returns empty map for metrics when no env vars set', () {
         final config = OTelEnv.getOtlpConfig(signal: 'metrics');
-        expect(config, isA<Map<String, dynamic>>());
+        expect(config, isA<OtlpEnvironmentValues>());
       });
 
       test('returns empty map for logs when no env vars set', () {
         final config = OTelEnv.getOtlpConfig(signal: 'logs');
-        expect(config, isA<Map<String, dynamic>>());
+        expect(config, isA<OtlpEnvironmentValues>());
       });
 
       test('returns empty map for unknown signal', () {
         final config = OTelEnv.getOtlpConfig(signal: 'unknown');
-        expect(config, isA<Map<String, dynamic>>());
+        expect(config, isA<OtlpEnvironmentValues>());
         // An unknown signal won't match any switch case so all values stay null
-        expect(config, isEmpty);
+        expect(config.endpoint, isNull);
+        expect(config.protocol, isNull);
+        expect(config.headers, isNull);
+        expect(config.insecure, isNull);
+        expect(config.timeout, isNull);
+        expect(config.compression, isNull);
       });
 
       test('defaults to traces signal', () {
         final configDefault = OTelEnv.getOtlpConfig();
         final configTraces = OTelEnv.getOtlpConfig(signal: 'traces');
         // Both should produce the same result
-        expect(configDefault.length, equals(configTraces.length));
+        expect(configDefault, equals(configTraces));
       });
     });
 
@@ -220,7 +225,7 @@ void main() {
     group('getServiceConfig', () {
       test('returns a map', () {
         final config = OTelEnv.getServiceConfig();
-        expect(config, isA<Map<String, dynamic>>());
+        expect(config, isA<ServiceEnvironmentValues>());
       });
 
       test(
@@ -236,10 +241,11 @@ void main() {
           final config = OTelEnv.getServiceConfig();
 
           if (resourceAttrs == null && serviceName == null) {
-            expect(config, isEmpty);
+            expect(config.serviceName, isNull);
+            expect(config.serviceVersion, isNull);
           } else {
             // If env vars are set, config should have entries
-            expect(config, isA<Map<String, dynamic>>());
+            expect(config, isA<ServiceEnvironmentValues>());
           }
         },
       );

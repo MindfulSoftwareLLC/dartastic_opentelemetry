@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.14-wip]
 
+### Changed
+
+- **BREAKING**: `OTelEnv` configuration functions (`getOtlpConfig`, `getBspConfig`, `getServiceConfig`, `getLogRecordLimits`, etc.) now return strongly-typed Dart Records instead of `Map<String, dynamic>`.
+  Migration hint: Update map accesses to record property accesses (e.g., `config['endpoint'] as String?` → `config.endpoint`).
+
 ### Added
 
 - `TracerProvider.hasSpanProcessors` — allocation-free check for registered

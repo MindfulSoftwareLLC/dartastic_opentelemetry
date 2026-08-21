@@ -974,9 +974,10 @@ void main() {
       expect(config, isA<BlrpEnvironmentValues>());
     });
 
-    test('getLogRecordLimits returns a Map<String, dynamic>', () {
+    test('getLogRecordLimits returns a LogRecordLimitsEnvironmentValues record',
+        () {
       final config = OTelEnv.getLogRecordLimits();
-      expect(config, isA<Map<String, dynamic>>());
+      expect(config, isA<LogRecordLimitsEnvironmentValues>());
     });
 
     test('getExporter for metrics returns nullable result', () {
