@@ -1,6 +1,9 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
+@Timeout(Duration(seconds: 60))
+library;
+
 import 'dart:convert';
 import 'dart:io';
 

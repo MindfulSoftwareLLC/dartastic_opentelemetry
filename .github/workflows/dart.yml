@@ -37,7 +37,10 @@ jobs:
       - name: Run tests
         run: |
           chmod +x tool/test.sh
-          ./tool/test.sh
+          # Match the runner's core count. The local default of 20 oversubscribes
+          # the 4-vCPU hosted runners: suites that bind sockets and wait on
+          # exports get time-sliced past the 30s per-test timeout and flake.
+          ./tool/test.sh --concurrency 4
 
   test-env-vars:
     runs-on: ubuntu-latest

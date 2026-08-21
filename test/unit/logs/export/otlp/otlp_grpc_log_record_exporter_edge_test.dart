@@ -6,6 +6,9 @@
 // flush/shutdown, generic errors, retryable gRPC errors, give-up,
 // shutdown-during-retry, and channel cleanup.
 
+@Timeout(Duration(seconds: 60))
+library;
+
 import 'dart:async';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart'
