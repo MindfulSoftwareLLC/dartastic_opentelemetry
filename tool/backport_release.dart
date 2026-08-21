@@ -70,6 +70,7 @@ import 'package:pub_semver/pub_semver.dart';
 const _pubspecPath = 'pubspec.yaml';
 const _changelogPath = 'CHANGELOG.md';
 const _readmePath = 'README.md';
+const _versionFilePath = 'lib/src/version.dart';
 
 /// The dependency whose constraint has to move from the prerelease api line
 /// to the stable one. The beta depends on e.g. `^1.0.0-rc.1`; a `0.9.x`
@@ -171,6 +172,7 @@ Future<void> main(List<String> args) async {
     _runOrThrow('git', ['checkout', '--detach', from]);
 
     _replaceVersionLine(to: version);
+    _replaceVersionConst(to: version);
     _replaceDependencyConstraint(name: _backportedDep, to: apiConstraint);
     _replaceReadmeVersion(packageName: _readPackageName(), to: version);
     // The beta tag's CHANGELOG predates the entry we just validated on the
@@ -199,6 +201,7 @@ Future<void> main(List<String> args) async {
       'add',
       _pubspecPath,
       _changelogPath,
+      _versionFilePath,
       if (File(_readmePath).existsSync()) _readmePath,
     ]);
     _runOrThrow('git', [
@@ -464,6 +467,30 @@ void _replaceVersionLine({required String to}) {
   if (!replaced) throw StateError('no `version:` line in $_pubspecPath');
   f.writeAsStringSync('${lines.join('\n')}\n');
   stdout.writeln('✓ pubspec version -> $to');
+}
+
+/// Rewrites the stamped `packageVersion` const in lib/src/version.dart
+/// (see issue #249), so the backported release identifies itself as its own
+/// version rather than the beta's. Throws if the line is missing so a moved
+/// or hand-edited file fails the release loudly.
+void _replaceVersionConst({required String to}) {
+  final f = File(_versionFilePath);
+  final lines = f.readAsLinesSync();
+  final re = RegExp(r"^const String packageVersion = '.*';$");
+  var replaced = false;
+  for (var i = 0; i < lines.length; i++) {
+    if (!re.hasMatch(lines[i])) continue;
+    lines[i] = "const String packageVersion = '$to';";
+    replaced = true;
+    break;
+  }
+  if (!replaced) {
+    throw StateError(
+      'did not find the packageVersion const in $_versionFilePath',
+    );
+  }
+  f.writeAsStringSync('${lines.join('\n')}\n');
+  stdout.writeln('✓ $_versionFilePath -> $to');
 }
 
 /// Rewrites `  <name>: <constraint>` in place, preserving indentation and any
