@@ -143,26 +143,26 @@ class MetricsConfiguration {
     }
 
     final otlpConfig = OTelEnv.getOtlpConfig(signal: 'metrics');
-    final protocol = otlpConfig['protocol'] as String? ?? 'http/protobuf';
+    final protocol = otlpConfig.protocol ?? 'http/protobuf';
     // The default endpoint depends on the protocol (issue #220): OTLP/gRPC
     // uses port 4317, the HTTP protocols use port 4318.
-    final effectiveEndpoint = endpoint ??
+    final effectiveEndpoint = otlpConfig.endpoint ??
+        endpoint ??
         (protocol == 'grpc' ? OTel.defaultGrpcEndpoint : OTel.defaultEndpoint);
     // Parity with logs_config: honor OTEL_EXPORTER_OTLP_METRICS_INSECURE
     // (previously parsed and dropped) and the endpoint scheme per the
     // OTLP spec, falling back to the resolved global setting.
     final effectiveSecure = OTelEnv.resolveOtlpSecure(
-      envInsecure: otlpConfig['insecure'] as bool?,
+      envInsecure: otlpConfig.insecure,
       endpoint: effectiveEndpoint,
       fallback: secure,
     );
-    final headers = otlpConfig['headers'] as Map<String, String>? ?? const {};
-    final timeout =
-        otlpConfig['timeout'] as Duration? ?? const Duration(seconds: 10);
-    final compression = otlpConfig['compression'] == 'gzip';
-    final certificate = otlpConfig['certificate'] as String?;
-    final clientKey = otlpConfig['clientKey'] as String?;
-    final clientCertificate = otlpConfig['clientCertificate'] as String?;
+    final headers = otlpConfig.headers ?? const {};
+    final timeout = otlpConfig.timeout ?? const Duration(seconds: 10);
+    final compression = otlpConfig.compression == 'gzip';
+    final certificate = otlpConfig.certificate;
+    final clientKey = otlpConfig.clientKey;
+    final clientCertificate = otlpConfig.clientCertificate;
 
     if (protocol == 'grpc') {
       if (OTelLog.isDebug()) {

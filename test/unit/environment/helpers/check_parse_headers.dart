@@ -12,6 +12,6 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 void main() {
   OTelLog.logFunction = null;
   final config = OTelEnv.getOtlpConfig(signal: 'traces');
-  final headers = config['headers'] as Map<String, String>?;
+  final headers = config.headers;
   print(jsonEncode(headers ?? {}));
 }

@@ -70,15 +70,15 @@ class BatchSpanProcessorConfig {
   factory BatchSpanProcessorConfig.fromEnvironment() {
     final env = OTelEnv.getBspConfig();
 
-    var queueSize = (env['maxQueueSize'] as int?) ?? 2048;
-    var batchSize = (env['maxExportBatchSize'] as int?) ?? 512;
+    var queueSize = env.maxQueueSize ?? 2048;
+    var batchSize = env.maxExportBatchSize ?? 512;
 
     // --- scheduleDelay ---
     // Spec type: Duration. Zero is valid ("export as fast as possible").
     // Negative values MUST warn and fall back to default.
     Duration scheduleDelay;
-    if (env['scheduleDelay'] is Duration) {
-      final delay = env['scheduleDelay'] as Duration;
+    if (env.scheduleDelay != null) {
+      final delay = env.scheduleDelay!;
       if (delay.inMilliseconds >= 0) {
         scheduleDelay = delay;
       } else {
@@ -97,8 +97,8 @@ class BatchSpanProcessorConfig {
     // Spec type: Timeout. Zero means "no limit" — substitute a very large
     // duration. Negative values MUST warn and fall back to default.
     Duration exportTimeout;
-    if (env['exportTimeout'] is Duration) {
-      final timeout = env['exportTimeout'] as Duration;
+    if (env.exportTimeout != null) {
+      final timeout = env.exportTimeout!;
       if (timeout.inMilliseconds == 0) {
         exportTimeout = noLimit;
       } else if (timeout.inMilliseconds > 0) {

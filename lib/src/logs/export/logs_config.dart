@@ -125,15 +125,15 @@ class LogsConfiguration {
   ) {
     // Get OTLP config for logs signal
     final otlpConfig = OTelEnv.getOtlpConfig(signal: 'logs');
-    final protocol = otlpConfig['protocol'] as String? ?? 'http/protobuf';
+    final protocol = otlpConfig.protocol ?? 'http/protobuf';
 
     // Use env endpoint if available, otherwise use provided endpoint. The
     // default endpoint depends on the protocol (issue #220): OTLP/gRPC uses
     // port 4317, the HTTP protocols use port 4318.
-    final effectiveEndpoint = otlpConfig['endpoint'] as String? ??
+    final effectiveEndpoint = otlpConfig.endpoint ??
         endpoint ??
         (protocol == 'grpc' ? OTel.defaultGrpcEndpoint : OTel.defaultEndpoint);
-    final envInsecure = otlpConfig['insecure'] as bool?;
+    final envInsecure = otlpConfig.insecure;
     final effectiveSecure = OTelEnv.resolveOtlpSecure(
       envInsecure: envInsecure,
       endpoint: effectiveEndpoint,
@@ -157,13 +157,12 @@ class LogsConfiguration {
           OtlpGrpcLogRecordExporterConfig(
             endpoint: effectiveEndpoint,
             insecure: !effectiveSecure,
-            headers: otlpConfig['headers'] as Map<String, String>? ?? {},
-            timeout: otlpConfig['timeout'] as Duration? ??
-                const Duration(seconds: 10),
-            compression: otlpConfig['compression'] == 'gzip',
-            certificate: otlpConfig['certificate'] as String?,
-            clientKey: otlpConfig['clientKey'] as String?,
-            clientCertificate: otlpConfig['clientCertificate'] as String?,
+            headers: otlpConfig.headers ?? {},
+            timeout: otlpConfig.timeout ?? const Duration(seconds: 10),
+            compression: otlpConfig.compression == 'gzip',
+            certificate: otlpConfig.certificate,
+            clientKey: otlpConfig.clientKey,
+            clientCertificate: otlpConfig.clientCertificate,
           ),
         );
       } else {
@@ -175,13 +174,12 @@ class LogsConfiguration {
         return OtlpHttpLogRecordExporter(
           OtlpHttpLogRecordExporterConfig(
             endpoint: effectiveEndpoint,
-            headers: otlpConfig['headers'] as Map<String, String>? ?? {},
-            timeout: otlpConfig['timeout'] as Duration? ??
-                const Duration(seconds: 10),
-            compression: otlpConfig['compression'] == 'gzip',
-            certificate: otlpConfig['certificate'] as String?,
-            clientKey: otlpConfig['clientKey'] as String?,
-            clientCertificate: otlpConfig['clientCertificate'] as String?,
+            headers: otlpConfig.headers ?? {},
+            timeout: otlpConfig.timeout ?? const Duration(seconds: 10),
+            compression: otlpConfig.compression == 'gzip',
+            certificate: otlpConfig.certificate,
+            clientKey: otlpConfig.clientKey,
+            clientCertificate: otlpConfig.clientCertificate,
           ),
         );
       }

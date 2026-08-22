@@ -12,15 +12,20 @@ void main() {
   OTelLog.logFunction = null;
   final config = OTelEnv.getBspConfig();
 
-  // Convert Duration to milliseconds for JSON serialization.
+  // Convert record to JSON-serializable map.
   final jsonConfig = <String, dynamic>{};
-  config.forEach((key, value) {
-    if (value is Duration) {
-      jsonConfig['${key}_ms'] = value.inMilliseconds;
-    } else {
-      jsonConfig[key] = value;
-    }
-  });
+  if (config.scheduleDelay != null) {
+    jsonConfig['scheduleDelay_ms'] = config.scheduleDelay!.inMilliseconds;
+  }
+  if (config.exportTimeout != null) {
+    jsonConfig['exportTimeout_ms'] = config.exportTimeout!.inMilliseconds;
+  }
+  if (config.maxQueueSize != null) {
+    jsonConfig['maxQueueSize'] = config.maxQueueSize;
+  }
+  if (config.maxExportBatchSize != null) {
+    jsonConfig['maxExportBatchSize'] = config.maxExportBatchSize;
+  }
 
   print(jsonEncode(jsonConfig));
 }
