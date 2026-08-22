@@ -48,7 +48,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   empty strings to `null`, so every consumer (endpoint, protocol, service
   name, log level, …) reads an empty value as unset (#213).
 
-Thanks to @abidiahmedcom; reported by @yuzurihaaa (#213, #220, #228).
+  Thanks to @abidiahmedcom; reported by @yuzurihaaa (#213, #220, #228).
+
+- **`service.name` in `OTEL_RESOURCE_ATTRIBUTES` no longer overrides an
+  explicit `serviceName:` argument or `OTEL_SERVICE_NAME`** (#103).
+  Precedence is now, highest first: explicit argument, `OTEL_SERVICE_NAME`,
+  `OTEL_RESOURCE_ATTRIBUTES`, default. `service.version` follows the same
+  order.
+
+- `OTEL_LOG_LEVEL` now takes effect at the start of `OTel.initialize`, so
+  debug logging covers the environment parsing itself.
 
 ## [1.1.0-beta.13] - 2026-08-13
 

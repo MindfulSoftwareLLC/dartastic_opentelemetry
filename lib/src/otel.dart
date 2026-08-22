@@ -160,6 +160,10 @@ class OTel {
   }) async {
     // Has to run before anything logs OTLP headers.
     OTelEnv.applyHeaderLogAllowlist(otlpHeaderLogAllowlist);
+    // Apply OTEL_LOG_LEVEL before the env parsing below emits its debug
+    // output — otherwise an env-configured debug level misses exactly the
+    // lines that diagnose env configuration.
+    initializeLogging();
 
     // Apply environment variables only if parameters are not provided
     final envServiceConfig = OTelEnv.getServiceConfig();
@@ -214,8 +218,20 @@ class OTel {
     // Get otlpConfig for exporter creation later
     final otlpConfigForExporter = OTelEnv.getOtlpConfig(signal: 'traces');
 
-    // Get resource attributes from environment and merge with provided ones
-    final envResourceAttrs = OTelEnv.getResourceAttributes();
+    // Get resource attributes from environment and merge with provided ones.
+    //
+    // service.name and service.version are deliberately excluded here. They
+    // were already resolved into serviceName/serviceVersion above by
+    // getServiceConfig(), which applies the spec precedence -- OTEL_SERVICE_NAME
+    // outranks service.name in OTEL_RESOURCE_ATTRIBUTES -- and an explicit
+    // argument outranks both. These attributes are merged last, at the highest
+    // precedence, so leaving the service keys in would let
+    // OTEL_RESOURCE_ATTRIBUTES override the resolved values and silently beat
+    // programmatic configuration.
+    final envResourceAttrs =
+        Map<String, Object>.from(OTelEnv.getResourceAttributes())
+          ..remove(Service.serviceName.key)
+          ..remove(Service.serviceVersion.key);
     if (envResourceAttrs.isNotEmpty) {
       if (resourceAttributes != null) {
         // Merge with provided attributes - provided ones take precedence
@@ -263,8 +279,6 @@ class OTel {
     _defaultTimeProvider = timeProvider;
     OTel.defaultTracerName = tracerName ?? _defaultTracerName;
     OTel.defaultTracerVersion = tracerVersion ?? defaultTracerVersion;
-    // Initialize logging from environment variables if needed
-    initializeLogging();
 
     final createdFactory = factoryFactory(
       apiEndpoint: endpoint ?? defaultEndpoint,

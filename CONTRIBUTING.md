@@ -35,6 +35,17 @@ There are many ways to contribute to this project:
    ```bash
    dart pub get
    ```
+5. Install the git hooks:
+   ```bash
+   ./tool/setup-hooks.sh
+   ```
+   - **pre-commit**: Automatically formats Dart files and restages them
+   - **pre-push**: Blocks the push if the analyzer reports issues, tests fail,
+     or coverage drops below the published coverage badge
+
+   First-time contributors' CI runs need maintainer approval before they
+   execute, so the hooks are your first line of feedback — they run the same
+   checks CI enforces.
 
 ### Development Workflow
 
@@ -47,14 +58,14 @@ There are many ways to contribute to this project:
    ```bash
    ./tool/test.sh
    ```
-   Why not just `dart test`? The unit tests uses a real otel collector for robustness.  
-   The test.sh script downloads the otel collector for the currecnt platform if it hasn't been downloaded before
+   Why not just `dart test`? The unit tests use a real otel collector for robustness.  
+   The test.sh script downloads the otel collector for the current platform if it hasn't been downloaded before
 
     Optionally, set debug log level or change concurrency from the default of 10.
    ```bash
    ./tool/test.sh --concurrency 1 --log debug
    ```
-4. Run coverage to ensure code has adequete (+80%) code coverage:
+4. Run coverage to ensure code has adequate (+80%) code coverage:
    ```bash
    ./tool/coverage.sh
    ```
@@ -68,23 +79,23 @@ There are many ways to contribute to this project:
    open coverage/html/index.html
    ```
    
-4. Run the analyzer:
+5. Run the analyzer:
    ```bash
    dart analyze
    ```
-5. Format your code:
+6. Format your code:
    ```bash
    dart format .
    ```
-6. Commit your changes with a descriptive commit message:
+7. Commit your changes with a descriptive commit message:
    ```bash
    git commit -m "Add feature: description of your changes"
    ```
-7. Push your branch to your fork:
+8. Push your branch to your fork:
    ```bash
    git push origin feature/your-feature-name
    ```
-8. Create a pull request to the main repository
+9. Create a pull request to the main repository
 
 ## Pull Request Process
 
