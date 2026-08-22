@@ -251,9 +251,13 @@ void main() {
     });
 
     group('number data point with exemplars', () {
-      setUp(() {});
+      setUp(() {
+        MetricTransformer.setExemplarFilter(MetricsExemplarFilter.alwaysOn);
+      });
 
-      tearDown(() {});
+      tearDown(() {
+        MetricTransformer.setExemplarFilter(MetricsExemplarFilter.traceBased);
+      });
 
       test('transforms exemplars for sum metric', () {
         final now = DateTime.now();
@@ -320,9 +324,13 @@ void main() {
     });
 
     group('histogram data point with exemplars', () {
-      setUp(() {});
+      setUp(() {
+        MetricTransformer.setExemplarFilter(MetricsExemplarFilter.alwaysOn);
+      });
 
-      tearDown(() {});
+      tearDown(() {
+        MetricTransformer.setExemplarFilter(MetricsExemplarFilter.traceBased);
+      });
 
       test('transforms exemplars for histogram metric', () {
         final now = DateTime.now();
