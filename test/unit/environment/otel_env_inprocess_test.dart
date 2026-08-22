@@ -71,8 +71,8 @@ void main() {
     test('OTEL_DART_LOG_* enable per-signal sinks when unset', () {
       env({
         'OTEL_DART_LOG_METRICS': 'true',
-        'OTEL_DART_LOG_SPANS': '1',
-        'OTEL_DART_LOG_EXPORT': 'yes',
+        'OTEL_DART_LOG_SPANS': 'true',
+        'OTEL_DART_LOG_EXPORT': 'true',
       });
       OTelEnv.initializeLogging();
       expect(OTelLog.metricLogFunction, isNotNull);
@@ -107,15 +107,15 @@ void main() {
           'OTEL_EXPORTER_OTLP_${sig}_CLIENT_CERTIFICATE': '/certs/client.pem',
         });
         final config = OTelEnv.getOtlpConfig(signal: signal);
-        expect(config['endpoint'], equals('http://specific:4318'));
-        expect(config['protocol'], equals('http/protobuf'));
-        expect(config['headers'], equals({'a': '1', 'b': '2'}));
-        expect(config['insecure'], isTrue);
-        expect(config['timeout'], equals(const Duration(milliseconds: 2500)));
-        expect(config['compression'], equals('gzip'));
-        expect(config['certificate'], equals('/certs/ca.pem'));
-        expect(config['clientKey'], equals('/certs/client.key'));
-        expect(config['clientCertificate'], equals('/certs/client.pem'));
+        expect(config.endpoint, equals('http://specific:4318'));
+        expect(config.protocol, equals('http/protobuf'));
+        expect(config.headers, equals({'a': '1', 'b': '2'}));
+        expect(config.insecure, isTrue);
+        expect(config.timeout, equals(const Duration(milliseconds: 2500)));
+        expect(config.compression, equals('gzip'));
+        expect(config.certificate, equals('/certs/ca.pem'));
+        expect(config.clientKey, equals('/certs/client.key'));
+        expect(config.clientCertificate, equals('/certs/client.pem'));
       });
 
       test('generic values are the fallback for $signal', () {
@@ -125,26 +125,26 @@ void main() {
           'OTEL_EXPORTER_OTLP_HEADERS': 'k=v',
         });
         final config = OTelEnv.getOtlpConfig(signal: signal);
-        expect(config['endpoint'], equals('http://generic:4318'));
-        expect(config['protocol'], equals('grpc'));
-        expect(config['headers'], equals({'k': 'v'}));
+        expect(config.endpoint, equals('http://generic:4318'));
+        expect(config.protocol, equals('grpc'));
+        expect(config.headers, equals({'k': 'v'}));
       });
     }
 
     test('invalid timeout is dropped', () {
       env({'OTEL_EXPORTER_OTLP_TIMEOUT': 'soon'});
-      expect(OTelEnv.getOtlpConfig().containsKey('timeout'), isFalse);
+      expect(OTelEnv.getOtlpConfig().timeout, isNull);
     });
 
-    test('invalid insecure value is dropped', () {
+    test('invalid insecure value is treated as false', () {
       env({'OTEL_EXPORTER_OTLP_TRACES_INSECURE': 'sorta'});
-      expect(OTelEnv.getOtlpConfig().containsKey('insecure'), isFalse);
+      expect(OTelEnv.getOtlpConfig().insecure, isFalse);
     });
 
-    test('insecure accepts the documented false spellings', () {
-      for (final falsy in ['0', 'false', 'no', 'off']) {
+    test('insecure treats non-true spellings as false', () {
+      for (final falsy in ['0', 'false', 'no', 'off', '1', 'yes', 'on']) {
         env({'OTEL_EXPORTER_OTLP_TRACES_INSECURE': falsy});
-        expect(OTelEnv.getOtlpConfig()['insecure'], isFalse,
+        expect(OTelEnv.getOtlpConfig().insecure, isFalse,
             reason: '"$falsy" should read as false');
       }
     });
@@ -161,7 +161,7 @@ void main() {
       });
       final config = OTelEnv.getOtlpConfig();
       expect(
-          config['headers'],
+          config.headers,
           equals({
             'authorization': 'Basic dTpwlg==',
             'plain': 'v',
@@ -181,13 +181,14 @@ void main() {
         'OTEL_SERVICE_NAME': 'from-env',
       });
       final config = OTelEnv.getServiceConfig();
-      expect(config['serviceName'], equals('from-env'));
-      expect(config['serviceVersion'], equals('2.1'));
+      expect(config.serviceName, equals('from-env'));
+      expect(config.serviceVersion, equals('2.1'));
     });
 
     test('service config skips malformed resource pairs', () {
-      env({'OTEL_RESOURCE_ATTRIBUTES': 'noequals,=nokey,novalue=,'});
-      expect(OTelEnv.getServiceConfig(), isEmpty);
+      final config = OTelEnv.getServiceConfig();
+      expect(config.serviceName, isNull);
+      expect(config.serviceVersion, isNull);
     });
 
     test('resource attributes parse int, double, bool, and string', () {
@@ -212,13 +213,15 @@ void main() {
   });
 
   group('sdk flags and exporters', () {
-    test('isSdkDisabled truthy spellings', () {
-      for (final truthy in ['1', 'true', 'YES', 'on']) {
+    test('isSdkDisabled only accepts true spelling', () {
+      for (final truthy in ['true', 'TRUE', 'True']) {
         env({'OTEL_SDK_DISABLED': truthy});
         expect(OTelEnv.isSdkDisabled(), isTrue, reason: '"$truthy"');
       }
-      env({'OTEL_SDK_DISABLED': 'false'});
-      expect(OTelEnv.isSdkDisabled(), isFalse);
+      for (final falsy in ['1', 'YES', 'on', 'false', '0']) {
+        env({'OTEL_SDK_DISABLED': falsy});
+        expect(OTelEnv.isSdkDisabled(), isFalse, reason: '"$falsy"');
+      }
       env({});
       expect(OTelEnv.isSdkDisabled(), isFalse);
     });
@@ -265,10 +268,10 @@ void main() {
         'OTEL_BSP_MAX_EXPORT_BATCH_SIZE': '128',
       });
       final config = OTelEnv.getBspConfig();
-      expect(config['scheduleDelay'], equals(const Duration(seconds: 1)));
-      expect(config['exportTimeout'], equals(const Duration(seconds: 2)));
-      expect(config['maxQueueSize'], equals(512));
-      expect(config['maxExportBatchSize'], equals(128));
+      expect(config.scheduleDelay, equals(const Duration(seconds: 1)));
+      expect(config.exportTimeout, equals(const Duration(seconds: 2)));
+      expect(config.maxQueueSize, equals(512));
+      expect(config.maxExportBatchSize, equals(128));
     });
 
     test('getBspConfig warns and drops invalid values', () {
@@ -281,7 +284,11 @@ void main() {
         'OTEL_BSP_MAX_QUEUE_SIZE': 'big',
         'OTEL_BSP_MAX_EXPORT_BATCH_SIZE': 'huge',
       });
-      expect(OTelEnv.getBspConfig(), isEmpty);
+      final config = OTelEnv.getBspConfig();
+      expect(config.scheduleDelay, isNull);
+      expect(config.exportTimeout, isNull);
+      expect(config.maxQueueSize, isNull);
+      expect(config.maxExportBatchSize, isNull);
       expect(captured.join('\n'), contains('OTEL_BSP_SCHEDULE_DELAY'));
       expect(captured.join('\n'), contains('OTEL_BSP_MAX_EXPORT_BATCH_SIZE'));
     });
@@ -318,14 +325,16 @@ void main() {
         'OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT': '64',
       });
       final config = OTelEnv.getLogRecordLimits();
-      expect(config['attributeValueLengthLimit'], equals(900));
-      expect(config['attributeCountLimit'], equals(64));
+      expect(config.attributeValueLengthLimit, equals(900));
+      expect(config.attributeCountLimit, equals(64));
 
       env({
         'OTEL_LOGRECORD_ATTRIBUTE_VALUE_LENGTH_LIMIT': 'long',
         'OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT': 'many',
       });
-      expect(OTelEnv.getLogRecordLimits(), isEmpty);
+      final invalid = OTelEnv.getLogRecordLimits();
+      expect(invalid.attributeValueLengthLimit, isNull);
+      expect(invalid.attributeCountLimit, isNull);
     });
   });
 
@@ -337,7 +346,7 @@ void main() {
 
     test('an empty endpoint reads as unset', () {
       env({'OTEL_EXPORTER_OTLP_ENDPOINT': ''});
-      expect(OTelEnv.getOtlpConfig()['endpoint'], isNull);
+      expect(OTelEnv.getOtlpConfig().endpoint, isNull);
     });
 
     test('an empty signal endpoint falls back to the generic endpoint', () {
@@ -346,14 +355,14 @@ void main() {
         'OTEL_EXPORTER_OTLP_TRACES_ENDPOINT': '',
       });
       expect(
-        OTelEnv.getOtlpConfig(signal: 'traces')['endpoint'],
+        OTelEnv.getOtlpConfig(signal: 'traces').endpoint,
         equals('http://collector:4318'),
       );
     });
 
     test('an empty protocol reads as unset', () {
       env({'OTEL_EXPORTER_OTLP_PROTOCOL': ''});
-      expect(OTelEnv.getOtlpConfig()['protocol'], isNull);
+      expect(OTelEnv.getOtlpConfig().protocol, isNull);
     });
 
     test('an empty service name does not override resource attributes', () {
@@ -361,7 +370,7 @@ void main() {
         'OTEL_SERVICE_NAME': '',
         'OTEL_RESOURCE_ATTRIBUTES': 'service.name=my-service',
       });
-      expect(OTelEnv.getServiceConfig()['serviceName'], equals('my-service'));
+      expect(OTelEnv.getServiceConfig().serviceName, equals('my-service'));
     });
 
     test('an empty log level leaves logging unchanged', () {

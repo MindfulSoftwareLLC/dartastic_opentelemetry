@@ -189,9 +189,9 @@ void main() {
       expect(config.maxExportBatchSize, isNull);
     });
 
-    test('getLogRecordLimits returns empty map when no env vars set', () {
+    test('getLogRecordLimits returns record when no env vars set', () {
       final config = OTelEnv.getLogRecordLimits();
-      expect(config, isA<Map<String, dynamic>>());
+      expect(config, isA<LogRecordLimitsEnvironmentValues>());
     });
   });
 

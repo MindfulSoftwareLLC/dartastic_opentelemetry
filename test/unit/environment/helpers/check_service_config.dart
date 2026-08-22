@@ -11,5 +11,15 @@ import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 
 void main() {
   final config = OTelEnv.getServiceConfig();
-  print(jsonEncode(config));
+
+  // Convert record to JSON-serializable map.
+  final jsonConfig = <String, dynamic>{};
+  if (config.serviceName != null) {
+    jsonConfig['serviceName'] = config.serviceName;
+  }
+  if (config.serviceVersion != null) {
+    jsonConfig['serviceVersion'] = config.serviceVersion;
+  }
+
+  print(jsonEncode(jsonConfig));
 }

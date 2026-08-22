@@ -49,7 +49,14 @@ void main(List<String> args) {
 
 void _printServiceConfig() {
   final config = OTelEnv.getServiceConfig();
-  print(jsonEncode(config));
+  final jsonConfig = <String, dynamic>{};
+  if (config.serviceName != null) {
+    jsonConfig['serviceName'] = config.serviceName;
+  }
+  if (config.serviceVersion != null) {
+    jsonConfig['serviceVersion'] = config.serviceVersion;
+  }
+  print(jsonEncode(jsonConfig));
 }
 
 void _printResourceAttributes() {
@@ -62,13 +69,27 @@ void _printOtlpConfig(String? signal) {
       ? OTelEnv.getOtlpConfig(signal: signal)
       : OTelEnv.getOtlpConfig();
 
-  // Convert headers map to JSON-serializable format
-  if (config['headers'] != null) {
-    final headers = config['headers'] as Map<String, String>;
-    config['headers'] = headers;
+  // Convert record to JSON-serializable map
+  final jsonConfig = <String, dynamic>{};
+  if (config.endpoint != null) jsonConfig['endpoint'] = config.endpoint;
+  if (config.protocol != null) jsonConfig['protocol'] = config.protocol;
+  if (config.headers != null) jsonConfig['headers'] = config.headers;
+  if (config.insecure != null) jsonConfig['insecure'] = config.insecure;
+  if (config.timeout != null) {
+    jsonConfig['timeout'] = config.timeout!.inMilliseconds;
+  }
+  if (config.compression != null) {
+    jsonConfig['compression'] = config.compression;
+  }
+  if (config.certificate != null) {
+    jsonConfig['certificate'] = config.certificate;
+  }
+  if (config.clientKey != null) jsonConfig['clientKey'] = config.clientKey;
+  if (config.clientCertificate != null) {
+    jsonConfig['clientCertificate'] = config.clientCertificate;
   }
 
-  print(jsonEncode(config));
+  print(jsonEncode(jsonConfig));
 }
 
 void _printHeaders(String? signal) {
@@ -76,7 +97,7 @@ void _printHeaders(String? signal) {
       ? OTelEnv.getOtlpConfig(signal: signal)
       : OTelEnv.getOtlpConfig();
 
-  final headers = config['headers'] as Map<String, String>?;
+  final headers = config.headers;
   if (headers != null) {
     print(jsonEncode(headers));
   } else {
