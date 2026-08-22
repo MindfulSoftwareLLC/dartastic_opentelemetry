@@ -32,6 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **`browser.*` resource attributes and `user_agent.original` are now
+  populated on web** (#190). Invalid `@JS` bindings made the web resource
+  detector throw on first use; the error was swallowed and the attributes
+  were silently missing. A detector failure now omits attributes instead of
+  emitting blanks.
+
 - `Tracer.enabled` now returns `false` when `TracerProvider` has no span
   processor(s) registered, per the Trace SDK spec, sparing span-creation cost
   when nothing is listening. Thanks to @abidiahmedcom (#138, #175).

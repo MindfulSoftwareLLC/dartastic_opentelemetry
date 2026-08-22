@@ -28,24 +28,17 @@ extension NavigatorJSExtension on NavigatorJS {
 
   @JS('vendor')
   external String? get vendor;
+
+  @JS('languages')
+  external JSArray<JSString>? get languages;
 }
 
-// Pure JS function to safely get languages as string
-@JS(
-  'function() { '
-  'var langs = window.navigator.languages;'
-  'return (langs && Array.isArray(langs)) ? langs.join(",") : "";'
-  '}',
-)
-external String _getLanguagesString();
-
-// Pure JS function to check if mobile
-@JS(
-  'function() { '
-  'return /Mobile|Android|iPhone|iPad|iPod|Windows Phone/i.test(window.navigator.userAgent) ? "true" : "false";'
-  '}',
-)
-external String _isMobile();
+/// Matches the user agents of mobile browsers. Computed in Dart — a `@JS`
+/// annotation names a global binding path, never a function body (#190).
+final _mobileUserAgent = RegExp(
+  r'Mobile|Android|iPhone|iPad|iPod|Windows Phone',
+  caseSensitive: false,
+);
 
 /// Detects browser and web-specific resource information.
 ///
@@ -70,26 +63,22 @@ class WebResourceDetector implements ResourceDetector {
 
     try {
       final nav = _navigator;
+      final userAgent = nav.userAgent ?? '';
       attributes['browser.language'] = nav.language ?? '';
       attributes['browser.platform'] = nav.platform ?? '';
       // `user_agent.original` is the current OTel semconv key; the
       // older `browser.user_agent` was removed from the browser
       // namespace in favor of this top-level key.
-      attributes[UserAgent.userAgentOriginal.key] = nav.userAgent ?? '';
+      attributes[UserAgent.userAgentOriginal.key] = userAgent;
       attributes['browser.vendor'] = nav.vendor ?? '';
-      attributes['browser.mobile'] = _isMobile();
-
-      // Get languages using dedicated JS function
-      attributes['browser.languages'] = _getLanguagesString();
+      attributes['browser.mobile'] =
+          _mobileUserAgent.hasMatch(userAgent) ? 'true' : 'false';
+      attributes['browser.languages'] =
+          nav.languages?.toDart.map((l) => l.toDart).join(',') ?? '';
     } catch (e) {
+      // Omit what could not be read rather than emitting blank values —
+      // a populated-but-empty resource hides the failure (#190).
       if (OTelLog.isError()) OTelLog.error('Error detecting web resources: $e');
-      // Provide fallback values to avoid empty attributes
-      attributes['browser.language'] = '';
-      attributes['browser.platform'] = '';
-      attributes[UserAgent.userAgentOriginal.key] = '';
-      attributes['browser.vendor'] = '';
-      attributes['browser.mobile'] = 'false';
-      attributes['browser.languages'] = '';
     }
 
     return ResourceCreate.create(
