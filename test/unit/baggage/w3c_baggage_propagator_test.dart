@@ -133,13 +133,15 @@ void main() {
     });
 
     test('unparseable baggage header preserves existing baggage', () {
-      final existingBaggage = OTel.baggage({'test': OTel.baggageEntry('value')});
+      final existingBaggage =
+          OTel.baggage({'test': OTel.baggageEntry('value')});
       final contextWithExisting = context.withBaggage(existingBaggage);
 
       final carrier = {'baggage': 'invalid_format'};
       final getter = TestTextMapGetter(carrier);
 
-      final extractedContext = propagator.extract(contextWithExisting, carrier, getter);
+      final extractedContext =
+          propagator.extract(contextWithExisting, carrier, getter);
       final extractedBaggage = extractedContext.baggage;
 
       expect(extractedContext, same(contextWithExisting));
