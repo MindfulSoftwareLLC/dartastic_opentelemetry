@@ -142,6 +142,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   baggage untouched instead of clearing it. Thanks to @abidiahmedcom
   (#199, #200, #261).
 
+## [0.10.0]
+Stable-channel republication of `1.1.0-beta.14`. Depends on
+`dartastic_opentelemetry_api: ^0.10.0`.
+
+The minor bump from `0.9.8` carries three **breaking** spec-compliance
+changes:
+
+- **Sampler decisions are honored end to end** (#120–#123, #129): dropped
+  spans reach no processor, `RecordOnly` no longer sets the W3C `Sampled`
+  flag, and exporters receive only sampled spans. Adjust your sampler
+  configuration if you relied on unsampled spans being exported.
+- **The default sampler is `ParentBased(root: AlwaysOn)`** (#126): child
+  spans now respect an unsampled parent. Pass
+  `sampler: const AlwaysOnSampler()` to restore the old behavior.
+- **`OTelEnv` configuration functions return typed Dart Records** instead
+  of `Map<String, dynamic>` (`config['endpoint'] as String?` →
+  `config.endpoint`).
+
+Also notable: OTLP/gRPC exporters default to port 4317 per the OTLP spec
+(#220), OTLP requests carry an identifying `User-Agent` (#228), empty
+environment variables read as unset (#213), `service.name` precedence is
+fixed (#103), `browser.*` resource attributes are populated on web (#190)
+with `browser.mobile` as a boolean, and baggage values containing `=`
+survive extraction (#199). Full detail in the `1.1.0-beta.14` entry.
+
 ## [1.1.0-beta.13] - 2026-08-13
 
 ### Security
