@@ -8,13 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.14-wip]
 
-### Fixed
-
-- **`OtlpHttpMetricExporter.forceFlush()` and `shutdown()` now await
-  in-flight exports** (#262). Both returned immediately, and `shutdown()`
-  closed the HTTP client under the live request — failing an export that
-  was about to succeed. Now matches the span and log HTTP exporters.
-
 ### Changed
 
 - **BREAKING**: `OTelEnv` configuration functions (`getOtlpConfig`, `getBspConfig`, `getServiceConfig`, `getLogRecordLimits`, etc.) now return strongly-typed Dart Records instead of `Map<String, dynamic>`.
@@ -38,6 +31,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   4318 (#220).
 
 ### Fixed
+
+- **`OtlpHttpMetricExporter.forceFlush()` and `shutdown()` now await
+  in-flight exports** (#262). Both returned immediately, and `shutdown()`
+  closed the HTTP client under the live request — failing an export that
+  was about to succeed. Now matches the span and log HTTP exporters.
 
 - `Tracer.enabled` now returns `false` when `TracerProvider` has no span
   processor(s) registered, per the Trace SDK spec, sparing span-creation cost
