@@ -142,7 +142,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   baggage untouched instead of clearing it. Thanks to @abidiahmedcom
   (#199, #200, #261).
 
-## [0.10.0]
+## [0.10.0] - 2026-08-23
 Stable-channel republication of `1.1.0-beta.14`. Depends on
 `dartastic_opentelemetry_api: ^0.10.0`.
 
