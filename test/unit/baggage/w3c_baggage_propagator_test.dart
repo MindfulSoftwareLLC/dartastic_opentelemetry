@@ -123,14 +123,95 @@ void main() {
     });
 
     test('handles invalid baggage format', () {
+      // Propagators API spec: when no entry survives parsing the
+      // implementation MUST NOT store a new value — return original context.
       final carrier = {'baggage': 'invalid format'};
       final getter = TestTextMapGetter(carrier);
 
       final extractedContext = propagator.extract(context, carrier, getter);
-      final extractedBaggage = extractedContext.baggage;
 
-      expect(extractedBaggage, isA<Baggage>());
-      expect(extractedBaggage!.getAllEntries(), isEmpty);
+      expect(extractedContext, same(context),
+          reason: 'unparseable header must not overwrite existing context');
+    });
+
+    test('preserves existing baggage when header is unparseable (#200)',
+        () async {
+      // Set up a context that already carries valid baggage.
+      final existingBaggage =
+          OTel.baggage({'existing': OTel.baggageEntry('keep-me')});
+      final incoming = context.withBaggage(existingBaggage);
+
+      // An unparseable header that will produce zero valid entries.
+      final carrier = {'baggage': '=x'};
+      final getter = TestTextMapGetter(carrier);
+
+      final extracted = propagator.extract(incoming, carrier, getter);
+      final extractedBaggage = extracted.baggage;
+
+      expect(extractedBaggage, isNotNull);
+      expect(extractedBaggage!.getEntry('existing')?.value, 'keep-me',
+          reason: 'existing baggage must survive an unparseable header');
+    });
+
+    test('preserves existing baggage when all entries are invalid (#200)', () {
+      final existingBaggage =
+          OTel.baggage({'existing': OTel.baggageEntry('keep-me')});
+      final incoming = context.withBaggage(existingBaggage);
+
+      final carrier = {'baggage': 'garbage,,=x,=y'};
+      final getter = TestTextMapGetter(carrier);
+
+      final extracted = propagator.extract(incoming, carrier, getter);
+      final extractedBaggage = extracted.baggage;
+
+      expect(extractedBaggage, isNotNull);
+      expect(extractedBaggage!.getEntry('existing')?.value, 'keep-me',
+          reason: 'existing baggage must survive when all entries are invalid');
+    });
+
+    test('value containing equals sign is preserved (#199)', () {
+      final carrier = {'baggage': 'query=a=b'};
+      final getter = TestTextMapGetter(carrier);
+
+      final extracted = propagator.extract(context, carrier, getter);
+      final entry = extracted.baggage!.getEntry('query');
+
+      expect(entry, isNotNull);
+      expect(entry!.value, 'a=b');
+    });
+
+    test('base64-padded value with trailing equals is preserved (#199)', () {
+      final carrier = {'baggage': 'token=abc123=='};
+      final getter = TestTextMapGetter(carrier);
+
+      final extracted = propagator.extract(context, carrier, getter);
+      final entry = extracted.baggage!.getEntry('token');
+
+      expect(entry, isNotNull);
+      expect(entry!.value, 'abc123==');
+    });
+
+    test('multiple equals in value are all preserved (#199)', () {
+      final carrier = {'baggage': 'data=a=b=c&key=1'};
+      final getter = TestTextMapGetter(carrier);
+
+      final extracted = propagator.extract(context, carrier, getter);
+      final entry = extracted.baggage!.getEntry('data');
+
+      expect(entry, isNotNull);
+      expect(entry!.value, 'a=b=c&key=1');
+    });
+
+    test('equals in value with metadata is preserved (#199)', () {
+      final carrier = {'baggage': 'token=abc=def;prop=foo'};
+      final getter = TestTextMapGetter(carrier);
+
+      final extracted = propagator.extract(context, carrier, getter);
+      final entry = extracted.baggage!.getEntry('token');
+
+      expect(entry, isNotNull);
+      expect(entry!.value, 'abc=def');
+      expect(entry.metadata, 'prop=foo');
     });
 
     test(
