@@ -78,6 +78,12 @@ void main() {
       ('non-ASCII is UTF-8 percent-encoded', 'café', 'caf%C3%A9'),
       ('CR LF are escaped', 'a\r\nb', 'a%0D%0Ab'),
       ('backslash is escaped', r'C:\x', 'C%3A%5Cx'),
+      // Folded from w3c_baggage_propagator_test.dart per review.
+      ('space is escaped', 'a b', 'a%20b'),
+      ('semicolon is escaped', 'a;b', 'a%3Bb'),
+      ('comma is escaped', 'a,b', 'a%2Cb'),
+      ('double quote is escaped', 'a"b', 'a%22b'),
+      ('plus stays literal, not form-decoded', 'a+b', 'a+b'),
     ];
 
     for (final (label, value, wire) in rows) {

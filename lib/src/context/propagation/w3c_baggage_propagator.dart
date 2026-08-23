@@ -1,6 +1,8 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
+import 'dart:convert' show utf8;
+
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import '../../otel.dart';
@@ -58,15 +60,32 @@ class W3CBaggagePropagator
       if (eqIndex <= 0) continue;
 
       // Keys are tokens per RFC 7230 — they are NOT percent-encoded or
-      // decoded on the wire.  Use the raw key as-is.
+      // decoded on the wire. Apply the same token rule inject applies so a
+      // pass-through hop cannot lose entries (extract→inject symmetry).
       final key = trimmedPair.substring(0, eqIndex).trim();
-      if (key.isEmpty) continue;
+      if (!_isValidToken(key)) continue;
 
       final valueAndMetadata = trimmedPair.substring(eqIndex + 1).split(';');
-      final value = _decodeValue(valueAndMetadata[0].trim());
+
+      // W3C Baggage: an unparsable list member is ignored, not fatal — one
+      // malformed entry must neither break the rest of the header nor, in
+      // composite propagation, prevent traceparent from being parsed.
+      String value;
+      try {
+        value = _decodeValue(valueAndMetadata[0].trim());
+      }
+      // ignore: avoid_catching_errors
+      on ArgumentError {
+        // Uri.decodeComponent signals truncated/invalid escapes as
+        // ArgumentError; W3C says skip the list member.
+        continue;
+      } on FormatException {
+        continue;
+      }
+
       String? metadata;
       if (valueAndMetadata.length > 1) {
-        metadata = valueAndMetadata.sublist(1).join(';').trim();
+        metadata = _safeDecode(valueAndMetadata.sublist(1).join(';').trim());
       }
 
       entries[key] = OTel.baggageEntry(value, metadata);
@@ -135,8 +154,11 @@ class W3CBaggagePropagator
             'Processing entry - Key: $key, Value: $value, Metadata: $metadata',
           );
         }
+        // Metadata is `property = token "=" *baggage-octet` on the wire and
+        // free text in the API, so it must go through the same encoding as
+        // values or a raw `,`/`;`/CRLF in it would forge extra list members.
         if (metadata != null && metadata.isNotEmpty) {
-          return '$key=$value;$metadata';
+          return '$key=$value;${_encodeValue(metadata)}';
         }
         return '$key=$value';
       }).join(',');
@@ -156,74 +178,74 @@ class W3CBaggagePropagator
   @override
   List<String> fields() => const [_baggageHeader];
 
-  /// Checks whether [key] is a valid W3C Baggage token (RFC 7230).
-  ///
-  /// Valid token characters: `!`, `#`, `$`, `%`, `&`, `'`, `*`, `+`, `-`,
-  /// `.`, `^`, `_`, `` ` ``, `|`, `~`, digits, and letters.
-  bool _isValidToken(String key) {
-    if (key.isEmpty) return false;
-    for (var i = 0; i < key.length; i++) {
-      final code = key.codeUnitAt(i);
-      if (!_isTchar(code)) return false;
-    }
-    return true;
-  }
+  /// Matches an RFC 7230 `token`, the grammar W3C Baggage requires for
+  /// keys (and property names): `!`, `#`, `$`, `%`, `&`, `'`, `*`, `+`,
+  /// `-`, `.`, `^`, `_`, `` ` ``, `|`, `~`, DIGIT, ALPHA.
+  static final RegExp _token = RegExp(r"^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$");
 
-  static bool _isTchar(int code) {
-    // "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." /
-    // "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA
-    if (code >= 0x41 && code <= 0x5A) return true; // A-Z
-    if (code >= 0x61 && code <= 0x7A) return true; // a-z
-    if (code >= 0x30 && code <= 0x39) return true; // 0-9
-    switch (code) {
-      case 0x21: // !
-      case 0x23: // #
-      case 0x24: // $
-      case 0x25: // %
-      case 0x26: // &
-      case 0x27: // '
-      case 0x2A: // *
-      case 0x2B: // +
-      case 0x2D: // -
-      case 0x2E: // .
-      case 0x5E: // ^
-      case 0x5F: // _
-      case 0x60: // `
-      case 0x7C: // |
-      case 0x7E: // ~
-        return true;
-      default:
-        return false;
-    }
-  }
+  /// Checks whether [key] is a valid W3C Baggage key.
+  bool _isValidToken(String key) => _token.hasMatch(key);
+
+  /// Whether [octet] is in the W3C Baggage `baggage-octet` set
+  /// (`%x21 / %x23-2B / %x2D-3A / %x3C-5B / %x5D-7E`) — i.e. printable
+  /// ASCII excluding space, `"`, `,`, `;`, `\`, controls, and non-ASCII.
+  ///
+  /// `:` (0x3A) is in the set on the wire but is additionally excluded from
+  /// raw pass-through here: emitting it as `%3A` stays within
+  /// `baggage-octet` for every emitted byte, keeps the pinned contract
+  /// byte-exact, and any spec-following receiver percent-decodes it back.
+  static bool _isBaggageOctet(int octet) =>
+      octet >= 0x21 &&
+      octet <= 0x7E &&
+      octet != 0x22 && // "
+      octet != 0x2C && // ,
+      octet != 0x3A && // :
+      octet != 0x3B && // ;
+      octet != 0x5C; //   \
 
   /// Encodes a baggage value per the W3C Baggage specification.
   ///
-  /// The spec's `baggage-octet` set allows most printable ASCII but
-  /// excludes space (0x20), `"` (0x22), `,` (0x2C), and `;` (0x3B).
-  /// Those four characters are percent-encoded; everything else passes through.
+  /// Allowlist encoding: every UTF-8 byte outside `baggage-octet`
+  /// (non-ASCII included) is percent-encoded with uppercase hex. `%` itself
+  /// is always emitted as `%25` even though it is a valid octet — otherwise
+  /// the decoder could misread pre-existing escape sequences and the codec
+  /// would not be injective (e.g. `a%2Cb` must not decode to `a,b`).
   String _encodeValue(String value) {
     final buffer = StringBuffer();
-    for (var i = 0; i < value.length; i++) {
-      final code = value.codeUnitAt(i);
-      switch (code) {
-        case 0x20: // space
-          buffer.write('%20');
-        case 0x22: // "
-          buffer.write('%22');
-        case 0x2C: // ,
-          buffer.write('%2C');
-        case 0x3B: // ;
-          buffer.write('%3B');
-        default:
-          buffer.writeCharCode(code);
+    for (final octet in utf8.encode(value)) {
+      if (octet == 0x25) {
+        buffer.write('%25');
+      } else if (_isBaggageOctet(octet)) {
+        buffer.writeCharCode(octet);
+      } else {
+        buffer.write(
+          '%${octet.toRadixString(16).toUpperCase().padLeft(2, '0')}',
+        );
       }
     }
     return buffer.toString();
   }
 
   /// Decodes a baggage value (plain percent-decoding, no form-style `+`).
+  ///
+  /// Throws [ArgumentError] or [FormatException] on malformed input;
+  /// callers guard per entry per the W3C "ignore unparsable member" rule.
   String _decodeValue(String value) {
     return Uri.decodeComponent(value);
+  }
+
+  /// Best-effort decode used for metadata: returns the input unchanged when
+  /// it is not valid percent-encoding, since metadata is auxiliary and must
+  /// never be able to fail the surrounding entry.
+  static String _safeDecode(String value) {
+    try {
+      return Uri.decodeComponent(value);
+    }
+    // ignore: avoid_catching_errors
+    on ArgumentError {
+      return value;
+    } on FormatException {
+      return value;
+    }
   }
 }
