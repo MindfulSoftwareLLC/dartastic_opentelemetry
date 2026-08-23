@@ -286,10 +286,16 @@ void main() {
       await server.close(force: true);
 
       final completer = Completer<void>();
+      // The response was already gated on a completer, but nothing gated
+      // RECEIPT — a 50ms sleep stood in for "the server has the request",
+      // and under parallel load that elapses before the request lands, so
+      // shutdown ran against no pending export at all.
+      final received = Completer<void>();
       server = await HttpServer.bind('localhost', 0);
       port = server.port;
       server.listen((request) async {
         requestCount++;
+        if (!received.isCompleted) received.complete();
         await request.drain<void>();
         await completer.future;
         request.response.statusCode = 200;
@@ -304,7 +310,8 @@ void main() {
 
       // Start export
       final exportFuture = exporter.export(spans);
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+      // The export is in flight as a fact, not as a hope about elapsed time.
+      await received.future;
 
       // Start shutdown while export is pending
       final shutdownFuture = exporter.shutdown();
