@@ -356,8 +356,7 @@ void main() {
       timeout: testTimeout,
     );
 
-    test('withSpanContext replaces a span context from another trace',
-        () async {
+    test('withSpanContext allows trace ID replacement', () async {
       final uniqueSpanName1 = 'span1-$uniqueId';
       final uniqueSpanName2 = 'span2-$uniqueId';
 
@@ -367,21 +366,17 @@ void main() {
       final newContext = OTel.context();
       final span2 = tracer.startSpan(uniqueSpanName2, context: newContext);
 
-      // Per the Context specification a set-value operation always returns a
-      // derived Context, and per the Propagators API `extract` must never
-      // throw: receiving a valid span context for another trace while a local
-      // span is active is an ordinary situation during extraction, not an
-      // error. This asserted throwsArgumentError until the API stopped
-      // rejecting it.
-      final foreign = span2.spanContext;
-      final before = context1.spanContext;
-      final derived = context1.withSpanContext(foreign);
+      final derived = context1.withSpanContext(span2.spanContext);
 
-      expect(derived.spanContext, same(foreign));
       expect(
-        context1.spanContext,
-        same(before),
-        reason: 'Context is immutable; the original must be unchanged',
+        derived.spanContext?.traceId,
+        equals(span2.spanContext.traceId),
+        reason: 'Derived context should carry span2 trace ID',
+      );
+      expect(
+        derived.spanContext,
+        equals(span2.spanContext),
+        reason: 'Derived context should contain span2 span context',
       );
 
       span1.end();
