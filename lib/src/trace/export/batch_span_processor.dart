@@ -213,6 +213,18 @@ class BatchSpanProcessor implements SpanProcessor {
       return;
     }
 
+    // Per the Trace SDK spec (Sampling), span exporters MUST receive
+    // spans with the Sampled flag set and SHOULD NOT receive the ones
+    // that do not (e.g. RECORD_ONLY spans record but are not exported).
+    if (!span.spanContext.traceFlags.isSampled) {
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+          'BatchSpanProcessor: Skipping enqueue - span ${span.spanContext.spanId} is not sampled',
+        );
+      }
+      return;
+    }
+
     return _lock.synchronized(() {
       if (_spanQueue.length >= _config.maxQueueSize) {
         if (OTelLog.isDebug()) {

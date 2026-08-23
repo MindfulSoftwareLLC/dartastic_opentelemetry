@@ -64,18 +64,22 @@ class RateLimitingSampler implements Sampler {
     // Update tokens first
     _updateTokens();
 
+    final parentTraceState = parentContext.spanContext?.traceState;
+
     // If we have tokens available, sample the trace
     if (_tokenBalance >= 1.0) {
       _tokenBalance -= 1.0;
-      return const SamplingResult(
+      return SamplingResult(
         decision: SamplingDecision.recordAndSample,
         source: SamplingDecisionSource.tracerConfig,
+        traceState: parentTraceState,
       );
     }
 
-    return const SamplingResult(
+    return SamplingResult(
       decision: SamplingDecision.drop,
       source: SamplingDecisionSource.tracerConfig,
+      traceState: parentTraceState,
     );
   }
 
