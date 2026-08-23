@@ -48,9 +48,17 @@ extension NavigatorJSExtension on NavigatorJS {
 ///
 /// NOTE for a follow-up, deliberately not changed in a bug fix: both
 /// occupy the official `browser.*` namespace without being in the
-/// registry. `browser.vendor` in particular overlaps `browser.brands`,
-/// which IS the registry's way of naming the engine vendor. Renaming
-/// either is a wire change and belongs in its own PR.
+/// registry, which the OTel naming rules advise against — "It is not
+/// recommended to use existing OpenTelemetry semantic convention
+/// namespace as a prefix for a new company- or application-specific
+/// attribute name. Doing so may result in a name clash in the future."
+///
+/// `browser.vendor` in particular overlaps `browser.brands`, which IS
+/// the registry's way of naming the vendor, and its source
+/// (`navigator.vendor`) is a frozen legacy API. `browser.languages`
+/// is the stronger of the two and should also be an array rather than
+/// a comma-joined string, per the pluralization rule. Renaming either
+/// is a wire change and belongs in its own PR.
 enum _BrowserExtra implements OTelSemantic {
   /// All languages the user accepts, comma-joined. `browser.language`
   /// (registry) carries only the preferred one.
@@ -77,16 +85,34 @@ final _mobileUserAgent = RegExp(
 
 /// Whether the browser is running on a mobile device.
 ///
-/// The user agent alone is not enough. Since iPadOS 13 an iPad requests
-/// desktop sites by default and reports a `Macintosh; Intel Mac OS X`
-/// user agent, so the `iPad` alternative above never matches and every
-/// iPad would be reported as non-mobile. `maxTouchPoints` is the standard
-/// supplement: a desktop Mac reports 0, a touch device reports the number
-/// of simultaneous touches it supports.
+/// The user agent alone is not enough, and no amount of UA parsing can
+/// fix that. Since iPadOS 13 an iPad requests desktop sites by default
+/// and reports a `Macintosh; Intel Mac OS X` user agent, so the `iPad`
+/// alternative above never matches and every iPad reads as non-mobile.
 ///
-/// Combining them keeps both directions honest — a UA-spoofing desktop
-/// browser with no touchscreen stays desktop, and a touch-capable
-/// Windows laptop only counts as mobile if its UA says so too.
+/// There is no version or silicon hint to fall back on. Apple froze the
+/// macOS platform token, so EVERY Mac — Apple Silicon included — also
+/// reports `Intel Mac OS X`, pinned at `10_15_7` (Catalina) indefinitely;
+/// Safari and Chrome both do this deliberately, because introducing an
+/// `arm64` token would break UA sniffing across the web. An iPad in
+/// desktop mode is reusing that already-frozen Mac string, so the two are
+/// indistinguishable by user agent BY DESIGN. Do not "simplify" this back
+/// into a UA-only test.
+///
+/// `maxTouchPoints` is the only signal left: a Mac reports 0 (a trackpad
+/// is not a touch point) and iPadOS reports 5. Requiring both keeps each
+/// direction honest — a UA-spoofing desktop with no touchscreen stays
+/// desktop, and a touch-capable Windows laptop counts as mobile only if
+/// its UA says so too.
+///
+/// KNOWN DEVIATION from semconv, tracked for follow-up rather than
+/// decided here: the registry says this value "is intended to be taken
+/// from the UA client hints API (`navigator.userAgentData.mobile`). If
+/// unavailable, this attribute SHOULD be left unset." UA Client Hints is
+/// Chromium-only — Safari does not implement `navigator.userAgentData` at
+/// all — so strict conformance would leave `browser.mobile` unset for
+/// every WebKit and Gecko user. We derive it instead. That trade-off
+/// belongs upstream, not in a silent local choice.
 @visibleForTesting
 bool isMobileBrowser(String userAgent, int? maxTouchPoints) =>
     _mobileUserAgent.hasMatch(userAgent) ||
@@ -117,6 +143,12 @@ class WebResourceDetector implements ResourceDetector {
       final nav = _navigator;
       final userAgent = nav.userAgent ?? '';
       attributes[Browser.browserLanguage.key] = nav.language ?? '';
+      // `navigator.platform` — the legacy source the registry sanctions
+      // when UA Client Hints is unavailable. Note it reports `MacIntel`
+      // for an iPad in desktop mode, for the same frozen-token reason
+      // described on [isMobileBrowser]: misleading, but conformant, and
+      // unlike `browser.mobile` we cannot correct it without departing
+      // from the spec.
       attributes[Browser.browserPlatform.key] = nav.platform ?? '';
       // `user_agent.original` is the current OTel semconv key; the
       // older `browser.user_agent` was removed from the browser
