@@ -38,6 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   were silently missing. A detector failure now omits attributes instead of
   emitting blanks.
 
+- **`browser.vendor` is no longer emitted.** `navigator.vendor` is a frozen
+  legacy API that returns a hardcoded vendor string rather than the real
+  vendor, and the registry's `browser.brands` is the structured answer to
+  the same question.
+
 - **`browser.mobile` is now correct on iPad.** Since iPadOS 13 an iPad
   requests desktop sites by default and reports a `Macintosh` user agent,
   so a user-agent test alone reported every iPad as a desktop. The

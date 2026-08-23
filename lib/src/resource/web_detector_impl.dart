@@ -28,9 +28,6 @@ extension NavigatorJSExtension on NavigatorJS {
   @JS('userAgent')
   external String? get userAgent;
 
-  @JS('vendor')
-  external String? get vendor;
-
   @JS('languages')
   external JSArray<JSString>? get languages;
 
@@ -43,29 +40,24 @@ extension NavigatorJSExtension on NavigatorJS {
 /// The OpenTelemetry attribute registry defines `browser.brands`,
 /// `browser.language`, `browser.mobile`, `browser.platform` and
 /// `browser.document.url.full` — those come from [Browser] and are not
-/// repeated here. These two have no registry equivalent, so they are
-/// declared rather than written as literals at the call site.
+/// repeated here. This one has no registry equivalent, so it is declared
+/// rather than written as a literal at the call site.
 ///
-/// NOTE for a follow-up, deliberately not changed in a bug fix: both
-/// occupy the official `browser.*` namespace without being in the
-/// registry, which the OTel naming rules advise against — "It is not
-/// recommended to use existing OpenTelemetry semantic convention
-/// namespace as a prefix for a new company- or application-specific
-/// attribute name. Doing so may result in a name clash in the future."
+/// NOTE for a follow-up, deliberately not changed in a bug fix: it
+/// occupies the official `browser.*` namespace without being in the
+/// registry, and it should be an array rather than a comma-joined
+/// string, per the naming rule that an attribute representing multiple
+/// entities "SHOULD be pluralized and the value type SHOULD be an
+/// array". Both are wire changes and belong in their own PR.
 ///
-/// `browser.vendor` in particular overlaps `browser.brands`, which IS
-/// the registry's way of naming the vendor, and its source
-/// (`navigator.vendor`) is a frozen legacy API. `browser.languages`
-/// is the stronger of the two and should also be an array rather than
-/// a comma-joined string, per the pluralization rule. Renaming either
-/// is a wire change and belongs in its own PR.
+/// `browser.vendor` used to sit alongside this and has been dropped:
+/// `navigator.vendor` is a frozen legacy API returning a hardcoded
+/// vendor string, and `browser.brands` is the registry's structured
+/// answer to the same question.
 enum _BrowserExtra implements OTelSemantic {
   /// All languages the user accepts, comma-joined. `browser.language`
   /// (registry) carries only the preferred one.
-  browserLanguages('browser.languages'),
-
-  /// `navigator.vendor`. No registry equivalent; see the note above.
-  browserVendor('browser.vendor');
+  browserLanguages('browser.languages');
 
   @override
   final String key;
@@ -154,7 +146,6 @@ class WebResourceDetector implements ResourceDetector {
       // older `browser.user_agent` was removed from the browser
       // namespace in favor of this top-level key.
       attributes[UserAgent.userAgentOriginal.key] = userAgent;
-      attributes[_BrowserExtra.browserVendor.key] = nav.vendor ?? '';
       attributes[Browser.browserMobile.key] =
           isMobileBrowser(userAgent, nav.maxTouchPoints) ? 'true' : 'false';
       attributes[_BrowserExtra.browserLanguages.key] =
