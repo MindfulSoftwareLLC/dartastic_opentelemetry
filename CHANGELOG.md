@@ -38,6 +38,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   were silently missing. A detector failure now omits attributes instead of
   emitting blanks.
 
+- **`browser.mobile` is now correct on iPad.** Since iPadOS 13 an iPad
+  requests desktop sites by default and reports a `Macintosh` user agent,
+  so a user-agent test alone reported every iPad as a desktop. The
+  detector now also consults `navigator.maxTouchPoints`, which
+  distinguishes a touch device from a Mac. A touchscreen laptop is still
+  not mobile — both signals have to agree.
+
 - `Tracer.enabled` now returns `false` when `TracerProvider` has no span
   processor(s) registered, per the Trace SDK spec, sparing span-creation cost
   when nothing is listening. Thanks to @abidiahmedcom (#138, #175).
