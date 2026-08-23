@@ -228,21 +228,29 @@ void main() {
   // Shutdown-during-export paths
   // ---------------------------------------------------------------
   group('shutdown during export', () {
-    test('export catches shutdown-interrupted StateError', () async {
-      // Use a slow server so we can shutdown during export
+    test('shutdown drains an in-flight export rather than severing it',
+        () async {
+      // Use a slow server so shutdown lands while the request is in flight.
       await startServer(delay: const Duration(milliseconds: 200));
       final exp = createExporter();
 
-      // Start export in background
       final exportFuture = exp.export(makeMetrics());
 
-      // Give it a moment to start the HTTP request, then shutdown
       await Future<void>.delayed(const Duration(milliseconds: 50));
       await exp.shutdown();
 
-      // The export should return false (interrupted) not throw
-      final result = await exportFuture;
-      expect(result, isFalse);
+      // The FIRST attempt is deliberately allowed to finish: _export only
+      // honours the shutdown flag on retry attempts, "so we complete
+      // in-flight requests". shutdown() waits for it, so the request reaches
+      // the server and succeeds.
+      //
+      // This asserted isFalse until the exporter began registering exports in
+      // _pendingExports. Before that, shutdown() saw an empty list, returned
+      // immediately and closed the HTTP client underneath the live request,
+      // which failed as a ClientException and retried into the shutdown
+      // check. Losing a delivered export that way was the bug, not the
+      // contract.
+      expect(await exportFuture, isTrue);
     });
 
     test('_export at start detects shutdown', () async {
@@ -282,8 +290,14 @@ void main() {
       () async {
         // When wasShutdownDuringRetry is true and ClientException caught,
         // the export throws a StateError
+        // Every attempt fails, so the outcome cannot depend on whether
+        // shutdown lands before or after a particular retry: either the
+        // shutdown check aborts the retry, or the retries exhaust. Both
+        // return false. With a single 503 the second attempt could succeed
+        // if the machine was loaded enough to delay shutdown past it, which
+        // made this test fail only in full-suite runs.
         await startServer(
-          codes: [503],
+          codes: [503, 503, 503, 503],
           delay: const Duration(milliseconds: 100),
         );
         final exp = OtlpHttpMetricExporter(
