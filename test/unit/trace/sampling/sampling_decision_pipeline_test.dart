@@ -148,9 +148,9 @@ void main() {
       test('DROP does not set Sampled ($parentDesc parent)', () async {
         await initWith(sampler: FixedDecisionSampler(SamplingDecision.drop));
         final span = OTel.tracer().startSpan(
-              'drop-span',
-              context: parentContextWith(sampled: parentSampled),
-            );
+          'drop-span',
+          context: parentContextWith(sampled: parentSampled),
+        );
         expect(span.spanContext.traceFlags.isSampled, isFalse);
         span.end();
       });
@@ -160,9 +160,9 @@ void main() {
           sampler: FixedDecisionSampler(SamplingDecision.recordOnly),
         );
         final span = OTel.tracer().startSpan(
-              'record-only-span',
-              context: parentContextWith(sampled: parentSampled),
-            );
+          'record-only-span',
+          context: parentContextWith(sampled: parentSampled),
+        );
         expect(span.spanContext.traceFlags.isSampled, isFalse);
         expect(span.isRecording, isTrue);
         span.end();
@@ -173,9 +173,9 @@ void main() {
           sampler: FixedDecisionSampler(SamplingDecision.recordAndSample),
         );
         final span = OTel.tracer().startSpan(
-              'sampled-span',
-              context: parentContextWith(sampled: parentSampled),
-            );
+          'sampled-span',
+          context: parentContextWith(sampled: parentSampled),
+        );
         expect(span.spanContext.traceFlags.isSampled, isTrue);
         expect(span.isRecording, isTrue);
         span.end();
@@ -266,10 +266,10 @@ void main() {
       OTel.tracerProvider().sampler = null;
 
       final span = OTel.tracer().startSpan(
-            'forced-off',
-            context: parentContextWith(sampled: true),
-            isRecording: false,
-          );
+        'forced-off',
+        context: parentContextWith(sampled: true),
+        isRecording: false,
+      );
 
       expect(span.isRecording, isFalse);
       expect(span.spanContext.traceFlags.isSampled, isFalse);
@@ -294,9 +294,9 @@ void main() {
         await initWith(sampler: FixedDecisionSampler(decision));
         for (final forced in <bool?>[null, true, false]) {
           final span = OTel.tracer().startSpan(
-                'combination-check',
-                isRecording: forced,
-              );
+            'combination-check',
+            isRecording: forced,
+          );
           final forbidden =
               span.spanContext.traceFlags.isSampled && !span.isRecording;
           expect(forbidden, isFalse,
@@ -425,9 +425,9 @@ void main() {
 
       // Local parent: the child of childOfRemote inherits transitively.
       final grandChild = OTel.tracer().startSpan(
-            'grandchild',
-            parentSpan: childOfRemote,
-          );
+        'grandchild',
+        parentSpan: childOfRemote,
+      );
       expect(grandChild.spanContext.traceState?.get('vendor'), 'value');
       grandChild.end();
       childOfRemote.end();
@@ -534,8 +534,7 @@ void main() {
       OTel.tracerProvider().addSpanProcessor(recorder);
     }
 
-    test('the default sampler is ParentBased with an AlwaysOn root',
-        () async {
+    test('the default sampler is ParentBased with an AlwaysOn root', () async {
       await initWithDefaults();
       final sampler = OTel.tracerProvider().sampler;
       expect(sampler, isA<ParentBasedSampler>());
@@ -559,9 +558,9 @@ void main() {
       test('child of a $kindDesc sampled parent is sampled', () async {
         await initWithDefaults();
         final span = OTel.tracer().startSpan(
-              'child-$kindDesc-sampled',
-              context: parentContextWith(sampled: true, isRemote: isRemote),
-            );
+          'child-$kindDesc-sampled',
+          context: parentContextWith(sampled: true, isRemote: isRemote),
+        );
         expect(span.spanContext.traceFlags.isSampled, isTrue);
         expect(span.isRecording, isTrue);
         span.end();
@@ -571,9 +570,9 @@ void main() {
       test('child of a $kindDesc unsampled parent is dropped', () async {
         await initWithDefaults();
         final span = OTel.tracer().startSpan(
-              'child-$kindDesc-unsampled',
-              context: parentContextWith(sampled: false, isRemote: isRemote),
-            );
+          'child-$kindDesc-unsampled',
+          context: parentContextWith(sampled: false, isRemote: isRemote),
+        );
         expect(span.spanContext.traceFlags.isSampled, isFalse);
         expect(span.isRecording, isFalse);
         span.end();
@@ -599,8 +598,7 @@ void main() {
       expect(exporter.spans, isEmpty);
     });
 
-    test('createSpan notifies processors and exports sampled spans',
-        () async {
+    test('createSpan notifies processors and exports sampled spans', () async {
       await initWith();
       final span = OTel.tracer().createSpan(name: 'created-sampled');
 
@@ -638,9 +636,9 @@ void main() {
         spanId: OTel.spanIdFrom('0011223344556677'),
       );
       final span = OTel.tracer().createSpan(
-            name: 'created-explicit',
-            spanContext: explicit,
-          );
+        name: 'created-explicit',
+        spanContext: explicit,
+      );
 
       expect(span.spanContext.traceId, equals(explicit.traceId));
       expect(span.spanContext.spanId, equals(explicit.spanId));
