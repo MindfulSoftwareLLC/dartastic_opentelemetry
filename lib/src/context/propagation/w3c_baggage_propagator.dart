@@ -35,7 +35,7 @@ class W3CBaggagePropagator
     TextMapGetter<String> getter,
   ) {
     final value = getter.get(_baggageHeader);
-    if (OTelLog.isDebug() {      
+    if (OTelLog.isDebug()) {
       OTelLog.debug('Extracting baggage: $value');
     }
     if (value == null || value.isEmpty) {
