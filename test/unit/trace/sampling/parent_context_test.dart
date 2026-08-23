@@ -137,7 +137,7 @@ void main() {
       );
     });
 
-    test('uses bad explicit spanContext over context parent', () {
+    test('explicit spanContext from another trace replaces the parent\'s', () {
       // Create parent span and context
       final parentSpan = tracer.startSpan('parent');
       final parentContext = Context.current.withSpan(parentSpan);
@@ -148,10 +148,19 @@ void main() {
         spanId: OTel.spanId(),
       );
 
+      // Per the Context specification a set-value operation always returns a
+      // derived Context, and per the Propagators API `extract` must never
+      // throw: receiving a valid span context for another trace while a local
+      // span is active is an ordinary situation during extraction, not an
+      // error. This asserted throwsArgumentError until the API stopped
+      // rejecting it.
+      final derived = parentContext.withSpanContext(explicitSpanContext);
+
+      expect(derived.spanContext, same(explicitSpanContext));
       expect(
-        () => parentContext.withSpanContext(explicitSpanContext),
-        throwsArgumentError,
-        reason: 'Should not allow changing trace ID via withSpanContext',
+        derived.span,
+        same(parentSpan),
+        reason: 'withSpanContext replaces the span context, not the span',
       );
     });
 

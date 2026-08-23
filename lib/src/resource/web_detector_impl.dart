@@ -4,7 +4,9 @@
 // Implementation file for web platforms
 // This file won't be directly imported on non-web platforms
 import 'dart:js_interop';
+
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+import 'package:meta/meta.dart';
 import 'resource.dart';
 import 'resource_detector.dart';
 
@@ -26,26 +28,54 @@ extension NavigatorJSExtension on NavigatorJS {
   @JS('userAgent')
   external String? get userAgent;
 
-  @JS('vendor')
-  external String? get vendor;
+  @JS('languages')
+  external JSArray<JSString>? get languages;
+
+  @JS('maxTouchPoints')
+  external int? get maxTouchPoints;
 }
 
-// Pure JS function to safely get languages as string
-@JS(
-  'function() { '
-  'var langs = window.navigator.languages;'
-  'return (langs && Array.isArray(langs)) ? langs.join(",") : "";'
-  '}',
-)
-external String _getLanguagesString();
+/// Matches the user agents of mobile browsers. Computed in Dart — a `@JS`
+/// annotation names a global binding path, never a function body (#190).
+final _mobileUserAgent = RegExp(
+  r'Mobile|Android|iPhone|iPad|iPod|Windows Phone',
+  caseSensitive: false,
+);
 
-// Pure JS function to check if mobile
-@JS(
-  'function() { '
-  'return /Mobile|Android|iPhone|iPad|iPod|Windows Phone/i.test(window.navigator.userAgent) ? "true" : "false";'
-  '}',
-)
-external String _isMobile();
+/// Whether the browser is running on a mobile device.
+///
+/// The user agent alone is not enough, and no amount of UA parsing can
+/// fix that. Since iPadOS 13 an iPad requests desktop sites by default
+/// and reports a `Macintosh; Intel Mac OS X` user agent, so the `iPad`
+/// alternative above never matches and every iPad reads as non-mobile.
+///
+/// There is no version or silicon hint to fall back on. Apple froze the
+/// macOS platform token, so EVERY Mac — Apple Silicon included — also
+/// reports `Intel Mac OS X`, pinned at `10_15_7` (Catalina) indefinitely;
+/// Safari and Chrome both do this deliberately, because introducing an
+/// `arm64` token would break UA sniffing across the web. An iPad in
+/// desktop mode is reusing that already-frozen Mac string, so the two are
+/// indistinguishable by user agent BY DESIGN. Do not "simplify" this back
+/// into a UA-only test.
+///
+/// `maxTouchPoints` is the only signal left: a Mac reports 0 (a trackpad
+/// is not a touch point) and iPadOS reports 5. Requiring both keeps each
+/// direction honest — a UA-spoofing desktop with no touchscreen stays
+/// desktop, and a touch-capable Windows laptop counts as mobile only if
+/// its UA says so too.
+///
+/// KNOWN DEVIATION from semconv, tracked for follow-up rather than
+/// decided here: the registry says this value "is intended to be taken
+/// from the UA client hints API (`navigator.userAgentData.mobile`). If
+/// unavailable, this attribute SHOULD be left unset." UA Client Hints is
+/// Chromium-only — Safari does not implement `navigator.userAgentData` at
+/// all — so strict conformance would leave `browser.mobile` unset for
+/// every WebKit and Gecko user. We derive it instead. That trade-off
+/// belongs upstream, not in a silent local choice.
+@visibleForTesting
+bool isMobileBrowser(String userAgent, int? maxTouchPoints) =>
+    _mobileUserAgent.hasMatch(userAgent) ||
+    (userAgent.contains('Macintosh') && (maxTouchPoints ?? 0) > 1);
 
 /// Detects browser and web-specific resource information.
 ///
@@ -70,26 +100,62 @@ class WebResourceDetector implements ResourceDetector {
 
     try {
       final nav = _navigator;
-      attributes['browser.language'] = nav.language ?? '';
-      attributes['browser.platform'] = nav.platform ?? '';
+      final userAgent = nav.userAgent ?? '';
+      attributes[Browser.browserLanguage.key] = nav.language ?? '';
+      // `navigator.platform` — the legacy source the registry sanctions
+      // when UA Client Hints is unavailable. Note it reports `MacIntel`
+      // for an iPad in desktop mode, for the same frozen-token reason
+      // described on [isMobileBrowser]: misleading, but conformant, and
+      // unlike `browser.mobile` we cannot correct it without departing
+      // from the spec.
+      attributes[Browser.browserPlatform.key] = nav.platform ?? '';
       // `user_agent.original` is the current OTel semconv key; the
       // older `browser.user_agent` was removed from the browser
       // namespace in favor of this top-level key.
-      attributes[UserAgent.userAgentOriginal.key] = nav.userAgent ?? '';
-      attributes['browser.vendor'] = nav.vendor ?? '';
-      attributes['browser.mobile'] = _isMobile();
-
-      // Get languages using dedicated JS function
-      attributes['browser.languages'] = _getLanguagesString();
+      attributes[UserAgent.userAgentOriginal.key] = userAgent;
+      // A BOOLEAN, which is how the registry types `browser.mobile`. It was
+      // the string 'true'/'false', so a backend filtering `browser.mobile =
+      // true` matched nothing.
+      attributes[Browser.browserMobile.key] =
+          isMobileBrowser(userAgent, nav.maxTouchPoints);
+      // `browser.languages` has no registry equivalent. It is not a literal
+      // and not a private enum either: the API stages it as an upstream
+      // candidate, so the key and the argument for it live in one place
+      // rather than being restated here.
+      // An ARRAY, not a comma-joined string: the naming rules say an
+      // attribute that "can represent multiple entities SHOULD be pluralized
+      // and the value type SHOULD be an array", which is also how the
+      // registry shapes the neighbouring `browser.brands`.
+      //
+      // Set only when there is something to say. Unlike an empty string,
+      // which attribute creation drops, an empty list is a real attribute
+      // value and would publish `browser.languages: []` — a claim that the
+      // browser accepts no languages, rather than the absence of an answer.
+      //
+      // Opting into an @experimental key deliberately. That marker is the
+      // API telling consumers this name is a proposal, not a published
+      // convention — which is exactly what this is, and prototyping it in
+      // instrumentation is what the semantic-conventions contribution guide
+      // asks for. If it is renamed or rejected upstream, this line is the
+      // one that has to change.
+      final languages = nav.languages?.toDart.map((l) => l.toDart).toList() ??
+          const <String>[];
+      if (languages.isNotEmpty) {
+        // ignore: experimental_member_use
+        attributes[BrowserCandidate.browserLanguages.key] = languages;
+      }
     } catch (e) {
+      // Resource detection is BEST EFFORT and must never interrupt
+      // initialization: only `initialize` may throw, and a browser we have
+      // never seen is not a reason to take the caller's app down. Whatever
+      // was read before the failure is kept; the rest is omitted.
+      //
+      // Omitted, not blanked — a populated-but-empty resource hides the
+      // failure, which is exactly how #190 stayed invisible. Empty strings
+      // are dropped at attribute creation, so the `?? ''` fallbacks above
+      // produce absent attributes rather than blank ones for the same
+      // reason.
       if (OTelLog.isError()) OTelLog.error('Error detecting web resources: $e');
-      // Provide fallback values to avoid empty attributes
-      attributes['browser.language'] = '';
-      attributes['browser.platform'] = '';
-      attributes[UserAgent.userAgentOriginal.key] = '';
-      attributes['browser.vendor'] = '';
-      attributes['browser.mobile'] = 'false';
-      attributes['browser.languages'] = '';
     }
 
     return ResourceCreate.create(

@@ -75,7 +75,10 @@ class Span implements APISpan {
       if (OTelLog.isDebug()) {
         OTelLog.debug('SDKSpan: Calling delegate.end() for span $name');
       }
-      _delegate.end(endTime: endTime, spanStatus: spanStatus);
+      // `spanStatus` is deliberately NOT forwarded: setStatus() above already
+      // applied it to the same delegate, and the API's end(spanStatus:) is
+      // deprecated because the spec's End operation takes only a timestamp.
+      _delegate.end(endTime: endTime);
       if (OTelLog.isDebug()) {
         OTelLog.debug('SDKSpan: Delegate.end() completed for span $name');
       }
