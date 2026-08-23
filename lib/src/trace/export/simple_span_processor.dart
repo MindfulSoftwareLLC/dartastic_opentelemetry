@@ -45,6 +45,18 @@ class SimpleSpanProcessor implements SpanProcessor {
       return;
     }
 
+    // Per the Trace SDK spec (Sampling), span exporters MUST receive
+    // spans with the Sampled flag set and SHOULD NOT receive the ones
+    // that do not (e.g. RECORD_ONLY spans record but are not exported).
+    if (!span.spanContext.traceFlags.isSampled) {
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+          'SimpleSpanProcessor: Skipping export - span ${span.spanContext.spanId} is not sampled',
+        );
+      }
+      return;
+    }
+
     // Verify the span has a valid end time
     if (span.endTime == null) {
       if (OTelLog.isWarn()) {

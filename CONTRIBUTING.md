@@ -6,6 +6,24 @@ Thank you for your interest in contributing to the OpenTelemetry SDK for Dart! T
 
 This project follows the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/main/code-of-conduct.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to the project maintainers.
 
+## Generative AI Policy
+
+This project follows the OpenTelemetry
+[Generative AI policy](https://github.com/open-telemetry/community/blob/main/policies/genai.md).
+In short: AI assistance is welcome for code, documentation, and tests, but
+**you remain in control and bear full responsibility** — review and validate
+everything before submitting, never post raw AI output as an issue, PR, or
+reply, and when AI generates the bulk of a commit, disclose it with an
+`Assisted-by:` commit trailer (e.g. `Assisted-by: Claude Opus 4.5`).
+Maintainers may close low-effort AI-generated contributions.
+
+**First-time contributors:** your first three contributions should be
+primarily human-written, and PR descriptions must be your own words — see
+the short guide at
+[Using AI](https://opentelemetry.io/docs/contributing/pull-requests/#using-ai).
+
+AI agents: see [AGENTS.md](AGENTS.md).
+
 ## Ways to Contribute
 
 There are many ways to contribute to this project:
