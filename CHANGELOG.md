@@ -59,6 +59,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `OTEL_LOG_LEVEL` now takes effect at the start of `OTel.initialize`, so
   debug logging covers the environment parsing itself.
 
+- **Baggage values containing `=` (e.g. base64 padding) are no longer
+  dropped** on extract, and an unparsable `baggage` header leaves existing
+  baggage untouched instead of clearing it. Thanks to @abidiahmedcom
+  (#199, #200, #261).
+
 ## [1.1.0-beta.13] - 2026-08-13
 
 ### Security
