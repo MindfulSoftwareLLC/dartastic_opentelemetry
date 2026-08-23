@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0-beta.14-wip]
 
 ### Changed
+- **Requires `dartastic_opentelemetry_api` ^1.0.0-rc.2.** Picks up the
+  semantic conventions at registry v1.44.0 — including the full
+  `browser.web_vital.*` set — and three spec-compliance fixes.
+
+  One of those changes behaviour visible from this package:
+  `Context.withSpanContext` now returns a derived Context when the incoming
+  span context belongs to a different trace, instead of throwing
+  `ArgumentError`. Per the Context specification a set-value operation always
+  returns a derived Context, and per the Propagators API `extract` must never
+  throw — receiving a valid span context for another trace during extraction
+  is ordinary, not an error. Four tests that asserted the throw now assert the
+  derived Context.
+
+  `SDKSpan.end()` no longer forwards the deprecated `spanStatus` argument to
+  its delegate; `setStatus()` had already applied it to the same delegate, so
+  the second pass was redundant.
+
 
 - **BREAKING**: `OTelEnv` configuration functions (`getOtlpConfig`, `getBspConfig`, `getServiceConfig`, `getLogRecordLimits`, etc.) now return strongly-typed Dart Records instead of `Map<String, dynamic>`.
   Migration hint: Update map accesses to record property accesses (e.g., `config['endpoint'] as String?` → `config.endpoint`).
@@ -37,6 +54,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   detector throw on first use; the error was swallowed and the attributes
   were silently missing. A detector failure now omits attributes instead of
   emitting blanks.
+
+- **`browser.mobile` is now a boolean**, which is how the registry types it.
+  It was emitted as the string `'true'`/`'false'`, so a backend filtering
+  `browser.mobile = true` matched nothing.
+
+- **`browser.languages` is now a string array, and its key comes from the
+  API.** It was a comma-joined string under a key this package declared
+  privately. The naming rules say an attribute that can represent multiple
+  entities "SHOULD be pluralized and the value type SHOULD be an array",
+  which is also how the registry shapes the neighbouring `browser.brands`.
+  The key is now `BrowserCandidate.browserLanguages`, staged in the API as an
+  upstream candidate, so the name and the argument for it live in one place.
+  It is set only when the browser reports languages: an empty array is a real
+  value on the wire and would claim the browser accepts none.
 
 - **`browser.vendor` is no longer emitted.** `navigator.vendor` is a frozen
   legacy API that returns a hardcoded vendor string rather than the real

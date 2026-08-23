@@ -35,12 +35,18 @@ void main() {
       // the catch papered over it.
       expect(attrs[Browser.browserLanguage.key], isNotEmpty);
       expect(attrs[Browser.browserPlatform.key], isNotEmpty);
-      expect(attrs['browser.languages'], isNotEmpty);
+      // A List<String>, not a comma-joined string.
+      // ignore: experimental_member_use
+      final langs = attrs[BrowserCandidate.browserLanguages.key];
+      expect(langs, isA<List<String>>());
+      expect(langs as List<String>, isNotEmpty);
       expect(attrs[UserAgent.userAgentOriginal.key], isNotEmpty);
 
       // Headless desktop Chrome is not mobile; this must be computed, not
       // the catch-path fallback.
-      expect(attrs[Browser.browserMobile.key], equals('false'));
+      // A bool, not the string 'false' — the registry types this attribute
+      // as a boolean.
+      expect(attrs[Browser.browserMobile.key], isFalse);
     });
 
     group('isMobileBrowser', () {

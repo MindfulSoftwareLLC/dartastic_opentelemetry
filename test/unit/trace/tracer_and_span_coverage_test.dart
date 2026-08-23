@@ -183,7 +183,10 @@ class _InvalidSpanWrapper implements APISpan {
   InstrumentationScope get instrumentationScope =>
       _delegate.instrumentationScope;
   @override
+  // The parameter is deprecated but still part of the interface this fake
+  // implements, so it has to be accepted and forwarded verbatim.
   void end({DateTime? endTime, SpanStatusCode? spanStatus}) =>
+      // ignore: deprecated_member_use
       _delegate.end(endTime: endTime, spanStatus: spanStatus);
   @override
   void setStatus(SpanStatusCode code, [String? description]) =>

@@ -40,14 +40,21 @@ void main() {
 
     expect(await messages.moveNext(), isTrue,
         reason: 'no OTLP export reached the capture server');
-    final attrs = (messages.current as Map).cast<String, String>();
+    final attrs = (messages.current as Map).cast<String, Object>();
 
     expect(attrs['service.name'], equals('web-e2e'));
     expect(attrs['browser.language'], isNotEmpty);
     expect(attrs['browser.platform'], isNotEmpty);
-    expect(attrs['browser.languages'], isNotEmpty);
+    // A List<String>, not a comma-joined string.
+    // ignore: experimental_member_use
+    final langs = attrs[BrowserCandidate.browserLanguages.key];
+    expect(langs, isA<List>(),
+        reason: 'browser.languages must reach the wire as an OTLP array, '
+            'not a joined string');
+    expect(langs as List, isNotEmpty);
     expect(attrs['user_agent.original'], isNotEmpty);
-    expect(attrs['browser.mobile'], equals('false'));
+    // Must arrive as an OTLP boolValue, not the string 'false'.
+    expect(attrs[Browser.browserMobile.key], isFalse);
 
     await OTel.reset();
   });

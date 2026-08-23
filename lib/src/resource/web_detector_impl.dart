@@ -35,39 +35,6 @@ extension NavigatorJSExtension on NavigatorJS {
   external int? get maxTouchPoints;
 }
 
-/// Non-registry `browser.*` keys this detector emits.
-///
-/// The OpenTelemetry attribute registry defines `browser.brands`,
-/// `browser.language`, `browser.mobile`, `browser.platform` and
-/// `browser.document.url.full` — those come from [Browser] and are not
-/// repeated here. This one has no registry equivalent, so it is declared
-/// rather than written as a literal at the call site.
-///
-/// NOTE for a follow-up, deliberately not changed in a bug fix: it
-/// occupies the official `browser.*` namespace without being in the
-/// registry, and it should be an array rather than a comma-joined
-/// string, per the naming rule that an attribute representing multiple
-/// entities "SHOULD be pluralized and the value type SHOULD be an
-/// array". Both are wire changes and belong in their own PR.
-///
-/// `browser.vendor` used to sit alongside this and has been dropped:
-/// `navigator.vendor` is a frozen legacy API returning a hardcoded
-/// vendor string, and `browser.brands` is the registry's structured
-/// answer to the same question.
-enum _BrowserExtra implements OTelSemantic {
-  /// All languages the user accepts, comma-joined. `browser.language`
-  /// (registry) carries only the preferred one.
-  browserLanguages('browser.languages');
-
-  @override
-  final String key;
-
-  const _BrowserExtra(this.key);
-
-  @override
-  String toString() => key;
-}
-
 /// Matches the user agents of mobile browsers. Computed in Dart — a `@JS`
 /// annotation names a global binding path, never a function body (#190).
 final _mobileUserAgent = RegExp(
@@ -146,10 +113,37 @@ class WebResourceDetector implements ResourceDetector {
       // older `browser.user_agent` was removed from the browser
       // namespace in favor of this top-level key.
       attributes[UserAgent.userAgentOriginal.key] = userAgent;
+      // A BOOLEAN, which is how the registry types `browser.mobile`. It was
+      // the string 'true'/'false', so a backend filtering `browser.mobile =
+      // true` matched nothing.
       attributes[Browser.browserMobile.key] =
-          isMobileBrowser(userAgent, nav.maxTouchPoints) ? 'true' : 'false';
-      attributes[_BrowserExtra.browserLanguages.key] =
-          nav.languages?.toDart.map((l) => l.toDart).join(',') ?? '';
+          isMobileBrowser(userAgent, nav.maxTouchPoints);
+      // `browser.languages` has no registry equivalent. It is not a literal
+      // and not a private enum either: the API stages it as an upstream
+      // candidate, so the key and the argument for it live in one place
+      // rather than being restated here.
+      // An ARRAY, not a comma-joined string: the naming rules say an
+      // attribute that "can represent multiple entities SHOULD be pluralized
+      // and the value type SHOULD be an array", which is also how the
+      // registry shapes the neighbouring `browser.brands`.
+      //
+      // Set only when there is something to say. Unlike an empty string,
+      // which attribute creation drops, an empty list is a real attribute
+      // value and would publish `browser.languages: []` — a claim that the
+      // browser accepts no languages, rather than the absence of an answer.
+      //
+      // Opting into an @experimental key deliberately. That marker is the
+      // API telling consumers this name is a proposal, not a published
+      // convention — which is exactly what this is, and prototyping it in
+      // instrumentation is what the semantic-conventions contribution guide
+      // asks for. If it is renamed or rejected upstream, this line is the
+      // one that has to change.
+      final languages = nav.languages?.toDart.map((l) => l.toDart).toList() ??
+          const <String>[];
+      if (languages.isNotEmpty) {
+        // ignore: experimental_member_use
+        attributes[BrowserCandidate.browserLanguages.key] = languages;
+      }
     } catch (e) {
       // Resource detection is BEST EFFORT and must never interrupt
       // initialization: only `initialize` may throw, and a browser we have

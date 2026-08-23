@@ -34,9 +34,18 @@ Future<void> hybridMain(StreamChannel<Object?> channel) async {
     final bytes =
         await request.fold<List<int>>([], (b, chunk) => b..addAll(chunk));
     final export = ExportTraceServiceRequest.fromBuffer(bytes);
-    final resourceAttributes = <String, String>{
+    // Decode both shapes. Reading only `stringValue` silently rendered every
+    // array attribute as '' — which made an array-valued attribute look
+    // absent rather than wrong, so `browser.languages` could not be asserted
+    // as an array at all.
+    final resourceAttributes = <String, Object>{
       for (final rs in export.resourceSpans)
-        for (final kv in rs.resource.attributes) kv.key: kv.value.stringValue,
+        for (final kv in rs.resource.attributes)
+          kv.key: kv.value.hasArrayValue()
+              ? [for (final v in kv.value.arrayValue.values) v.stringValue]
+              : kv.value.hasBoolValue()
+                  ? kv.value.boolValue
+                  : kv.value.stringValue,
     };
 
     response.statusCode = 200;
