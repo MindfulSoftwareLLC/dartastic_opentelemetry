@@ -14,4 +14,4 @@ library;
 
 /// Synced with the `version:` line in pubspec.yaml by the release tooling.
 /// Do not edit by hand — see tool/release.dart.
-const String packageVersion = '1.1.0-beta.14';
+const String packageVersion = '1.1.0-beta.15-wip';
