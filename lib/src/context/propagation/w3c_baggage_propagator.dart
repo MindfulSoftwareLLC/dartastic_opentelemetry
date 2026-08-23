@@ -57,11 +57,13 @@ class W3CBaggagePropagator
       final eqIndex = trimmedPair.indexOf('=');
       if (eqIndex <= 0) continue;
 
-      final key = _decodeComponent(trimmedPair.substring(0, eqIndex).trim());
+      // Keys are tokens per RFC 7230 — they are NOT percent-encoded or
+      // decoded on the wire.  Use the raw key as-is.
+      final key = trimmedPair.substring(0, eqIndex).trim();
       if (key.isEmpty) continue;
 
       final valueAndMetadata = trimmedPair.substring(eqIndex + 1).split(';');
-      final value = _decodeComponent(valueAndMetadata[0].trim());
+      final value = _decodeValue(valueAndMetadata[0].trim());
       String? metadata;
       if (valueAndMetadata.length > 1) {
         metadata = valueAndMetadata.sublist(1).join(';').trim();
@@ -114,9 +116,19 @@ class W3CBaggagePropagator
         return;
       }
 
-      final serializedEntries = entries.entries.map((entry) {
-        final key = _encodeComponent(entry.key);
-        final value = _encodeComponent(entry.value.value);
+      final serializedEntries = entries.entries.where((entry) {
+        if (!_isValidToken(entry.key)) {
+          if (OTelLog.isDebug()) {
+            OTelLog.debug(
+              'Dropping baggage entry with invalid key: ${entry.key}',
+            );
+          }
+          return false;
+        }
+        return true;
+      }).map((entry) {
+        final key = entry.key;
+        final value = _encodeValue(entry.value.value);
         final metadata = entry.value.metadata;
         if (OTelLog.isDebug()) {
           OTelLog.debug(
@@ -144,21 +156,74 @@ class W3CBaggagePropagator
   @override
   List<String> fields() => const [_baggageHeader];
 
-  /// Encodes a component for use in the baggage header.
+  /// Checks whether [key] is a valid W3C Baggage token (RFC 7230).
   ///
-  /// @param value The value to encode
-  /// @return The encoded value
-  String _encodeComponent(String value) {
-    return Uri.encodeComponent(
-      value,
-    ).replaceAll('%20', '+').replaceAll('*', '%2A');
+  /// Valid token characters: `!`, `#`, `$`, `%`, `&`, `'`, `*`, `+`, `-`,
+  /// `.`, `^`, `_`, `` ` ``, `|`, `~`, digits, and letters.
+  bool _isValidToken(String key) {
+    if (key.isEmpty) return false;
+    for (var i = 0; i < key.length; i++) {
+      final code = key.codeUnitAt(i);
+      if (!_isTchar(code)) return false;
+    }
+    return true;
   }
 
-  /// Decodes a component from the baggage header.
+  static bool _isTchar(int code) {
+    // "!" / "#" / "$" / "%" / "&" / "'" / "*" / "+" / "-" / "." /
+    // "^" / "_" / "`" / "|" / "~" / DIGIT / ALPHA
+    if (code >= 0x41 && code <= 0x5A) return true; // A-Z
+    if (code >= 0x61 && code <= 0x7A) return true; // a-z
+    if (code >= 0x30 && code <= 0x39) return true; // 0-9
+    switch (code) {
+      case 0x21: // !
+      case 0x23: // #
+      case 0x24: // $
+      case 0x25: // %
+      case 0x26: // &
+      case 0x27: // '
+      case 0x2A: // *
+      case 0x2B: // +
+      case 0x2D: // -
+      case 0x2E: // .
+      case 0x5E: // ^
+      case 0x5F: // _
+      case 0x60: // `
+      case 0x7C: // |
+      case 0x7E: // ~
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /// Encodes a baggage value per the W3C Baggage specification.
   ///
-  /// @param value The value to decode
-  /// @return The decoded value
-  String _decodeComponent(String value) {
-    return Uri.decodeComponent(value.replaceAll('+', '%20'));
+  /// The spec's `baggage-octet` set allows most printable ASCII but
+  /// excludes space (0x20), `"` (0x22), `,` (0x2C), and `;` (0x3B).
+  /// Those four characters are percent-encoded; everything else passes through.
+  String _encodeValue(String value) {
+    final buffer = StringBuffer();
+    for (var i = 0; i < value.length; i++) {
+      final code = value.codeUnitAt(i);
+      switch (code) {
+        case 0x20: // space
+          buffer.write('%20');
+        case 0x22: // "
+          buffer.write('%22');
+        case 0x2C: // ,
+          buffer.write('%2C');
+        case 0x3B: // ;
+          buffer.write('%3B');
+        default:
+          buffer.writeCharCode(code);
+      }
+    }
+    return buffer.toString();
+  }
+
+  /// Decodes a baggage value (plain percent-decoding, no form-style `+`).
+  String _decodeValue(String value) {
+    return Uri.decodeComponent(value);
   }
 }

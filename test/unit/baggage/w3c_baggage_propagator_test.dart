@@ -85,9 +85,13 @@ void main() {
     });
 
     test('handles special characters correctly', () {
+      // Keys with spaces or commas are invalid tokens per RFC 7230 and
+      // must be dropped on inject.  Values with those characters are
+      // percent-encoded and must round-trip correctly.
       final entries = <String, BaggageEntry>{
-        'key with spaces': OTel.baggageEntry('value with spaces'),
-        'key,with,commas': OTel.baggageEntry('value,with,commas'),
+        'valid-key': OTel.baggageEntry('value with spaces'),
+        'also-valid': OTel.baggageEntry('value,with,commas'),
+        'key with spaces': OTel.baggageEntry('should be dropped'),
       };
 
       final baggage = OTel.baggage(entries);
@@ -97,16 +101,19 @@ void main() {
       final setter = TestTextMapSetter(carrier);
       propagator.inject(contextWithBaggage, carrier, setter);
 
+      // The invalid key must not appear in the header.
+      expect(carrier['baggage'], isNot(contains('key with spaces')));
+
       final getter = TestTextMapGetter(carrier);
       final extractedContext = propagator.extract(context, carrier, getter);
       final extractedBaggage = extractedContext.baggage;
 
       expect(
-        extractedBaggage!.getEntry('key with spaces')?.value,
+        extractedBaggage!.getEntry('valid-key')?.value,
         equals('value with spaces'),
       );
       expect(
-        extractedBaggage.getEntry('key,with,commas')?.value,
+        extractedBaggage.getEntry('also-valid')?.value,
         equals('value,with,commas'),
       );
     });
@@ -212,6 +219,129 @@ void main() {
       expect(entry, isNotNull);
       expect(entry!.value, 'abc=def');
       expect(entry.metadata, 'prop=foo');
+    });
+
+    test('plus in value is literal, not decoded to space (#198)', () {
+      final carrier = {'baggage': 'key=a+b'};
+      final getter = TestTextMapGetter(carrier);
+
+      final extracted = propagator.extract(context, carrier, getter);
+      final entry = extracted.baggage!.getEntry('key');
+
+      expect(entry, isNotNull);
+      expect(entry!.value, 'a+b');
+    });
+
+    test('space in value is encoded as %20, not plus (#198)', () {
+      final entries = <String, BaggageEntry>{
+        'key': OTel.baggageEntry('a b'),
+      };
+
+      final baggage = OTel.baggage(entries);
+      final contextWithBaggage = context.withBaggage(baggage);
+
+      final carrier = <String, String>{};
+      final setter = TestTextMapSetter(carrier);
+      propagator.inject(contextWithBaggage, carrier, setter);
+
+      // Must use %20, not +
+      expect(carrier['baggage'], 'key=a%20b');
+      expect(carrier['baggage'], isNot(contains('+')));
+    });
+
+    test('inject-then-extract round-trips plus and space (#198)', () {
+      final entries = <String, BaggageEntry>{
+        'key': OTel.baggageEntry('a+b c'),
+      };
+
+      final baggage = OTel.baggage(entries);
+      final contextWithBaggage = context.withBaggage(baggage);
+
+      final carrier = <String, String>{};
+      final setter = TestTextMapSetter(carrier);
+      propagator.inject(contextWithBaggage, carrier, setter);
+
+      final getter = TestTextMapGetter(carrier);
+      final extracted = propagator.extract(context, carrier, getter);
+      final entry = extracted.baggage!.getEntry('key');
+
+      expect(entry, isNotNull);
+      expect(entry!.value, 'a+b c');
+    });
+
+    test('semicolon in value is percent-encoded and round-trips', () {
+      final entries = <String, BaggageEntry>{
+        'key': OTel.baggageEntry('a;b'),
+      };
+
+      final baggage = OTel.baggage(entries);
+      final contextWithBaggage = context.withBaggage(baggage);
+
+      final carrier = <String, String>{};
+      final setter = TestTextMapSetter(carrier);
+      propagator.inject(contextWithBaggage, carrier, setter);
+
+      expect(carrier['baggage'], 'key=a%3Bb');
+
+      final getter = TestTextMapGetter(carrier);
+      final extracted = propagator.extract(context, carrier, getter);
+      expect(extracted.baggage!.getEntry('key')?.value, 'a;b');
+    });
+
+    test('comma in value is percent-encoded and round-trips', () {
+      final entries = <String, BaggageEntry>{
+        'key': OTel.baggageEntry('a,b'),
+      };
+
+      final baggage = OTel.baggage(entries);
+      final contextWithBaggage = context.withBaggage(baggage);
+
+      final carrier = <String, String>{};
+      final setter = TestTextMapSetter(carrier);
+      propagator.inject(contextWithBaggage, carrier, setter);
+
+      expect(carrier['baggage'], 'key=a%2Cb');
+
+      final getter = TestTextMapGetter(carrier);
+      final extracted = propagator.extract(context, carrier, getter);
+      expect(extracted.baggage!.getEntry('key')?.value, 'a,b');
+    });
+
+    test('quote in value is percent-encoded and round-trips', () {
+      final entries = <String, BaggageEntry>{
+        'key': OTel.baggageEntry('a"b'),
+      };
+
+      final baggage = OTel.baggage(entries);
+      final contextWithBaggage = context.withBaggage(baggage);
+
+      final carrier = <String, String>{};
+      final setter = TestTextMapSetter(carrier);
+      propagator.inject(contextWithBaggage, carrier, setter);
+
+      expect(carrier['baggage'], 'key=a%22b');
+
+      final getter = TestTextMapGetter(carrier);
+      final extracted = propagator.extract(context, carrier, getter);
+      expect(extracted.baggage!.getEntry('key')?.value, 'a"b');
+    });
+
+    test('invalid token keys are dropped on inject', () {
+      final entries = <String, BaggageEntry>{
+        'valid': OTel.baggageEntry('ok'),
+        'has space': OTel.baggageEntry('dropped'),
+        'has,comma': OTel.baggageEntry('dropped'),
+        'has=equals': OTel.baggageEntry('dropped'),
+      };
+
+      final baggage = OTel.baggage(entries);
+      final contextWithBaggage = context.withBaggage(baggage);
+
+      final carrier = <String, String>{};
+      final setter = TestTextMapSetter(carrier);
+      propagator.inject(contextWithBaggage, carrier, setter);
+
+      expect(carrier['baggage'], 'valid=ok');
     });
 
     test(
