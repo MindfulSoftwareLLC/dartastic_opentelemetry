@@ -10,21 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **`OtlpHttpMetricExporter.forceFlush()` and `shutdown()` no longer return
-  while an export is still in flight.** The exporter kept a `_pendingExports`
-  list and both methods drained it, but `export()` never added to it, so the
-  list was always empty and both returned immediately.
-
-  `shutdown()` then closed the HTTP client underneath the live request, so an
-  export that was about to succeed died as a `ClientException` and was
-  reported as failed. The exporter's own retry loop documents the opposite
-  intent — "Allow the export to continue even during shutdown, so we complete
-  in-flight requests" — which was unreachable. The span and log-record HTTP
-  exporters already registered their exports; the metric exporter now matches.
-
-  Behaviour change: a metric export in flight when `shutdown()` is called is
-  now awaited and can succeed, where previously it was severed and reported
-  as a failure.
+- **`OtlpHttpMetricExporter.forceFlush()` and `shutdown()` now await
+  in-flight exports** (#262). Both returned immediately, and `shutdown()`
+  closed the HTTP client under the live request — failing an export that
+  was about to succeed. Now matches the span and log HTTP exporters.
 
 ### Changed
 
