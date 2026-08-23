@@ -54,15 +54,29 @@ class SamplingResult {
   /// information about the sampling decision.
   final Attributes? attributes;
 
+  /// The TraceState to associate with the Span through the new
+  /// SpanContext (Trace SDK spec, ShouldSample).
+  ///
+  /// Samplers SHOULD normally return the passed-in parent TraceState
+  /// (reachable via `parentContext.spanContext?.traceState`) if they do
+  /// not intend to change it — all built-in samplers do. Returning an
+  /// empty TraceState clears the span's TraceState. Returning null means
+  /// the sampler has no opinion and the SDK keeps the TraceState
+  /// inherited from the parent, so samplers written before this field
+  /// existed keep their inheritance behavior.
+  final TraceState? traceState;
+
   /// Creates a new sampling result.
   ///
   /// @param decision The sampling decision
   /// @param source The source of the sampling decision
   /// @param attributes Optional attributes to add to the span
+  /// @param traceState Optional TraceState for the new SpanContext
   const SamplingResult({
     required this.decision,
     required this.source,
     this.attributes,
+    this.traceState,
   });
 }
 

@@ -10,6 +10,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **BREAKING (spec compliance): sampler decisions are now honored end to end**
+  (#120, #121, #122, #123, #129). A `Drop` decision produces a non-recording
+  span that reaches no processor; `RecordOnly` records without setting the
+  W3C `Sampled` flag; built-in processors deliver only recording spans to
+  `onStart`/`onEnd` and only sampled spans to exporters, per the spec's
+  IsRecording/Sampled reaction table; the forbidden Sampled+non-recording
+  combination is unrepresentable; `createSpan` routes through the sampler and
+  processors instead of bypassing them. Code that relied on unsampled or
+  dropped spans being exported must adjust its sampler configuration.
+
+- **BREAKING (spec compliance): the default sampler is now
+  `ParentBased(root: AlwaysOn)`** instead of bare `AlwaysOn` (#126). Root
+  spans still sample by default, but child spans of unsampled remote or local
+  parents now respect the parent's decision. Pass
+  `sampler: const AlwaysOnSampler()` to restore the old behavior.
+
+- **Child spans inherit the parent `TraceState`** (#124), and
+  **`SamplingResult` gains a `traceState` field** (#125) so samplers can
+  modify or replace it: `null` keeps the inherited parent TraceState, an
+  explicitly empty `TraceState` clears it. Existing custom samplers keep
+  working unchanged.
+
 - **BREAKING**: `OTelEnv` configuration functions (`getOtlpConfig`, `getBspConfig`, `getServiceConfig`, `getLogRecordLimits`, etc.) now return strongly-typed Dart Records instead of `Map<String, dynamic>`.
   Migration hint: Update map accesses to record property accesses (e.g., `config['endpoint'] as String?` → `config.endpoint`).
 

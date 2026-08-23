@@ -34,9 +34,10 @@ class CompositeSampler implements Sampler {
     required List<SpanLink>? links,
   }) {
     if (_samplers.isEmpty) {
-      return const SamplingResult(
+      return SamplingResult(
         decision: SamplingDecision.recordAndSample,
         source: SamplingDecisionSource.tracerConfig,
+        traceState: parentContext.spanContext?.traceState,
       );
     }
 
@@ -77,6 +78,7 @@ class CompositeSampler implements Sampler {
           : SamplingDecision.drop,
       source: SamplingDecisionSource.tracerConfig,
       attributes: combinedAttributes,
+      traceState: parentContext.spanContext?.traceState,
     );
   }
 }

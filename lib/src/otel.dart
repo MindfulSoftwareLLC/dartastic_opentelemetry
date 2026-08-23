@@ -107,7 +107,7 @@ class OTel {
   /// @param tracerVersion Version of the default tracer (default: null)
   /// @param resourceAttributes Additional attributes for the resource
   /// @param spanProcessor Custom span processor (default: BatchSpanProcessor with OtlpGrpcSpanExporter)
-  /// @param sampler Sampling strategy to use (default: AlwaysOnSampler)
+  /// @param sampler Sampling strategy to use (default: ParentBased(root=AlwaysOn) per the spec)
   /// @param spanKind Default span kind (default: SpanKind.server)
   /// @param metricExporter Custom metric exporter for metrics
   /// @param metricReader Custom metric reader for metrics
@@ -141,7 +141,7 @@ class OTel {
     String? tracerVersion,
     Attributes? resourceAttributes,
     SpanProcessor? spanProcessor,
-    Sampler sampler = const AlwaysOnSampler(),
+    Sampler? sampler,
     SpanExceptionOptions spanExceptionOptions = const SpanExceptionOptions(),
     SpanKind spanKind = SpanKind.server,
     MetricExporter? metricExporter,
@@ -273,8 +273,12 @@ class OTel {
     }
     final factoryFactory =
         oTelFactoryCreationFunction ?? otelSDKFactoryFactoryFunction;
-    // Initialize with default sampler
-    _defaultSampler = sampler;
+    // Initialize with default sampler. Per the Trace SDK spec
+    // (Built-in samplers), "The default sampler is
+    // ParentBased(root=AlwaysOn)": children follow their parent's
+    // sampling decision (a remote unsampled parent's child is dropped),
+    // and root spans are always sampled.
+    _defaultSampler = sampler ?? ParentBasedSampler(const AlwaysOnSampler());
     _defaultSpanExceptionOptions = spanExceptionOptions;
     _defaultTimeProvider = timeProvider;
     OTel.defaultTracerName = tracerName ?? _defaultTracerName;
