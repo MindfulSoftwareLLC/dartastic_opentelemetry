@@ -87,8 +87,14 @@ class OtlpHttpMetricExporter implements MetricExporter {
       );
     }
 
+    final exportFuture = _export(metrics);
+
+    // Register before awaiting: forceFlush() and shutdown() both drain
+    // _pendingExports, so an export that is not in the list is invisible to
+    // them and they return while it is still in flight.
+    _pendingExports.add(exportFuture);
     try {
-      final result = await _export(metrics);
+      final result = await exportFuture;
       if (OTelLog.isDebug()) {
         OTelLog.debug('OtlpHttpMetricExporter: Export completed successfully');
       }
@@ -108,6 +114,8 @@ class OtlpHttpMetricExporter implements MetricExporter {
         // Re-throw other errors
         rethrow;
       }
+    } finally {
+      _pendingExports.remove(exportFuture);
     }
   }
 

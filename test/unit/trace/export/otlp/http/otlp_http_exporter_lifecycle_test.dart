@@ -8,6 +8,7 @@
 @Timeout(Duration(seconds: 60))
 library;
 
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
@@ -16,20 +17,29 @@ import 'package:test/test.dart';
 void main() {
   late HttpServer server;
   late int port;
-  var slowMillis = 0;
   late List<int> statusCodes;
+
+  // The forceFlush tests need an export to be provably in flight. Gate the
+  // stub server on completers rather than delaying its response and racing a
+  // sleep against it: [requestReceived] fires once the server has the
+  // request, and the response is withheld until [holdResponse] is completed.
+  Completer<void>? requestReceived;
+  Completer<void>? holdResponse;
 
   setUp(() async {
     await OTel.reset();
     OTelLog.logFunction = (_) {};
-    slowMillis = 0;
     statusCodes = [];
+    requestReceived = null;
+    holdResponse = null;
     server = await HttpServer.bind('localhost', 0);
     port = server.port;
     server.listen((request) async {
-      if (slowMillis > 0) {
-        await Future<void>.delayed(Duration(milliseconds: slowMillis));
-      }
+      final received = requestReceived;
+      if (received != null && !received.isCompleted) received.complete();
+      // Retries reuse the same gate; awaiting an already-completed future is
+      // a no-op, so a held response only blocks the first attempt.
+      await holdResponse?.future;
       final code = statusCodes.isNotEmpty ? statusCodes.removeAt(0) : 200;
       request.response.statusCode = code;
       await request.drain<void>();
@@ -45,6 +55,10 @@ void main() {
   });
 
   tearDown(() async {
+    // Release anything still parked in the handler before tearing the server
+    // down, so a failed test cannot leave the listener awaiting forever.
+    final held = holdResponse;
+    if (held != null && !held.isCompleted) held.complete();
     await server.close(force: true);
     await OTel.shutdown();
     await OTel.reset();
@@ -90,13 +104,28 @@ void main() {
     });
 
     test('forceFlush waits for a pending export', () async {
-      slowMillis = 60;
+      final received = requestReceived = Completer<void>();
+      final release = holdResponse = Completer<void>();
       final exporter = OtlpHttpSpanExporter(
         OtlpHttpExporterConfig(endpoint: 'http://localhost:$port'),
       );
       final pending = exporter.export(spans());
-      await Future<void>.delayed(const Duration(milliseconds: 5));
-      await exporter.forceFlush();
+      // The server has the request, so the export is in flight as a fact
+      // rather than as a hope about elapsed time.
+      await received.future;
+      var flushCompleted = false;
+      final flush = exporter.forceFlush().whenComplete(() {
+        flushCompleted = true;
+      });
+      await pumpEventQueue();
+      expect(
+        flushCompleted,
+        isFalse,
+        reason: 'forceFlush must not complete while an export is pending',
+      );
+      release.complete();
+      await flush;
+      expect(flushCompleted, isTrue);
       await pending;
       await exporter.shutdown();
     });
@@ -131,13 +160,28 @@ void main() {
     });
 
     test('forceFlush waits for a pending export', () async {
-      slowMillis = 60;
+      final received = requestReceived = Completer<void>();
+      final release = holdResponse = Completer<void>();
       final exporter = OtlpHttpMetricExporter(
         OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:$port'),
       );
       final pending = exporter.export(metricData());
-      await Future<void>.delayed(const Duration(milliseconds: 5));
-      await exporter.forceFlush();
+      // The server has the request, so the export is in flight as a fact
+      // rather than as a hope about elapsed time.
+      await received.future;
+      var flushCompleted = false;
+      final flush = exporter.forceFlush().whenComplete(() {
+        flushCompleted = true;
+      });
+      await pumpEventQueue();
+      expect(
+        flushCompleted,
+        isFalse,
+        reason: 'forceFlush must not complete while an export is pending',
+      );
+      release.complete();
+      await flush;
+      expect(flushCompleted, isTrue);
       await pending;
       await exporter.shutdown();
     });
@@ -158,7 +202,8 @@ void main() {
 
   group('OtlpHttpLogRecordExporter lifecycle', () {
     test('forceFlush waits for a pending export', () async {
-      slowMillis = 60;
+      final received = requestReceived = Completer<void>();
+      final release = holdResponse = Completer<void>();
       final exporter = OtlpHttpLogRecordExporter(
         OtlpHttpLogRecordExporterConfig(endpoint: 'http://localhost:$port'),
       );
@@ -169,8 +214,22 @@ void main() {
         body: 'pending',
       );
       final pending = exporter.export([record]);
-      await Future<void>.delayed(const Duration(milliseconds: 5));
-      await exporter.forceFlush();
+      // The server has the request, so the export is in flight as a fact
+      // rather than as a hope about elapsed time.
+      await received.future;
+      var flushCompleted = false;
+      final flush = exporter.forceFlush().whenComplete(() {
+        flushCompleted = true;
+      });
+      await pumpEventQueue();
+      expect(
+        flushCompleted,
+        isFalse,
+        reason: 'forceFlush must not complete while an export is pending',
+      );
+      release.complete();
+      await flush;
+      expect(flushCompleted, isTrue);
       await pending;
       await exporter.shutdown();
       await exporter.forceFlush();
