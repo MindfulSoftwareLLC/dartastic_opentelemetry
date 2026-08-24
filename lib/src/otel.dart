@@ -182,6 +182,11 @@ class OTel {
     final envInsecure = secure == null ? otlpConfig?.insecure : null;
 
     endpoint ??= envEndpoint;
+    // Keep the caller's explicit choice (null when not given): the
+    // metrics/logs configurations resolve security against their own
+    // per-signal endpoints and env vars, so they must receive the
+    // original parameter rather than the traces-resolved value (#253).
+    final explicitSecure = secure;
     secure = OTelEnv.resolveOtlpSecure(
       explicitSecure: secure,
       envInsecure: envInsecure,
@@ -480,14 +485,14 @@ class OTel {
       if (metricExporter == null && metricReader == null) {
         MetricsConfiguration.configureMeterProvider(
           endpoint: endpoint,
-          secure: secure,
+          secure: explicitSecure,
           resource: OTel.defaultResource,
         );
       } else {
         // Use the provided exporter and/or reader
         MetricsConfiguration.configureMeterProvider(
           endpoint: endpoint,
-          secure: secure,
+          secure: explicitSecure,
           metricExporter: metricExporter,
           metricReader: metricReader,
           resource: OTel.defaultResource,
@@ -499,7 +504,7 @@ class OTel {
     if (enableLogs && !sdkDisabled) {
       LogsConfiguration.configureLoggerProvider(
         endpoint: endpoint,
-        secure: secure,
+        secure: explicitSecure,
         logRecordExporter: logRecordExporter,
         logRecordProcessor: logRecordProcessor,
         resource: OTel.defaultResource,

@@ -8,6 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.15-wip]
 
+### Fixed
+
+- **The programmatic `secure` parameter is honored by the logs and metrics
+  configurations** (#253). `LogsConfiguration.configureLoggerProvider` and
+  `MetricsConfiguration.configureMeterProvider` declared `bool secure = false`
+  and passed it as the lowest-precedence fallback, so the parameter was a
+  no-op whenever the endpoint carried a scheme — which both defaults do. It is
+  now `bool? secure`: a non-null value is the caller's explicit choice and
+  outranks `OTEL_EXPORTER_OTLP_INSECURE`, while `null` (the default) defers to
+  the endpoint scheme, then the environment, then the built-in default.
+
+  `OTel.initialize` now forwards the caller's original value rather than the
+  boolean it resolved for the traces signal. Without that, a plaintext generic
+  endpoint could turn TLS **off** for a signal the operator had pointed at an
+  `https://` endpoint via `OTEL_EXPORTER_OTLP_{LOGS,METRICS}_ENDPOINT`.
+
 ## [1.1.0-beta.14] - 2026-08-23
 
 ### Changed
