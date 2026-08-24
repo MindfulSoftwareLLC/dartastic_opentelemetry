@@ -413,16 +413,16 @@ void main() {
         points: [metricPoint],
       );
 
-      MetricTransformer.setExemplarFilter(MetricsExemplarFilter.traceBased);
-      final traceBased = MetricTransformer.transformMetric(metric);
+      final traceBased = MetricTransformer.transformMetric(metric,
+          exemplarFilter: MetricsExemplarFilter.traceBased);
       expect(traceBased.gauge.dataPoints.first.exemplars.length, equals(1));
 
-      MetricTransformer.setExemplarFilter(MetricsExemplarFilter.alwaysOn);
-      final alwaysOn = MetricTransformer.transformMetric(metric);
+      final alwaysOn = MetricTransformer.transformMetric(metric,
+          exemplarFilter: MetricsExemplarFilter.alwaysOn);
       expect(alwaysOn.gauge.dataPoints.first.exemplars.length, equals(2));
 
-      MetricTransformer.setExemplarFilter(MetricsExemplarFilter.alwaysOff);
-      final alwaysOff = MetricTransformer.transformMetric(metric);
+      final alwaysOff = MetricTransformer.transformMetric(metric,
+          exemplarFilter: MetricsExemplarFilter.alwaysOff);
       expect(alwaysOff.gauge.dataPoints.first.exemplars, isEmpty);
 
       span.end();

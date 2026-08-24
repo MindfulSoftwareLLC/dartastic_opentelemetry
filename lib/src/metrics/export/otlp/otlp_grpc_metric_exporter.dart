@@ -14,6 +14,7 @@ import 'metric_transformer.dart';
 /// OtlpGrpcMetricExporter exports metrics to the OpenTelemetry collector via gRPC.
 class OtlpGrpcMetricExporter implements MetricExporter {
   final MetricsServiceClient _client;
+  final OtlpGrpcMetricExporterConfig _config;
   bool _shutdown = false;
 
   // Static channel reference to allow shutdown
@@ -21,7 +22,8 @@ class OtlpGrpcMetricExporter implements MetricExporter {
 
   /// Creates a new OtlpGrpcMetricExporter with the given configuration.
   OtlpGrpcMetricExporter(OtlpGrpcMetricExporterConfig config)
-      : _client = _createClient(config);
+      : _config = config,
+        _client = _createClient(config);
 
   /// Creates channel credentials based on configuration.
   ///
@@ -172,6 +174,7 @@ class OtlpGrpcMetricExporter implements MetricExporter {
       MetricTransformer.transformMetrics(
         data,
         fallbackResource: OTel.resource(null),
+        exemplarFilter: _config.exemplarFilter,
       );
 
   @override

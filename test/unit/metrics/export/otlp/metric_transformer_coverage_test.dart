@@ -251,14 +251,6 @@ void main() {
     });
 
     group('number data point with exemplars', () {
-      setUp(() {
-        MetricTransformer.setExemplarFilter(MetricsExemplarFilter.alwaysOn);
-      });
-
-      tearDown(() {
-        MetricTransformer.setExemplarFilter(MetricsExemplarFilter.traceBased);
-      });
-
       test('transforms exemplars for sum metric', () {
         final now = DateTime.now();
         final start = now.subtract(const Duration(minutes: 1));
@@ -281,7 +273,8 @@ void main() {
 
         final metric = Metric.sum(name: 'test.sum.exemplars', points: [point]);
 
-        final metricProto = MetricTransformer.transformMetric(metric);
+        final metricProto = MetricTransformer.transformMetric(metric,
+            exemplarFilter: MetricsExemplarFilter.alwaysOn);
         final dp = metricProto.sum.dataPoints.first;
         expect(dp.exemplars.length, equals(1));
         expect(dp.exemplars.first.asDouble, equals(1.5));
@@ -316,7 +309,8 @@ void main() {
           points: [point],
         );
 
-        final metricProto = MetricTransformer.transformMetric(metric);
+        final metricProto = MetricTransformer.transformMetric(metric,
+            exemplarFilter: MetricsExemplarFilter.alwaysOn);
         final dp = metricProto.gauge.dataPoints.first;
         expect(dp.exemplars.length, equals(1));
         expect(dp.exemplars.first.asDouble, equals(99.9));
@@ -324,14 +318,6 @@ void main() {
     });
 
     group('histogram data point with exemplars', () {
-      setUp(() {
-        MetricTransformer.setExemplarFilter(MetricsExemplarFilter.alwaysOn);
-      });
-
-      tearDown(() {
-        MetricTransformer.setExemplarFilter(MetricsExemplarFilter.traceBased);
-      });
-
       test('transforms exemplars for histogram metric', () {
         final now = DateTime.now();
         final start = now.subtract(const Duration(minutes: 1));
@@ -372,7 +358,8 @@ void main() {
           points: [point],
         );
 
-        final metricProto = MetricTransformer.transformMetric(metric);
+        final metricProto = MetricTransformer.transformMetric(metric,
+            exemplarFilter: MetricsExemplarFilter.alwaysOn);
         final dp = metricProto.histogram.dataPoints.first;
         expect(dp.exemplars.length, equals(2));
         expect(dp.exemplars[0].asDouble, equals(5.0));

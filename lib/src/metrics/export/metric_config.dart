@@ -70,7 +70,8 @@ class MetricsConfiguration {
         switch (name) {
           case 'otlp':
           case 'console':
-            final created = _createExporter(name, endpoint, secure);
+            final created = _createExporter(
+                name, endpoint, secure, metricsSdkConfig.exemplarFilter);
             if (created != null) {
               exporters.add(created);
             }
@@ -103,14 +104,16 @@ class MetricsConfiguration {
           OTelLog.warn('OTEL_METRICS_EXPORTER produced no usable exporter; '
               'falling back to the default otlp exporter.');
         }
-        exporters.add(_createExporter('otlp', endpoint, secure)!);
+        exporters.add(_createExporter(
+            'otlp', endpoint, secure, metricsSdkConfig.exemplarFilter)!);
       }
       metricExporter = exporters.length == 1
           ? exporters.single
           : CompositeMetricExporter(exporters);
     }
 
-    metricExporter ??= _createExporter('otlp', endpoint, secure);
+    metricExporter ??= _createExporter(
+        'otlp', endpoint, secure, metricsSdkConfig.exemplarFilter);
     if (metricExporter == null) {
       return meterProvider;
     }
@@ -131,6 +134,7 @@ class MetricsConfiguration {
     String exporterType,
     String? endpoint,
     bool secure,
+    MetricsExemplarFilter exemplarFilter,
   ) {
     if (exporterType == 'console') {
       if (OTelLog.isDebug()) {
@@ -179,10 +183,11 @@ class MetricsConfiguration {
           insecure: !effectiveSecure,
           headers: headers,
           timeoutMillis: timeout.inMilliseconds,
-          compression: compression,
           certificate: certificate,
           clientKey: clientKey,
           clientCertificate: clientCertificate,
+          compression: compression,
+          exemplarFilter: exemplarFilter,
         ),
       );
     }
@@ -200,6 +205,7 @@ class MetricsConfiguration {
         certificate: certificate,
         clientKey: clientKey,
         clientCertificate: clientCertificate,
+        exemplarFilter: exemplarFilter,
       ),
     );
   }

@@ -34,6 +34,7 @@ class MetricTransformer {
   static ExportMetricsServiceRequest transformMetrics(
     MetricData data, {
     Resource? fallbackResource,
+    MetricsExemplarFilter exemplarFilter = MetricsExemplarFilter.traceBased,
   }) {
     final request = ExportMetricsServiceRequest();
     final resourceMetrics = proto.ResourceMetrics();
@@ -49,20 +50,13 @@ class MetricTransformer {
       version: '1.0.0',
     );
     for (final metric in data.metrics) {
-      scopeMetrics.metrics.add(transformMetric(metric));
+      scopeMetrics.metrics
+          .add(transformMetric(metric, exemplarFilter: exemplarFilter));
     }
 
     resourceMetrics.scopeMetrics.add(scopeMetrics);
     request.resourceMetrics.add(resourceMetrics);
     return request;
-  }
-
-  static MetricsExemplarFilter _exemplarFilter =
-      MetricsExemplarFilter.traceBased;
-
-  /// Configures the exemplar filter used during OTLP transformation.
-  static void setExemplarFilter(MetricsExemplarFilter filter) {
-    _exemplarFilter = filter;
   }
 
   /// Transforms a Resource to an OTLP Resource proto.
@@ -80,7 +74,9 @@ class MetricTransformer {
   }
 
   /// Transforms a Metric to an OTLP Metric proto.
-  static proto.Metric transformMetric(Metric metric) {
+  static proto.Metric transformMetric(Metric metric,
+      {MetricsExemplarFilter exemplarFilter =
+          MetricsExemplarFilter.traceBased}) {
     final metricProto = proto.Metric();
     metricProto.name = metric.name;
 
@@ -105,7 +101,7 @@ class MetricTransformer {
         final histogramDataPoints = <proto.HistogramDataPoint>[];
         for (final point in metric.points) {
           if (point.value is HistogramValue) {
-            final dataPoint = _createHistogramDataPoint(point);
+            final dataPoint = _createHistogramDataPoint(point, exemplarFilter);
             histogramDataPoints.add(dataPoint);
           }
         }
@@ -126,7 +122,7 @@ class MetricTransformer {
         // Sum metric
         final numberDataPoints = <proto.NumberDataPoint>[];
         for (final point in metric.points) {
-          final dataPoint = _createNumberDataPoint(point);
+          final dataPoint = _createNumberDataPoint(point, exemplarFilter);
           numberDataPoints.add(dataPoint);
         }
 
@@ -148,7 +144,7 @@ class MetricTransformer {
         // Gauge metric
         final numberDataPoints = <proto.NumberDataPoint>[];
         for (final point in metric.points) {
-          final dataPoint = _createNumberDataPoint(point);
+          final dataPoint = _createNumberDataPoint(point, exemplarFilter);
           numberDataPoints.add(dataPoint);
         }
 
@@ -164,6 +160,7 @@ class MetricTransformer {
   /// Creates a histogram data point for the given MetricPoint.
   static proto.HistogramDataPoint _createHistogramDataPoint(
     MetricPoint<dynamic> point,
+    MetricsExemplarFilter exemplarFilter,
   ) {
     final histogramValue = point.value as HistogramValue;
 
@@ -174,7 +171,8 @@ class MetricTransformer {
         .toList();
 
     // Prepare exemplars if available
-    final exemplars = _transformExemplars(point.exemplars?.cast<Exemplar>());
+    final exemplars =
+        _transformExemplars(point.exemplars?.cast<Exemplar>(), exemplarFilter);
 
     // Create bucket counts as Int64 list
     final bucketCountsInt64 =
@@ -198,6 +196,7 @@ class MetricTransformer {
   /// Creates a number data point for the given MetricPoint.
   static proto.NumberDataPoint _createNumberDataPoint(
     MetricPoint<dynamic> point,
+    MetricsExemplarFilter exemplarFilter,
   ) {
     // Prepare attributes
     final attributes = point.attributes.toMap();
@@ -206,7 +205,8 @@ class MetricTransformer {
         .toList();
 
     // Prepare exemplars if available
-    final exemplars = _transformExemplars(point.exemplars?.cast<Exemplar>());
+    final exemplars =
+        _transformExemplars(point.exemplars?.cast<Exemplar>(), exemplarFilter);
 
     // Create the NumberDataPoint with all fields set
     return proto.NumberDataPoint(
@@ -257,13 +257,14 @@ class MetricTransformer {
     return keyValue;
   }
 
-  static List<proto.Exemplar> _transformExemplars(List<Exemplar>? exemplars) {
+  static List<proto.Exemplar> _transformExemplars(
+      List<Exemplar>? exemplars, MetricsExemplarFilter exemplarFilter) {
     if (exemplars == null || exemplars.isEmpty) {
       return const [];
     }
 
     return exemplars.where((exemplar) {
-      switch (_exemplarFilter) {
+      switch (exemplarFilter) {
         case MetricsExemplarFilter.alwaysOn:
           return true;
         case MetricsExemplarFilter.alwaysOff:

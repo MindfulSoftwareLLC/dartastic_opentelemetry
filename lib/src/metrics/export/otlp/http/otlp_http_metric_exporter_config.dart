@@ -3,6 +3,7 @@
 
 import '../../../../export/otlp_http_protocol.dart';
 import '../../../../trace/export/otlp/certificate_utils.dart';
+import '../../metrics_sdk_config.dart';
 
 /// Configuration for the OpenTelemetry metric exporter that exports metrics
 /// using OTLP/HTTP. Wire format defaults to `application/x-protobuf` and can
@@ -15,6 +16,10 @@ class OtlpHttpMetricExporterConfig {
   /// Wire-format protocol — `httpProtobuf` (default) or `httpJson`.
   /// Controls `Content-Type` and how OTLP messages are serialized.
   final OtlpHttpProtocol protocol;
+
+  /// The filter to apply to exemplars during export.
+  /// Default: `MetricsExemplarFilter.traceBased`
+  final MetricsExemplarFilter exemplarFilter;
 
   /// Additional HTTP headers to include in the export requests
   final Map<String, String> headers;
@@ -64,6 +69,7 @@ class OtlpHttpMetricExporterConfig {
     this.clientKey,
     this.clientCertificate,
     this.protocol = OtlpHttpProtocol.httpProtobuf,
+    this.exemplarFilter = MetricsExemplarFilter.traceBased,
   })  : endpoint = _validateEndpoint(endpoint),
         headers = _validateHeaders(headers ?? {}),
         timeout = _validateTimeout(timeout),
