@@ -33,13 +33,22 @@ class Span implements APISpan {
   final APISpan _delegate;
   final Tracer _sdkTracer;
 
+  /// The recording state decided by the sampler at creation time.
+  ///
+  /// Per the Trace SDK spec (ShouldSample), a DROP decision creates a span
+  /// with `IsRecording == false`; the delegate APISpan does not carry this
+  /// state, so the SDK span holds it.
+  final bool _isRecording;
+
   /// Private constructor for creating Span instances.
   ///
   /// @param delegate The API Span implementation to delegate to
   /// @param sdkTracer The SDK Tracer that created this Span
-  Span._(APISpan delegate, Tracer sdkTracer)
+  /// @param isRecording Whether this span records data (sampling decision)
+  Span._(APISpan delegate, Tracer sdkTracer, {bool isRecording = true})
       : _delegate = delegate,
-        _sdkTracer = sdkTracer {
+        _sdkTracer = sdkTracer,
+        _isRecording = isRecording {
     if (OTelLog.isDebug()) {
       OTelLog.debug('SDKSpan: Created new span with name ${delegate.name}');
     }
@@ -66,12 +75,25 @@ class Span implements APISpan {
       if (OTelLog.isDebug()) {
         OTelLog.debug('SDKSpan: Calling delegate.end() for span $name');
       }
-      _delegate.end(endTime: endTime, spanStatus: spanStatus);
+      // `spanStatus` is deliberately NOT forwarded: setStatus() above already
+      // applied it to the same delegate, and the API's end(spanStatus:) is
+      // deprecated because the spec's End operation takes only a timestamp.
+      _delegate.end(endTime: endTime);
       if (OTelLog.isDebug()) {
         OTelLog.debug('SDKSpan: Delegate.end() completed for span $name');
       }
 
-      // Notify span processors that this span has ended
+      // Notify span processors that this span has ended. Per the Trace
+      // SDK spec (Sampling), span processors MUST receive only spans
+      // with IsRecording == true — a dropped span ends silently.
+      if (!_isRecording) {
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+            'SDKSpan: Span $name is not recording; skipping processor onEnd',
+          );
+        }
+        return;
+      }
       final provider = _sdkTracer.provider;
       if (OTelLog.isDebug()) {
         OTelLog.debug(
@@ -107,31 +129,52 @@ class Span implements APISpan {
     }
   }
 
-  @override
-  set attributes(Attributes newAttributes) =>
-      _delegate.attributes = newAttributes;
+  // All mutators below are gated on the sampling decision: when a span is
+  // not recording, "all this data is discarded right away" and mutation
+  // attempts are no-ops (Trace API spec, IsRecording). The delegate only
+  // guards against mutation after end, so the gate lives here.
 
   @override
-  void addAttributes(Attributes attributes) =>
-      _delegate.addAttributes(attributes);
+  set attributes(Attributes newAttributes) {
+    if (!_isRecording) return;
+    _delegate.attributes = newAttributes;
+  }
 
   @override
-  void addEvent(SpanEvent spanEvent) => _delegate.addEvent(spanEvent);
+  void addAttributes(Attributes attributes) {
+    if (!_isRecording) return;
+    _delegate.addAttributes(attributes);
+  }
 
   @override
-  void addEventNow(String name, [Attributes? attributes]) =>
-      _delegate.addEventNow(name, attributes);
+  void addEvent(SpanEvent spanEvent) {
+    if (!_isRecording) return;
+    _delegate.addEvent(spanEvent);
+  }
 
   @override
-  void addEvents(Map<String, Attributes?> spanEvents) =>
-      _delegate.addEvents(spanEvents);
+  void addEventNow(String name, [Attributes? attributes]) {
+    if (!_isRecording) return;
+    _delegate.addEventNow(name, attributes);
+  }
 
   @override
-  void addLink(SpanContext spanContext, [Attributes? attributes]) =>
-      _delegate.addLink(spanContext, attributes);
+  void addEvents(Map<String, Attributes?> spanEvents) {
+    if (!_isRecording) return;
+    _delegate.addEvents(spanEvents);
+  }
 
   @override
-  void addSpanLink(SpanLink spanLink) => _delegate.addSpanLink(spanLink);
+  void addLink(SpanContext spanContext, [Attributes? attributes]) {
+    if (!_isRecording) return;
+    _delegate.addLink(spanContext, attributes);
+  }
+
+  @override
+  void addSpanLink(SpanLink spanLink) {
+    if (!_isRecording) return;
+    _delegate.addSpanLink(spanLink);
+  }
 
   @override
   DateTime? get endTime => _delegate.endTime;
@@ -140,7 +183,7 @@ class Span implements APISpan {
   bool get isEnded => _delegate.isEnded;
 
   @override
-  bool get isRecording => _delegate.isRecording;
+  bool get isRecording => _isRecording && _delegate.isRecording;
 
   @override
   SpanKind get kind => _delegate.kind;
@@ -157,40 +200,55 @@ class Span implements APISpan {
     StackTrace? stackTrace,
     Attributes? attributes,
     bool? escaped,
-  }) =>
-      _delegate.recordException(
-        exception,
-        stackTrace: stackTrace,
-        attributes: attributes,
-        escaped: escaped,
-      );
+  }) {
+    if (!_isRecording) return;
+    _delegate.recordException(
+      exception,
+      stackTrace: stackTrace,
+      attributes: attributes,
+      escaped: escaped,
+    );
+  }
 
   @override
-  void setBoolAttribute(String name, bool value) =>
-      _delegate.setBoolAttribute(name, value);
+  void setBoolAttribute(String name, bool value) {
+    if (!_isRecording) return;
+    _delegate.setBoolAttribute(name, value);
+  }
 
   @override
-  void setBoolListAttribute(String name, List<bool> value) =>
-      _delegate.setBoolListAttribute(name, value);
+  void setBoolListAttribute(String name, List<bool> value) {
+    if (!_isRecording) return;
+    _delegate.setBoolListAttribute(name, value);
+  }
 
   @override
-  void setDoubleAttribute(String name, double value) =>
-      _delegate.setDoubleAttribute(name, value);
+  void setDoubleAttribute(String name, double value) {
+    if (!_isRecording) return;
+    _delegate.setDoubleAttribute(name, value);
+  }
 
   @override
-  void setDoubleListAttribute(String name, List<double> value) =>
-      _delegate.setDoubleListAttribute(name, value);
+  void setDoubleListAttribute(String name, List<double> value) {
+    if (!_isRecording) return;
+    _delegate.setDoubleListAttribute(name, value);
+  }
 
   @override
-  void setIntAttribute(String name, int value) =>
-      _delegate.setIntAttribute(name, value);
+  void setIntAttribute(String name, int value) {
+    if (!_isRecording) return;
+    _delegate.setIntAttribute(name, value);
+  }
 
   @override
-  void setIntListAttribute(String name, List<int> value) =>
-      _delegate.setIntListAttribute(name, value);
+  void setIntListAttribute(String name, List<int> value) {
+    if (!_isRecording) return;
+    _delegate.setIntListAttribute(name, value);
+  }
 
   @override
   void setStatus(SpanStatusCode statusCode, [String? description]) {
+    if (!_isRecording) return;
     _delegate.setStatus(statusCode, description);
     if (OTelLog.isDebug()) {
       OTelLog.debug(
@@ -200,16 +258,22 @@ class Span implements APISpan {
   }
 
   @override
-  void setStringAttribute<T>(String name, String value) =>
-      _delegate.setStringAttribute<T>(name, value);
+  void setStringAttribute<T>(String name, String value) {
+    if (!_isRecording) return;
+    _delegate.setStringAttribute<T>(name, value);
+  }
 
   @override
-  void setStringListAttribute<T>(String name, List<String> value) =>
-      _delegate.setStringListAttribute<T>(name, value);
+  void setStringListAttribute<T>(String name, List<String> value) {
+    if (!_isRecording) return;
+    _delegate.setStringListAttribute<T>(name, value);
+  }
 
   @override
-  void setDateTimeAsStringAttribute(String name, DateTime value) =>
-      _delegate.setDateTimeAsStringAttribute(name, value);
+  void setDateTimeAsStringAttribute(String name, DateTime value) {
+    if (!_isRecording) return;
+    _delegate.setDateTimeAsStringAttribute(name, value);
+  }
 
   @override
   SpanContext get spanContext => _delegate.spanContext;
@@ -234,6 +298,7 @@ class Span implements APISpan {
 
   @override
   void updateName(String name) {
+    if (!_isRecording) return;
     _delegate.updateName(name);
 
     final provider = _sdkTracer.provider;

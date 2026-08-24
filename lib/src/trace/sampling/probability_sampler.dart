@@ -63,17 +63,21 @@ class ProbabilitySampler implements Sampler {
     required Attributes? attributes,
     required List<SpanLink>? links,
   }) {
+    final parentTraceState = parentContext.spanContext?.traceState;
+
     // Short circuit for always/never sample
     if (probability >= 1.0) {
-      return const SamplingResult(
+      return SamplingResult(
         decision: SamplingDecision.recordAndSample,
         source: SamplingDecisionSource.tracerConfig,
+        traceState: parentTraceState,
       );
     }
     if (probability <= 0.0) {
-      return const SamplingResult(
+      return SamplingResult(
         decision: SamplingDecision.drop,
         source: SamplingDecisionSource.tracerConfig,
+        traceState: parentTraceState,
       );
     }
 
@@ -83,6 +87,7 @@ class ProbabilitySampler implements Sampler {
       decision:
           decision ? SamplingDecision.recordAndSample : SamplingDecision.drop,
       source: SamplingDecisionSource.tracerConfig,
+      traceState: parentTraceState,
     );
   }
 }

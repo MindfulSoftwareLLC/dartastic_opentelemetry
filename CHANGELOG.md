@@ -6,9 +6,50 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [1.1.0-beta.14-wip]
+## [1.1.0-beta.15-wip]
+
+## [1.1.0-beta.14] - 2026-08-23
 
 ### Changed
+- **Requires `dartastic_opentelemetry_api` ^1.0.0-rc.2.** Picks up the
+  semantic conventions at registry v1.44.0 — including the full
+  `browser.web_vital.*` set — and three spec-compliance fixes.
+
+  One of those changes behaviour visible from this package:
+  `Context.withSpanContext` now returns a derived Context when the incoming
+  span context belongs to a different trace, instead of throwing
+  `ArgumentError`. Per the Context specification a set-value operation always
+  returns a derived Context, and per the Propagators API `extract` must never
+  throw — receiving a valid span context for another trace during extraction
+  is ordinary, not an error. Four tests that asserted the throw now assert the
+  derived Context.
+
+  `SDKSpan.end()` no longer forwards the deprecated `spanStatus` argument to
+  its delegate; `setStatus()` had already applied it to the same delegate, so
+  the second pass was redundant.
+
+
+- **BREAKING (spec compliance): sampler decisions are now honored end to end**
+  (#120, #121, #122, #123, #129). A `Drop` decision produces a non-recording
+  span that reaches no processor; `RecordOnly` records without setting the
+  W3C `Sampled` flag; built-in processors deliver only recording spans to
+  `onStart`/`onEnd` and only sampled spans to exporters, per the spec's
+  IsRecording/Sampled reaction table; the forbidden Sampled+non-recording
+  combination is unrepresentable; `createSpan` routes through the sampler and
+  processors instead of bypassing them. Code that relied on unsampled or
+  dropped spans being exported must adjust its sampler configuration.
+
+- **BREAKING (spec compliance): the default sampler is now
+  `ParentBased(root: AlwaysOn)`** instead of bare `AlwaysOn` (#126). Root
+  spans still sample by default, but child spans of unsampled remote or local
+  parents now respect the parent's decision. Pass
+  `sampler: const AlwaysOnSampler()` to restore the old behavior.
+
+- **Child spans inherit the parent `TraceState`** (#124), and
+  **`SamplingResult` gains a `traceState` field** (#125) so samplers can
+  modify or replace it: `null` keeps the inherited parent TraceState, an
+  explicitly empty `TraceState` clears it. Existing custom samplers keep
+  working unchanged.
 
 - **BREAKING**: `OTelEnv` configuration functions (`getOtlpConfig`, `getBspConfig`, `getServiceConfig`, `getLogRecordLimits`, etc.) now return strongly-typed Dart Records instead of `Map<String, dynamic>`.
   Migration hint: Update map accesses to record property accesses (e.g., `config['endpoint'] as String?` → `config.endpoint`).
@@ -31,6 +72,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   4318 (#220).
 
 ### Fixed
+
+- **`browser.*` resource attributes and `user_agent.original` are now
+  populated on web** (#190). Invalid `@JS` bindings made the web resource
+  detector throw on first use; the error was swallowed and the attributes
+  were silently missing. A detector failure now omits attributes instead of
+  emitting blanks.
+
+- **`browser.mobile` is now a boolean**, which is how the registry types it.
+  It was emitted as the string `'true'`/`'false'`, so a backend filtering
+  `browser.mobile = true` matched nothing.
+
+- **`browser.languages` is now a string array, and its key comes from the
+  API.** It was a comma-joined string under a key this package declared
+  privately. The naming rules say an attribute that can represent multiple
+  entities "SHOULD be pluralized and the value type SHOULD be an array",
+  which is also how the registry shapes the neighbouring `browser.brands`.
+  The key is now `BrowserCandidate.browserLanguages`, staged in the API as an
+  upstream candidate, so the name and the argument for it live in one place.
+  It is set only when the browser reports languages: an empty array is a real
+  value on the wire and would claim the browser accepts none.
+
+- **`browser.vendor` is no longer emitted.** `navigator.vendor` is a frozen
+  legacy API that returns a hardcoded vendor string rather than the real
+  vendor, and the registry's `browser.brands` is the structured answer to
+  the same question.
+
+- **`browser.mobile` is now correct on iPad.** Since iPadOS 13 an iPad
+  requests desktop sites by default and reports a `Macintosh` user agent,
+  so a user-agent test alone reported every iPad as a desktop. The
+  detector now also consults `navigator.maxTouchPoints`, which
+  distinguishes a touch device from a Mac. A touchscreen laptop is still
+  not mobile — both signals have to agree.
+
+- **`OtlpHttpMetricExporter.forceFlush()` and `shutdown()` now await
+  in-flight exports** (#262). Both returned immediately, and `shutdown()`
+  closed the HTTP client under the live request — failing an export that
+  was about to succeed. Now matches the span and log HTTP exporters.
 
 - `Tracer.enabled` now returns `false` when `TracerProvider` has no span
   processor(s) registered, per the Trace SDK spec, sparing span-creation cost
@@ -58,6 +136,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `OTEL_LOG_LEVEL` now takes effect at the start of `OTel.initialize`, so
   debug logging covers the environment parsing itself.
+
+- **Baggage values containing `=` (e.g. base64 padding) are no longer
+  dropped** on extract, and an unparsable `baggage` header leaves existing
+  baggage untouched instead of clearing it. Thanks to @abidiahmedcom
+  (#199, #200, #261).
+
+## [0.10.0]
+Stable-channel republication of `1.1.0-beta.14`. Depends on
+`dartastic_opentelemetry_api: ^0.10.0`.
+
+The minor bump from `0.9.8` carries three **breaking** spec-compliance
+changes:
+
+- **Sampler decisions are honored end to end** (#120–#123, #129): dropped
+  spans reach no processor, `RecordOnly` no longer sets the W3C `Sampled`
+  flag, and exporters receive only sampled spans. Adjust your sampler
+  configuration if you relied on unsampled spans being exported.
+- **The default sampler is `ParentBased(root: AlwaysOn)`** (#126): child
+  spans now respect an unsampled parent. Pass
+  `sampler: const AlwaysOnSampler()` to restore the old behavior.
+- **`OTelEnv` configuration functions return typed Dart Records** instead
+  of `Map<String, dynamic>` (`config['endpoint'] as String?` →
+  `config.endpoint`).
+
+Also notable: OTLP/gRPC exporters default to port 4317 per the OTLP spec
+(#220), OTLP requests carry an identifying `User-Agent` (#228), empty
+environment variables read as unset (#213), `service.name` precedence is
+fixed (#103), `browser.*` resource attributes are populated on web (#190)
+with `browser.mobile` as a boolean, and baggage values containing `=`
+survive extraction (#199). Full detail in the `1.1.0-beta.14` entry.
 
 ## [1.1.0-beta.13] - 2026-08-13
 

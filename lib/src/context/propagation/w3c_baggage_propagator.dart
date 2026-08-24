@@ -35,7 +35,9 @@ class W3CBaggagePropagator
     TextMapGetter<String> getter,
   ) {
     final value = getter.get(_baggageHeader);
-    OTelLog.debug('Extracting baggage: $value');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('Extracting baggage: $value');
+    }
     if (value == null || value.isEmpty) {
       // Propagators API spec: extract returns the passed context, updated
       // with extracted values — and unchanged when there is nothing to
@@ -50,13 +52,15 @@ class W3CBaggagePropagator
       final trimmedPair = pair.trim();
       if (trimmedPair.isEmpty) continue;
 
-      final keyValue = trimmedPair.split('=');
-      if (keyValue.length != 2) continue;
+      // Split on the first '=' only — the W3C Baggage spec allows '='
+      // inside values (e.g. base64 padding like "token=abc123==").
+      final eqIndex = trimmedPair.indexOf('=');
+      if (eqIndex <= 0) continue;
 
-      final key = _decodeComponent(keyValue[0].trim());
+      final key = _decodeComponent(trimmedPair.substring(0, eqIndex).trim());
       if (key.isEmpty) continue;
 
-      final valueAndMetadata = keyValue[1].split(';');
+      final valueAndMetadata = trimmedPair.substring(eqIndex + 1).split(';');
       final value = _decodeComponent(valueAndMetadata[0].trim());
       String? metadata;
       if (valueAndMetadata.length > 1) {
@@ -66,6 +70,12 @@ class W3CBaggagePropagator
       entries[key] = OTel.baggageEntry(value, metadata);
     }
 
+    // Propagators API spec: "If a value can not be parsed from the carrier
+    // for a cross-cutting concern, the implementation MUST NOT store a new
+    // value in the Context, in order to preserve any previously existing
+    // valid value."  An empty entry map means nothing was parsed, so we
+    // return the original context untouched.
+    if (entries.isEmpty) return context;
     final baggage = OTel.baggage(entries);
     return context.withBaggage(baggage);
   }

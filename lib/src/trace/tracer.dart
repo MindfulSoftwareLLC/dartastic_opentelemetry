@@ -209,6 +209,16 @@ class Tracer implements APITracer {
     }
   }
 
+  /// Creates a span without making it active in any context.
+  ///
+  /// Per the Trace SDK spec (SDK Span creation), this goes through the
+  /// same pipeline as [startSpan]: the sampler is queried and the span
+  /// processors are notified. Unlike [startSpan], an explicitly provided
+  /// [spanContext] is used verbatim as the new span's SpanContext
+  /// (identity, flags, and TraceState) rather than only donating its
+  /// trace ID — the sampler still controls IsRecording and processor
+  /// delivery, and the forbidden Sampled==true with IsRecording==false
+  /// combination is corrected by clearing the Sampled flag.
   @override
   Span createSpan({
     required String name,
@@ -219,29 +229,35 @@ class Tracer implements APITracer {
     List<SpanLink>? links,
     List<SpanEvent>? spanEvents,
     DateTime? startTime,
-    bool? isRecording = true,
+    bool? isRecording,
     Context? context,
   }) {
     if (OTelLog.isDebug()) {
       OTelLog.debug('Tracer: Creating span with name: $name, kind: $kind');
     }
 
-    final delegateSpan = _delegate.createSpan(
+    return _startSpanInternal(
       name: name,
+      context: context,
       spanContext: spanContext,
       parentSpan: parentSpan,
       kind: kind,
       attributes: attributes,
       links: links,
-      startTime: startTime,
       spanEvents: spanEvents,
+      startTime: startTime,
       isRecording: isRecording,
-      context: context,
+      honorExplicitSpanContext: true,
     );
-
-    return SDKSpanCreate.create(delegateSpan: delegateSpan, sdkTracer: this);
   }
 
+  /// Starts a new span.
+  ///
+  /// [isRecording] defaults to null, which means the sampler's decision
+  /// determines whether the span records. Passing false forces a
+  /// non-recording span and clears the Sampled flag (the SDK MUST NOT
+  /// produce Sampled == true with IsRecording == false); passing true
+  /// cannot resurrect a span the sampler decided to drop.
   @override
   Span startSpan(
     String name, {
@@ -251,12 +267,47 @@ class Tracer implements APITracer {
     SpanKind kind = SpanKind.internal,
     Attributes? attributes,
     List<SpanLink>? links,
-    bool? isRecording = true,
+    bool? isRecording,
   }) {
     if (OTelLog.isDebug()) {
       OTelLog.debug('Tracer: Starting span with name: $name, kind: $kind');
     }
 
+    return _startSpanInternal(
+      name: name,
+      context: context,
+      spanContext: spanContext,
+      parentSpan: parentSpan,
+      kind: kind,
+      attributes: attributes,
+      links: links,
+      isRecording: isRecording,
+    );
+  }
+
+  /// Shared SDK span-creation pipeline, per the Trace SDK spec
+  /// ("SDK Span creation"): resolve the parent, generate a new SpanId,
+  /// query the sampler's ShouldSample, create the span according to the
+  /// decision, and notify the span processors.
+  ///
+  /// When [honorExplicitSpanContext] is true (the [createSpan] path) and
+  /// [spanContext] is provided, that SpanContext is used verbatim for
+  /// the new span instead of minting a new SpanId and deriving flags
+  /// from the sampling decision; the decision still governs IsRecording
+  /// and processor delivery.
+  Span _startSpanInternal({
+    required String name,
+    Context? context,
+    SpanContext? spanContext,
+    APISpan? parentSpan,
+    SpanKind kind = SpanKind.internal,
+    Attributes? attributes,
+    List<SpanLink>? links,
+    List<SpanEvent>? spanEvents,
+    DateTime? startTime,
+    bool? isRecording,
+    bool honorExplicitSpanContext = false,
+  }) {
     // Get parent context from either the passed context or parent span.
     // Use a content-based check rather than `effectiveContext != Context.root`
     // — Context.root can carry the propagated context inside an isolate
@@ -318,14 +369,23 @@ class Tracer implements APITracer {
       parentSpanId = parentContext.spanId;
     }
 
-    // Inherit trace flags from parent — explicit parentSpan wins over context
-    // for consistency with traceId resolution above.
+    // Inherit trace flags and TraceState from parent — explicit parentSpan
+    // wins over context for consistency with traceId resolution above.
+    // Per the Trace API spec (Span creation), "the child span MUST inherit
+    // all TraceState values of its parent by default"; this applies to
+    // local and remote parents alike.
     TraceFlags? traceFlags;
+    TraceState? parentTraceState;
     if (parentSpan != null && parentSpan.spanContext.isValid) {
       traceFlags = parentSpan.spanContext.traceFlags;
+      parentTraceState = parentSpan.spanContext.traceState;
     } else if (parentContext != null && parentContext.isValid) {
       traceFlags = parentContext.traceFlags;
+      parentTraceState = parentContext.traceState;
     }
+    // An explicit spanContext argument can also donate a TraceState when
+    // no parent supplied one (it already donates the traceId above).
+    parentTraceState ??= spanContext?.traceState;
 
     if (OTelLog.isDebug()) {
       if (parentSpanId != null) {
@@ -339,6 +399,7 @@ class Tracer implements APITracer {
 
     // Apply sampling decision if we have a sampler
     var shouldRecord = true;
+    bool? sampled; // null: no sampler configured, keep inherited flags
     if (sampler != null) {
       final samplingResult = sampler!.shouldSample(
         parentContext: effectiveContext,
@@ -349,20 +410,31 @@ class Tracer implements APITracer {
         links: links,
       );
 
-      // Update the isRecording flag based on the sampling decision
-      shouldRecord = samplingResult.decision != SamplingDecision.drop;
+      // Map the decision onto the (IsRecording, Sampled) pair, per the
+      // Trace SDK spec (ShouldSample):
+      //   DROP              -> IsRecording false, Sampled MUST NOT be set
+      //   RECORD_ONLY       -> IsRecording true,  Sampled MUST NOT be set
+      //   RECORD_AND_SAMPLE -> IsRecording true,  Sampled MUST be set
+      switch (samplingResult.decision) {
+        case SamplingDecision.drop:
+          shouldRecord = false;
+          sampled = false;
+        case SamplingDecision.recordOnly:
+          shouldRecord = true;
+          sampled = false;
+        case SamplingDecision.recordAndSample:
+          shouldRecord = true;
+          sampled = true;
+      }
 
-      // Update trace flags based on sampling decision
-      if (traceFlags == null) {
-        traceFlags = OTel.traceFlags(
-          shouldRecord ? TraceFlags.SAMPLED_FLAG : TraceFlags.NONE_FLAG,
-        );
-      } else if (shouldRecord && !traceFlags.isSampled) {
-        // Upgrade to sampled if necessary
-        traceFlags = OTel.traceFlags(TraceFlags.SAMPLED_FLAG);
-      } else if (!shouldRecord && traceFlags.isSampled) {
-        // Downgrade to not sampled if necessary
-        traceFlags = OTel.traceFlags(TraceFlags.NONE_FLAG);
+      // Per the Trace SDK spec (ShouldSample), the Tracestate returned
+      // by the sampler is associated with the Span through the new
+      // SpanContext. An explicitly empty TraceState clears it; null
+      // means the sampler has no opinion (samplers written before
+      // SamplingResult.traceState existed keep parent inheritance).
+      final samplerTraceState = samplingResult.traceState;
+      if (samplerTraceState != null) {
+        parentTraceState = samplerTraceState.isEmpty ? null : samplerTraceState;
       }
 
       // Add sampler attributes if provided
@@ -383,37 +455,92 @@ class Tracer implements APITracer {
       }
     }
 
-    // Always create a new span context with a new span ID
-    // For root spans, ensure we set an invalid parent span ID (zeros)
-    final newSpanContext = OTel.spanContext(
-      traceId: traceId,
-      spanId: OTel.spanId(), // Always generate a new span ID
-      parentSpanId: parentSpanId ??
-          OTel.spanIdInvalid(), // Use invalid span ID for root spans
-      traceFlags: traceFlags,
-    );
+    // The sampler owns the recording decision. A caller may pass
+    // isRecording: false to force a non-recording span, but can never
+    // resurrect a dropped one (spec: DROP => IsRecording will be false).
+    final recording = shouldRecord && (isRecording ?? true);
 
-    // Create the delegate span with our newly created span context
-    final delegateSpan = _delegate.startSpan(
-      name,
+    // The SDK MUST NOT allow Sampled == true with IsRecording == false
+    // (Trace SDK spec, Sampling — the combination causes gaps in the
+    // distributed trace). A forced non-recording span is never sampled.
+    if (!recording) {
+      sampled = false;
+    }
+
+    if (sampled != null) {
+      // The Sampled trace flag reflects the sampling decision only —
+      // RECORD_ONLY records without setting the flag.
+      traceFlags = OTel.traceFlags(
+        sampled ? TraceFlags.SAMPLED_FLAG : TraceFlags.NONE_FLAG,
+      );
+    } else if (!recording && (traceFlags?.isSampled ?? false)) {
+      // No sampler configured and flags inherited from the parent:
+      // still clear Sampled on a forced non-recording span.
+      traceFlags = OTel.traceFlags(TraceFlags.NONE_FLAG);
+    }
+
+    final SpanContext newSpanContext;
+    if (honorExplicitSpanContext && spanContext != null) {
+      // createSpan contract: an explicitly provided SpanContext is used
+      // verbatim. Only the forbidden Sampled==true with
+      // IsRecording==false combination is corrected (Trace SDK spec,
+      // Sampling: the SDK MUST NOT allow it).
+      newSpanContext = (!recording && spanContext.traceFlags.isSampled)
+          ? OTel.spanContext(
+              traceId: spanContext.traceId,
+              spanId: spanContext.spanId,
+              parentSpanId: spanContext.parentSpanId,
+              traceFlags: OTel.traceFlags(TraceFlags.NONE_FLAG),
+              traceState: spanContext.traceState,
+              isRemote: spanContext.isRemote,
+            )
+          : spanContext;
+    } else {
+      // Always create a new span context with a new span ID
+      // For root spans, ensure we set an invalid parent span ID (zeros)
+      newSpanContext = OTel.spanContext(
+        traceId: traceId,
+        spanId: OTel.spanId(), // Always generate a new span ID
+        parentSpanId: parentSpanId ??
+            OTel.spanIdInvalid(), // Use invalid span ID for root spans
+        traceFlags: traceFlags,
+        traceState: parentTraceState,
+      );
+    }
+
+    // Create the delegate span with our newly created span context.
+    // (The API's startSpan forwards verbatim to createSpan; calling
+    // createSpan directly also lets this pipeline carry spanEvents and
+    // an explicit startTime.)
+    final delegateSpan = _delegate.createSpan(
+      name: name,
       context: effectiveContext,
       spanContext: newSpanContext,
       parentSpan: effectiveParentSpan,
       kind: kind,
       attributes: attributes,
       links: links,
-      isRecording: isRecording ?? shouldRecord,
+      spanEvents: spanEvents,
+      startTime: startTime,
+      isRecording: recording,
     );
 
     // Wrap it in our SDK span which will handle processing
     final sdkSpan = SDKSpanCreate.create(
       delegateSpan: delegateSpan,
       sdkTracer: this,
+      isRecording: recording,
     );
 
-    // Notify processors
-    for (final processor in _provider.spanProcessors) {
-      processor.onStart(sdkSpan, context);
+    // Notify processors. Per the Trace SDK spec (Sampling), span
+    // processors MUST receive only spans with IsRecording == true.
+    // OnStart receives "the parent Context of the span that the SDK
+    // determined", so pass the resolved effectiveContext, never the raw
+    // (possibly null) context argument.
+    if (recording) {
+      for (final processor in _provider.spanProcessors) {
+        processor.onStart(sdkSpan, effectiveContext);
+      }
     }
 
     return sdkSpan;

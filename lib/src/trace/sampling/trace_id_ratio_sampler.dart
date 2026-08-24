@@ -53,19 +53,23 @@ class TraceIdRatioSampler implements Sampler {
     required Attributes? attributes,
     required List<SpanLink>? links,
   }) {
+    final parentTraceState = parentContext.spanContext?.traceState;
+
     // If ratio is 0, never sample
     if (ratio == 0.0) {
-      return const SamplingResult(
+      return SamplingResult(
         decision: SamplingDecision.drop,
         source: SamplingDecisionSource.tracerConfig,
+        traceState: parentTraceState,
       );
     }
 
     // If ratio is 1, always sample
     if (ratio == 1.0) {
-      return const SamplingResult(
+      return SamplingResult(
         decision: SamplingDecision.recordAndSample,
         source: SamplingDecisionSource.tracerConfig,
+        traceState: parentTraceState,
       );
     }
 
@@ -80,6 +84,7 @@ class TraceIdRatioSampler implements Sampler {
           ? SamplingDecision.recordAndSample
           : SamplingDecision.drop,
       source: SamplingDecisionSource.tracerConfig,
+      traceState: parentTraceState,
     );
   }
 }
