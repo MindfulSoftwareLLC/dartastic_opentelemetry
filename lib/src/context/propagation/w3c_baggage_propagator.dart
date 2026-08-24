@@ -35,7 +35,9 @@ class W3CBaggagePropagator
     TextMapGetter<String> getter,
   ) {
     final value = getter.get(_baggageHeader);
-    OTelLog.debug('Extracting baggage: $value');
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('Extracting baggage: $value');
+    }
     if (value == null || value.isEmpty) {
       // Propagators API spec: extract returns the passed context, updated
       // with extracted values — and unchanged when there is nothing to
