@@ -664,8 +664,7 @@ class OTelEnv {
     );
   }
 
-  static ({int? attributeValueLengthLimit, int? attributeCountLimit})
-      _parseAttributeLimits({
+  static AttributeLimitsEnvironmentValues _parseAttributeLimits({
     required String lengthVar,
     required String countVar,
     String? fallbackLengthVar,
