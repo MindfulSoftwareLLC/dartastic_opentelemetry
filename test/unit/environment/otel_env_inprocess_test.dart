@@ -366,6 +366,119 @@ void main() {
     });
   });
 
+  group('invalid limit values warn', () {
+    // The spec requires an invalid environment value to be reported, not
+    // silently ignored: "the SDK MUST ... log a warning" and fall back to
+    // the default. Dropping the value is only half the contract; these
+    // pin the other half, including that the warning names the variable
+    // the value actually came from.
+    late List<String> logs;
+
+    void captureWarnings() {
+      logs = <String>[];
+      OTelLog.logFunction = logs.add;
+      OTelLog.currentLevel = LogLevel.warn;
+    }
+
+    test('getAttributeLimits warns for each invalid value', () {
+      captureWarnings();
+      env({
+        'OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT': '-10',
+        'OTEL_ATTRIBUTE_COUNT_LIMIT': 'invalid',
+      });
+
+      final config = OTelEnv.getAttributeLimits();
+
+      expect(config.attributeValueLengthLimit, isNull);
+      expect(config.attributeCountLimit, isNull);
+      expect(
+        logs.where((l) =>
+            l.contains('for OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT.') &&
+            l.contains('"-10"')),
+        hasLength(1),
+        reason: 'a negative limit must be reported, naming the variable '
+            'and the offending value',
+      );
+      expect(
+        logs.where((l) =>
+            l.contains('for OTEL_ATTRIBUTE_COUNT_LIMIT.') &&
+            l.contains('"invalid"')),
+        hasLength(1),
+        reason: 'a non-numeric limit must be reported the same way',
+      );
+    });
+
+    test('getLogRecordLimits warns for each invalid value', () {
+      captureWarnings();
+      env({
+        'OTEL_LOGRECORD_ATTRIBUTE_VALUE_LENGTH_LIMIT': 'long',
+        'OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT': '-5',
+      });
+
+      final config = OTelEnv.getLogRecordLimits();
+
+      expect(config.attributeValueLengthLimit, isNull);
+      expect(config.attributeCountLimit, isNull);
+      expect(
+        logs.where((l) =>
+            l.contains('for OTEL_LOGRECORD_ATTRIBUTE_VALUE_LENGTH_LIMIT.')),
+        hasLength(1),
+      );
+      expect(
+        logs.where(
+            (l) => l.contains('for OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT.')),
+        hasLength(1),
+      );
+    });
+
+    test('the warning names the general variable when it is the fallback', () {
+      captureWarnings();
+      // The signal-specific variable is unset, so the invalid value came
+      // from the general one - the warning has to say so, or the reader
+      // goes looking for a variable they never set.
+      env({'OTEL_ATTRIBUTE_COUNT_LIMIT': 'nope'});
+
+      final config = OTelEnv.getLogRecordLimits();
+
+      expect(config.attributeCountLimit, isNull);
+      expect(
+        logs.where((l) => l.contains('for OTEL_ATTRIBUTE_COUNT_LIMIT.')),
+        hasLength(1),
+      );
+      expect(
+        logs.where((l) => l.contains('OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT')),
+        isEmpty,
+        reason: 'the unset signal-specific variable must not be blamed',
+      );
+    });
+
+    test('valid limits warn about nothing', () {
+      captureWarnings();
+      env({
+        'OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT': '4096',
+        'OTEL_ATTRIBUTE_COUNT_LIMIT': '128',
+      });
+
+      final config = OTelEnv.getAttributeLimits();
+
+      expect(config.attributeValueLengthLimit, equals(4096));
+      expect(config.attributeCountLimit, equals(128));
+      expect(logs, isEmpty);
+    });
+
+    test('zero is a valid limit and is not warned about', () {
+      captureWarnings();
+      // Zero is meaningful: it drops every attribute. Only negatives and
+      // non-numerics are invalid.
+      env({'OTEL_ATTRIBUTE_COUNT_LIMIT': '0'});
+
+      final config = OTelEnv.getAttributeLimits();
+
+      expect(config.attributeCountLimit, equals(0));
+      expect(logs, isEmpty);
+    });
+  });
+
   group('parsing empty values (issue #213)', () {
     test('an empty value reads as unset from getValue', () {
       env({'OTEL_SERVICE_NAME': ''});
