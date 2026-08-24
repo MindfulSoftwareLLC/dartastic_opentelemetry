@@ -20,6 +20,30 @@ void main() {
       expect(config.exportTimeout, equals(const Duration(seconds: 30)));
     });
 
+    test('a zero export interval falls back to the default', () {
+      // getPositiveIntEnv admits 0 (minInclusive: 0) and the negative
+      // guard does not catch it, so a zero reaches
+      // Timer.periodic(Duration.zero) in PeriodicExportingMetricReader -
+      // which fires every event-loop turn, spinning the CPU and flooding
+      // the exporter. Java rejects non-positive intervals; Go falls back
+      // to the default.
+      final config = MetricsSdkConfig.fromEnvironment((
+        exemplarFilter: null,
+        exportInterval: Duration.zero,
+        exportTimeout: null,
+      ));
+
+      expect(
+        config.exportInterval,
+        greaterThan(Duration.zero),
+        reason: 'a zero interval must never reach Timer.periodic',
+      );
+      expect(
+        config.exportInterval,
+        equals(MetricsSdkConfig.defaultExportInterval),
+      );
+    });
+
     test('parses valid values', () {
       final config = MetricsSdkConfig.fromEnvironment((
         exemplarFilter: 'always_on',
