@@ -82,9 +82,10 @@ class MetricsSdkConfig {
     var interval = defaultExportInterval;
     if (env.exportInterval != null) {
       final t = env.exportInterval!;
-      if (t.inMilliseconds < 0) {
+      if (t.inMilliseconds <= 0) {
         if (OTelLog.isWarn()) {
-          OTelLog.warn('MetricsSdkConfig: Negative OTEL_METRIC_EXPORT_INTERVAL '
+          OTelLog.warn(
+              'MetricsSdkConfig: Non-positive OTEL_METRIC_EXPORT_INTERVAL '
               '(${t.inMilliseconds} ms) is invalid per spec, using default '
               '(${defaultExportInterval.inMilliseconds} ms).');
         }
