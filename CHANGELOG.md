@@ -167,6 +167,20 @@ fixed (#103), `browser.*` resource attributes are populated on web (#190)
 with `browser.mobile` as a boolean, and baggage values containing `=`
 survive extraction (#199). Full detail in the `1.1.0-beta.14` entry.
 
+- **BREAKING: W3C Baggage now percent-encodes per the W3C grammar instead of
+  form-style encoding** (#198, #197, #264). Values encode every byte outside
+  the W3C `baggage-octet` allowlist (`%` → `%25`, space → `%20`,
+  `,`/`;`/`"`/`\`/`:` escaped, controls and non-ASCII UTF-8 percent-encoded)
+  instead of sending space as `+`; keys travel as raw RFC 7230 tokens, and
+  keys that are not valid tokens are dropped on inject and ignored on
+  extract; metadata is encoded too, so it can no longer forge additional
+  header entries; extract ignores unparsable list members instead of
+  throwing into the caller (which also blocked `traceparent` parsing).
+  Migration hint: the previous release decoded `+` as space — during a
+  rolling deploy against it, entries with spaces or `+` in values (e.g.
+  `key+with+spaces`) can be lost or misread at the version boundary; use
+  token keys and expect literal `+` in values on mixed fleets.
+
 ## [1.1.0-beta.13] - 2026-08-13
 
 ### Security
