@@ -486,6 +486,34 @@ void main() {
       expect(result.containsKey('attributeCountLimit'), isFalse);
     });
 
+    test('ignores negative attribute limits', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_logrecord_limits.dart',
+        {
+          'OTEL_LOGRECORD_ATTRIBUTE_VALUE_LENGTH_LIMIT': '-10',
+          'OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT': '-5',
+        },
+      );
+      final result = jsonDecode(output.trim().split('\n').last.trim())
+          as Map<String, dynamic>;
+      expect(result.containsKey('attributeValueLengthLimit'), isFalse);
+      expect(result.containsKey('attributeCountLimit'), isFalse);
+    });
+
+    test('falls back to general attribute limits', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_logrecord_limits.dart',
+        {
+          'OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT': '1024',
+          'OTEL_ATTRIBUTE_COUNT_LIMIT': '128',
+        },
+      );
+      final result = jsonDecode(output.trim().split('\n').last.trim())
+          as Map<String, dynamic>;
+      expect(result['attributeValueLengthLimit'], equals(1024));
+      expect(result['attributeCountLimit'], equals(128));
+    });
+
     test('returns empty map when no limits env vars set', () async {
       final output = await runWithEnv(
         'test/unit/environment/helpers/check_logrecord_limits.dart',
@@ -556,6 +584,19 @@ void main() {
         {'OTEL_ATTRIBUTE_COUNT_LIMIT': 'bad'},
       );
       final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result.containsKey('attributeCountLimit'), isFalse);
+    });
+
+    test('ignores negative attribute limits', () async {
+      final output = await runWithEnv(
+        'test/unit/environment/helpers/check_attribute_limits.dart',
+        {
+          'OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT': '-1',
+          'OTEL_ATTRIBUTE_COUNT_LIMIT': '-99',
+        },
+      );
+      final result = jsonDecode(output.trim()) as Map<String, dynamic>;
+      expect(result.containsKey('attributeValueLengthLimit'), isFalse);
       expect(result.containsKey('attributeCountLimit'), isFalse);
     });
 
@@ -1125,7 +1166,9 @@ void main() {
       expect(config, isA<LogRecordLimitsEnvironmentValues>());
     });
 
-    test('getAttributeLimits returns an AttributeLimitsEnvironmentValues record', () {
+    test(
+        'getAttributeLimits returns an AttributeLimitsEnvironmentValues record',
+        () {
       final config = OTelEnv.getAttributeLimits();
       expect(config, isA<AttributeLimitsEnvironmentValues>());
     });

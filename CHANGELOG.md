@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.15-wip]
 
+### Added
+- Parse OpenTelemetry attribute limit environment variables (`OTEL_ATTRIBUTE_COUNT_LIMIT`, `OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT`, and their `OTEL_LOGRECORD_*` variants) according to the spec fallback rules. Note that enforcement of these limits at the attribute creation boundary is follow-up work.
 ## [1.1.0-beta.14] - 2026-08-23
 
 ### Changed

@@ -664,6 +664,41 @@ class OTelEnv {
     );
   }
 
+  static ({int? attributeValueLengthLimit, int? attributeCountLimit})
+      _parseAttributeLimits({
+    required String lengthVar,
+    required String countVar,
+    String? fallbackLengthVar,
+    String? fallbackCountVar,
+  }) {
+    int? parseLimit(String primaryVar, String? fallbackVar) {
+      var val = _getEnv(primaryVar);
+      var varName = primaryVar;
+
+      if (val == null && fallbackVar != null) {
+        val = _getEnv(fallbackVar);
+        varName = fallbackVar;
+      }
+
+      if (val != null) {
+        final limit = int.tryParse(val);
+        if (limit != null && limit >= 0) {
+          return limit;
+        }
+        if (OTelLog.isWarn()) {
+          OTelLog.warn('OTelEnv: Invalid value "$val" for $varName. '
+              'Limit must be a non-negative integer.');
+        }
+      }
+      return null;
+    }
+
+    return (
+      attributeValueLengthLimit: parseLimit(lengthVar, fallbackLengthVar),
+      attributeCountLimit: parseLimit(countVar, fallbackCountVar),
+    );
+  }
+
   /// Get general attribute limits from environment variables.
   ///
   /// These limits apply globally to all telemetry signals (traces, metrics,
@@ -680,40 +715,9 @@ class OTelEnv {
   ///
   /// See: https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#attribute-limits
   static AttributeLimitsEnvironmentValues getAttributeLimits() {
-    int? parsedValueLengthLimit;
-    int? parsedCountLimit;
-
-    // Get attribute value length limit
-    final valueLengthLimit = _getEnv(otelAttributeValueLengthLimit);
-    if (valueLengthLimit != null) {
-      final limit = int.tryParse(valueLengthLimit);
-      if (limit != null) {
-        parsedValueLengthLimit = limit;
-        if (OTelLog.isDebug()) {
-          OTelLog.debug(
-            'OTelEnv: General attribute value length limit set to $limit',
-          );
-        }
-      }
-    }
-
-    // Get attribute count limit (spec default: 128)
-    final countLimit = _getEnv(otelAttributeCountLimit);
-    if (countLimit != null) {
-      final limit = int.tryParse(countLimit);
-      if (limit != null) {
-        parsedCountLimit = limit;
-        if (OTelLog.isDebug()) {
-          OTelLog.debug(
-            'OTelEnv: General attribute count limit set to $limit',
-          );
-        }
-      }
-    }
-
-    return (
-      attributeValueLengthLimit: parsedValueLengthLimit,
-      attributeCountLimit: parsedCountLimit,
+    return _parseAttributeLimits(
+      lengthVar: otelAttributeValueLengthLimit,
+      countVar: otelAttributeCountLimit,
     );
   }
 
@@ -723,24 +727,11 @@ class OTelEnv {
   /// log record attribute limits. Fields are `null` when the corresponding
   /// env var is unset or contains a non-numeric value.
   static LogRecordLimitsEnvironmentValues getLogRecordLimits() {
-    // Get attribute value length limit
-    int? parsedValueLengthLimit;
-    final valueLengthLimit = _getEnv(otelLogrecordAttributeValueLengthLimit);
-    if (valueLengthLimit != null) {
-      parsedValueLengthLimit = int.tryParse(valueLengthLimit);
-    }
-
-    // Get attribute count limit
-    int? parsedCountLimit;
-    final countLimit = _getEnv(otelLogrecordAttributeCountLimit);
-    if (countLimit != null) {
-
-      parsedCountLimit = int.tryParse(countLimit);
-    }
-
-    return (
-      attributeValueLengthLimit: parsedValueLengthLimit,
-      attributeCountLimit: parsedCountLimit,
+    return _parseAttributeLimits(
+      lengthVar: otelLogrecordAttributeValueLengthLimit,
+      countVar: otelLogrecordAttributeCountLimit,
+      fallbackLengthVar: otelAttributeValueLengthLimit,
+      fallbackCountVar: otelAttributeCountLimit,
     );
   }
 

@@ -319,6 +319,24 @@ void main() {
       expect(invalid.maxExportBatchSize, isNull);
     });
 
+    test('getAttributeLimits parses valid values and drops invalid ones', () {
+      env({
+        'OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT': '4096',
+        'OTEL_ATTRIBUTE_COUNT_LIMIT': '128',
+      });
+      final config = OTelEnv.getAttributeLimits();
+      expect(config.attributeValueLengthLimit, equals(4096));
+      expect(config.attributeCountLimit, equals(128));
+
+      env({
+        'OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT': '-10',
+        'OTEL_ATTRIBUTE_COUNT_LIMIT': 'invalid',
+      });
+      final invalid = OTelEnv.getAttributeLimits();
+      expect(invalid.attributeValueLengthLimit, isNull);
+      expect(invalid.attributeCountLimit, isNull);
+    });
+
     test('getLogRecordLimits parses valid values and drops invalid ones', () {
       env({
         'OTEL_LOGRECORD_ATTRIBUTE_VALUE_LENGTH_LIMIT': '900',
@@ -330,11 +348,21 @@ void main() {
 
       env({
         'OTEL_LOGRECORD_ATTRIBUTE_VALUE_LENGTH_LIMIT': 'long',
-        'OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT': 'many',
+        'OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT': '-5',
       });
       final invalid = OTelEnv.getLogRecordLimits();
       expect(invalid.attributeValueLengthLimit, isNull);
       expect(invalid.attributeCountLimit, isNull);
+    });
+
+    test('getLogRecordLimits falls back to general attribute limits', () {
+      env({
+        'OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT': '256',
+        'OTEL_ATTRIBUTE_COUNT_LIMIT': '32',
+      });
+      final fallback = OTelEnv.getLogRecordLimits();
+      expect(fallback.attributeValueLengthLimit, equals(256));
+      expect(fallback.attributeCountLimit, equals(32));
     });
   });
 
