@@ -77,7 +77,10 @@ void main() {
       ('pre-encoded text stays distinct', 'a%2Cb', 'a%252Cb'),
       ('non-ASCII is UTF-8 percent-encoded', 'café', 'caf%C3%A9'),
       ('CR LF are escaped', 'a\r\nb', 'a%0D%0Ab'),
-      ('backslash is escaped', r'C:\x', 'C%3A%5Cx'),
+      ('backslash is escaped', r'C:\x', 'C:%5Cx'),
+      // ':' is inside %x2D-3A, so it must survive as itself: the
+      // excluded printables are only '"', ',', ';' and '\'.
+      ('colon is not encoded', 'host:4317', 'host:4317'),
       // Folded from w3c_baggage_propagator_test.dart per review.
       ('space is escaped', 'a b', 'a%20b'),
       ('semicolon is escaped', 'a;b', 'a%3Bb'),

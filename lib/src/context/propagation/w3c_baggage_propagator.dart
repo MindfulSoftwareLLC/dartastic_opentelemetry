@@ -189,17 +189,11 @@ class W3CBaggagePropagator
   /// Whether [octet] is in the W3C Baggage `baggage-octet` set
   /// (`%x21 / %x23-2B / %x2D-3A / %x3C-5B / %x5D-7E`) — i.e. printable
   /// ASCII excluding space, `"`, `,`, `;`, `\`, controls, and non-ASCII.
-  ///
-  /// `:` (0x3A) is in the set on the wire but is additionally excluded from
-  /// raw pass-through here: emitting it as `%3A` stays within
-  /// `baggage-octet` for every emitted byte, keeps the pinned contract
-  /// byte-exact, and any spec-following receiver percent-decodes it back.
   static bool _isBaggageOctet(int octet) =>
       octet >= 0x21 &&
       octet <= 0x7E &&
       octet != 0x22 && // "
       octet != 0x2C && // ,
-      octet != 0x3A && // :
       octet != 0x3B && // ;
       octet != 0x5C; //   \
 
