@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:meta/meta.dart';
 
 import '../dartastic_opentelemetry.dart';
+import 'trace/traces_configuration.dart';
 
 /// Main entry point for the OpenTelemetry SDK.
 ///
@@ -165,8 +166,17 @@ class OTel {
     // lines that diagnose env configuration.
     initializeLogging();
 
-    // Apply environment variables only if parameters are not provided
+    // Apply environment variables exactly once
     final envServiceConfig = OTelEnv.getServiceConfig();
+    final otlpTracesConfig = OTelEnv.getOtlpConfig(signal: 'traces');
+    final otlpMetricsConfig = OTelEnv.getOtlpConfig(signal: 'metrics');
+    final otlpLogsConfig = OTelEnv.getOtlpConfig(signal: 'logs');
+    final tracesExporters = OTelEnv.getExporters(signal: 'traces') ?? ['otlp'];
+    final metricsExporters =
+        OTelEnv.getExporters(signal: 'metrics') ?? ['otlp'];
+    final logsExporters = OTelEnv.getExporters(signal: 'logs') ?? ['otlp'];
+    final blrpConfig = OTelEnv.getBlrpConfig();
+
     final envServiceName =
         serviceName == null ? envServiceConfig.serviceName : null;
     final envServiceVersion =
@@ -175,11 +185,8 @@ class OTel {
     serviceName ??= envServiceName;
     serviceVersion ??= envServiceVersion;
 
-    final otlpConfig = (endpoint == null || secure == null)
-        ? OTelEnv.getOtlpConfig(signal: 'traces')
-        : null;
-    final envEndpoint = endpoint == null ? otlpConfig?.endpoint : null;
-    final envInsecure = secure == null ? otlpConfig?.insecure : null;
+    final envEndpoint = endpoint == null ? otlpTracesConfig.endpoint : null;
+    final envInsecure = secure == null ? otlpTracesConfig.insecure : null;
 
     endpoint ??= envEndpoint;
     secure = OTelEnv.resolveOtlpSecure(
@@ -188,14 +195,9 @@ class OTel {
       endpoint: endpoint,
     );
 
-    // Apply defaults if still null. The endpoint stays nullable here and is
-    // resolved per signal after the protocol is known (issue #220): the OTLP
-    // spec default is http://localhost:4317 for gRPC and http://localhost:4318
-    // for the HTTP protocols, so a single 4318 default must not be applied
-    // before the protocol is resolved.
+    // Apply defaults if still null.
     serviceName ??= defaultServiceName;
     serviceVersion ??= '1.0.0';
-    // secure is guaranteed non-null from above
 
     // Log environment variable usage
     if (OTelLog.isDebug()) {
@@ -215,35 +217,6 @@ class OTel {
       }
     }
 
-    // Get otlpConfig for exporter creation later
-    final otlpConfigForExporter = OTelEnv.getOtlpConfig(signal: 'traces');
-
-    // Get resource attributes from environment and merge with provided ones.
-    //
-    // service.name and service.version are deliberately excluded here. They
-    // were already resolved into serviceName/serviceVersion above by
-    // getServiceConfig(), which applies the spec precedence -- OTEL_SERVICE_NAME
-    // outranks service.name in OTEL_RESOURCE_ATTRIBUTES -- and an explicit
-    // argument outranks both. These attributes are merged last, at the highest
-    // precedence, so leaving the service keys in would let
-    // OTEL_RESOURCE_ATTRIBUTES override the resolved values and silently beat
-    // programmatic configuration.
-    final envResourceAttrs =
-        Map<String, Object>.from(OTelEnv.getResourceAttributes())
-          ..remove(Service.serviceName.key)
-          ..remove(Service.serviceVersion.key);
-    if (envResourceAttrs.isNotEmpty) {
-      if (resourceAttributes != null) {
-        // Merge with provided attributes - provided ones take precedence
-        final mergedAttrs = Map<String, Object>.from(envResourceAttrs);
-        resourceAttributes.toList().forEach((attr) {
-          mergedAttrs[attr.key] = attr.value;
-        });
-        resourceAttributes = OTel.attributesFromMap(mergedAttrs);
-      } else {
-        resourceAttributes = OTel.attributesFromMap(envResourceAttrs);
-      }
-    }
     // The API auto-installs its OTelAPIFactory if API-only code runs
     // before the SDK initializes. The SDK must upgrade it to the SDK (per spec).
     final existingFactory = OTelFactory.otelFactory;
@@ -273,11 +246,6 @@ class OTel {
     }
     final factoryFactory =
         oTelFactoryCreationFunction ?? otelSDKFactoryFactoryFunction;
-    // Initialize with default sampler. Per the Trace SDK spec
-    // (Built-in samplers), "The default sampler is
-    // ParentBased(root=AlwaysOn)": children follow their parent's
-    // sampling decision (a remote unsampled parent's child is dropped),
-    // and root spans are always sampled.
     _defaultSampler = sampler ?? ParentBasedSampler(const AlwaysOnSampler());
     _defaultSpanExceptionOptions = spanExceptionOptions;
     _defaultTimeProvider = timeProvider;
@@ -290,19 +258,14 @@ class OTel {
       apiServiceVersion: serviceVersion,
     );
     OTelFactory.otelFactory = createdFactory;
-    // Populate the cache _getAndCacheOtelFactory maintains, so methods that
-    // branch on it before the guard (attributes, attributesFromMap) route
-    // through the SDK factory immediately after initialize.
     if (createdFactory is OTelSDKFactory) {
       _otelFactory = createdFactory;
     }
 
-    // context/api-propagators.md, "Global Propagators": the SDK configures
-    // the API's global propagator at initialization, per OTEL_PROPAGATORS.
     _installGlobalPropagator();
 
     if (OTelLog.isDebug()) {
-      final traceProtocol = otlpConfigForExporter.protocol ?? 'http/protobuf';
+      final traceProtocol = otlpTracesConfig.protocol ?? 'http/protobuf';
       OTelLog.debug(
         'OTel initialized with endpoint: '
         '${endpoint ?? (traceProtocol == 'grpc' ? defaultGrpcEndpoint : defaultEndpoint)}, '
@@ -310,192 +273,75 @@ class OTel {
       );
     }
 
+    // Initialize resource with correct precedence
+    var mergedResource = OTel.resource(OTel.attributes());
+
+    if (detectPlatformResources) {
+      final resourceDetector = PlatformResourceDetector.create();
+      final platformResource = await resourceDetector.detect();
+      mergedResource = mergedResource.merge(platformResource);
+    }
+
+    // Always run EnvVarResourceDetector for OTEL_RESOURCE_ATTRIBUTES
+    final envVarResource = await EnvVarResourceDetector().detect();
+    mergedResource = mergedResource.merge(envVarResource);
+
+    // Apply OTEL_SERVICE_NAME (and VERSION) via service name variables
     final serviceResourceAttributes = {
       Service.serviceName.key: serviceName,
       Service.serviceVersion.key: serviceVersion,
     };
-    // Create initial resource with service attributes
-    var baseResource = OTel.resource(
-      OTel.attributesFromMap(serviceResourceAttributes),
-    );
+    mergedResource = mergedResource.merge(
+        OTel.resource(OTel.attributesFromMap(serviceResourceAttributes)));
 
-    // Initialize with tenant-aware resource
-    var mergedResource = baseResource;
-    if (detectPlatformResources) {
-      final resourceDetector = PlatformResourceDetector.create();
-      final platformResource = await resourceDetector.detect();
-      // Merge platform resource with our service resource - our service resource takes precedence
-      mergedResource = platformResource.merge(mergedResource);
-
-      if (OTelLog.isDebug()) {
-        OTelLog.debug('Resource after platform merge:');
-        mergedResource.attributes.toList().forEach((attr) {
-          if (attr.key == Service.serviceName.key) {
-            OTelLog.debug('  ${attr.key}: ${attr.value}');
-          }
-        });
-      }
-    }
+    // Finally, explicit programmatic arguments outrank everything
     if (resourceAttributes != null) {
       final initResources = OTel.resource(resourceAttributes);
-      // Merge user-provided attributes - they have highest priority
       mergedResource = mergedResource.merge(initResources);
-
-      if (OTelLog.isDebug()) {
-        OTelLog.debug('Resource after user attributes merge:');
-        mergedResource.attributes.toList().forEach((attr) {
-          if (attr.key == Service.serviceName.key) {
-            OTelLog.debug('  ${attr.key}: ${attr.value}');
-          }
-        });
-      }
     }
-    // Set the final merged resource as default
+
     OTel.defaultResource = mergedResource;
 
-    // OTEL_SDK_DISABLED=true is the spec-defined global off-switch: all three
-    // signals become no-ops. Honoring this here keeps signal-specific configs
-    // (`OTEL_*_EXPORTER`) from being ever consulted.
+    if (OTelLog.isDebug()) {
+      OTelLog.debug('Final resource:');
+      mergedResource.attributes.toList().forEach((attr) {
+        if (attr.key == Service.serviceName.key) {
+          OTelLog.debug('  ${attr.key}: ${attr.value}');
+        }
+      });
+    }
+
     final sdkDisabled = OTelEnv.isSdkDisabled();
     if (sdkDisabled && OTelLog.isDebug()) {
       OTelLog.debug('OTel: OTEL_SDK_DISABLED=true, skipping all signal setup');
     }
 
-    if (spanProcessor == null && !sdkDisabled) {
-      // Spec "Exporter Selection": OTEL_TRACES_EXPORTER, default otlp; "The
-      // implementation MAY accept a comma-separated list to enable setting
-      // multiple exporters" — supported here. Known: otlp, console, none.
-      final requested = OTelEnv.getExporters(signal: 'traces') ?? ['otlp'];
-      if (requested.contains('none')) {
-        if (requested.length > 1 && OTelLog.isWarn()) {
-          OTelLog.warn("OTEL_TRACES_EXPORTER contains 'none' alongside other "
-              'values; installing no exporter.');
-        }
-        // spanProcessor remains null and no processor is added.
-      } else {
-        // Determine protocol - default to http/protobuf if not set
-        final protocol = otlpConfigForExporter.protocol ?? 'http/protobuf';
-
-        // Capture the resolved values: promotion of the nullable
-        // parameters does not carry into the closure. The endpoint default is
-        // protocol-dependent (issue #220): gRPC uses port 4317, the HTTP
-        // protocols use port 4318. The secure setting is likewise re-resolved
-        // against the resolved endpoint so an http:// scheme (including the
-        // gRPC default http://localhost:4317) yields an insecure connection,
-        // matching the metrics/logs paths.
-        final resolvedEndpoint = endpoint ??
-            (protocol == 'grpc' ? defaultGrpcEndpoint : defaultEndpoint);
-        final resolvedSecure = OTelEnv.resolveOtlpSecure(
-          envInsecure: otlpConfigForExporter.insecure,
-          endpoint: resolvedEndpoint,
-          fallback: secure,
-        );
-        SpanExporter buildOtlpExporter() {
-          // Create appropriate exporter based on protocol
-          if (protocol == 'grpc') {
-            return OtlpGrpcSpanExporter(
-              OtlpGrpcExporterConfig(
-                endpoint: resolvedEndpoint,
-                insecure: !resolvedSecure,
-                headers: otlpConfigForExporter.headers ?? {},
-                timeout: otlpConfigForExporter.timeout ??
-                    const Duration(seconds: 10),
-                compression: otlpConfigForExporter.compression == 'gzip',
-                certificate: otlpConfigForExporter.certificate,
-                clientKey: otlpConfigForExporter.clientKey,
-                clientCertificate: otlpConfigForExporter.clientCertificate,
-              ),
-            );
-          } else {
-            // http/protobuf (default) or http/json (opt-in via env-var).
-            // Anything else falls back to http/protobuf — the spec-
-            // recommended default per `specification/protocol/exporter.md`.
-            final httpProtocol = otlpHttpProtocolFromString(protocol) ??
-                OtlpHttpProtocol.httpProtobuf;
-            return OtlpHttpSpanExporter(
-              OtlpHttpExporterConfig(
-                endpoint: resolvedEndpoint,
-                headers: otlpConfigForExporter.headers ?? {},
-                timeout: otlpConfigForExporter.timeout ??
-                    const Duration(seconds: 10),
-                compression: otlpConfigForExporter.compression == 'gzip',
-                certificate: otlpConfigForExporter.certificate,
-                clientKey: otlpConfigForExporter.clientKey,
-                clientCertificate: otlpConfigForExporter.clientCertificate,
-                protocol: httpProtocol,
-              ),
-            );
-          }
-        }
-
-        final exporters = <SpanExporter>[];
-        for (final name in requested) {
-          switch (name) {
-            case 'otlp':
-              exporters.add(buildOtlpExporter());
-            case 'console':
-              exporters.add(ConsoleExporter());
-            case 'logging':
-              if (OTelLog.isWarn()) {
-                OTelLog.warn("OTEL_TRACES_EXPORTER value 'logging' is "
-                    "deprecated in the spec and not supported; use 'console'.");
-              }
-            default:
-              if (OTelLog.isWarn()) {
-                OTelLog.warn("OTEL_TRACES_EXPORTER value '$name' is not "
-                    'supported; ignoring. Supported: otlp, console, none.');
-              }
-          }
-        }
-        if (exporters.isEmpty) {
-          // Invalid enum values: warn, gracefully ignore, use the default.
-          if (OTelLog.isWarn()) {
-            OTelLog.warn('OTEL_TRACES_EXPORTER produced no usable exporter; '
-                'falling back to the default otlp exporter.');
-          }
-          exporters.add(buildOtlpExporter());
-        }
-        // Spec: the default pipeline is otlp only — debug logging must not
-        // alter it (see #49 for the identical metrics fix). Console output
-        // stays available via OTEL_TRACES_EXPORTER=console (or a
-        // comma-separated list, e.g. otlp,console).
-        spanProcessor = BatchSpanProcessor(
-          exporters.length == 1
-              ? exporters.single
-              : CompositeExporter(exporters),
-          BatchSpanProcessorConfig.fromEnvironment(),
-        );
-      }
-    }
-    // Create and configure TracerProvider — but when OTEL_SDK_DISABLED=true,
-    // do not install any processor even if the caller passed one explicitly,
-    // so the SDK is a true no-op for traces.
-    if (spanProcessor != null && !sdkDisabled) {
-      OTel.tracerProvider().addSpanProcessor(spanProcessor);
+    if (!sdkDisabled) {
+      TracesConfiguration.configureTracerProvider(
+        endpoint: endpoint,
+        secure: secure,
+        spanProcessor: spanProcessor,
+        sampler: sampler,
+        spanExceptionOptions: spanExceptionOptions,
+        resource: OTel.defaultResource,
+        otlpConfig: otlpTracesConfig,
+        exporters: tracesExporters,
+        bspConfig: OTelEnv.getBspConfig(),
+      );
     }
 
-    // Configure metrics if enabled
     if (enableMetrics && !sdkDisabled) {
-      // If no explicit metric exporter is provided, create one with the same endpoint
-      if (metricExporter == null && metricReader == null) {
-        MetricsConfiguration.configureMeterProvider(
-          endpoint: endpoint,
-          secure: secure,
-          resource: OTel.defaultResource,
-        );
-      } else {
-        // Use the provided exporter and/or reader
-        MetricsConfiguration.configureMeterProvider(
-          endpoint: endpoint,
-          secure: secure,
-          metricExporter: metricExporter,
-          metricReader: metricReader,
-          resource: OTel.defaultResource,
-        );
-      }
+      MetricsConfiguration.configureMeterProvider(
+        endpoint: endpoint,
+        secure: secure,
+        metricExporter: metricExporter,
+        metricReader: metricReader,
+        resource: OTel.defaultResource,
+        otlpConfig: otlpMetricsConfig,
+        exporters: metricsExporters,
+      );
     }
 
-    // Configure logs if enabled
     if (enableLogs && !sdkDisabled) {
       LogsConfiguration.configureLoggerProvider(
         endpoint: endpoint,
@@ -503,6 +349,9 @@ class OTel {
         logRecordExporter: logRecordExporter,
         logRecordProcessor: logRecordProcessor,
         resource: OTel.defaultResource,
+        otlpConfig: otlpLogsConfig,
+        exporters: logsExporters,
+        blrpConfig: blrpConfig,
       );
     }
 

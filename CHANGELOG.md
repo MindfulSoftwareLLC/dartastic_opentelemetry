@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.15-wip]
 
+### Breaking Changes
+- `OTel.initialize` now correctly applies `OTEL_RESOURCE_ATTRIBUTES` even when `detectPlatformResources` is `false`. Previously, setting `detectPlatformResources: false` completely bypassed the `EnvVarResourceDetector`, leading to spec-mandated environment variables being ignored. The resource merging precedence has also been updated to strictly follow the OpenTelemetry specification (`Platform Resources` -> `OTEL_RESOURCE_ATTRIBUTES` -> `OTEL_SERVICE_NAME` -> `Code Attributes`).
+- Extracted trace exporter and processor configuration logic into `TracesConfiguration` internal class to align with `MetricsConfiguration` and `LogsConfiguration`.
+
+### Features
+
 ## [1.1.0-beta.14] - 2026-08-23
 
 ### Changed

@@ -149,7 +149,7 @@ class PlatformResourceDetector {
   ///
   /// @return A ResourceDetector that combines all appropriate detectors
   static ResourceDetector create() {
-    final detectors = <ResourceDetector>[EnvVarResourceDetector()];
+    final detectors = <ResourceDetector>[];
 
     // For non-web platforms (native)
     if (!const bool.fromEnvironment('dart.library.js_interop')) {

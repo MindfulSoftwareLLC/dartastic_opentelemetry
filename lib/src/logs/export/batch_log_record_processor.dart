@@ -75,8 +75,13 @@ class BatchLogRecordProcessorConfig {
   /// Invalid or out-of-range values emit an [OTelLog.warn] diagnostic and
   /// fall back to the spec default.
   factory BatchLogRecordProcessorConfig.fromEnvironment() {
-    final env = OTelEnv.getBlrpConfig();
+    return BatchLogRecordProcessorConfig.fromBlrpEnvironmentValues(
+        OTelEnv.getBlrpConfig());
+  }
 
+  /// Creates a configuration from pre-read BLRP environment values.
+  factory BatchLogRecordProcessorConfig.fromBlrpEnvironmentValues(
+      BlrpEnvironmentValues env) {
     var queueSize = env.maxQueueSize ?? defaultMaxQueueSize;
     var batchSize = env.maxExportBatchSize ?? defaultMaxExportBatchSize;
 

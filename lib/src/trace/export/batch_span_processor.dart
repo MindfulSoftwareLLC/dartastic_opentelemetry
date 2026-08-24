@@ -67,15 +67,12 @@ class BatchSpanProcessorConfig {
   ///
   /// Invalid or out-of-range values emit an [OTelLog.warn] diagnostic and
   /// fall back to the spec default.
-  factory BatchSpanProcessorConfig.fromEnvironment() {
-    final env = OTelEnv.getBspConfig();
-
+  factory BatchSpanProcessorConfig.fromBspEnvironmentValues(
+      BspEnvironmentValues env) {
     var queueSize = env.maxQueueSize ?? 2048;
     var batchSize = env.maxExportBatchSize ?? 512;
 
     // --- scheduleDelay ---
-    // Spec type: Duration. Zero is valid ("export as fast as possible").
-    // Negative values MUST warn and fall back to default.
     Duration scheduleDelay;
     if (env.scheduleDelay != null) {
       final delay = env.scheduleDelay!;
@@ -94,8 +91,6 @@ class BatchSpanProcessorConfig {
     }
 
     // --- exportTimeout ---
-    // Spec type: Timeout. Zero means "no limit" — substitute a very large
-    // duration. Negative values MUST warn and fall back to default.
     Duration exportTimeout;
     if (env.exportTimeout != null) {
       final timeout = env.exportTimeout!;
@@ -132,7 +127,6 @@ class BatchSpanProcessorConfig {
       }
       batchSize = 512;
     }
-    // Spec rule: maxExportBatchSize must be less than or equal to maxQueueSize
     if (batchSize > queueSize) {
       batchSize = queueSize;
     }
@@ -143,6 +137,11 @@ class BatchSpanProcessorConfig {
       scheduleDelay: scheduleDelay,
       exportTimeout: exportTimeout,
     );
+  }
+
+  factory BatchSpanProcessorConfig.fromEnvironment() {
+    return BatchSpanProcessorConfig.fromBspEnvironmentValues(
+        OTelEnv.getBspConfig());
   }
 }
 
