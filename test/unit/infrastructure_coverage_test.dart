@@ -125,11 +125,12 @@ void main() {
       );
     });
 
-    test('extract with invalid traceparent format logs debug', () {
-      // Correct total length (55) but wrong version to trigger version mismatch log.
+    test('extract with forbidden version logs debug', () {
+      // Correct total length (55) but version ff, which the spec forbids.
+      // A higher version such as 01 is parsed, not rejected.
       final carrier = {
         'traceparent':
-            '01-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
+            'ff-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
       };
       logOutput.clear();
       final extracted = propagator.extract(
@@ -140,9 +141,39 @@ void main() {
 
       expect(extracted.spanContext, isNull);
       expect(
-        logOutput.any((m) => m.contains('Unsupported traceparent version')),
+        logOutput.any(
+          (m) =>
+              m.contains('Invalid traceparent version') &&
+              m.contains('reserved'),
+        ),
         isTrue,
-        reason: 'Expected debug log about unsupported version',
+        reason: 'ff is valid hex, so the log must cite the reserved version '
+            'rather than the character set',
+      );
+    });
+
+    test('extract with a non-hex version logs debug', () {
+      final carrier = {
+        'traceparent':
+            'zz-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
+      };
+      logOutput.clear();
+      final extracted = propagator.extract(
+        OTel.context(),
+        carrier,
+        _MapGetter(carrier),
+      );
+
+      expect(extracted.spanContext, isNull);
+      expect(
+        logOutput.any(
+          (m) =>
+              m.contains('Invalid traceparent version') &&
+              m.contains('0-9 and a-f'),
+        ),
+        isTrue,
+        reason: 'A non-hex version must cite the character set rather than '
+            'the reserved version',
       );
     });
 
@@ -335,8 +366,7 @@ void main() {
 
     test('extract with invalid traceparent logs "Invalid traceparent format"',
         () {
-      // Force a traceparent that is exactly 55 chars but has no '-' separators,
-      // so split('-') yields only 1 part instead of 4.
+      // Correct total length, but no delimiters at the required offsets.
       final bogus = 'X' * 55;
       final carrier = {'traceparent': bogus};
       logOutput.clear();
@@ -344,15 +374,12 @@ void main() {
 
       expect(
         logOutput.any(
-          (m) =>
-              m.contains('Invalid traceparent format') ||
-              m.contains('Invalid trace ID length') ||
-              m.contains('Invalid span ID length') ||
-              m.contains('Invalid trace flags length'),
+          (m) => m.contains(
+            'Invalid traceparent format: misplaced delimiters',
+          ),
         ),
         isTrue,
-        reason:
-            'Expected some validation debug log for the malformed traceparent',
+        reason: 'Expected the misplaced-delimiter validation log',
       );
     });
   });

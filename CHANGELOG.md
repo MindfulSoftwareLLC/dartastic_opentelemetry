@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.15-wip]
 
+### Fixed
+
+- **`traceparent` parsing now follows W3C Trace Context Level 2** (#192, #193,
+  #194). Higher versions from `01` through `fe` are parsed using the version
+  `00` field layout and may carry trailing fields, while version `00` retains
+  its strict grammar. Version, trace ID, parent ID, and trace flags now require
+  fixed-width lowercase hexadecimal syntax, preventing malformed identifiers
+  from being accepted and invalid flags from being coerced to unsampled.
+
 ## [1.1.0-beta.14] - 2026-08-23
 
 ### Changed
