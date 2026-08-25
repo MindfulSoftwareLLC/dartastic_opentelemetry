@@ -156,6 +156,13 @@ const String otelExporterOtlpHeaders = 'OTEL_EXPORTER_OTLP_HEADERS';
 /// This option only applies to OTLP/gRPC when an endpoint is provided without
 /// the http or https scheme. OTLP/HTTP always uses the scheme from the endpoint.
 ///
+/// An `https` or `http` scheme on the endpoint takes precedence over this
+/// variable, so it only decides for a scheme-less endpoint such as
+/// `my-collector:4317`.
+///
+/// The `secure` parameter of `OTel.initialize` is the code equivalent of this
+/// variable (inverted) and takes precedence over it.
+///
 /// Type: Boolean
 /// Default: false
 const String otelExporterOtlpInsecure = 'OTEL_EXPORTER_OTLP_INSECURE';
