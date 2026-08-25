@@ -116,7 +116,7 @@ class LogsConfiguration {
 
     if (OTelLog.isDebug()) {
       OTelLog.debug('LogsConfiguration: Configured LoggerProvider with '
-          '${exporters.length} exporter(s) from OTEL_LOGS_EXPORTER');
+          '${createdExporters.length} exporter(s) from OTEL_LOGS_EXPORTER');
     }
 
     return logProvider;

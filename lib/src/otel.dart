@@ -7,7 +7,6 @@ import 'dart:typed_data';
 import 'package:meta/meta.dart';
 
 import '../dartastic_opentelemetry.dart';
-import 'trace/traces_configuration.dart';
 
 /// Main entry point for the OpenTelemetry SDK.
 ///
@@ -166,16 +165,57 @@ class OTel {
     // lines that diagnose env configuration.
     initializeLogging();
 
+    final sdkDisabled = OTelEnv.isSdkDisabled();
+    if (sdkDisabled && OTelLog.isDebug()) {
+      OTelLog.debug('OTel: OTEL_SDK_DISABLED=true, skipping all signal setup');
+    }
+
     // Apply environment variables exactly once
     final envServiceConfig = OTelEnv.getServiceConfig();
-    final otlpTracesConfig = OTelEnv.getOtlpConfig(signal: 'traces');
-    final otlpMetricsConfig = OTelEnv.getOtlpConfig(signal: 'metrics');
-    final otlpLogsConfig = OTelEnv.getOtlpConfig(signal: 'logs');
-    final tracesExporters = OTelEnv.getExporters(signal: 'traces') ?? ['otlp'];
-    final metricsExporters =
-        OTelEnv.getExporters(signal: 'metrics') ?? ['otlp'];
-    final logsExporters = OTelEnv.getExporters(signal: 'logs') ?? ['otlp'];
-    final blrpConfig = OTelEnv.getBlrpConfig();
+    const OtlpEnvironmentValues emptyOtlp = (
+      endpoint: null,
+      protocol: null,
+      headers: null,
+      insecure: null,
+      timeout: null,
+      compression: null,
+      certificate: null,
+      clientKey: null,
+      clientCertificate: null
+    );
+    const BlrpEnvironmentValues emptyBlrp = (
+      scheduleDelay: null,
+      exportTimeout: null,
+      maxQueueSize: null,
+      maxExportBatchSize: null
+    );
+    const BspEnvironmentValues emptyBsp = (
+      scheduleDelay: null,
+      exportTimeout: null,
+      maxQueueSize: null,
+      maxExportBatchSize: null
+    );
+
+    final otlpTracesConfig =
+        !sdkDisabled ? OTelEnv.getOtlpConfig(signal: 'traces') : emptyOtlp;
+    final otlpMetricsConfig = enableMetrics && !sdkDisabled
+        ? OTelEnv.getOtlpConfig(signal: 'metrics')
+        : emptyOtlp;
+    final otlpLogsConfig = enableLogs && !sdkDisabled
+        ? OTelEnv.getOtlpConfig(signal: 'logs')
+        : emptyOtlp;
+    final tracesExporters = !sdkDisabled
+        ? (OTelEnv.getExporters(signal: 'traces') ?? ['otlp'])
+        : <String>[];
+    final metricsExporters = enableMetrics && !sdkDisabled
+        ? (OTelEnv.getExporters(signal: 'metrics') ?? ['otlp'])
+        : <String>[];
+    final logsExporters = enableLogs && !sdkDisabled
+        ? (OTelEnv.getExporters(signal: 'logs') ?? ['otlp'])
+        : <String>[];
+    final blrpConfig =
+        enableLogs && !sdkDisabled ? OTelEnv.getBlrpConfig() : emptyBlrp;
+    final bspConfig = !sdkDisabled ? OTelEnv.getBspConfig() : emptyBsp;
 
     final envServiceName =
         serviceName == null ? envServiceConfig.serviceName : null;
@@ -283,7 +323,8 @@ class OTel {
     }
 
     // Always run EnvVarResourceDetector for OTEL_RESOURCE_ATTRIBUTES
-    final envVarResource = await EnvVarResourceDetector().detect();
+    final envVarResource =
+        await CompositeResourceDetector([EnvVarResourceDetector()]).detect();
     mergedResource = mergedResource.merge(envVarResource);
 
     // Apply OTEL_SERVICE_NAME (and VERSION) via service name variables
@@ -311,11 +352,6 @@ class OTel {
       });
     }
 
-    final sdkDisabled = OTelEnv.isSdkDisabled();
-    if (sdkDisabled && OTelLog.isDebug()) {
-      OTelLog.debug('OTel: OTEL_SDK_DISABLED=true, skipping all signal setup');
-    }
-
     if (!sdkDisabled) {
       TracesConfiguration.configureTracerProvider(
         endpoint: endpoint,
@@ -326,7 +362,7 @@ class OTel {
         resource: OTel.defaultResource,
         otlpConfig: otlpTracesConfig,
         exporters: tracesExporters,
-        bspConfig: OTelEnv.getBspConfig(),
+        bspConfig: bspConfig,
       );
     }
 

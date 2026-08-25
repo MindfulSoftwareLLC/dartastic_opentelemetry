@@ -78,6 +78,7 @@ export 'src/trace/export/otlp/otlp_grpc_span_exporter_config.dart';
 export 'src/trace/export/otlp/span_transformer.dart';
 export 'src/trace/export/simple_span_processor.dart';
 export 'src/trace/export/span_exporter.dart';
+export 'src/trace/export/traces_config.dart';
 // Only export the implementation files, not the duplicated classes in sampler.dart
 export 'src/trace/sampling/always_off_sampler.dart';
 export 'src/trace/sampling/always_on_sampler.dart';

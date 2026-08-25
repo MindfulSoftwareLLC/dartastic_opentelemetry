@@ -4,24 +4,24 @@
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
     show OTelLog;
 
-import '../environment/otel_env.dart';
-import '../export/otlp_http_protocol.dart';
-import '../otel.dart';
-import '../resource/resource.dart';
-import 'export/batch_span_processor.dart';
-import 'export/composite_exporter.dart';
-import 'export/console_exporter.dart';
-import 'export/otlp/http/otlp_http_span_exporter.dart';
-import 'export/otlp/http/otlp_http_span_exporter_config.dart';
-import 'export/otlp/otlp_grpc_span_exporter.dart';
-import 'export/otlp/otlp_grpc_span_exporter_config.dart';
-import 'export/span_exporter.dart';
-import 'sampling/always_on_sampler.dart';
-import 'sampling/parent_based_sampler.dart';
-import 'sampling/sampler.dart';
-import 'span_exception_options.dart';
-import 'span_processor.dart';
-import 'tracer_provider.dart';
+import '../../environment/otel_env.dart';
+import '../../export/otlp_http_protocol.dart';
+import '../../otel.dart';
+import '../../resource/resource.dart';
+import '../sampling/always_on_sampler.dart';
+import '../sampling/parent_based_sampler.dart';
+import '../sampling/sampler.dart';
+import '../span_exception_options.dart';
+import '../span_processor.dart';
+import '../tracer_provider.dart';
+import 'batch_span_processor.dart';
+import 'composite_exporter.dart';
+import 'console_exporter.dart';
+import 'otlp/http/otlp_http_span_exporter.dart';
+import 'otlp/http/otlp_http_span_exporter_config.dart';
+import 'otlp/otlp_grpc_span_exporter.dart';
+import 'otlp/otlp_grpc_span_exporter_config.dart';
+import 'span_exporter.dart';
 
 /// Configuration for traces exporters and processors.
 class TracesConfiguration {
@@ -35,7 +35,7 @@ class TracesConfiguration {
   /// - Sets up resources on the TracerProvider
   static TracerProvider configureTracerProvider({
     String? endpoint,
-    bool secure = false,
+    bool? secure,
     SpanProcessor? spanProcessor,
     Sampler? sampler,
     SpanExceptionOptions spanExceptionOptions = const SpanExceptionOptions(),
@@ -50,51 +50,54 @@ class TracesConfiguration {
       tracerProvider.resource = resource;
     }
 
-    // Determine protocol - default to http/protobuf if not set
-    final protocol = otlpConfig.protocol ?? 'http/protobuf';
-
-    final resolvedEndpoint = endpoint ??
-        (protocol == 'grpc' ? OTel.defaultGrpcEndpoint : OTel.defaultEndpoint);
-    final resolvedSecure = OTelEnv.resolveOtlpSecure(
-      envInsecure: otlpConfig.insecure,
-      endpoint: resolvedEndpoint,
-      fallback: secure,
-    );
-
-    SpanExporter buildOtlpExporter() {
-      // Create appropriate exporter based on protocol
-      if (protocol == 'grpc') {
-        return OtlpGrpcSpanExporter(
-          OtlpGrpcExporterConfig(
-            endpoint: resolvedEndpoint,
-            insecure: !resolvedSecure,
-            headers: otlpConfig.headers ?? {},
-            timeout: otlpConfig.timeout ?? const Duration(seconds: 10),
-            compression: otlpConfig.compression == 'gzip',
-            certificate: otlpConfig.certificate,
-            clientKey: otlpConfig.clientKey,
-            clientCertificate: otlpConfig.clientCertificate,
-          ),
-        );
-      } else {
-        final httpProtocol = otlpHttpProtocolFromString(protocol) ??
-            OtlpHttpProtocol.httpProtobuf;
-        return OtlpHttpSpanExporter(
-          OtlpHttpExporterConfig(
-            endpoint: resolvedEndpoint,
-            headers: otlpConfig.headers ?? {},
-            timeout: otlpConfig.timeout ?? const Duration(seconds: 10),
-            compression: otlpConfig.compression == 'gzip',
-            certificate: otlpConfig.certificate,
-            clientKey: otlpConfig.clientKey,
-            clientCertificate: otlpConfig.clientCertificate,
-            protocol: httpProtocol,
-          ),
-        );
-      }
-    }
-
     if (spanProcessor == null) {
+      // Determine protocol - default to http/protobuf if not set
+      final protocol = otlpConfig.protocol ?? 'http/protobuf';
+
+      final resolvedEndpoint = otlpConfig.endpoint ??
+          endpoint ??
+          (protocol == 'grpc'
+              ? OTel.defaultGrpcEndpoint
+              : OTel.defaultEndpoint);
+      final resolvedSecure = OTelEnv.resolveOtlpSecure(
+        envInsecure: otlpConfig.insecure,
+        endpoint: resolvedEndpoint,
+        explicitSecure: secure,
+      );
+
+      SpanExporter buildOtlpExporter() {
+        // Create appropriate exporter based on protocol
+        if (protocol == 'grpc') {
+          return OtlpGrpcSpanExporter(
+            OtlpGrpcExporterConfig(
+              endpoint: resolvedEndpoint,
+              insecure: !resolvedSecure,
+              headers: otlpConfig.headers ?? {},
+              timeout: otlpConfig.timeout ?? const Duration(seconds: 10),
+              compression: otlpConfig.compression == 'gzip',
+              certificate: otlpConfig.certificate,
+              clientKey: otlpConfig.clientKey,
+              clientCertificate: otlpConfig.clientCertificate,
+            ),
+          );
+        } else {
+          final httpProtocol = otlpHttpProtocolFromString(protocol) ??
+              OtlpHttpProtocol.httpProtobuf;
+          return OtlpHttpSpanExporter(
+            OtlpHttpExporterConfig(
+              endpoint: resolvedEndpoint,
+              headers: otlpConfig.headers ?? {},
+              timeout: otlpConfig.timeout ?? const Duration(seconds: 10),
+              compression: otlpConfig.compression == 'gzip',
+              certificate: otlpConfig.certificate,
+              clientKey: otlpConfig.clientKey,
+              clientCertificate: otlpConfig.clientCertificate,
+              protocol: httpProtocol,
+            ),
+          );
+        }
+      }
+
       if (exporters.contains('none')) {
         if (exporters.length > 1 && OTelLog.isWarn()) {
           OTelLog.warn("OTEL_TRACES_EXPORTER contains 'none' alongside other "
@@ -142,7 +145,7 @@ class TracesConfiguration {
     if (spanProcessor != null) {
       tracerProvider.addSpanProcessor(spanProcessor);
     }
-    tracerProvider.sampler =
+    tracerProvider.sampler ??=
         sampler ?? ParentBasedSampler(const AlwaysOnSampler());
     tracerProvider.spanExceptionOptions = spanExceptionOptions;
 

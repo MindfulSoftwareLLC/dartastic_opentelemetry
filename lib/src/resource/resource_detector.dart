@@ -85,11 +85,11 @@ class EnvVarResourceDetector implements ResourceDetector {
       part = part.trim();
 
       // Split on first equals sign
-      final keyValue = part.split('=');
-      if (keyValue.length != 2) continue;
+      final equalsIndex = part.indexOf('=');
+      if (equalsIndex == -1) continue;
 
-      final key = keyValue[0].trim();
-      var value = keyValue[1].trim();
+      final key = part.substring(0, equalsIndex).trim();
+      var value = part.substring(equalsIndex + 1).trim();
 
       // Handle percent-encoded characters
       value = Uri.decodeComponent(value);
@@ -149,7 +149,7 @@ class PlatformResourceDetector {
   ///
   /// @return A ResourceDetector that combines all appropriate detectors
   static ResourceDetector create() {
-    final detectors = <ResourceDetector>[];
+    final detectors = <ResourceDetector>[EnvVarResourceDetector()];
 
     // For non-web platforms (native)
     if (!const bool.fromEnvironment('dart.library.js_interop')) {
