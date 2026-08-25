@@ -115,7 +115,6 @@ typedef AttributeLimitsEnvironmentValues = ({
   int? attributeCountLimit,
 });
 
-
 /// Utility class for handling OpenTelemetry environment variables.
 ///
 /// This class provides methods for reading standard OpenTelemetry environment
