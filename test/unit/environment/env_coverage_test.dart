@@ -1160,10 +1160,10 @@ void main() {
       expect(config, isA<BlrpEnvironmentValues>());
     });
 
-    test('getLogRecordLimits returns a LogRecordLimitsEnvironmentValues record',
+    test('getLogRecordLimits returns an AttributeLimitsEnvironmentValues record',
         () {
       final config = OTelEnv.getLogRecordLimits();
-      expect(config, isA<LogRecordLimitsEnvironmentValues>());
+      expect(config, isA<AttributeLimitsEnvironmentValues>());
     });
 
     test(

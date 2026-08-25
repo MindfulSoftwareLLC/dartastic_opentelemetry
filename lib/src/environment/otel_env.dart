@@ -115,17 +115,6 @@ typedef AttributeLimitsEnvironmentValues = ({
   int? attributeCountLimit,
 });
 
-/// Raw log record limit values parsed by [OTelEnv.getLogRecordLimits].
-///
-/// All fields are nullable — `null` means the corresponding env var was
-/// unset or contained a non-numeric value.
-typedef LogRecordLimitsEnvironmentValues = ({
-  /// Parsed from `OTEL_LOGRECORD_ATTRIBUTE_VALUE_LENGTH_LIMIT`
-  int? attributeValueLengthLimit,
-
-  /// Parsed from `OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT`
-  int? attributeCountLimit,
-});
 
 /// Utility class for handling OpenTelemetry environment variables.
 ///
@@ -722,10 +711,10 @@ class OTelEnv {
 
   /// Get LogRecord attribute limits from environment variables.
   ///
-  /// Returns a [LogRecordLimitsEnvironmentValues] record containing the
+  /// Returns a [AttributeLimitsEnvironmentValues] record containing the
   /// log record attribute limits. Fields are `null` when the corresponding
   /// env var is unset or contains a non-numeric value.
-  static LogRecordLimitsEnvironmentValues getLogRecordLimits() {
+  static AttributeLimitsEnvironmentValues getLogRecordLimits() {
     return _parseAttributeLimits(
       lengthVar: otelLogrecordAttributeValueLengthLimit,
       countVar: otelLogrecordAttributeCountLimit,

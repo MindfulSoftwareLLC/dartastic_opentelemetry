@@ -191,7 +191,7 @@ void main() {
 
     test('getLogRecordLimits returns record when no env vars set', () {
       final config = OTelEnv.getLogRecordLimits();
-      expect(config, isA<LogRecordLimitsEnvironmentValues>());
+      expect(config, isA<AttributeLimitsEnvironmentValues>());
     });
   });
 
