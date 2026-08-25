@@ -681,13 +681,14 @@ class OTelEnv {
   /// Resolves whether an OTLP connection should use TLS, per the OTLP
   /// exporter spec's precedence:
   ///
-  /// 1. the endpoint **scheme** decides when there is one: an `https` or
-  ///    `http` scheme "takes precedence over the `insecure` configuration
-  ///    setting";
-  /// 2. otherwise — a scheme-less endpoint such as `my-collector:4317`, the
-  ///    only case where the setting applies at all — an explicit
-  ///    programmatic choice ([explicitSecure]) wins, being the code
-  ///    equivalent of the environment variable;
+  /// 1. if [endpoint] carries an `http://` or `https://` scheme, that scheme
+  ///    alone decides — the spec says a scheme "takes precedence over the
+  ///    `insecure` configuration setting", from either channel;
+  /// 2. otherwise the endpoint is scheme-less (gRPC's native
+  ///    `my-collector:4317` form), which is the only case where the insecure
+  ///    setting applies at all. There, an explicit programmatic choice
+  ///    ([explicitSecure]) wins, being the code equivalent of the
+  ///    environment variable;
   /// 3. otherwise `OTEL_EXPORTER_OTLP_INSECURE` (or its per-signal
   ///    variant, passed as [envInsecure]) applies;
   /// 4. otherwise [fallback] (secure by default).

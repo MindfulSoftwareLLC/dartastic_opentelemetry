@@ -245,6 +245,10 @@ const String otelExporterOtlpTracesHeaders =
 ///
 /// Overrides OTEL_EXPORTER_OTLP_INSECURE for traces.
 ///
+/// Applies only to OTLP/gRPC, and only when the traces endpoint carries no
+/// `http://` or `https://` scheme — a scheme takes precedence over this
+/// variable, and OTLP/HTTP always takes its security from the endpoint.
+///
 /// Type: Boolean
 /// Default: none (uses OTEL_EXPORTER_OTLP_INSECURE)
 const String otelExporterOtlpTracesInsecure =
@@ -338,6 +342,10 @@ const String otelExporterOtlpMetricsHeaders =
 ///
 /// Overrides OTEL_EXPORTER_OTLP_INSECURE for metrics.
 ///
+/// Applies only to OTLP/gRPC, and only when the metrics endpoint carries no
+/// `http://` or `https://` scheme — a scheme takes precedence over this
+/// variable, and OTLP/HTTP always takes its security from the endpoint.
+///
 /// Type: Boolean
 /// Default: none (uses OTEL_EXPORTER_OTLP_INSECURE)
 const String otelExporterOtlpMetricsInsecure =
@@ -427,6 +435,10 @@ const String otelExporterOtlpLogsHeaders = 'OTEL_EXPORTER_OTLP_LOGS_HEADERS';
 /// Whether to use insecure connection for logs OTLP/gRPC.
 ///
 /// Overrides OTEL_EXPORTER_OTLP_INSECURE for logs.
+///
+/// Applies only to OTLP/gRPC, and only when the logs endpoint carries no
+/// `http://` or `https://` scheme — a scheme takes precedence over this
+/// variable, and OTLP/HTTP always takes its security from the endpoint.
 ///
 /// Type: Boolean
 /// Default: none (uses OTEL_EXPORTER_OTLP_INSECURE)
