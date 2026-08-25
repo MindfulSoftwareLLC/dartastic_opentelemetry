@@ -45,6 +45,33 @@ void main() {
     EnvironmentService.testOverrides = null;
   });
 
+  group('OTEL_EXPORTER_OTLP_METRICS_ENDPOINT', () {
+    test('signal-specific metrics endpoint flows to the http exporter',
+        () async {
+      OTelLog.currentLevel = LogLevel.debug;
+      await initWith({
+        'OTEL_EXPORTER_OTLP_METRICS_ENDPOINT': 'http://custom-metrics:9999',
+      }, metrics: true);
+      final reader = OTel.meterProvider().metricReaders.single
+          as PeriodicExportingMetricReader;
+      expect(reader.exporter, isA<OtlpHttpMetricExporter>());
+      expect(warnings.join('\n'), contains('http://custom-metrics:9999'));
+    });
+
+    test('signal-specific metrics endpoint flows to the grpc exporter',
+        () async {
+      OTelLog.currentLevel = LogLevel.debug;
+      await initWith({
+        'OTEL_EXPORTER_OTLP_METRICS_ENDPOINT': 'http://custom-metrics:4317',
+        'OTEL_EXPORTER_OTLP_PROTOCOL': 'grpc',
+      }, metrics: true);
+      final reader = OTel.meterProvider().metricReaders.single
+          as PeriodicExportingMetricReader;
+      expect(reader.exporter, isA<OtlpGrpcMetricExporter>());
+      expect(warnings.join('\n'), contains('http://custom-metrics:4317'));
+    });
+  });
+
   group('OTEL_METRICS_EXPORTER selection', () {
     test('none installs no reader', () async {
       await initWith({'OTEL_METRICS_EXPORTER': 'none'}, metrics: true);
