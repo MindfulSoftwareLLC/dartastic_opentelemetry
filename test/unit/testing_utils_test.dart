@@ -33,14 +33,15 @@ void main() {
   });
 
   group('InMemorySpanExporter', () {
-    test('stores spans, flushes, and refuses export after shutdown', () async {
+    test('stores spans, flushes, and returns gracefully after shutdown',
+        () async {
       final exporter = InMemorySpanExporter();
       final span = OTel.tracer().startSpan('kept')..end();
       await exporter.export([span]);
       expect(exporter.findSpansStartingWith('kep'), hasLength(1));
       await exporter.forceFlush();
       await exporter.shutdown();
-      expect(() => exporter.export([span]), throwsStateError);
+      await expectLater(exporter.export([span]), completes);
     });
   });
 

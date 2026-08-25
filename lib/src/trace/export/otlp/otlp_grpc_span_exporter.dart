@@ -251,12 +251,12 @@ class OtlpGrpcSpanExporter implements SpanExporter {
 
   Future<void> _ensureChannel() async {
     if (_isShutdown) {
-      if (OTelLog.isDebug()) {
-        OTelLog.debug(
-          'OtlpGrpcSpanExporter: Not ensuring channel - exporter is shut down',
+      if (OTelLog.isWarn()) {
+        OTelLog.warn(
+          'OtlpGrpcSpanExporter: Cannot export after shutdown',
         );
       }
-      throw StateError('Exporter is shutdown');
+      return;
     }
 
     if (_initialized && _channel != null && _traceService != null) {
@@ -279,7 +279,7 @@ class OtlpGrpcSpanExporter implements SpanExporter {
   Future<void> _tryExport(List<Span> spans) async {
     await _ensureChannel();
     if (_isShutdown) {
-      throw StateError('Exporter is shutdown');
+      return;
     }
     if (OTelLog.isLogSpans()) {
       logSpans(spans, 'Exporting spans.');
@@ -402,7 +402,12 @@ class OtlpGrpcSpanExporter implements SpanExporter {
   @override
   Future<void> export(List<Span> spans) async {
     if (_isShutdown) {
-      throw StateError('Exporter is shutdown');
+      if (OTelLog.isWarn()) {
+        OTelLog.warn(
+          'OtlpGrpcSpanExporter: Cannot export after shutdown',
+        );
+      }
+      return;
     }
 
     if (spans.isEmpty) {
@@ -419,7 +424,7 @@ class OtlpGrpcSpanExporter implements SpanExporter {
     }
     final exportFuture = _export(spans);
 
-    // Track the pending export but don't throw if it fails during shutdown
+    // Track the pending export
     _pendingExports.add(exportFuture);
     try {
       await exportFuture;
@@ -427,19 +432,8 @@ class OtlpGrpcSpanExporter implements SpanExporter {
         OTelLog.debug('OtlpGrpcSpanExporter: Export completed successfully');
       }
     } catch (e) {
-      if (_isShutdown &&
-          e is StateError &&
-          e.message.contains('shut down during')) {
-        // Gracefully handle the case where shutdown interrupted the export
-        if (OTelLog.isDebug()) {
-          OTelLog.debug(
-            'OtlpGrpcSpanExporter: Export was interrupted by shutdown, suppressing error',
-          );
-        }
-      } else {
-        // Re-throw other errors
-        rethrow;
-      }
+      // Re-throw errors
+      rethrow;
     } finally {
       _pendingExports.remove(exportFuture);
     }
@@ -447,7 +441,7 @@ class OtlpGrpcSpanExporter implements SpanExporter {
 
   Future<void> _export(List<Span> spans) async {
     if (_isShutdown) {
-      throw StateError('Exporter was shut down during export');
+      return;
     }
 
     if (OTelLog.isDebug()) {
@@ -466,12 +460,12 @@ class OtlpGrpcSpanExporter implements SpanExporter {
       try {
         // Only check for shutdown on retry attempts to ensure in-progress exports can complete
         if (wasShutdownDuringRetry && attempts > 0) {
-          if (OTelLog.isDebug()) {
-            OTelLog.debug(
+          if (OTelLog.isWarn()) {
+            OTelLog.warn(
               'OtlpGrpcSpanExporter: Export interrupted by shutdown',
             );
           }
-          throw StateError('Exporter was shut down during export');
+          return;
         }
 
         await _tryExport(spans);
@@ -489,12 +483,12 @@ class OtlpGrpcSpanExporter implements SpanExporter {
 
         // Check if the exporter was shut down while we were waiting
         if (wasShutdownDuringRetry) {
-          if (OTelLog.isError()) {
-            OTelLog.error(
+          if (OTelLog.isWarn()) {
+            OTelLog.warn(
               'OtlpGrpcSpanExporter: Export interrupted by shutdown',
             );
           }
-          throw StateError('Exporter was shut down during export');
+          return;
         }
 
         if (!_retryableStatusCodes.contains(e.code)) {
@@ -537,7 +531,12 @@ class OtlpGrpcSpanExporter implements SpanExporter {
 
         // Check if we should stop retrying due to shutdown
         if (wasShutdownDuringRetry) {
-          throw StateError('Exporter was shut down during export');
+          if (OTelLog.isWarn()) {
+            OTelLog.warn(
+              'OtlpGrpcSpanExporter: Export interrupted by shutdown',
+            );
+          }
+          return;
         }
 
         if (attempts >= maxAttempts - 1) {

@@ -22,6 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Previously `secure` overrode the gRPC endpoint scheme; now the scheme
   (`http:`, `https:`) takes precedence and `secure` applies only to
   scheme-less endpoints.
+- Exporters no longer throw `StateError` after shutdown. Per the OTel spec,
+  "the SDK MUST NOT throw unhandled exceptions for errors in their own
+  operations." All OTLP exporters (gRPC/HTTP span, HTTP metric, gRPC log)
+  and test exporters (`InMemorySpanExporter`, `TestFileExporter`) now return
+  gracefully after shutdown instead of throwing. ([#231](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/231))
 
 ## [1.1.0-beta.14] - 2026-08-23
 

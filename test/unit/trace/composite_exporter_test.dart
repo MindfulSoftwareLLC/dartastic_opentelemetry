@@ -63,9 +63,9 @@ void main() {
 
       await composite.shutdown();
 
-      // After shutdown, exporters should reject new exports
-      await expectLater(() => exporter1.export([]), throwsA(isA<StateError>()));
-      await expectLater(() => exporter2.export([]), throwsA(isA<StateError>()));
+      // After shutdown, exporters should gracefully ignore new exports
+      await expectLater(exporter1.export([]), completes);
+      await expectLater(exporter2.export([]), completes);
     });
 
     test('export sends the same spans to each exporter', () async {

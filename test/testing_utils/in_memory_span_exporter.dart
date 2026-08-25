@@ -21,7 +21,7 @@ class InMemorySpanExporter implements SpanExporter {
   @override
   Future<void> export(List<Span> spans) async {
     if (_isShutdown) {
-      throw StateError('Exporter is shutdown');
+      return;
     }
     _spans.addAll(spans);
   }

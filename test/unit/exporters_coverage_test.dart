@@ -111,7 +111,7 @@ void main() {
       );
     }
 
-    test('export on shutdown exporter throws StateError', () async {
+    test('export on shutdown exporter returns false', () async {
       await initForMetrics();
       final config = OtlpHttpMetricExporterConfig(
         endpoint: 'http://localhost:4318',
@@ -120,20 +120,18 @@ void main() {
 
       await metricExporter.shutdown();
 
-      expect(
-        () => metricExporter.export(
-          MetricData(
-            metrics: [
-              Metric.sum(
-                name: 'test',
-                points: [],
-                temporality: AggregationTemporality.cumulative,
-              ),
-            ],
-          ),
+      final result = await metricExporter.export(
+        MetricData(
+          metrics: [
+            Metric.sum(
+              name: 'test',
+              points: [],
+              temporality: AggregationTemporality.cumulative,
+            ),
+          ],
         ),
-        throwsStateError,
       );
+      expect(result, isFalse);
     });
 
     test('export with empty metrics returns true', () async {
@@ -557,7 +555,7 @@ void main() {
       await spanExporter.shutdown();
     });
 
-    test('export on shutdown exporter throws StateError', () async {
+    test('export on shutdown exporter returns gracefully', () async {
       await OTel.initialize(
         serviceName: 'span-exporter-shutdown-test',
         detectPlatformResources: false,
@@ -570,12 +568,12 @@ void main() {
 
       await spanExporter.shutdown();
 
-      // Export after shutdown should throw StateError
+      // Export after shutdown should return gracefully
       final tracer = OTel.tracer();
       final span = tracer.startSpan('test-span');
       span.end();
 
-      expect(() => spanExporter.export([span]), throwsStateError);
+      await expectLater(spanExporter.export([span]), completes);
     });
 
     test('export with empty spans returns immediately', () async {

@@ -98,7 +98,7 @@ void main() {
     });
 
     group('export', () {
-      test('export after shutdown throws StateError', () async {
+      test('export after shutdown returns gracefully', () async {
         final exporter = OtlpGrpcSpanExporter(
           OtlpGrpcExporterConfig(insecure: true),
         );
@@ -126,7 +126,7 @@ void main() {
           startTime: DateTime.now(),
         );
 
-        expect(() => exporter.export([span]), throwsA(isA<StateError>()));
+        await expectLater(exporter.export([span]), completes);
       });
 
       test('export with empty span list handles gracefully', () async {

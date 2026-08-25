@@ -224,7 +224,7 @@ void main() {
       await exporter.shutdown();
     });
 
-    test('export after shutdown throws StateError', () async {
+    test('export after shutdown returns gracefully', () async {
       final exporter = OtlpHttpSpanExporter(
         OtlpHttpExporterConfig(endpoint: 'http://localhost:$port'),
       );
@@ -232,7 +232,7 @@ void main() {
       await exporter.shutdown();
 
       final spans = createTestSpans();
-      expect(() => exporter.export(spans), throwsA(isA<StateError>()));
+      await expectLater(exporter.export(spans), completes);
     });
 
     test('export retries on 503', () async {
@@ -354,7 +354,7 @@ void main() {
       await exporter.shutdown();
     });
 
-    test('shutdown then export throws', () async {
+    test('shutdown then export returns gracefully', () async {
       final exporter = OtlpHttpSpanExporter(
         OtlpHttpExporterConfig(endpoint: 'http://localhost:$port'),
       );
@@ -362,7 +362,7 @@ void main() {
       await exporter.shutdown();
 
       final spans = createTestSpans();
-      expect(() => exporter.export(spans), throwsA(isA<StateError>()));
+      await expectLater(exporter.export(spans), completes);
     });
 
     test(

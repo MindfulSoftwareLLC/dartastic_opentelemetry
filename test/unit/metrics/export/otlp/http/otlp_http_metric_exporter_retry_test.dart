@@ -353,12 +353,13 @@ void main() {
       expect(shutdownCount, equals(1));
     });
 
-    test('export throws StateError after shutdown', () async {
+    test('export returns false after shutdown', () async {
       final exporter = createExporter();
       await exporter.shutdown();
 
       final metricData = createTestMetricData();
-      expect(() => exporter.export(metricData), throwsA(isA<StateError>()));
+      final result = await exporter.export(metricData);
+      expect(result, isFalse);
     });
 
     test('shutdown debug log shows pending export count', () async {

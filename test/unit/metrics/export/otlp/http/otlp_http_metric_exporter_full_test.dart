@@ -222,7 +222,7 @@ void main() {
       await exporter.shutdown();
     });
 
-    test('export after shutdown throws StateError', () async {
+    test('export after shutdown returns false', () async {
       final exporter = OtlpHttpMetricExporter(
         OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:$port'),
       );
@@ -230,7 +230,8 @@ void main() {
       await exporter.shutdown();
 
       final metricData = createTestMetricData();
-      expect(() => exporter.export(metricData), throwsA(isA<StateError>()));
+      final result = await exporter.export(metricData);
+      expect(result, isFalse);
     });
 
     test('export retries on 503', () async {
@@ -317,7 +318,7 @@ void main() {
       await exporter.shutdown();
     });
 
-    test('shutdown then export throws', () async {
+    test('shutdown then export returns false', () async {
       final exporter = OtlpHttpMetricExporter(
         OtlpHttpMetricExporterConfig(endpoint: 'http://localhost:$port'),
       );
@@ -325,7 +326,8 @@ void main() {
       await exporter.shutdown();
 
       final metricData = createTestMetricData();
-      expect(() => exporter.export(metricData), throwsA(isA<StateError>()));
+      final result = await exporter.export(metricData);
+      expect(result, isFalse);
     });
 
     test('_getEndpointUrl appends /v1/metrics', () async {

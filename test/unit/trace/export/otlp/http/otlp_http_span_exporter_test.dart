@@ -46,7 +46,7 @@ void main() {
     });
 
     group('export', () {
-      test('throws StateError after shutdown', () async {
+      test('returns gracefully after shutdown', () async {
         final exporter = OtlpHttpSpanExporter();
         await exporter.shutdown();
 
@@ -54,7 +54,7 @@ void main() {
         final span = tracer.startSpan('test-span');
         span.end();
 
-        expect(() => exporter.export([span]), throwsA(isA<StateError>()));
+        await expectLater(exporter.export([span]), completes);
       });
 
       test('with empty span list returns without error', () async {
@@ -79,7 +79,7 @@ void main() {
         // No error means success - second call is a no-op
       });
 
-      test('sets shutdown state so export throws StateError', () async {
+      test('returns gracefully after shutdown', () async {
         final exporter = OtlpHttpSpanExporter();
 
         // Export with empty list should work before shutdown
@@ -87,12 +87,12 @@ void main() {
 
         await exporter.shutdown();
 
-        // After shutdown, export should throw
+        // After shutdown, export should return gracefully
         final tracer = OTel.tracer();
         final span = tracer.startSpan('test-span');
         span.end();
 
-        expect(() => exporter.export([span]), throwsA(isA<StateError>()));
+        await expectLater(exporter.export([span]), completes);
       });
     });
 

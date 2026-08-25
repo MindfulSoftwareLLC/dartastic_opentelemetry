@@ -713,11 +713,11 @@ void main() {
     });
 
     // -----------------------------------------------------------------------
-    // 10. _ensureChannel throws StateError when shutdown
-    //     Exercises _ensureChannel throwing when exporter is shutdown
+    // 10. _ensureChannel returns gracefully when shutdown
+    //     Exercises _ensureChannel returning early when exporter is shutdown
     // -----------------------------------------------------------------------
     test(
-      '_ensureChannel throws StateError when exporter is shutdown',
+      '_ensureChannel returns gracefully when exporter is shutdown',
       () async {
         final service = InternalErrorTraceService(failCount: 0);
         final server = Server.create(services: [service]);
@@ -729,7 +729,7 @@ void main() {
 
         final span = _createTestSpan(name: 'post-shutdown-span');
 
-        expect(() => exporter.export([span]), throwsA(isA<StateError>()));
+        await expectLater(exporter.export([span]), completes);
 
         await server.shutdown();
       },
@@ -753,9 +753,9 @@ void main() {
       // Shutdown
       await exporter.shutdown();
 
-      // Trying to export again should throw
+      // Trying to export again should return gracefully
       final span2 = _createTestSpan(name: 'after-shutdown-span');
-      expect(() => exporter.export([span2]), throwsA(isA<StateError>()));
+      await expectLater(exporter.export([span2]), completes);
 
       await server.shutdown();
     });
@@ -778,11 +778,11 @@ void main() {
       final span1 = _createTestSpan(name: 'init-span-for-tryexport');
       await exporter.export([span1]);
 
-      // Shutdown, then try to export - the StateError will be thrown
+      // Shutdown, then try to export - should return gracefully
       await exporter.shutdown();
 
       final span2 = _createTestSpan(name: 'post-shutdown-tryexport');
-      expect(() => exporter.export([span2]), throwsA(isA<StateError>()));
+      await expectLater(exporter.export([span2]), completes);
 
       await server.shutdown();
     });
@@ -825,7 +825,7 @@ void main() {
 
       // export() checks _isShutdown first, before calling _export
       final span = _createTestSpan(name: 'export-shutdown-span');
-      expect(() => exporter.export([span]), throwsA(isA<StateError>()));
+      await expectLater(exporter.export([span]), completes);
 
       await server.shutdown();
     });

@@ -71,7 +71,10 @@ class OtlpHttpMetricExporter implements MetricExporter {
   @override
   Future<bool> export(MetricData metrics) async {
     if (_isShutdown) {
-      throw StateError('Exporter is shutdown');
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('OtlpHttpMetricExporter: Cannot export after shutdown');
+      }
+      return false;
     }
 
     if (metrics.metrics.isEmpty) {
@@ -100,20 +103,7 @@ class OtlpHttpMetricExporter implements MetricExporter {
       }
       return result;
     } catch (e) {
-      if (_isShutdown &&
-          e is StateError &&
-          e.message.contains('shut down during')) {
-        // Gracefully handle the case where shutdown interrupted the export
-        if (OTelLog.isDebug()) {
-          OTelLog.debug(
-            'OtlpHttpMetricExporter: Export was interrupted by shutdown, suppressing error',
-          );
-        }
-        return false;
-      } else {
-        // Re-throw other errors
-        rethrow;
-      }
+      rethrow;
     } finally {
       _pendingExports.remove(exportFuture);
     }
@@ -121,7 +111,7 @@ class OtlpHttpMetricExporter implements MetricExporter {
 
   Future<bool> _export(MetricData metrics) async {
     if (_isShutdown) {
-      throw StateError('Exporter was shut down during export');
+      return false;
     }
 
     if (OTelLog.isDebug()) {
@@ -140,12 +130,12 @@ class OtlpHttpMetricExporter implements MetricExporter {
       try {
         // Only check for shutdown on retry attempts to ensure in-progress exports can complete
         if (wasShutdownDuringRetry && attempts > 0) {
-          if (OTelLog.isDebug()) {
-            OTelLog.debug(
+          if (OTelLog.isWarn()) {
+            OTelLog.warn(
               'OtlpHttpMetricExporter: Export interrupted by shutdown',
             );
           }
-          throw StateError('Exporter was shut down during export');
+          return false;
         }
 
         final success = await _tryExport(metrics);
@@ -163,12 +153,12 @@ class OtlpHttpMetricExporter implements MetricExporter {
 
         // Check if the exporter was shut down while we were waiting
         if (wasShutdownDuringRetry) {
-          if (OTelLog.isError()) {
-            OTelLog.error(
+          if (OTelLog.isWarn()) {
+            OTelLog.warn(
               'OtlpHttpMetricExporter: Export interrupted by shutdown',
             );
           }
-          throw StateError('Exporter was shut down during export');
+          return false;
         }
 
         // Handle status code-based retries
@@ -218,7 +208,12 @@ class OtlpHttpMetricExporter implements MetricExporter {
 
         // Check if we should stop retrying due to shutdown
         if (wasShutdownDuringRetry) {
-          throw StateError('Exporter was shut down during export');
+          if (OTelLog.isWarn()) {
+            OTelLog.warn(
+              'OtlpHttpMetricExporter: Export interrupted by shutdown',
+            );
+          }
+          return false;
         }
 
         if (attempts >= maxAttempts - 1) {
@@ -241,7 +236,10 @@ class OtlpHttpMetricExporter implements MetricExporter {
 
   Future<bool> _tryExport(MetricData metrics) async {
     if (_isShutdown) {
-      throw StateError('Exporter is shutdown');
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('OtlpHttpMetricExporter: Cannot export after shutdown');
+      }
+      return false;
     }
 
     if (OTelLog.isLogMetrics()) {

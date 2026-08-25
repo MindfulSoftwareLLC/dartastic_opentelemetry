@@ -43,7 +43,7 @@ class TestFileExporter implements SpanExporter {
         );
       }
       print('TestFileExporter: Cannot export - exporter is shut down');
-      throw StateError('Exporter is shutdown');
+      return;
     }
 
     if (spans.isEmpty) {

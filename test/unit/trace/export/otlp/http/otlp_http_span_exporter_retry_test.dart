@@ -476,12 +476,12 @@ void main() {
       expect(shutdownCount, equals(1));
     });
 
-    test('export throws StateError after shutdown', () async {
+    test('export returns gracefully after shutdown', () async {
       final exporter = createExporter();
       await exporter.shutdown();
 
       final spans = createTestSpans();
-      expect(() => exporter.export(spans), throwsA(isA<StateError>()));
+      await expectLater(exporter.export(spans), completes);
     });
 
     test('connection refused exercises generic catch block', () async {

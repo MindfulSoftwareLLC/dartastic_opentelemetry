@@ -46,7 +46,7 @@ void main() {
     });
 
     group('export', () {
-      test('throws StateError after shutdown', () async {
+      test('returns false after shutdown', () async {
         final exporter = OtlpHttpMetricExporter();
         await exporter.shutdown();
 
@@ -54,7 +54,8 @@ void main() {
           metrics: [Metric.sum(name: 'test-metric', points: [])],
         );
 
-        expect(() => exporter.export(metricData), throwsA(isA<StateError>()));
+        final result = await exporter.export(metricData);
+        expect(result, isFalse);
       });
 
       test('with empty metrics returns true', () async {
@@ -86,7 +87,7 @@ void main() {
         expect(result2, isTrue);
       });
 
-      test('sets shutdown state so export throws StateError', () async {
+      test('sets shutdown state so export returns false', () async {
         final exporter = OtlpHttpMetricExporter();
 
         // Export with empty data should work before shutdown
@@ -95,12 +96,13 @@ void main() {
 
         await exporter.shutdown();
 
-        // After shutdown, export should throw
+        // After shutdown, export should return false
         final metricData = MetricData(
           metrics: [Metric.sum(name: 'test-metric', points: [])],
         );
 
-        expect(() => exporter.export(metricData), throwsA(isA<StateError>()));
+        final result = await exporter.export(metricData);
+        expect(result, isFalse);
       });
     });
 

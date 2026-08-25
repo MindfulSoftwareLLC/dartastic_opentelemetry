@@ -254,11 +254,12 @@ void main() {
     });
 
     test('_export at start detects shutdown', () async {
-      // Shutdown before calling _export -> detects shutdown at start
+      // Shutdown before calling _export -> returns false gracefully
       await startServer();
       final exp = createExporter();
       await exp.shutdown();
-      expect(() => exp.export(makeMetrics()), throwsStateError);
+      final result = await exp.export(makeMetrics());
+      expect(result, isFalse);
     });
 
     test('shutdown during retry stops retrying', () async {
@@ -286,10 +287,10 @@ void main() {
     });
 
     test(
-      'ClientException during shutdown-flagged export throws StateError',
+      'ClientException during shutdown-flagged export returns false',
       () async {
         // When wasShutdownDuringRetry is true and ClientException caught,
-        // the export throws a StateError
+        // the export returns false gracefully
         // Every attempt fails, so the outcome cannot depend on whether
         // shutdown lands before or after a particular retry: either the
         // shutdown check aborts the retry, or the retries exhaust. Both

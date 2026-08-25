@@ -340,13 +340,13 @@ void main() {
     });
 
     // 4
-    test('export after shutdown throws StateError', () async {
+    test('export after shutdown returns gracefully', () async {
       final exporter = _createExporter(port);
       await exporter.shutdown();
 
       final span = _createTestSpan(name: 'after-shutdown-span');
 
-      expect(() => exporter.export([span]), throwsA(isA<StateError>()));
+      await expectLater(exporter.export([span]), completes);
     });
 
     // 5
@@ -433,10 +433,10 @@ void main() {
 
       await exporter.shutdown();
 
-      // After shutdown, exporting again should throw.
-      expect(
-        () => exporter.export([_createTestSpan(name: 'post-shutdown')]),
-        throwsA(isA<StateError>()),
+      // After shutdown, exporting again should return gracefully.
+      await expectLater(
+        exporter.export([_createTestSpan(name: 'post-shutdown')]),
+        completes,
       );
     });
 

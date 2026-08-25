@@ -201,7 +201,12 @@ class OtlpGrpcLogRecordExporter implements LogRecordExporter {
 
   Future<void> _ensureChannel() async {
     if (_isShutdown) {
-      throw StateError('Exporter is shutdown');
+      if (OTelLog.isWarn()) {
+        OTelLog.warn(
+          'OtlpGrpcLogRecordExporter: Cannot export after shutdown',
+        );
+      }
+      return;
     }
 
     if (_initialized && _channel != null && _logsService != null) {
@@ -317,14 +322,6 @@ class OtlpGrpcLogRecordExporter implements LogRecordExporter {
       }
       return result;
     } catch (e) {
-      if (_isShutdown &&
-          e is StateError &&
-          e.message.contains('shut down during')) {
-        if (OTelLog.isDebug()) {
-          OTelLog.debug(
-              'OtlpGrpcLogRecordExporter: Export was interrupted by shutdown');
-        }
-      }
       return ExportResult.failure;
     } finally {
       _pendingExports.remove(exportFuture);
