@@ -38,8 +38,10 @@ void main() {
         // Generic endpoint is plaintext, so the traces signal resolves
         // insecure...
         'OTEL_EXPORTER_OTLP_ENDPOINT': 'http://localhost:4317',
-        // ...while the operator points logs at a TLS endpoint.
-        'OTEL_EXPORTER_OTLP_LOGS_ENDPOINT': 'https://logs.example.com:4317',
+        // ...while logs point at a scheme-less host. No scheme means the
+        // insecure setting decides, and nothing set it - so logs must fall
+        // back to the spec default (secure), not inherit the traces answer.
+        'OTEL_EXPORTER_OTLP_LOGS_ENDPOINT': 'logs.example.com:4317',
       };
 
       // No `secure:` argument, so nothing the caller said may override the
@@ -58,9 +60,10 @@ void main() {
       expect(
         exporter.config.insecure,
         isFalse,
-        reason: 'the logs endpoint is https, so the logs exporter must use '
-            'TLS; the traces signal resolving to insecure must not become '
-            "the logs signal's explicit choice",
+        reason: 'the logs endpoint carries no scheme and nothing chose '
+            'insecure for it, so it takes the secure default; the traces '
+            'signal resolving to insecure must not become the logs '
+            "signal's explicit choice",
       );
     });
   });
@@ -160,9 +163,7 @@ void main() {
         expect(exporter.config.insecure, isFalse);
       });
 
-      test(
-          'an explicit secure: true currently outranks an http scheme '
-          '(see #225)', () {
+      test('an http scheme outranks an explicit secure: true (#225)', () {
         EnvironmentService.testOverrides = {
           'OTEL_EXPORTER_OTLP_PROTOCOL': 'grpc',
         };
@@ -170,11 +171,11 @@ void main() {
           endpoint: 'http://localhost:4317',
           secure: true,
         );
-        expect(exporter.config.insecure, isFalse,
-            reason: 'resolveOtlpSecure returns the explicit parameter '
-                'before consulting the scheme. #225 tracks making the '
-                'endpoint scheme decisive at the gRPC exporter layer, '
-                'which will invert this expectation.');
+        expect(exporter.config.insecure, isTrue,
+            reason: 'protocol/exporter.md: an http scheme "takes precedence '
+                'over the insecure configuration setting", so a '
+                'scheme-carrying endpoint is not overridable by the '
+                'parameter');
       });
     });
 
