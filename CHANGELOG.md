@@ -10,12 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **The `secure` parameter now works for logs and metrics** (#253, #225). It
-  was ignored, and a plaintext traces endpoint could disable TLS for a signal
-  you had pointed at an `https://` one. `secure` is now `bool?`: leave it unset
-  and the endpoint decides. It applies only to OTLP/gRPC endpoints written
-  without a scheme, such as `my-collector:4317` — an `https://` or `http://`
-  endpoint always wins, and OTLP/HTTP always follows its URL.
+- **The `secure` parameter now works for logs and metrics** (#253, #225).
+  Previously `secure` overrode the gRPC endpoint scheme; now the scheme
+  (`http:`, `https:`) takes precedence and `secure` applies only to
+  scheme-less endpoints.
 
 ## [1.1.0-beta.14] - 2026-08-23
 
