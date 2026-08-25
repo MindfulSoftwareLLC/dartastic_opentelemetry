@@ -10,27 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **The programmatic `secure` parameter is honored by the logs and metrics
-  configurations** (#253). `LogsConfiguration.configureLoggerProvider` and
-  `MetricsConfiguration.configureMeterProvider` declared `bool secure = false`
-  and passed it as the lowest-precedence fallback, so the parameter was a
-  no-op whenever the endpoint carried a scheme — which both defaults do. It is
-  now `bool? secure`: a non-null value is the caller's explicit choice and
-  outranks `OTEL_EXPORTER_OTLP_INSECURE`, while `null` (the default) defers to
-  the endpoint scheme, then the environment, then the built-in default.
-
-  Precedence now follows `protocol/exporter.md`: the endpoint **scheme**
-  decides when there is one (an `https` or `http` scheme "takes precedence
-  over the `insecure` configuration setting"), so the setting applies only
-  to OTLP/gRPC with a scheme-less endpoint such as `my-collector:4317` —
-  the one case where nothing else can express the choice. Previously an
-  explicit value outranked the scheme, meaning `secure: true` alongside an
-  `http://` endpoint produced TLS against the spec. Fixes #225.
-
-  `OTel.initialize` now forwards the caller's original value rather than the
-  boolean it resolved for the traces signal. Without that, a plaintext generic
-  endpoint could turn TLS **off** for a signal the operator had pointed at an
-  `https://` endpoint via `OTEL_EXPORTER_OTLP_{LOGS,METRICS}_ENDPOINT`.
+- **The `secure` parameter now works for logs and metrics** (#253, #225). It
+  was ignored, and a plaintext traces endpoint could disable TLS for a signal
+  you had pointed at an `https://` one. `secure` is now `bool?`: leave it unset
+  and the endpoint decides. It applies only to OTLP/gRPC endpoints written
+  without a scheme, such as `my-collector:4317` — an `https://` or `http://`
+  endpoint always wins, and OTLP/HTTP always follows its URL.
 
 ## [1.1.0-beta.14] - 2026-08-23
 
