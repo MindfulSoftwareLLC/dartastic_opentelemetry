@@ -414,18 +414,25 @@ class OTelEnv {
     // First, parse service.name and service.version from OTEL_RESOURCE_ATTRIBUTES
     final resourceStr = _getEnv(otelResourceAttributes);
     if (resourceStr != null) {
-      final pairs = resourceStr.split(',');
-      for (final pair in pairs) {
-        final equalIndex = pair.indexOf('=');
-        if (equalIndex > 0 && equalIndex < pair.length - 1) {
-          final key = pair.substring(0, equalIndex).trim();
-          final value = pair.substring(equalIndex + 1).trim();
+      // Split on commas, but handle escaped commas
+      final parts = resourceStr.split(RegExp(r'(?<!\\),'));
+      for (var part in parts) {
+        part = part.trim();
+        final equalIndex = part.indexOf('=');
+        if (equalIndex == -1) continue;
 
-          if (key == Service.serviceName.key) {
-            parsedServiceName = value;
-          } else if (key == Service.serviceVersion.key) {
-            parsedServiceVersion = value;
-          }
+        final key = part.substring(0, equalIndex).trim();
+        var value = part.substring(equalIndex + 1).trim();
+
+        // Handle percent-encoded characters
+        value = Uri.decodeComponent(value);
+        // Remove escape characters
+        value = value.replaceAll(r'\,', ',');
+
+        if (key == Service.serviceName.key) {
+          parsedServiceName = value;
+        } else if (key == Service.serviceVersion.key) {
+          parsedServiceVersion = value;
         }
       }
     }
@@ -451,32 +458,21 @@ class OTelEnv {
 
     final resourceStr = _getEnv(otelResourceAttributes);
     if (resourceStr != null) {
-      final pairs = resourceStr.split(',');
-      for (final pair in pairs) {
-        final parts = pair.split('=');
-        if (parts.length == 2) {
-          final key = parts[0].trim();
-          final value = parts[1].trim();
-          // Try to parse as number if possible
-          final intValue = int.tryParse(value);
-          if (intValue != null) {
-            resourceAttrs[key] = intValue;
-          } else {
-            final doubleValue = double.tryParse(value);
-            if (doubleValue != null) {
-              resourceAttrs[key] = doubleValue;
-            } else {
-              // Handle boolean values
-              if (value.toLowerCase() == 'true') {
-                resourceAttrs[key] = true;
-              } else if (value.toLowerCase() == 'false') {
-                resourceAttrs[key] = false;
-              } else {
-                resourceAttrs[key] = value;
-              }
-            }
-          }
-        }
+      final parts = resourceStr.split(RegExp(r'(?<!\\),'));
+      for (var part in parts) {
+        part = part.trim();
+        final equalIndex = part.indexOf('=');
+        if (equalIndex == -1) continue;
+
+        final key = part.substring(0, equalIndex).trim();
+        var value = part.substring(equalIndex + 1).trim();
+
+        // Handle percent-encoded characters
+        value = Uri.decodeComponent(value);
+        // Remove escape characters
+        value = value.replaceAll(r'\,', ',');
+
+        resourceAttrs[key] = value;
       }
     }
 

@@ -8,8 +8,6 @@ import '../../environment/otel_env.dart';
 import '../../export/otlp_http_protocol.dart';
 import '../../otel.dart';
 import '../../resource/resource.dart';
-import '../sampling/always_on_sampler.dart';
-import '../sampling/parent_based_sampler.dart';
 import '../sampling/sampler.dart';
 import '../span_exception_options.dart';
 import '../span_processor.dart';
@@ -145,8 +143,9 @@ class TracesConfiguration {
     if (spanProcessor != null) {
       tracerProvider.addSpanProcessor(spanProcessor);
     }
-    tracerProvider.sampler ??=
-        sampler ?? ParentBasedSampler(const AlwaysOnSampler());
+    if (sampler != null) {
+      tracerProvider.sampler = sampler;
+    }
     tracerProvider.spanExceptionOptions = spanExceptionOptions;
 
     return tracerProvider;
