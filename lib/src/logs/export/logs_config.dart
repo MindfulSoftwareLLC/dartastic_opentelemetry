@@ -38,7 +38,7 @@ class LogsConfiguration {
   /// @return The configured LoggerProvider
   static LoggerProvider configureLoggerProvider({
     String? endpoint,
-    bool secure = false,
+    bool? secure,
     LogRecordExporter? logRecordExporter,
     LogRecordProcessor? logRecordProcessor,
     Resource? resource,
@@ -126,7 +126,7 @@ class LogsConfiguration {
   static LogRecordExporter? _createExporter(
     String exporterType,
     String? endpoint,
-    bool secure,
+    bool? secure,
     OtlpEnvironmentValues otlpConfig,
   ) {
     final protocol = otlpConfig.protocol ?? 'http/protobuf';
@@ -141,7 +141,7 @@ class LogsConfiguration {
     final effectiveSecure = OTelEnv.resolveOtlpSecure(
       envInsecure: envInsecure,
       endpoint: effectiveEndpoint,
-      fallback: secure,
+      explicitSecure: secure,
     );
 
     if (exporterType == 'console') {

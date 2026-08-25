@@ -229,11 +229,6 @@ class OTel {
     final envInsecure = secure == null ? otlpTracesConfig.insecure : null;
 
     endpoint ??= envEndpoint;
-    secure = OTelEnv.resolveOtlpSecure(
-      explicitSecure: secure,
-      envInsecure: envInsecure,
-      endpoint: endpoint,
-    );
 
     // Apply defaults if still null.
     serviceName ??= defaultServiceName;
