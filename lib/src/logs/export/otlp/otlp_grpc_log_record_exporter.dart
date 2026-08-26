@@ -7,6 +7,7 @@ import 'dart:math';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
     show OTelLog;
 import 'package:grpc/grpc.dart';
+import 'package:meta/meta.dart';
 
 import '../../../../proto/opentelemetry_proto_dart.dart' as proto;
 import '../../../export/otlp_user_agent.dart';
@@ -31,6 +32,11 @@ class OtlpGrpcLogRecordExporter implements LogRecordExporter {
   ];
 
   final OtlpGrpcLogRecordExporterConfig _config;
+
+  /// The configuration this exporter was created with. Exposed for
+  /// tests asserting the resolved connection security (#253).
+  @visibleForTesting
+  OtlpGrpcLogRecordExporterConfig get config => _config;
   ClientChannel? _channel;
   proto.LogsServiceClient? _logsService;
   bool _isShutdown = false;

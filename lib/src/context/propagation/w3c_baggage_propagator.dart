@@ -1,6 +1,8 @@
 // Copyright The OpenTelemetry Authors
 // SPDX-License-Identifier: Apache-2.0
 
+import 'dart:convert' show utf8;
+
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import '../../otel.dart';
@@ -57,14 +59,33 @@ class W3CBaggagePropagator
       final eqIndex = trimmedPair.indexOf('=');
       if (eqIndex <= 0) continue;
 
-      final key = _decodeComponent(trimmedPair.substring(0, eqIndex).trim());
-      if (key.isEmpty) continue;
+      // Keys are tokens per RFC 7230 — they are NOT percent-encoded or
+      // decoded on the wire. Apply the same token rule inject applies so a
+      // pass-through hop cannot lose entries (extract→inject symmetry).
+      final key = trimmedPair.substring(0, eqIndex).trim();
+      if (!_isValidToken(key)) continue;
 
       final valueAndMetadata = trimmedPair.substring(eqIndex + 1).split(';');
-      final value = _decodeComponent(valueAndMetadata[0].trim());
+
+      // W3C Baggage: an unparsable list member is ignored, not fatal — one
+      // malformed entry must neither break the rest of the header nor, in
+      // composite propagation, prevent traceparent from being parsed.
+      String value;
+      try {
+        value = _decodeValue(valueAndMetadata[0].trim());
+      }
+      // ignore: avoid_catching_errors
+      on ArgumentError {
+        // Uri.decodeComponent signals truncated/invalid escapes as
+        // ArgumentError; W3C says skip the list member.
+        continue;
+      } on FormatException {
+        continue;
+      }
+
       String? metadata;
       if (valueAndMetadata.length > 1) {
-        metadata = valueAndMetadata.sublist(1).join(';').trim();
+        metadata = _safeDecode(valueAndMetadata.sublist(1).join(';').trim());
       }
 
       entries[key] = OTel.baggageEntry(value, metadata);
@@ -114,17 +135,30 @@ class W3CBaggagePropagator
         return;
       }
 
-      final serializedEntries = entries.entries.map((entry) {
-        final key = _encodeComponent(entry.key);
-        final value = _encodeComponent(entry.value.value);
+      final serializedEntries = entries.entries.where((entry) {
+        if (!_isValidToken(entry.key)) {
+          if (OTelLog.isDebug()) {
+            OTelLog.debug(
+              'Dropping baggage entry with invalid key: ${entry.key}',
+            );
+          }
+          return false;
+        }
+        return true;
+      }).map((entry) {
+        final key = entry.key;
+        final value = _encodeValue(entry.value.value);
         final metadata = entry.value.metadata;
         if (OTelLog.isDebug()) {
           OTelLog.debug(
             'Processing entry - Key: $key, Value: $value, Metadata: $metadata',
           );
         }
+        // Metadata is `property = token "=" *baggage-octet` on the wire and
+        // free text in the API, so it must go through the same encoding as
+        // values or a raw `,`/`;`/CRLF in it would forge extra list members.
         if (metadata != null && metadata.isNotEmpty) {
-          return '$key=$value;$metadata';
+          return '$key=$value;${_encodeValue(metadata)}';
         }
         return '$key=$value';
       }).join(',');
@@ -144,21 +178,68 @@ class W3CBaggagePropagator
   @override
   List<String> fields() => const [_baggageHeader];
 
-  /// Encodes a component for use in the baggage header.
+  /// Matches an RFC 7230 `token`, the grammar W3C Baggage requires for
+  /// keys (and property names): `!`, `#`, `$`, `%`, `&`, `'`, `*`, `+`,
+  /// `-`, `.`, `^`, `_`, `` ` ``, `|`, `~`, DIGIT, ALPHA.
+  static final RegExp _token = RegExp(r"^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$");
+
+  /// Checks whether [key] is a valid W3C Baggage key.
+  bool _isValidToken(String key) => _token.hasMatch(key);
+
+  /// Whether [octet] is in the W3C Baggage `baggage-octet` set
+  /// (`%x21 / %x23-2B / %x2D-3A / %x3C-5B / %x5D-7E`) — i.e. printable
+  /// ASCII excluding space, `"`, `,`, `;`, `\`, controls, and non-ASCII.
+  static bool _isBaggageOctet(int octet) =>
+      octet >= 0x21 &&
+      octet <= 0x7E &&
+      octet != 0x22 && // "
+      octet != 0x2C && // ,
+      octet != 0x3B && // ;
+      octet != 0x5C; //   \
+
+  /// Encodes a baggage value per the W3C Baggage specification.
   ///
-  /// @param value The value to encode
-  /// @return The encoded value
-  String _encodeComponent(String value) {
-    return Uri.encodeComponent(
-      value,
-    ).replaceAll('%20', '+').replaceAll('*', '%2A');
+  /// Allowlist encoding: every UTF-8 byte outside `baggage-octet`
+  /// (non-ASCII included) is percent-encoded with uppercase hex. `%` itself
+  /// is always emitted as `%25` even though it is a valid octet — otherwise
+  /// the decoder could misread pre-existing escape sequences and the codec
+  /// would not be injective (e.g. `a%2Cb` must not decode to `a,b`).
+  String _encodeValue(String value) {
+    final buffer = StringBuffer();
+    for (final octet in utf8.encode(value)) {
+      if (octet == 0x25) {
+        buffer.write('%25');
+      } else if (_isBaggageOctet(octet)) {
+        buffer.writeCharCode(octet);
+      } else {
+        buffer.write(
+          '%${octet.toRadixString(16).toUpperCase().padLeft(2, '0')}',
+        );
+      }
+    }
+    return buffer.toString();
   }
 
-  /// Decodes a component from the baggage header.
+  /// Decodes a baggage value (plain percent-decoding, no form-style `+`).
   ///
-  /// @param value The value to decode
-  /// @return The decoded value
-  String _decodeComponent(String value) {
-    return Uri.decodeComponent(value.replaceAll('+', '%20'));
+  /// Throws [ArgumentError] or [FormatException] on malformed input;
+  /// callers guard per entry per the W3C "ignore unparsable member" rule.
+  String _decodeValue(String value) {
+    return Uri.decodeComponent(value);
+  }
+
+  /// Best-effort decode used for metadata: returns the input unchanged when
+  /// it is not valid percent-encoding, since metadata is auxiliary and must
+  /// never be able to fail the surrounding entry.
+  static String _safeDecode(String value) {
+    try {
+      return Uri.decodeComponent(value);
+    }
+    // ignore: avoid_catching_errors
+    on ArgumentError {
+      return value;
+    } on FormatException {
+      return value;
+    }
   }
 }

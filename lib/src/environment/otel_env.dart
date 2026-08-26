@@ -716,14 +716,20 @@ class OTelEnv {
   /// Resolves whether an OTLP connection should use TLS, per the OTLP
   /// exporter spec's precedence:
   ///
-  /// 1. an explicit programmatic choice ([explicitSecure]) wins;
-  /// 2. otherwise the endpoint **scheme** decides — the spec states the
-  ///    scheme indicates the connection security, and that
-  ///    `OTEL_EXPORTER_OTLP_INSECURE` "only applies to OTLP/gRPC when an
-  ///    endpoint is provided without the http or https scheme";
+  /// 1. if [endpoint] carries an `http://` or `https://` scheme, that scheme
+  ///    alone decides — the spec says a scheme "takes precedence over the
+  ///    `insecure` configuration setting", from either channel;
+  /// 2. otherwise the endpoint is scheme-less (gRPC's native
+  ///    `my-collector:4317` form), which is the only case where the insecure
+  ///    setting applies at all. There, an explicit programmatic choice
+  ///    ([explicitSecure]) wins, being the code equivalent of the
+  ///    environment variable;
   /// 3. otherwise `OTEL_EXPORTER_OTLP_INSECURE` (or its per-signal
   ///    variant, passed as [envInsecure]) applies;
   /// 4. otherwise [fallback] (secure by default).
+  ///
+  /// Note that the setting is meaningful only for OTLP/gRPC: OTLP/HTTP
+  /// always takes its security from the endpoint scheme.
   ///
   /// Bare `host:port` endpoints parse with a bogus scheme (`host`), so
   /// only exact `http`/`https` schemes participate in step 2.
@@ -733,9 +739,10 @@ class OTelEnv {
     String? endpoint,
     bool fallback = true,
   }) {
-    if (explicitSecure != null) {
-      return explicitSecure;
-    }
+    // The endpoint scheme outranks the insecure setting from either
+    // channel: "A scheme of https indicates a secure connection and takes
+    // precedence over the insecure configuration setting" (and likewise
+    // for http) - protocol/exporter.md, Endpoint (OTLP/gRPC).
     final scheme =
         endpoint == null ? null : Uri.tryParse(endpoint)?.scheme.toLowerCase();
     if (scheme == 'http') {
@@ -743,6 +750,13 @@ class OTelEnv {
     }
     if (scheme == 'https') {
       return true;
+    }
+    // Scheme-less endpoint: the insecure setting decides. The programmatic
+    // choice is the code equivalent of OTEL_EXPORTER_OTLP_INSECURE and wins
+    // over it, per "The environment-based configuration MUST have a direct
+    // code configuration equivalent" - configuration/sdk-environment-variables.md.
+    if (explicitSecure != null) {
+      return explicitSecure;
     }
     if (envInsecure != null) {
       return !envInsecure;

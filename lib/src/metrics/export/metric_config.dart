@@ -36,7 +36,7 @@ class MetricsConfiguration {
   /// `OTel.defaultEndpoint` for the HTTP protocols.
   static MeterProvider configureMeterProvider({
     String? endpoint,
-    bool secure = false,
+    bool? secure,
     MetricExporter? metricExporter,
     MetricReader? metricReader,
     Resource? resource,
@@ -133,7 +133,7 @@ class MetricsConfiguration {
   static MetricExporter? _createExporter(
     String exporterType,
     String? endpoint,
-    bool secure,
+    bool? secure,
     MetricsExemplarFilter exemplarFilter,
   ) {
     if (exporterType == 'console') {
@@ -163,7 +163,7 @@ class MetricsConfiguration {
     final effectiveSecure = OTelEnv.resolveOtlpSecure(
       envInsecure: otlpConfig.insecure,
       endpoint: effectiveEndpoint,
-      fallback: secure,
+      explicitSecure: secure,
     );
     final headers = otlpConfig.headers ?? const {};
     final timeout = otlpConfig.timeout ?? const Duration(seconds: 10);
