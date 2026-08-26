@@ -4,6 +4,7 @@
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/proto/metrics/v1/metrics.pb.dart'
     as proto;
+
 import 'package:dartastic_opentelemetry/src/metrics/export/otlp/metric_transformer.dart';
 import 'package:dartastic_opentelemetry/src/resource/resource.dart';
 import 'package:fixnum/fixnum.dart';
@@ -272,7 +273,8 @@ void main() {
 
         final metric = Metric.sum(name: 'test.sum.exemplars', points: [point]);
 
-        final metricProto = MetricTransformer.transformMetric(metric);
+        final metricProto = MetricTransformer.transformMetric(metric,
+            exemplarFilter: MetricsExemplarFilter.alwaysOn);
         final dp = metricProto.sum.dataPoints.first;
         expect(dp.exemplars.length, equals(1));
         expect(dp.exemplars.first.asDouble, equals(1.5));
@@ -307,7 +309,8 @@ void main() {
           points: [point],
         );
 
-        final metricProto = MetricTransformer.transformMetric(metric);
+        final metricProto = MetricTransformer.transformMetric(metric,
+            exemplarFilter: MetricsExemplarFilter.alwaysOn);
         final dp = metricProto.gauge.dataPoints.first;
         expect(dp.exemplars.length, equals(1));
         expect(dp.exemplars.first.asDouble, equals(99.9));
@@ -355,7 +358,8 @@ void main() {
           points: [point],
         );
 
-        final metricProto = MetricTransformer.transformMetric(metric);
+        final metricProto = MetricTransformer.transformMetric(metric,
+            exemplarFilter: MetricsExemplarFilter.alwaysOn);
         final dp = metricProto.histogram.dataPoints.first;
         expect(dp.exemplars.length, equals(2));
         expect(dp.exemplars[0].asDouble, equals(5.0));

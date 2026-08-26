@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import '../../../trace/export/otlp/certificate_utils.dart';
+import '../metrics_sdk_config.dart';
 
 /// Configuration for the OtlpGrpcMetricExporter.
 class OtlpGrpcMetricExporterConfig {
@@ -10,6 +11,10 @@ class OtlpGrpcMetricExporterConfig {
 
   /// Whether to use an insecure connection (HTTP instead of HTTPS).
   final bool insecure;
+
+  /// The filter to apply to exemplars during export.
+  /// Default: `MetricsExemplarFilter.traceBased`
+  final MetricsExemplarFilter exemplarFilter;
 
   /// Headers to include in the OTLP request.
   final Map<String, String>? headers;
@@ -39,6 +44,7 @@ class OtlpGrpcMetricExporterConfig {
     this.clientKey,
     this.clientCertificate,
     this.compression = false,
+    this.exemplarFilter = MetricsExemplarFilter.traceBased,
   }) {
     _validateCertificates(certificate, clientKey, clientCertificate);
   }

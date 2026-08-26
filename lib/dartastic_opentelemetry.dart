@@ -12,6 +12,7 @@ library;
 export 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 export 'src/context/propagation/w3c_baggage_propagator.dart';
+
 export 'src/environment/env_constants.dart';
 export 'src/environment/environment_service.dart';
 export 'src/environment/otel_env.dart';
@@ -39,6 +40,7 @@ export 'src/metrics/data/metric_data.dart';
 export 'src/metrics/data/metric_point.dart';
 export 'src/metrics/export/composite_metric_exporter.dart';
 export 'src/metrics/export/metric_config.dart';
+export 'src/metrics/export/metrics_sdk_config.dart';
 export 'src/metrics/export/otlp/http/otlp_http_metric_exporter.dart';
 export 'src/metrics/export/otlp/http/otlp_http_metric_exporter_config.dart';
 export 'src/metrics/export/otlp/otlp_grpc_metric_exporter.dart';

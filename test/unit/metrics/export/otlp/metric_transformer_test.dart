@@ -4,6 +4,7 @@
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:dartastic_opentelemetry/proto/metrics/v1/metrics.pb.dart'
     as proto;
+
 import 'package:dartastic_opentelemetry/src/metrics/export/otlp/metric_transformer.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:test/test.dart';
@@ -18,6 +19,8 @@ void main() {
         detectPlatformResources: false,
       );
     });
+
+    tearDown(() {});
 
     test('transformResource converts Resource attributes correctly', () {
       // Resource with various attribute types
@@ -370,6 +373,59 @@ void main() {
           isEmpty,
         );
       });
+    });
+
+    test('applies exemplar filter when transforming metrics', () {
+      final tracer = OTel.tracer();
+      final span = tracer.startSpan('exemplar-filter-span');
+      final spanContext = span.spanContext;
+
+      final nowTime = DateTime.now();
+      final startTime = nowTime.subtract(const Duration(minutes: 1));
+      final attributes = {'filter': 'test'}.toAttributes();
+
+      final tracedExemplar = Exemplar(
+        attributes: attributes,
+        filteredAttributes: OTel.attributes(),
+        timestamp: nowTime,
+        value: 1.0,
+        traceId: spanContext.traceId,
+        spanId: spanContext.spanId,
+      );
+      final plainExemplar = Exemplar(
+        attributes: attributes,
+        filteredAttributes: OTel.attributes(),
+        timestamp: nowTime,
+        value: 2.0,
+      );
+
+      final metricPoint = MetricPoint.gauge(
+        attributes: attributes,
+        startTime: startTime,
+        time: nowTime,
+        value: 10,
+        exemplars: [tracedExemplar, plainExemplar],
+      );
+
+      final metric = Metric(
+        name: 'exemplar.filter.metric',
+        type: MetricType.gauge,
+        points: [metricPoint],
+      );
+
+      final traceBased = MetricTransformer.transformMetric(metric,
+          exemplarFilter: MetricsExemplarFilter.traceBased);
+      expect(traceBased.gauge.dataPoints.first.exemplars.length, equals(1));
+
+      final alwaysOn = MetricTransformer.transformMetric(metric,
+          exemplarFilter: MetricsExemplarFilter.alwaysOn);
+      expect(alwaysOn.gauge.dataPoints.first.exemplars.length, equals(2));
+
+      final alwaysOff = MetricTransformer.transformMetric(metric,
+          exemplarFilter: MetricsExemplarFilter.alwaysOff);
+      expect(alwaysOff.gauge.dataPoints.first.exemplars, isEmpty);
+
+      span.end();
     });
   });
 }

@@ -266,6 +266,7 @@ class OtlpHttpMetricExporter implements MetricExporter {
     final request = MetricTransformer.transformMetrics(
       metrics,
       fallbackResource: OTel.resource(null),
+      exemplarFilter: _config.exemplarFilter,
     );
 
     if (OTelLog.isDebug()) {

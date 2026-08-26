@@ -100,7 +100,30 @@ class OTel {
   /// It sets up the global configuration and installs the SDK implementation.
   ///
   /// @param endpoint The endpoint URL for the OpenTelemetry collector (default: http://localhost:4318)
-  /// @param secure Whether to use TLS for the connection (default: true)
+  /// @param secure Transport security for OTLP/gRPC when the endpoint carries
+  ///   no scheme. This is the code equivalent of `OTEL_EXPORTER_OTLP_INSECURE`
+  ///   (inverted - `secure: true` means `insecure=false`) and takes precedence
+  ///   over it, per the spec rule that every environment variable has a direct
+  ///   code configuration equivalent.
+  ///
+  ///   The option is deliberately narrow, per the OTLP exporter specification
+  ///   (`protocol/exporter.md`, "Insecure"):
+  ///
+  ///   - **OTLP/HTTP ignores it entirely** - the endpoint's scheme always
+  ///     decides, so `https://host:4318` is TLS and `http://host:4318` is not.
+  ///   - **A scheme on the endpoint wins over this parameter.** The spec says
+  ///     an `https` or `http` scheme "takes precedence over the `insecure`
+  ///     configuration setting", so passing `secure: true` alongside
+  ///     `http://host:4317` does not produce TLS.
+  ///   - It therefore applies only to **OTLP/gRPC with a scheme-less
+  ///     endpoint**, such as `my-collector:4317` - the native gRPC form, and
+  ///     the one case where nothing else can express the choice.
+  ///
+  ///   Leave it null (the default) to let the endpoint scheme decide, then
+  ///   `OTEL_EXPORTER_OTLP_INSECURE`, then the spec default. That default is
+  ///   *secure*, but the default endpoint is `http://localhost:4317`, whose
+  ///   scheme wins - so an unconfigured SDK talks plaintext to a local
+  ///   collector, which is what you want for local development.
   /// @param serviceName Name that uniquely identifies the service (default: "@dart/dartastic_opentelemetry")
   /// @param serviceVersion Version of the service (defaults to the OTel spec version)
   /// @param tracerName Name of the default tracer (default: "dartastic")
@@ -229,6 +252,16 @@ class OTel {
     final envInsecure = secure == null ? otlpTracesConfig.insecure : null;
 
     endpoint ??= envEndpoint;
+    // Keep the caller's explicit choice (null when not given): the
+    // metrics/logs configurations resolve security against their own
+    // per-signal endpoints and env vars, so they must receive the
+    // original parameter rather than the traces-resolved value (#253).
+    final explicitSecure = secure;
+    secure = OTelEnv.resolveOtlpSecure(
+      explicitSecure: secure,
+      envInsecure: envInsecure,
+      endpoint: endpoint,
+    );
 
     // Apply defaults if still null.
     serviceName ??= defaultServiceName;
@@ -364,7 +397,7 @@ class OTel {
     if (enableMetrics && !sdkDisabled) {
       MetricsConfiguration.configureMeterProvider(
         endpoint: endpoint,
-        secure: secure,
+        secure: explicitSecure,
         metricExporter: metricExporter,
         metricReader: metricReader,
         resource: OTel.defaultResource,
@@ -376,7 +409,7 @@ class OTel {
     if (enableLogs && !sdkDisabled) {
       LogsConfiguration.configureLoggerProvider(
         endpoint: endpoint,
-        secure: secure,
+        secure: explicitSecure,
         logRecordExporter: logRecordExporter,
         logRecordProcessor: logRecordProcessor,
         resource: OTel.defaultResource,

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+import '../metrics/export/metrics_sdk_config.dart';
 import '../util/header_redaction.dart';
 import 'env_constants.dart';
 import 'environment_service.dart';
@@ -103,16 +104,32 @@ typedef ServiceEnvironmentValues = ({
   String? serviceVersion,
 });
 
-/// Raw log record limit values parsed by [OTelEnv.getLogRecordLimits].
+/// Raw attribute limit values parsed by [OTelEnv.getAttributeLimits].
 ///
 /// All fields are nullable — `null` means the corresponding env var was
 /// unset or contained a non-numeric value.
-typedef LogRecordLimitsEnvironmentValues = ({
-  /// Parsed from `OTEL_LOGRECORD_ATTRIBUTE_VALUE_LENGTH_LIMIT`
+typedef AttributeLimitsEnvironmentValues = ({
+  /// Parsed from `OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT`
   int? attributeValueLengthLimit,
 
-  /// Parsed from `OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT`
+  /// Parsed from `OTEL_ATTRIBUTE_COUNT_LIMIT`
   int? attributeCountLimit,
+});
+
+/// Raw metrics environment values parsed by [OTelEnv.getMetricsConfig].
+///
+/// All fields are nullable — `null` means the corresponding env var was
+/// unset. Domain-level validation and defaults belong in
+/// [MetricsSdkConfig.fromEnvironment], not here.
+typedef MetricsEnvironmentValues = ({
+  /// Parsed from `OTEL_METRICS_EXEMPLAR_FILTER`
+  String? exemplarFilter,
+
+  /// Parsed from `OTEL_METRIC_EXPORT_INTERVAL`
+  Duration? exportInterval,
+
+  /// Parsed from `OTEL_METRIC_EXPORT_TIMEOUT`
+  Duration? exportTimeout,
 });
 
 /// Utility class for handling OpenTelemetry environment variables.
@@ -644,43 +661,111 @@ class OTelEnv {
     );
   }
 
-  /// Get LogRecord attribute limits from environment variables.
-  ///
-  /// Returns a [LogRecordLimitsEnvironmentValues] record containing the
-  /// log record attribute limits. Fields are `null` when the corresponding
-  /// env var is unset or contains a non-numeric value.
-  static LogRecordLimitsEnvironmentValues getLogRecordLimits() {
-    // Get attribute value length limit
-    int? parsedValueLengthLimit;
-    final valueLengthLimit = _getEnv(otelLogrecordAttributeValueLengthLimit);
-    if (valueLengthLimit != null) {
-      parsedValueLengthLimit = int.tryParse(valueLengthLimit);
-    }
+  static AttributeLimitsEnvironmentValues _parseAttributeLimits({
+    required String lengthVar,
+    required String countVar,
+    String? fallbackLengthVar,
+    String? fallbackCountVar,
+  }) {
+    int? parseLimit(String primaryVar, String? fallbackVar) {
+      var val = _getEnv(primaryVar);
+      var varName = primaryVar;
 
-    // Get attribute count limit
-    int? parsedCountLimit;
-    final countLimit = _getEnv(otelLogrecordAttributeCountLimit);
-    if (countLimit != null) {
-      parsedCountLimit = int.tryParse(countLimit);
+      if (val == null && fallbackVar != null) {
+        val = _getEnv(fallbackVar);
+        varName = fallbackVar;
+      }
+
+      if (val != null) {
+        final limit = int.tryParse(val);
+        if (limit != null && limit >= 0) {
+          return limit;
+        }
+        if (OTelLog.isWarn()) {
+          OTelLog.warn('OTelEnv: Invalid value "$val" for $varName. '
+              'Limit must be a non-negative integer.');
+        }
+      }
+      return null;
     }
 
     return (
-      attributeValueLengthLimit: parsedValueLengthLimit,
-      attributeCountLimit: parsedCountLimit,
+      attributeValueLengthLimit: parseLimit(lengthVar, fallbackLengthVar),
+      attributeCountLimit: parseLimit(countVar, fallbackCountVar),
+    );
+  }
+
+  /// Get general attribute limits from environment variables.
+  ///
+  /// These limits apply globally to all telemetry signals (traces, metrics,
+  /// logs) unless overridden by signal-specific limits (e.g., span or
+  /// log record attribute limits).
+  ///
+  /// Returns an [AttributeLimitsEnvironmentValues] containing the general attribute
+  /// limits. Fields that are not set via environment variables will be `null`.
+  ///
+  /// Per the OpenTelemetry specification:
+  /// - Values exceeding the length limit should be truncated.
+  /// - Attributes exceeding the count limit should be dropped.
+  /// - Warnings should be logged when limits are exceeded.
+  ///
+  /// See: https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#attribute-limits
+  static AttributeLimitsEnvironmentValues getAttributeLimits() {
+    return _parseAttributeLimits(
+      lengthVar: otelAttributeValueLengthLimit,
+      countVar: otelAttributeCountLimit,
+    );
+  }
+
+  /// Get LogRecord attribute limits from environment variables.
+  ///
+  /// Returns a [AttributeLimitsEnvironmentValues] record containing the
+  /// log record attribute limits. Fields are `null` when the corresponding
+  /// env var is unset or contains a non-numeric value.
+  static AttributeLimitsEnvironmentValues getLogRecordLimits() {
+    return _parseAttributeLimits(
+      lengthVar: otelLogrecordAttributeValueLengthLimit,
+      countVar: otelLogrecordAttributeCountLimit,
+      fallbackLengthVar: otelAttributeValueLengthLimit,
+      fallbackCountVar: otelAttributeCountLimit,
+    );
+  }
+
+  /// Get metrics SDK configuration from environment variables.
+  static MetricsEnvironmentValues getMetricsConfig() {
+    final exportIntervalMs =
+        getPositiveIntEnv(otelMetricExportInterval, minInclusive: 0);
+    final exportTimeoutMs =
+        getPositiveIntEnv(otelMetricExportTimeout, minInclusive: 0);
+
+    return (
+      exemplarFilter: _getEnv(otelMetricsExemplarFilter),
+      exportInterval: exportIntervalMs != null
+          ? Duration(milliseconds: exportIntervalMs)
+          : null,
+      exportTimeout: exportTimeoutMs != null
+          ? Duration(milliseconds: exportTimeoutMs)
+          : null,
     );
   }
 
   /// Resolves whether an OTLP connection should use TLS, per the OTLP
   /// exporter spec's precedence:
   ///
-  /// 1. an explicit programmatic choice ([explicitSecure]) wins;
-  /// 2. otherwise the endpoint **scheme** decides — the spec states the
-  ///    scheme indicates the connection security, and that
-  ///    `OTEL_EXPORTER_OTLP_INSECURE` "only applies to OTLP/gRPC when an
-  ///    endpoint is provided without the http or https scheme";
+  /// 1. if [endpoint] carries an `http://` or `https://` scheme, that scheme
+  ///    alone decides — the spec says a scheme "takes precedence over the
+  ///    `insecure` configuration setting", from either channel;
+  /// 2. otherwise the endpoint is scheme-less (gRPC's native
+  ///    `my-collector:4317` form), which is the only case where the insecure
+  ///    setting applies at all. There, an explicit programmatic choice
+  ///    ([explicitSecure]) wins, being the code equivalent of the
+  ///    environment variable;
   /// 3. otherwise `OTEL_EXPORTER_OTLP_INSECURE` (or its per-signal
   ///    variant, passed as [envInsecure]) applies;
   /// 4. otherwise [fallback] (secure by default).
+  ///
+  /// Note that the setting is meaningful only for OTLP/gRPC: OTLP/HTTP
+  /// always takes its security from the endpoint scheme.
   ///
   /// Bare `host:port` endpoints parse with a bogus scheme (`host`), so
   /// only exact `http`/`https` schemes participate in step 2.
@@ -690,9 +775,10 @@ class OTelEnv {
     String? endpoint,
     bool fallback = true,
   }) {
-    if (explicitSecure != null) {
-      return explicitSecure;
-    }
+    // The endpoint scheme outranks the insecure setting from either
+    // channel: "A scheme of https indicates a secure connection and takes
+    // precedence over the insecure configuration setting" (and likewise
+    // for http) - protocol/exporter.md, Endpoint (OTLP/gRPC).
     final scheme =
         endpoint == null ? null : Uri.tryParse(endpoint)?.scheme.toLowerCase();
     if (scheme == 'http') {
@@ -700,6 +786,13 @@ class OTelEnv {
     }
     if (scheme == 'https') {
       return true;
+    }
+    // Scheme-less endpoint: the insecure setting decides. The programmatic
+    // choice is the code equivalent of OTEL_EXPORTER_OTLP_INSECURE and wins
+    // over it, per "The environment-based configuration MUST have a direct
+    // code configuration equivalent" - configuration/sdk-environment-variables.md.
+    if (explicitSecure != null) {
+      return explicitSecure;
     }
     if (envInsecure != null) {
       return !envInsecure;

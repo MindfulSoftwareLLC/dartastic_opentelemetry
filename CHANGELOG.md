@@ -9,9 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0-beta.15-wip]
 
 ### Breaking Changes
-- **Spec compliance (#206):** `OTEL_RESOURCE_ATTRIBUTES` values are now parsed strictly as `String`s rather than falling back to `int` or `bool`.
-- Percent-decoding is now applied to `OTEL_RESOURCE_ATTRIBUTES` values.
-- Extracted trace exporter and processor configuration logic into `TracesConfiguration` internal class to align with `MetricsConfiguration` and `LogsConfiguration`.
+
+- **`OTEL_RESOURCE_ATTRIBUTES` values are always strings** (#206). They were
+  previously coerced to `int` or `bool` where they looked numeric, which
+  changed the type of those attributes on the wire.
+- **`OTEL_RESOURCE_ATTRIBUTES` values are percent-decoded**, so `k=a%2Cb`
+  now yields `a,b`.
+
+### Added
+
+- **Attribute limit environment variables are parsed** (#73):
+  `OTEL_ATTRIBUTE_COUNT_LIMIT`, `OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT` and the
+  `OTEL_LOGRECORD_*` variants, with the spec's signal-specific-then-general
+  fallback. Enforcing the limits is follow-up work, so setting them has no
+  effect on emitted telemetry yet.
+
+### Fixed
+
+- **The `secure` parameter now works for logs and metrics** (#253, #225).
+  Previously `secure` overrode the gRPC endpoint scheme; now the scheme
+  (`http:`, `https:`) takes precedence and `secure` applies only to
+  scheme-less endpoints.
+- **`OTEL_RESOURCE_ATTRIBUTES` is honored when `detectPlatformResources` is
+  `false`**, and a malformed value is dropped with a warning instead of
+  failing `OTel.initialize`.
 
 ## [1.1.0-beta.14] - 2026-08-23
 
@@ -147,7 +168,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   baggage untouched instead of clearing it. Thanks to @abidiahmedcom
   (#199, #200, #261).
 
-## [0.10.0]
+## [0.10.0] - 2026-08-23
 Stable-channel republication of `1.1.0-beta.14`. Depends on
 `dartastic_opentelemetry_api: ^0.10.0`.
 
@@ -171,6 +192,20 @@ environment variables read as unset (#213), `service.name` precedence is
 fixed (#103), `browser.*` resource attributes are populated on web (#190)
 with `browser.mobile` as a boolean, and baggage values containing `=`
 survive extraction (#199). Full detail in the `1.1.0-beta.14` entry.
+
+- **BREAKING: W3C Baggage now percent-encodes per the W3C grammar instead of
+  form-style encoding** (#198, #197, #264). Values encode every byte outside
+  the W3C `baggage-octet` allowlist (`%` → `%25`, space → `%20`,
+  `,`/`;`/`"`/`\`/`:` escaped, controls and non-ASCII UTF-8 percent-encoded)
+  instead of sending space as `+`; keys travel as raw RFC 7230 tokens, and
+  keys that are not valid tokens are dropped on inject and ignored on
+  extract; metadata is encoded too, so it can no longer forge additional
+  header entries; extract ignores unparsable list members instead of
+  throwing into the caller (which also blocked `traceparent` parsing).
+  Migration hint: the previous release decoded `+` as space — during a
+  rolling deploy against it, entries with spaces or `+` in values (e.g.
+  `key+with+spaces`) can be lost or misread at the version boundary; use
+  token keys and expect literal `+` in values on mixed fleets.
 
 ## [1.1.0-beta.13] - 2026-08-13
 
@@ -209,6 +244,15 @@ survive extraction (#199). Full detail in the `1.1.0-beta.14` entry.
   since it narrows the search space for the token. Header names and the header count are
   still logged. A header value you relied on seeing at debug level now has to be listed
   in `OTEL_DART_HEADER_LOG_ALLOWLIST`.
+
+### Added
+- **Metrics environment configuration support**. The SDK now supports configuring the metrics export interval, export timeout, and exemplar filter via standard OpenTelemetry environment variables:
+  - `OTEL_METRIC_EXPORT_INTERVAL`: Sets the export interval (default: 60000 ms).
+  - `OTEL_METRIC_EXPORT_TIMEOUT`: Sets the export timeout (default: 30000 ms).
+  - `OTEL_METRICS_EXEMPLAR_FILTER`: Configures the exemplar filtering policy (`always_on`, `always_off`, or `trace_based`). Note: This is groundwork ahead of #154; filtering is currently inactive as the SDK does not yet record exemplars.
+
+### Changed
+- **Default metric export interval changed to 60s.** The `PeriodicExportingMetricReader` default export interval has been updated from the previous hardcoded `15s` to the spec-compliant `60s`. To restore the old cadence, set `OTEL_METRIC_EXPORT_INTERVAL=15000` in your environment.
 
 ## [1.1.0-beta.12] - 2026-07-20
 
@@ -389,7 +433,6 @@ survive extraction (#199). Full detail in the `1.1.0-beta.14` entry.
   `OTEL_BSP_SCHEDULE_DELAY=1000`.
 
 ## [1.1.0-beta.7] - 2026-07-11
-
 ### Fixed
 - **`OtlpGrpcSpanExporter.export()` gains a Dart-level timeout backstop.**
   Previously the configured `timeout` was applied only via gRPC's `CallOptions`
