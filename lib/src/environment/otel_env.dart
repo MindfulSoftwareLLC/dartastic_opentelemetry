@@ -104,15 +104,15 @@ typedef ServiceEnvironmentValues = ({
   String? serviceVersion,
 });
 
-/// Raw log record limit values parsed by [OTelEnv.getLogRecordLimits].
+/// Raw attribute limit values parsed by [OTelEnv.getAttributeLimits].
 ///
 /// All fields are nullable — `null` means the corresponding env var was
 /// unset or contained a non-numeric value.
-typedef LogRecordLimitsEnvironmentValues = ({
-  /// Parsed from `OTEL_LOGRECORD_ATTRIBUTE_VALUE_LENGTH_LIMIT`
+typedef AttributeLimitsEnvironmentValues = ({
+  /// Parsed from `OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT`
   int? attributeValueLengthLimit,
 
-  /// Parsed from `OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT`
+  /// Parsed from `OTEL_ATTRIBUTE_COUNT_LIMIT`
   int? attributeCountLimit,
 });
 
@@ -669,29 +669,73 @@ class OTelEnv {
     );
   }
 
-  /// Get LogRecord attribute limits from environment variables.
-  ///
-  /// Returns a [LogRecordLimitsEnvironmentValues] record containing the
-  /// log record attribute limits. Fields are `null` when the corresponding
-  /// env var is unset or contains a non-numeric value.
-  static LogRecordLimitsEnvironmentValues getLogRecordLimits() {
-    // Get attribute value length limit
-    int? parsedValueLengthLimit;
-    final valueLengthLimit = _getEnv(otelLogrecordAttributeValueLengthLimit);
-    if (valueLengthLimit != null) {
-      parsedValueLengthLimit = int.tryParse(valueLengthLimit);
-    }
+  static AttributeLimitsEnvironmentValues _parseAttributeLimits({
+    required String lengthVar,
+    required String countVar,
+    String? fallbackLengthVar,
+    String? fallbackCountVar,
+  }) {
+    int? parseLimit(String primaryVar, String? fallbackVar) {
+      var val = _getEnv(primaryVar);
+      var varName = primaryVar;
 
-    // Get attribute count limit
-    int? parsedCountLimit;
-    final countLimit = _getEnv(otelLogrecordAttributeCountLimit);
-    if (countLimit != null) {
-      parsedCountLimit = int.tryParse(countLimit);
+      if (val == null && fallbackVar != null) {
+        val = _getEnv(fallbackVar);
+        varName = fallbackVar;
+      }
+
+      if (val != null) {
+        final limit = int.tryParse(val);
+        if (limit != null && limit >= 0) {
+          return limit;
+        }
+        if (OTelLog.isWarn()) {
+          OTelLog.warn('OTelEnv: Invalid value "$val" for $varName. '
+              'Limit must be a non-negative integer.');
+        }
+      }
+      return null;
     }
 
     return (
-      attributeValueLengthLimit: parsedValueLengthLimit,
-      attributeCountLimit: parsedCountLimit,
+      attributeValueLengthLimit: parseLimit(lengthVar, fallbackLengthVar),
+      attributeCountLimit: parseLimit(countVar, fallbackCountVar),
+    );
+  }
+
+  /// Get general attribute limits from environment variables.
+  ///
+  /// These limits apply globally to all telemetry signals (traces, metrics,
+  /// logs) unless overridden by signal-specific limits (e.g., span or
+  /// log record attribute limits).
+  ///
+  /// Returns an [AttributeLimitsEnvironmentValues] containing the general attribute
+  /// limits. Fields that are not set via environment variables will be `null`.
+  ///
+  /// Per the OpenTelemetry specification:
+  /// - Values exceeding the length limit should be truncated.
+  /// - Attributes exceeding the count limit should be dropped.
+  /// - Warnings should be logged when limits are exceeded.
+  ///
+  /// See: https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#attribute-limits
+  static AttributeLimitsEnvironmentValues getAttributeLimits() {
+    return _parseAttributeLimits(
+      lengthVar: otelAttributeValueLengthLimit,
+      countVar: otelAttributeCountLimit,
+    );
+  }
+
+  /// Get LogRecord attribute limits from environment variables.
+  ///
+  /// Returns a [AttributeLimitsEnvironmentValues] record containing the
+  /// log record attribute limits. Fields are `null` when the corresponding
+  /// env var is unset or contains a non-numeric value.
+  static AttributeLimitsEnvironmentValues getLogRecordLimits() {
+    return _parseAttributeLimits(
+      lengthVar: otelLogrecordAttributeValueLengthLimit,
+      countVar: otelLogrecordAttributeCountLimit,
+      fallbackLengthVar: otelAttributeValueLengthLimit,
+      fallbackCountVar: otelAttributeCountLimit,
     );
   }
 
