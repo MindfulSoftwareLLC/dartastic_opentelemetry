@@ -58,18 +58,10 @@ class BatchSpanProcessorConfig {
   /// via [OTelEnv]. Falls back to standard OTel defaults if variables are
   /// missing or invalid.
   ///
-  /// | Environment Variable              | Type     | Default  | Notes                                                    |
-  /// |-----------------------------------|----------|----------|----------------------------------------------------------|
-  /// | `OTEL_BSP_SCHEDULE_DELAY`         | Duration | `5000`   | Delay between exports (ms). 0 is valid (export ASAP).    |
-  /// | `OTEL_BSP_EXPORT_TIMEOUT`         | Timeout  | `30000`  | Export timeout (ms). 0 means no limit.                   |
-  /// | `OTEL_BSP_MAX_QUEUE_SIZE`         | Integer  | `2048`   | Maximum span queue size.                                 |
-  /// | `OTEL_BSP_MAX_EXPORT_BATCH_SIZE`  | Integer  | `512`    | Maximum batch size. Must be ≤ `MAX_QUEUE_SIZE`.          |
-  ///
   /// Invalid or out-of-range values emit an [OTelLog.warn] diagnostic and
   /// fall back to the spec default.
-  factory BatchSpanProcessorConfig.fromEnvironment() {
-    final env = OTelEnv.getBspConfig();
-
+  factory BatchSpanProcessorConfig.fromBspEnvironmentValues(
+      BspEnvironmentValues env) {
     var queueSize = env.maxQueueSize ?? 2048;
     var batchSize = env.maxExportBatchSize ?? 512;
 
@@ -143,6 +135,24 @@ class BatchSpanProcessorConfig {
       scheduleDelay: scheduleDelay,
       exportTimeout: exportTimeout,
     );
+  }
+
+  /// Creates a configuration by reading `OTEL_BSP_*` environment variables
+  /// via [OTelEnv]. Falls back to standard OTel defaults if variables are
+  /// missing or invalid.
+  ///
+  /// | Environment Variable              | Type     | Default  | Notes                                                    |
+  /// |-----------------------------------|----------|----------|----------------------------------------------------------|
+  /// | `OTEL_BSP_SCHEDULE_DELAY`         | Duration | `5000`   | Delay between exports (ms). 0 is valid (export ASAP).    |
+  /// | `OTEL_BSP_EXPORT_TIMEOUT`         | Timeout  | `30000`  | Export timeout (ms). 0 means no limit.                   |
+  /// | `OTEL_BSP_MAX_QUEUE_SIZE`         | Integer  | `2048`   | Maximum span queue size.                                 |
+  /// | `OTEL_BSP_MAX_EXPORT_BATCH_SIZE`  | Integer  | `512`    | Maximum batch size. Must be ≤ `MAX_QUEUE_SIZE`.          |
+  ///
+  /// Invalid or out-of-range values emit an [OTelLog.warn] diagnostic and
+  /// fall back to the spec default.
+  factory BatchSpanProcessorConfig.fromEnvironment() {
+    return BatchSpanProcessorConfig.fromBspEnvironmentValues(
+        OTelEnv.getBspConfig());
   }
 }
 
