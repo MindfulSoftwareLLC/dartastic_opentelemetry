@@ -162,7 +162,8 @@ void main() {
       final resource = await initWith({});
       expect(attributeOf(resource, 'service.name'), isNotNull);
       expect(attributeOf(resource, 'service.name'), isNotEmpty);
-      expect(attributeOf(resource, 'service.version'), equals('1.0.0'));
+      // service.version is not set when not provided (issue #204)
+      expect(attributeOf(resource, 'service.version'), isNull);
     });
   });
 }

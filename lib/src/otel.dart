@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:meta/meta.dart';
 
 import '../dartastic_opentelemetry.dart';
+import 'environment/executable_name.dart';
 
 /// Main entry point for the OpenTelemetry SDK.
 ///
@@ -67,7 +68,16 @@ class OTel {
   static Resource? defaultResource;
 
   /// Default service name used if none is provided.
-  static const defaultServiceName = '@dart/dartastic_opentelemetry';
+  ///
+  /// Per the OTel specification, the SDK-provided default is
+  /// `unknown_service:<process.executable.name>`. When the executable
+  /// name is unavailable (e.g. web), the default is `unknown_service`.
+  static String get defaultServiceName {
+    final executable = processExecutableName;
+    return executable.isEmpty
+        ? 'unknown_service'
+        : 'unknown_service:$executable';
+  }
 
   /// Default OTEL endpoint.
   ///
@@ -265,7 +275,10 @@ class OTel {
 
     // Apply defaults if still null.
     serviceName ??= defaultServiceName;
-    serviceVersion ??= '1.0.0';
+    // serviceVersion is intentionally left nullable: the OTel spec does not
+    // mandate a default service.version, so we only set it when the caller
+    // (or OTEL_SERVICE_VERSION / OTEL_RESOURCE_ATTRIBUTES) provides one.
+    // secure is guaranteed non-null from above
 
     // Log environment variable usage
     if (OTelLog.isDebug()) {
@@ -309,7 +322,7 @@ class OTel {
     if (serviceName.isEmpty) {
       throw ArgumentError('serviceName must not be the empty string.');
     }
-    if (serviceVersion.isEmpty) {
+    if (serviceVersion != null && serviceVersion.isEmpty) {
       throw ArgumentError('serviceVersion must not be the empty string.');
     }
     final factoryFactory =
@@ -323,7 +336,7 @@ class OTel {
     final createdFactory = factoryFactory(
       apiEndpoint: endpoint ?? defaultEndpoint,
       apiServiceName: serviceName,
-      apiServiceVersion: serviceVersion,
+      apiServiceVersion: serviceVersion ?? OTelAPI.defaultServiceVersion,
     );
     OTelFactory.otelFactory = createdFactory;
     if (createdFactory is OTelSDKFactory) {
@@ -356,9 +369,9 @@ class OTel {
     mergedResource = mergedResource.merge(envVarResource);
 
     // Apply OTEL_SERVICE_NAME (and VERSION) via service name variables
-    final serviceResourceAttributes = {
+    final serviceResourceAttributes = <String, Object>{
       Service.serviceName.key: serviceName,
-      Service.serviceVersion.key: serviceVersion,
+      if (serviceVersion != null) Service.serviceVersion.key: serviceVersion,
     };
     mergedResource = mergedResource.merge(
         OTel.resource(OTel.attributesFromMap(serviceResourceAttributes)));

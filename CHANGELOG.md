@@ -34,6 +34,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `false`**, and a malformed value is dropped with a warning instead of
   failing `OTel.initialize`.
 
+- **`service.name` defaults to spec-compliant `unknown_service`** (#204):
+  Previously defaulted to `@dart/dartastic_opentelemetry`. Now defaults to
+  `unknown_service:<process.executable.name>` on native platforms and
+  `unknown_service` on web, as required by the OTel specification.
+  `service.version` is no longer invented when not provided.
+
 ## [1.1.0-beta.14] - 2026-08-23
 
 ### Changed
