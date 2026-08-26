@@ -11,21 +11,54 @@ import 'package:test/test.dart';
 
 void main() {
   group('OTelEnv.resolveOtlpSecure', () {
-    test('explicit choice wins over everything', () {
+    test('a scheme outranks an explicit choice (#225)', () {
+      // protocol/exporter.md, Endpoint (OTLP/gRPC): an https scheme
+      // "indicates a secure connection and takes precedence over the
+      // insecure configuration setting", and likewise http for insecure.
+      // The setting - from either the parameter or the environment - only
+      // applies to a scheme-less endpoint.
+      //
+      // This inverts the expectation originally pinned in #89, which had
+      // the explicit parameter winning over the scheme.
       expect(
         OTelEnv.resolveOtlpSecure(
           explicitSecure: true,
           envInsecure: true,
           endpoint: 'http://collector:4317',
         ),
-        isTrue,
+        isFalse,
+        reason: 'an http scheme means plaintext even when asked for TLS',
       );
       expect(
         OTelEnv.resolveOtlpSecure(
           explicitSecure: false,
           endpoint: 'https://collector:4317',
         ),
+        isTrue,
+        reason: 'an https scheme means TLS even when asked for plaintext',
+      );
+    });
+
+    test('the explicit choice decides for a scheme-less endpoint', () {
+      // The window where the setting actually applies: gRPC's native
+      // host:port form. Here the parameter beats the environment, being
+      // the code equivalent of OTEL_EXPORTER_OTLP_INSECURE.
+      expect(
+        OTelEnv.resolveOtlpSecure(
+          explicitSecure: false,
+          envInsecure: false,
+          endpoint: 'collector:4317',
+        ),
         isFalse,
+        reason: 'code beats env',
+      );
+      expect(
+        OTelEnv.resolveOtlpSecure(
+          explicitSecure: true,
+          envInsecure: true,
+          endpoint: 'collector:4317',
+        ),
+        isTrue,
       );
     });
 
