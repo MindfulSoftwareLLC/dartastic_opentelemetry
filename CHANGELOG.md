@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.15-wip]
 
+### Fixed
+
+- **The `secure` parameter now works for logs and metrics** (#253, #225).
+  Previously `secure` overrode the gRPC endpoint scheme; now the scheme
+  (`http:`, `https:`) takes precedence and `secure` applies only to
+  scheme-less endpoints.
+
 ## [1.1.0-beta.14] - 2026-08-23
 
 ### Changed
