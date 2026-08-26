@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fallback. Enforcing the limits is follow-up work, so setting them has no
   effect on emitted telemetry yet.
 
+- **Default resource now includes `telemetry.sdk.*` attributes** (#203):
+  `telemetry.sdk.language` (`dart`), `telemetry.sdk.name` (`opentelemetry`),
+  and `telemetry.sdk.version` (package version) are set on the default
+  resource, as required by the OTel specification.
+
 ### Fixed
 
 - **The `secure` parameter now works for logs and metrics** (#253, #225).

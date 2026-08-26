@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:meta/meta.dart';
 
 import '../dartastic_opentelemetry.dart';
+import 'version.dart';
 
 /// Main entry point for the OpenTelemetry SDK.
 ///
@@ -359,6 +360,9 @@ class OTel {
     final serviceResourceAttributes = {
       Service.serviceName.key: serviceName,
       Service.serviceVersion.key: serviceVersion,
+      Telemetry.telemetrySdkLanguage.key: 'dart',
+      Telemetry.telemetrySdkName.key: 'opentelemetry',
+      Telemetry.telemetrySdkVersion.key: packageVersion,
     };
     mergedResource = mergedResource.merge(
         OTel.resource(OTel.attributesFromMap(serviceResourceAttributes)));
