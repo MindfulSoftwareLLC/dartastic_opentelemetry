@@ -3,8 +3,9 @@
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
-import '../data/exemplar.dart';
 import '../data/metric_point.dart';
+import '../exemplar_filter.dart';
+import '../exemplar_reservoir.dart';
 import 'metric_storage.dart';
 
 /// HistogramStorage is used for storing and accumulating histogram data.
@@ -21,26 +22,45 @@ class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
   /// The start time for all points.
   final DateTime _startTime = DateTime.now();
 
-  /// Creates a new HistogramStorage instance.
-  HistogramStorage({required this.boundaries, this.recordMinMax = true});
+  /// The exemplar filter used by this storage.
+  final ExemplarFilter? exemplarFilter;
 
-  /// Records a measurement with the given attributes.
+  /// Creates a new HistogramStorage instance.
+  HistogramStorage(
+      {required this.boundaries,
+      this.recordMinMax = true,
+      this.exemplarFilter});
+
+  /// Records a measurement with the given attributes and context.
   @override
-  void record(T value, [Attributes? attributes]) {
+  void record(T value, [Attributes? attributes, Context? context]) {
     // Create a normalized key for lookup
     final key = attributes ?? _emptyAttributes();
 
+    _HistogramPointData<T> pointData;
     // Find matching attributes
     final existingKey = _findMatchingKey(key);
     if (existingKey != null) {
       // Update existing point
-      _points[existingKey]!.record(value);
+      pointData = _points[existingKey]!;
+      pointData.record(value);
     } else {
       // Create new point
-      _points[key] = _HistogramPointData<T>(
+      pointData = _HistogramPointData<T>(
         boundaries: boundaries,
         recordMinMax: recordMinMax,
-      )..record(value);
+        reservoir: AlignedHistogramBucketExemplarReservoir(boundaries),
+      );
+      pointData.record(value);
+      _points[key] = pointData;
+    }
+
+    // Process exemplars if a filter is provided
+    if (exemplarFilter != null && context != null) {
+      if (exemplarFilter!.shouldSample(value, key, context)) {
+        pointData.reservoir
+            .offerMeasurement(value, key, context, DateTime.now());
+      }
     }
   }
 
@@ -177,7 +197,7 @@ class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
         startTime: _startTime,
         endTime: now,
         value: histogramValue,
-        exemplars: data.exemplars,
+        exemplars: data.reservoir.collectAndReset(entry.key),
       );
     }).toList();
   }
@@ -186,19 +206,6 @@ class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
   @override
   void reset() {
     _points.clear();
-  }
-
-  /// Adds an exemplar to a specific point.
-  @override
-  void addExemplar(Exemplar exemplar, [Attributes? attributes]) {
-    // Create a normalized key for lookup
-    final key = attributes ?? _emptyAttributes();
-
-    // Find matching attributes
-    final existingKey = _findMatchingKey(key);
-    if (existingKey != null) {
-      _points[existingKey]!.exemplars.add(exemplar);
-    }
   }
 }
 
@@ -225,10 +232,13 @@ class _HistogramPointData<T extends num> {
   /// Whether to record min and max values.
   final bool recordMinMax;
 
-  /// Exemplars for this point.
-  final List<Exemplar> exemplars = [];
+  /// Reservoir for this point.
+  final ExemplarReservoir reservoir;
 
-  _HistogramPointData({required this.boundaries, required this.recordMinMax}) {
+  _HistogramPointData(
+      {required this.boundaries,
+      required this.recordMinMax,
+      required this.reservoir}) {
     // Initialize count array with one more than boundaries
     // (for the +Inf bucket)
     counts = List<int>.filled(boundaries.length + 1, 0);

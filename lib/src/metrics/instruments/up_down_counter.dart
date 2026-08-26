@@ -22,12 +22,16 @@ class UpDownCounter<T extends num>
   final Meter _meter;
 
   /// Storage for accumulating up-down counter measurements.
-  final SumStorage<T> _storage = SumStorage<T>(isMonotonic: false);
+  final SumStorage<T> _storage;
 
   /// Creates a new UpDownCounter instance.
   UpDownCounter({required APIUpDownCounter<T> apiCounter, required Meter meter})
       : _apiCounter = apiCounter,
-        _meter = meter {
+        _meter = meter,
+        _storage = SumStorage<T>(
+          isMonotonic: false,
+          exemplarFilter: meter.provider.exemplarFilter,
+        ) {
     // Register this instrument with the meter provider
     _meter.provider.registerInstrument(_meter.name, this);
   }
@@ -68,7 +72,7 @@ class UpDownCounter<T extends num>
     if (!_meter.enabled) return;
 
     // Record the measurement in our storage
-    _storage.record(value, attributes);
+    _storage.record(value, attributes, Context.current);
   }
 
   @override

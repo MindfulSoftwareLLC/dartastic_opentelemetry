@@ -17,14 +17,17 @@ class ObservableGauge<T extends num>
   final Meter _meter;
 
   /// Storage for gauge measurements.
-  final GaugeStorage<T> _storage = GaugeStorage<T>();
+  final GaugeStorage<T> _storage;
 
   /// Creates a new ObservableGauge instance.
   ObservableGauge({
     required APIObservableGauge<T> apiGauge,
     required Meter meter,
   })  : _apiGaugeDelegate = apiGauge,
-        _meter = meter;
+        _meter = meter,
+        _storage = GaugeStorage<T>(
+          exemplarFilter: meter.provider.exemplarFilter,
+        );
 
   @override
   String get name => _apiGaugeDelegate.name;
@@ -130,11 +133,12 @@ class ObservableGauge<T extends num>
           final attributes =
               measurement.attributes ?? OTelFactory.otelFactory!.attributes();
           if (T == int) {
-            _storage.record(numValue.toInt() as T, attributes);
+            _storage.record(numValue.toInt() as T, attributes, Context.current);
           } else if (T == double) {
-            _storage.record(numValue.toDouble() as T, attributes);
+            _storage.record(
+                numValue.toDouble() as T, attributes, Context.current);
           } else {
-            _storage.record(numValue as T, attributes);
+            _storage.record(numValue as T, attributes, Context.current);
           }
 
           result.add(measurement);

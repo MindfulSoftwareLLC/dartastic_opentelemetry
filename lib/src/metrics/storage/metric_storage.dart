@@ -3,7 +3,6 @@
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
-import '../data/exemplar.dart';
 import '../data/metric_point.dart';
 
 /// Base storage interface for all metric types.
@@ -11,15 +10,12 @@ import '../data/metric_point.dart';
 abstract class MetricStorage {
   /// Resets the storage (for delta temporality).
   void reset();
-
-  /// Adds an exemplar to a specific point.
-  void addExemplar(Exemplar exemplar, [Attributes? attributes]);
 }
 
 /// Storage for metrics that have simple numeric input and output (sum, gauge).
 abstract class NumericStorage<T extends num> extends MetricStorage {
-  /// Records a measurement with the given attributes.
-  void record(T value, [Attributes? attributes]);
+  /// Records a measurement with the given attributes and context.
+  void record(T value, [Attributes? attributes, Context? context]);
 
   /// Gets the current value for the given attributes.
   /// If no attributes are provided, returns a summary value depending on the instrument type.
@@ -31,8 +27,8 @@ abstract class NumericStorage<T extends num> extends MetricStorage {
 
 /// Storage for histogram metrics that have numeric input but HistogramValue output.
 abstract class HistogramStorageBase<T extends num> extends MetricStorage {
-  /// Records a measurement with the given attributes.
-  void record(T value, [Attributes? attributes]);
+  /// Records a measurement with the given attributes and context.
+  void record(T value, [Attributes? attributes, Context? context]);
 
   /// Gets the current histogram value for the given attributes.
   /// If no attributes are provided, returns a combined HistogramValue across all attribute sets.

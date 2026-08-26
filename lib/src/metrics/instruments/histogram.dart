@@ -33,6 +33,7 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
         _storage = HistogramStorage(
           boundaries: boundaries ?? _defaultBoundaries,
           recordMinMax: true,
+          exemplarFilter: meter.provider.exemplarFilter,
         ) {
     // Register this instrument with the meter provider
     _meter.provider.registerInstrument(_meter.name, this);
@@ -96,7 +97,7 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
     if (!enabled) return;
 
     // Record the measurement in our storage
-    _storage.record(value, attributes);
+    _storage.record(value, attributes, Context.current);
   }
 
   @override

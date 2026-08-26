@@ -121,36 +121,5 @@ void main() {
       expect(storage.getValue(attributes1), equals(0.0)); // Default value
       expect(storage.getValue(attributes2), equals(0.0)); // Default value
     });
-
-    test('GaugeStorage addExemplar adds exemplars to points', () {
-      final storage = GaugeStorage<double>();
-      final attributes1 = {'service': 'api'}.toAttributes();
-
-      // Record a value
-      storage.record(5.5, attributes1);
-
-      // Create an exemplar
-      final traceId = OTel.traceId();
-      final spanId = OTel.spanId();
-      final exemplar = Exemplar(
-        value: 5.5,
-        timestamp: DateTime.now(),
-        traceId: traceId,
-        spanId: spanId,
-        attributes: {'request.id': '123'}.toAttributes(),
-        filteredAttributes: OTel.attributes(),
-      );
-
-      // Add the exemplar
-      storage.addExemplar(exemplar, attributes1);
-
-      // Collect points and verify exemplar was added
-      final points = storage.collectPoints();
-      expect(points.length, equals(1));
-      expect(points.first.exemplars!.length, equals(1));
-      expect(points.first.exemplars!.first.value, equals(5.5));
-      expect(points.first.exemplars!.first.traceId, equals(traceId));
-      expect(points.first.exemplars!.first.spanId, equals(spanId));
-    });
   });
 }

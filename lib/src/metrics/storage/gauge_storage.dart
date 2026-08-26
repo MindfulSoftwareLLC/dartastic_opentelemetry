@@ -3,8 +3,9 @@
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
-import '../data/exemplar.dart';
 import '../data/metric_point.dart';
+import '../exemplar_filter.dart';
+import '../exemplar_reservoir.dart';
 import 'metric_storage.dart';
 
 /// GaugeStorage is used for storing the last recorded value for each set of attributes.
@@ -12,17 +13,34 @@ class GaugeStorage<T extends num> extends NumericStorage<T> {
   /// Map of attribute sets to gauge data.
   final Map<Attributes, _GaugePointData<T>> _points = {};
 
-  /// Creates a new GaugeStorage instance.
-  GaugeStorage();
+  /// The exemplar filter used by this storage.
+  final ExemplarFilter? exemplarFilter;
 
-  /// Records a measurement with the given attributes.
+  /// Creates a new GaugeStorage instance.
+  GaugeStorage({this.exemplarFilter});
+
+  /// Records a measurement with the given attributes and context.
   @override
-  void record(T value, [Attributes? attributes]) {
+  void record(T value, [Attributes? attributes, Context? context]) {
     // Create a normalized key for lookup
     final key = attributes ?? _emptyAttributes();
 
+    final pointData = _GaugePointData<T>(
+      value: value,
+      updateTime: DateTime.now(),
+      reservoir: SimpleFixedSizeExemplarReservoir(1), // Simple fixed size of 1
+    );
+
     // Always update with the latest value
-    _points[key] = _GaugePointData<T>(value: value, updateTime: DateTime.now());
+    _points[key] = pointData;
+
+    // Process exemplars if a filter is provided
+    if (exemplarFilter != null && context != null) {
+      if (exemplarFilter!.shouldSample(value, key, context)) {
+        pointData.reservoir
+            .offerMeasurement(value, key, context, DateTime.now());
+      }
+    }
   }
 
   /// Helper to get empty attributes safely
@@ -82,7 +100,7 @@ class GaugeStorage<T extends num> extends NumericStorage<T> {
         startTime: data.updateTime, // For gauges, start time is the update time
         time: now,
         value: data.value,
-        exemplars: data.exemplars,
+        exemplars: data.reservoir.collectAndReset(entry.key),
       );
     }).toList();
   }
@@ -91,19 +109,6 @@ class GaugeStorage<T extends num> extends NumericStorage<T> {
   @override
   void reset() {
     _points.clear();
-  }
-
-  /// Adds an exemplar to a specific point.
-  @override
-  void addExemplar(Exemplar exemplar, [Attributes? attributes]) {
-    // Create a normalized key for lookup
-    final key = attributes ?? _emptyAttributes();
-
-    // Find matching attributes
-    final existingKey = _findMatchingKey(key);
-    if (existingKey != null) {
-      _points[existingKey]!.exemplars.add(exemplar);
-    }
   }
 }
 
@@ -115,8 +120,9 @@ class _GaugePointData<T extends num> {
   /// The time this value was recorded.
   final DateTime updateTime;
 
-  /// Exemplars for this point.
-  final List<Exemplar> exemplars = [];
+  /// Reservoir for this point.
+  final ExemplarReservoir reservoir;
 
-  _GaugePointData({required this.value, required this.updateTime});
+  _GaugePointData(
+      {required this.value, required this.updateTime, required this.reservoir});
 }

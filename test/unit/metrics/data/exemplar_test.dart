@@ -85,7 +85,9 @@ void main() {
 
       // Create exemplar from measurement
       final exemplar = Exemplar.fromMeasurement(
-        measurement: measurement,
+        value: measurement.value,
+        measurementAttributes:
+            measurement.attributes ?? OTelFactory.otelFactory!.attributes(),
         timestamp: timestamp,
         aggregationAttributes: attributesSubset,
         traceId: traceId,
@@ -151,7 +153,9 @@ void main() {
       final measurement = createTestMeasurement(100, measurementAttributes);
 
       final exemplar = Exemplar.fromMeasurement(
-        measurement: measurement,
+        value: measurement.value,
+        measurementAttributes:
+            measurement.attributes ?? OTelFactory.otelFactory!.attributes(),
         timestamp: DateTime.now(),
         aggregationAttributes: aggregationAttributes,
       );
@@ -220,7 +224,9 @@ void main() {
       final measurement1 = createTestMeasurement(100, emptyMeasurementAttrs);
 
       final exemplar1 = Exemplar.fromMeasurement(
-        measurement: measurement1,
+        value: measurement1.value,
+        measurementAttributes:
+            measurement1.attributes ?? OTelFactory.otelFactory!.attributes(),
         timestamp: DateTime.now(),
         aggregationAttributes: someAggregationAttrs,
       );
@@ -238,7 +244,9 @@ void main() {
       final measurement2 = createTestMeasurement(100, someMeasurementAttrs);
 
       final exemplar2 = Exemplar.fromMeasurement(
-        measurement: measurement2,
+        value: measurement2.value,
+        measurementAttributes:
+            measurement2.attributes ?? OTelFactory.otelFactory!.attributes(),
         timestamp: DateTime.now(),
         aggregationAttributes: emptyAggregationAttrs,
       );
@@ -270,7 +278,9 @@ void main() {
       final aggregationAttributes = Attributes.of({'key1': 'value1'});
 
       final exemplar = Exemplar.fromMeasurement(
-        measurement: measurement,
+        value: measurement.value,
+        measurementAttributes:
+            measurement.attributes ?? OTelFactory.otelFactory!.attributes(),
         timestamp: DateTime.now(),
         aggregationAttributes: aggregationAttributes,
       );
@@ -301,7 +311,9 @@ void main() {
       final measurement = createTestMeasurement(100, measurementAttributes);
 
       final exemplar = Exemplar.fromMeasurement(
-        measurement: measurement,
+        value: measurement.value,
+        measurementAttributes:
+            measurement.attributes ?? OTelFactory.otelFactory!.attributes(),
         timestamp: DateTime.now(),
         aggregationAttributes: aggregationAttributes,
       );
