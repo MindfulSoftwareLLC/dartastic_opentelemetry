@@ -23,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`http:`, `https:`) takes precedence and `secure` applies only to
   scheme-less endpoints.
 
+- **`getLogger` no longer throws after shutdown** (#177):
+  Previously `LoggerProvider.getLogger()` threw `StateError` after shutdown.
+  It now returns a no-op logger that silently drops all calls, as required
+  by the OTel specification.
+
 ## [1.1.0-beta.14] - 2026-08-23
 
 ### Changed

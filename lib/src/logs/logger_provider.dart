@@ -126,7 +126,14 @@ class LoggerProvider implements APILoggerProvider {
           'LoggerProvider: Getting logger with name: $name, version: $version, schemaUrl: $schemaUrl');
     }
     if (isShutdown) {
-      throw StateError('LoggerProvider has been shut down');
+      // Return a no-op logger instead of throwing, per the OTel spec:
+      // "The SDK MUST NOT throw unhandled exceptions for errors in their
+      // own operations."
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+          'LoggerProvider: Attempting to get logger "$name" after shutdown. Returning a no-op logger.',
+        );
+      }
     }
 
     // Ensure resource is set before creating logger

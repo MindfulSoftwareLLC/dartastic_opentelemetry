@@ -275,7 +275,7 @@ void main() {
       );
     });
 
-    test('getLogger after shutdown throws StateError', () async {
+    test('getLogger after shutdown returns no-op logger', () async {
       await OTel.initialize(
         serviceName: 'lp-getlogger-shutdown-test',
         detectPlatformResources: false,
@@ -285,10 +285,9 @@ void main() {
       final provider = OTel.loggerProvider();
       await provider.shutdown();
 
-      expect(
-        () => provider.getLogger('test-after-shutdown'),
-        throwsA(isA<StateError>()),
-      );
+      final logger = provider.getLogger('test-after-shutdown');
+      expect(logger, isNotNull);
+      expect(logger.enabled, isFalse);
     });
 
     test('addLogRecordProcessor after shutdown throws StateError', () async {

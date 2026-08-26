@@ -100,14 +100,13 @@ void main() {
       expect(loggerProvider.logRecordProcessors.length, equals(2));
     });
 
-    test('LoggerProvider throws when getting logger after shutdown', () async {
+    test('LoggerProvider returns no-op logger after shutdown', () async {
       final loggerProvider = OTel.loggerProvider();
       await loggerProvider.shutdown();
 
-      expect(
-        () => loggerProvider.getLogger('test-logger'),
-        throwsA(isA<StateError>()),
-      );
+      final logger = loggerProvider.getLogger('test-logger');
+      expect(logger, isNotNull);
+      expect(logger.enabled, isFalse);
     });
 
     test('LoggerProvider throws when adding processor after shutdown',
