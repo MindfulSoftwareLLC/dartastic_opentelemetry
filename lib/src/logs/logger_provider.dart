@@ -134,6 +134,16 @@ class LoggerProvider implements APILoggerProvider {
           'LoggerProvider: Attempting to get logger "$name" after shutdown. Returning a no-op logger.',
         );
       }
+      final delegate = _delegate.getLogger(
+        name,
+        version: version,
+        schemaUrl: schemaUrl,
+        attributes: attributes,
+      );
+      return SDKLoggerCreate.create(
+        delegate: delegate,
+        provider: this,
+      );
     }
 
     // Ensure resource is set before creating logger
