@@ -137,9 +137,8 @@ void main() {
       await server.serve(port: 0);
       final exporter = exporterFor(server.port!, maxRetries: 1);
 
-      final result = await exporter
-          .export([record('generic')]).then<ExportResult?>((r) => r,
-              onError: (_) => null);
+      final result = await exporter.export([record('generic')]).then((r) => r,
+          onError: (_) => ExportResult.failure);
       expect(result, isNot(equals(ExportResult.success)));
 
       await exporter.shutdown();
@@ -165,9 +164,8 @@ void main() {
       await server.serve(port: 0);
       final exporter = exporterFor(server.port!, maxRetries: 2);
 
-      final result = await exporter
-          .export([record('doomed')]).then<ExportResult?>((r) => r,
-              onError: (_) => null);
+      final result = await exporter.export([record('doomed')]).then((r) => r,
+          onError: (_) => ExportResult.failure);
       expect(result, isNot(equals(ExportResult.success)));
       expect(service.callCount, greaterThanOrEqualTo(2));
 
@@ -177,9 +175,8 @@ void main() {
 
     test('connection refused fails the export', () async {
       final exporter = exporterFor(1, maxRetries: 1); // nothing listens on 1
-      final result = await exporter
-          .export([record('refused')]).then<ExportResult?>((r) => r,
-              onError: (_) => null);
+      final result = await exporter.export([record('refused')]).then((r) => r,
+          onError: (_) => ExportResult.failure);
       expect(result, isNot(equals(ExportResult.success)));
       await exporter.shutdown();
     });
@@ -188,8 +185,8 @@ void main() {
         () async {
       final exporter = exporterFor(1);
       await exporter.shutdown();
-      final result = await exporter.export(
-          [record('late')]).then<ExportResult?>((r) => r, onError: (_) => null);
+      final result = await exporter.export([record('late')]).then((r) => r,
+          onError: (_) => ExportResult.failure);
       expect(result, isNot(equals(ExportResult.success)));
       await exporter.forceFlush();
       await exporter.shutdown();

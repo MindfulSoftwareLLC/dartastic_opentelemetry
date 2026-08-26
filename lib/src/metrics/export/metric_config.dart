@@ -3,7 +3,6 @@
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
     show OTelLog;
-
 import '../../environment/otel_env.dart';
 import '../../otel.dart';
 import '../../resource/resource.dart';
@@ -11,8 +10,10 @@ import '../meter_provider.dart';
 import '../metric_exporter.dart';
 import '../metric_reader.dart';
 import 'composite_metric_exporter.dart';
+import 'metrics_sdk_config.dart';
 import 'otlp/http/otlp_http_metric_exporter.dart';
 import 'otlp/http/otlp_http_metric_exporter_config.dart';
+
 import 'otlp/otlp_grpc_metric_exporter.dart';
 import 'otlp/otlp_grpc_metric_exporter_config.dart';
 
@@ -45,6 +46,8 @@ class MetricsConfiguration {
       meterProvider.resource = resource;
     }
 
+    final metricsSdkConfig = MetricsSdkConfig.fromEnvironment();
+
     // Honor OTEL_METRICS_EXPORTER, but only when the caller did not pass an
     // explicit exporter/reader — explicit args are an unambiguous opt-in and
     // should not be silently dropped by env config.
@@ -67,7 +70,8 @@ class MetricsConfiguration {
         switch (name) {
           case 'otlp':
           case 'console':
-            final created = _createExporter(name, endpoint, secure);
+            final created = _createExporter(
+                name, endpoint, secure, metricsSdkConfig.exemplarFilter);
             if (created != null) {
               exporters.add(created);
             }
@@ -100,21 +104,24 @@ class MetricsConfiguration {
           OTelLog.warn('OTEL_METRICS_EXPORTER produced no usable exporter; '
               'falling back to the default otlp exporter.');
         }
-        exporters.add(_createExporter('otlp', endpoint, secure)!);
+        exporters.add(_createExporter(
+            'otlp', endpoint, secure, metricsSdkConfig.exemplarFilter)!);
       }
       metricExporter = exporters.length == 1
           ? exporters.single
           : CompositeMetricExporter(exporters);
     }
 
-    metricExporter ??= _createExporter('otlp', endpoint, secure);
+    metricExporter ??= _createExporter(
+        'otlp', endpoint, secure, metricsSdkConfig.exemplarFilter);
     if (metricExporter == null) {
       return meterProvider;
     }
 
     metricReader ??= PeriodicExportingMetricReader(
       metricExporter,
-      interval: const Duration(seconds: 15),
+      interval: metricsSdkConfig.exportInterval,
+      timeout: metricsSdkConfig.exportTimeout,
     );
 
     meterProvider.addMetricReader(metricReader);
@@ -127,6 +134,7 @@ class MetricsConfiguration {
     String exporterType,
     String? endpoint,
     bool? secure,
+    MetricsExemplarFilter exemplarFilter,
   ) {
     if (exporterType == 'console') {
       if (OTelLog.isDebug()) {
@@ -175,10 +183,11 @@ class MetricsConfiguration {
           insecure: !effectiveSecure,
           headers: headers,
           timeoutMillis: timeout.inMilliseconds,
-          compression: compression,
           certificate: certificate,
           clientKey: clientKey,
           clientCertificate: clientCertificate,
+          compression: compression,
+          exemplarFilter: exemplarFilter,
         ),
       );
     }
@@ -196,6 +205,7 @@ class MetricsConfiguration {
         certificate: certificate,
         clientKey: clientKey,
         clientCertificate: clientCertificate,
+        exemplarFilter: exemplarFilter,
       ),
     );
   }

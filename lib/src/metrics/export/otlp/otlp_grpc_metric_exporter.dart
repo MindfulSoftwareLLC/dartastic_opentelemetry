@@ -178,6 +178,7 @@ class OtlpGrpcMetricExporter implements MetricExporter {
       MetricTransformer.transformMetrics(
         data,
         fallbackResource: OTel.resource(null),
+        exemplarFilter: config.exemplarFilter,
       );
 
   @override

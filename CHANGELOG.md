@@ -234,6 +234,15 @@ survive extraction (#199). Full detail in the `1.1.0-beta.14` entry.
   still logged. A header value you relied on seeing at debug level now has to be listed
   in `OTEL_DART_HEADER_LOG_ALLOWLIST`.
 
+### Added
+- **Metrics environment configuration support**. The SDK now supports configuring the metrics export interval, export timeout, and exemplar filter via standard OpenTelemetry environment variables:
+  - `OTEL_METRIC_EXPORT_INTERVAL`: Sets the export interval (default: 60000 ms).
+  - `OTEL_METRIC_EXPORT_TIMEOUT`: Sets the export timeout (default: 30000 ms).
+  - `OTEL_METRICS_EXEMPLAR_FILTER`: Configures the exemplar filtering policy (`always_on`, `always_off`, or `trace_based`). Note: This is groundwork ahead of #154; filtering is currently inactive as the SDK does not yet record exemplars.
+
+### Changed
+- **Default metric export interval changed to 60s.** The `PeriodicExportingMetricReader` default export interval has been updated from the previous hardcoded `15s` to the spec-compliant `60s`. To restore the old cadence, set `OTEL_METRIC_EXPORT_INTERVAL=15000` in your environment.
+
 ## [1.1.0-beta.12] - 2026-07-20
 
 ### Changed
@@ -413,7 +422,6 @@ survive extraction (#199). Full detail in the `1.1.0-beta.14` entry.
   `OTEL_BSP_SCHEDULE_DELAY=1000`.
 
 ## [1.1.0-beta.7] - 2026-07-11
-
 ### Fixed
 - **`OtlpGrpcSpanExporter.export()` gains a Dart-level timeout backstop.**
   Previously the configured `timeout` was applied only via gRPC's `CallOptions`

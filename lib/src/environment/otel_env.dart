@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+import '../metrics/export/metrics_sdk_config.dart';
 import '../util/header_redaction.dart';
 import 'env_constants.dart';
 import 'environment_service.dart';
@@ -113,6 +114,22 @@ typedef AttributeLimitsEnvironmentValues = ({
 
   /// Parsed from `OTEL_ATTRIBUTE_COUNT_LIMIT`
   int? attributeCountLimit,
+});
+
+/// Raw metrics environment values parsed by [OTelEnv.getMetricsConfig].
+///
+/// All fields are nullable — `null` means the corresponding env var was
+/// unset. Domain-level validation and defaults belong in
+/// [MetricsSdkConfig.fromEnvironment], not here.
+typedef MetricsEnvironmentValues = ({
+  /// Parsed from `OTEL_METRICS_EXEMPLAR_FILTER`
+  String? exemplarFilter,
+
+  /// Parsed from `OTEL_METRIC_EXPORT_INTERVAL`
+  Duration? exportInterval,
+
+  /// Parsed from `OTEL_METRIC_EXPORT_TIMEOUT`
+  Duration? exportTimeout,
 });
 
 /// Utility class for handling OpenTelemetry environment variables.
@@ -719,6 +736,24 @@ class OTelEnv {
       countVar: otelLogrecordAttributeCountLimit,
       fallbackLengthVar: otelAttributeValueLengthLimit,
       fallbackCountVar: otelAttributeCountLimit,
+    );
+  }
+
+  /// Get metrics SDK configuration from environment variables.
+  static MetricsEnvironmentValues getMetricsConfig() {
+    final exportIntervalMs =
+        getPositiveIntEnv(otelMetricExportInterval, minInclusive: 0);
+    final exportTimeoutMs =
+        getPositiveIntEnv(otelMetricExportTimeout, minInclusive: 0);
+
+    return (
+      exemplarFilter: _getEnv(otelMetricsExemplarFilter),
+      exportInterval: exportIntervalMs != null
+          ? Duration(milliseconds: exportIntervalMs)
+          : null,
+      exportTimeout: exportTimeoutMs != null
+          ? Duration(milliseconds: exportTimeoutMs)
+          : null,
     );
   }
 
