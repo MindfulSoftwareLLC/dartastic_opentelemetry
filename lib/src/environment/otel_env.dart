@@ -424,6 +424,38 @@ class OTelEnv {
   /// - If `service.name` is in OTEL_RESOURCE_ATTRIBUTES, it's used as the base value
   /// - OTEL_SERVICE_NAME takes precedence over `service.name` in OTEL_RESOURCE_ATTRIBUTES
   /// - `service.version` comes from OTEL_RESOURCE_ATTRIBUTES only
+  /// Parses a resource attributes string into a map, handling escaping,
+  /// percent-encoding, and dropping malformed entries.
+  static Map<String, String> parseResourceAttributesString(String resourceStr) {
+    final resourceAttrs = <String, String>{};
+    final parts = resourceStr.split(RegExp(r'(?<!\\),'));
+    for (var part in parts) {
+      part = part.trim();
+      final equalIndex = part.indexOf('=');
+      if (equalIndex == -1) continue;
+
+      final key = part.substring(0, equalIndex).trim();
+      var value = part.substring(equalIndex + 1).trim();
+
+      // Handle percent-encoded characters safely
+      try {
+        value = Uri.decodeComponent(value);
+      } catch (e) {
+        if (OTelLog.isWarn()) {
+          OTelLog.warn(
+              'OTelEnv: Dropped malformed resource attribute "$key": $e');
+        }
+        continue; // Drop the malformed attribute per spec
+      }
+
+      // Remove escape characters
+      value = value.replaceAll(r'\,', ',');
+
+      resourceAttrs[key] = value;
+    }
+    return resourceAttrs;
+  }
+
   static ServiceEnvironmentValues getServiceConfig() {
     String? parsedServiceName;
     String? parsedServiceVersion;
@@ -431,20 +463,9 @@ class OTelEnv {
     // First, parse service.name and service.version from OTEL_RESOURCE_ATTRIBUTES
     final resourceStr = _getEnv(otelResourceAttributes);
     if (resourceStr != null) {
-      final pairs = resourceStr.split(',');
-      for (final pair in pairs) {
-        final equalIndex = pair.indexOf('=');
-        if (equalIndex > 0 && equalIndex < pair.length - 1) {
-          final key = pair.substring(0, equalIndex).trim();
-          final value = pair.substring(equalIndex + 1).trim();
-
-          if (key == Service.serviceName.key) {
-            parsedServiceName = value;
-          } else if (key == Service.serviceVersion.key) {
-            parsedServiceVersion = value;
-          }
-        }
-      }
+      final attrs = parseResourceAttributesString(resourceStr);
+      parsedServiceName = attrs[Service.serviceName.key];
+      parsedServiceVersion = attrs[Service.serviceVersion.key];
     }
 
     // OTEL_SERVICE_NAME takes precedence over service.name from resource attributes
@@ -464,40 +485,11 @@ class OTelEnv {
   /// Parses the OTEL_RESOURCE_ATTRIBUTES environment variable which should be
   /// a comma-separated list of key=value pairs.
   static Map<String, Object> getResourceAttributes() {
-    final resourceAttrs = <String, Object>{};
-
     final resourceStr = _getEnv(otelResourceAttributes);
     if (resourceStr != null) {
-      final pairs = resourceStr.split(',');
-      for (final pair in pairs) {
-        final parts = pair.split('=');
-        if (parts.length == 2) {
-          final key = parts[0].trim();
-          final value = parts[1].trim();
-          // Try to parse as number if possible
-          final intValue = int.tryParse(value);
-          if (intValue != null) {
-            resourceAttrs[key] = intValue;
-          } else {
-            final doubleValue = double.tryParse(value);
-            if (doubleValue != null) {
-              resourceAttrs[key] = doubleValue;
-            } else {
-              // Handle boolean values
-              if (value.toLowerCase() == 'true') {
-                resourceAttrs[key] = true;
-              } else if (value.toLowerCase() == 'false') {
-                resourceAttrs[key] = false;
-              } else {
-                resourceAttrs[key] = value;
-              }
-            }
-          }
-        }
-      }
+      return parseResourceAttributesString(resourceStr);
     }
-
-    return resourceAttrs;
+    return <String, Object>{};
   }
 
   /// Whether `OTEL_SDK_DISABLED` is set to a truthy value.

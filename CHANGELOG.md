@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.15-wip]
 
+### Breaking Changes
+
+- **`OTEL_RESOURCE_ATTRIBUTES` values are always strings** (#206). They were
+  previously coerced to `int` or `bool` where they looked numeric, which
+  changed the type of those attributes on the wire.
+- **`OTEL_RESOURCE_ATTRIBUTES` values are percent-decoded**, so `k=a%2Cb`
+  now yields `a,b`.
+
 ### Added
 
 - **Attribute limit environment variables are parsed** (#73):
@@ -22,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Previously `secure` overrode the gRPC endpoint scheme; now the scheme
   (`http:`, `https:`) takes precedence and `secure` applies only to
   scheme-less endpoints.
+- **`OTEL_RESOURCE_ATTRIBUTES` is honored when `detectPlatformResources` is
+  `false`**, and a malformed value is dropped with a warning instead of
+  failing `OTel.initialize`.
 
 ## [1.1.0-beta.14] - 2026-08-23
 
