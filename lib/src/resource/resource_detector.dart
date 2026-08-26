@@ -4,6 +4,7 @@
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import '../environment/environment_service.dart';
+import '../environment/otel_env.dart';
 import 'native_detectors.dart';
 import 'resource.dart';
 import 'web_detector.dart';
@@ -60,47 +61,9 @@ class EnvVarResourceDetector implements ResourceDetector {
       return Resource.empty;
     }
 
-    final attributes = _parseResourceAttributes(resourceAttrs);
-    return ResourceCreate.create(attributes);
-  }
-
-  /// Parses the OTEL_RESOURCE_ATTRIBUTES environment variable.
-  ///
-  /// The format is a comma-separated list of key=value pairs.
-  /// For example: key1=value1,key2=value2
-  ///
-  /// Commas can be escaped with a backslash, and the values can be
-  /// percent-encoded.
-  ///
-  /// @param envValue The value of the OTEL_RESOURCE_ATTRIBUTES environment variable
-  /// @return Attributes parsed from the environment variable
-  Attributes _parseResourceAttributes(String envValue) {
-    final attributes = <String, Object>{};
-
-    // Split on commas, but handle escaped commas
-    final parts = envValue.split(RegExp(r'(?<!\\),'));
-
-    for (var part in parts) {
-      // Remove any leading/trailing whitespace
-      part = part.trim();
-
-      // Split on first equals sign
-      final keyValue = part.split('=');
-      if (keyValue.length != 2) continue;
-
-      final key = keyValue[0].trim();
-      var value = keyValue[1].trim();
-
-      // Handle percent-encoded characters
-      value = Uri.decodeComponent(value);
-
-      // Remove escape characters
-      value = value.replaceAll(r'\,', ',');
-
-      attributes[key] = value;
-    }
-
-    return OTelFactory.otelFactory!.attributesFromMap(attributes);
+    final attributes = OTelEnv.parseResourceAttributesString(resourceAttrs);
+    return ResourceCreate.create(
+        OTelFactory.otelFactory!.attributesFromMap(attributes));
   }
 }
 

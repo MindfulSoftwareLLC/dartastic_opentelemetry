@@ -330,7 +330,7 @@ void main() {
 
       // Start an export that takes a while
       // ignore: unawaited_futures
-      exp.export(makeMetrics());
+      exp.export(makeMetrics()).catchError((_) => false);
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
       // forceFlush should wait for the pending export to complete
@@ -346,7 +346,7 @@ void main() {
 
       // Start export
       // ignore: unawaited_futures
-      exp.export(makeMetrics());
+      exp.export(makeMetrics()).catchError((_) => false);
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
       // Kill the server mid-request
@@ -369,7 +369,7 @@ void main() {
 
       // Start export
       // ignore: unawaited_futures
-      exp.export(makeMetrics());
+      exp.export(makeMetrics()).catchError((_) => false);
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
       // Shutdown waits for pending exports to complete with timeout
@@ -383,7 +383,7 @@ void main() {
 
       // Start export
       // ignore: unawaited_futures
-      exp.export(makeMetrics());
+      exp.export(makeMetrics()).catchError((_) => false);
       await Future<void>.delayed(const Duration(milliseconds: 20));
 
       // Kill server so export fails
