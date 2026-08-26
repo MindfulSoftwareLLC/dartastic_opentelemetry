@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0-beta.15-wip]
 
+### Added
+
+- **Attribute limit environment variables are parsed** (#73):
+  `OTEL_ATTRIBUTE_COUNT_LIMIT`, `OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT` and the
+  `OTEL_LOGRECORD_*` variants, with the spec's signal-specific-then-general
+  fallback. Enforcing the limits is follow-up work, so setting them has no
+  effect on emitted telemetry yet.
+
 ### Fixed
 
 - **The `secure` parameter now works for logs and metrics** (#253, #225).
