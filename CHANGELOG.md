@@ -254,7 +254,7 @@ survive extraction ([#261](https://github.com/MindfulSoftwareLLC/dartastic_opent
 - **Metrics environment configuration support**. The SDK now supports configuring the metrics export interval, export timeout, and exemplar filter via standard OpenTelemetry environment variables:
   - `OTEL_METRIC_EXPORT_INTERVAL`: Sets the export interval (default: 60000 ms).
   - `OTEL_METRIC_EXPORT_TIMEOUT`: Sets the export timeout (default: 30000 ms).
-  - `OTEL_METRICS_EXEMPLAR_FILTER`: Configures the exemplar filtering policy (`always_on`, `always_off`, or `trace_based`). Note: This is groundwork ahead of #154; filtering is currently inactive as the SDK does not yet record exemplars.
+  - `OTEL_METRICS_EXEMPLAR_FILTER`: Configures the exemplar filtering policy (`always_on`, `always_off`, or `trace_based`). Note: This is groundwork ahead of [#154](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/154); filtering is currently inactive as the SDK does not yet record exemplars.
 
 ### Changed
 - **Default metric export interval changed to 60s.** The `PeriodicExportingMetricReader` default export interval has been updated from the previous hardcoded `15s` to the spec-compliant `60s`. To restore the old cadence, set `OTEL_METRIC_EXPORT_INTERVAL=15000` in your environment.
@@ -267,7 +267,7 @@ survive extraction ([#261](https://github.com/MindfulSoftwareLLC/dartastic_opent
   literals, across resource creation, exception recording, the
   `package:logging` bridge, the OTLP span/log transformers, the sampler,
   and the env resource-attribute parsing. A mistyped key is now a compile
-  error — the same hardening applied to the resource detector after #90.
+  error — the same hardening applied to the resource detector after [#90](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/90).
   No wire change: `Enum.key` resolves to the identical registry string.
   
 ### Fixed
@@ -280,7 +280,7 @@ survive extraction ([#261](https://github.com/MindfulSoftwareLLC/dartastic_opent
 - The IO detector now keys every attribute from the generated registry
   enums (`Host.*`, `Os.*`, `ProcessAttributes.*`) instead of string
   literals, so a mistyped key is a compile error — the class of bug that
-  caused #90. The malformed `host.os.name` is corrected to `os.name`.
+  caused [#90](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/90). The malformed `host.os.name` is corrected to `os.name`.
 
 ### Removed
 - The IO resource detector no longer emits `host.processors`,
@@ -452,7 +452,7 @@ survive extraction ([#261](https://github.com/MindfulSoftwareLLC/dartastic_opent
   `OTel.initialize()` used to append a `ConsoleExporter` to the span exporters
   whenever debug logging was enabled (e.g. `OTEL_LOG_LEVEL=debug`/`trace`),
   silently changing the export pipeline shape. Per the OTel spec the default
-  exporter is `otlp` only — the same cleanup #49 applied to metrics. Console
+  exporter is `otlp` only — the same cleanup [#49](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/49) applied to metrics. Console
   output remains available explicitly: `OTEL_TRACES_EXPORTER=console`
   (replaces the exporter) or the `OTEL_CONSOLE_EXPORTER` `--dart-define`
   (adds one alongside). For span logging use `OTEL_LOG_SPANS=true`.
@@ -475,7 +475,7 @@ survive extraction ([#261](https://github.com/MindfulSoftwareLLC/dartastic_opent
   initialization instead of the cast error. `OTelSDKFactory` now overrides
   `isAPIFactory` to `false` per the API ≥ beta.8 contract. Note: API objects
   handed out before `initialize()` remain no-ops — capture tracers after
-  initialize. Thanks @robert-northmind for the investigation in #53 and the
+  initialize. Thanks @robert-northmind for the investigation in [#53](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/53) and the
   regression test suite adapted from it.
 
 ### Changed
@@ -532,7 +532,7 @@ survive extraction ([#261](https://github.com/MindfulSoftwareLLC/dartastic_opent
 - Bumped `dartastic_opentelemetry_api` to `^1.0.0-beta.4`. Beta.4 adds `OTelAPI.loggerProviders()` parallel to the existing `tracerProviders()` / `meterProviders()`.
 
 ### Fixed
-- **Named `LoggerProvider`s now shut down with `OTel.shutdown()`.** Closes the documented gap from beta.1's fix for issue #33. Beta.1 only shut down the default `LoggerProvider`; any provider created via `OTel.addLoggerProvider(name)` still kept its `BatchLogRecordProcessor.Timer.periodic` alive, parking the Dart isolate after `main()` returned for any consumer with multiple LoggerProviders. With API beta.4's new `loggerProviders()` enumerator, `OTel.shutdown()` now iterates all of them the same way it already does for tracer / meter providers.
+- **Named `LoggerProvider`s now shut down with `OTel.shutdown()`.** Closes the documented gap from beta.1's fix for issue [#33](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/33). Beta.1 only shut down the default `LoggerProvider`; any provider created via `OTel.addLoggerProvider(name)` still kept its `BatchLogRecordProcessor.Timer.periodic` alive, parking the Dart isolate after `main()` returned for any consumer with multiple LoggerProviders. With API beta.4's new `loggerProviders()` enumerator, `OTel.shutdown()` now iterates all of them the same way it already does for tracer / meter providers.
 
 ## [1.1.0-beta.1] - 2026-05-10
 
