@@ -38,6 +38,8 @@ export 'src/metrics/data/exemplar.dart';
 export 'src/metrics/data/metric.dart';
 export 'src/metrics/data/metric_data.dart';
 export 'src/metrics/data/metric_point.dart';
+export 'src/metrics/exemplar_filter.dart';
+export 'src/metrics/exemplar_reservoir.dart';
 export 'src/metrics/export/composite_metric_exporter.dart';
 export 'src/metrics/export/metric_config.dart';
 export 'src/metrics/export/metrics_sdk_config.dart';

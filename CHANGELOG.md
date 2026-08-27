@@ -26,6 +26,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`ExemplarFilter` and `ExemplarReservoir` are exported.** `OTel.initialize`
+  accepts an `exemplarFilter` and `MeterProvider.exemplarFilter` is public, but
+  the types themselves were not exported, so neither could be used from
+  application code.
 - **Attribute limit environment variables are parsed** (#73):
   `OTEL_ATTRIBUTE_COUNT_LIMIT`, `OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT` and the
   `OTEL_LOGRECORD_*` variants, with the spec's signal-specific-then-general
