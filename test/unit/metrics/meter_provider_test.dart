@@ -58,19 +58,19 @@ void main() {
 
       // Create a meter and verify it's also enabled
       final meter = meterProvider.getMeter(name: 'test-meter');
-      expect(meter.enabled, isTrue);
+      expect(meter.isEnabled(), isTrue);
 
       // Disable meter provider
       meterProvider.enabled = false;
 
       // Verify both meter provider and meter are disabled
       expect(meterProvider.enabled, isFalse);
-      expect(meter.enabled, isFalse);
+      expect(meter.isEnabled(), isFalse);
 
       // Re-enable
       meterProvider.enabled = true;
       expect(meterProvider.enabled, isTrue);
-      expect(meter.enabled, isTrue);
+      expect(meter.isEnabled(), isTrue);
     });
 
     test('MeterProvider returns same meter for same configuration', () {

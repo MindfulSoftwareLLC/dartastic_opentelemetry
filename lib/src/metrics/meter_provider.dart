@@ -6,7 +6,6 @@ import 'dart:async';
 import 'package:meta/meta.dart';
 
 import '../../dartastic_opentelemetry.dart';
-import 'exemplar_filter.dart';
 import 'meter.dart';
 
 part 'meter_provider_create.dart';

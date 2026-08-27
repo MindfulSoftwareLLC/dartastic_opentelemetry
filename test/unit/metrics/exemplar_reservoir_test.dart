@@ -4,7 +4,6 @@
 import 'dart:math';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
-import 'package:dartastic_opentelemetry/src/metrics/exemplar_reservoir.dart';
 import 'package:test/test.dart';
 
 class _ThrowingRandom implements Random {

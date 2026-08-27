@@ -17,7 +17,7 @@ abstract class SDKInstrument {
   String? get unit;
 
   /// Whether the instrument is enabled
-  bool get enabled;
+  bool isEnabled();
 
   /// The meter that created this instrument
   APIMeter get meter;

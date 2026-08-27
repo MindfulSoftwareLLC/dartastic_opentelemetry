@@ -44,7 +44,7 @@ class Gauge<T extends num> implements APIGauge<T>, SDKInstrument {
   String? get description => _apiGauge.description;
 
   @override
-  bool get enabled => _meter.enabled;
+  bool isEnabled() => _meter.isEnabled();
 
   @override
   APIMeter get meter => _meter;
@@ -67,7 +67,7 @@ class Gauge<T extends num> implements APIGauge<T>, SDKInstrument {
     _apiGauge.record(value, attributes);
 
     // Only record if enabled
-    if (!enabled) return;
+    if (!isEnabled()) return;
 
     // Record the measurement in our storage
     _storage.record(value, attributes, Context.current);
@@ -98,7 +98,7 @@ class Gauge<T extends num> implements APIGauge<T>, SDKInstrument {
 
   @override
   List<Metric> collectMetrics() {
-    if (!enabled) return [];
+    if (!isEnabled()) return [];
 
     // Get the points from storage
     final points = collectPoints();
