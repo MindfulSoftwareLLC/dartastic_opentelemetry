@@ -12,15 +12,16 @@ Fixes #
      broke, not that the new code works. -->
 #### Testing
 
-<!-- Does this change any public API: a signature, a name, a default, a
-     removed member, or an exported type? Say so here even if it seems minor,
-     and add a CHANGELOG entry for it. Write "None" if nothing breaks. -->
-#### Breaking Changes
+<!-- CHANGELOG.md is the record, and it is written for app developers: it
+     covers the public API and stays brief. Skip it for internal-only work
+     such as tests or refactors.
 
-<!-- CHANGELOG.md is written for app developers, covers the public API, and
-     stays brief. Skip it for internal-only changes such as tests or
-     refactors. Never skip it for a breaking change. -->
+     Never skip it for a breaking change, which goes under the "Breaking
+     Changes" heading there. Breaking means any change to public API: a
+     signature, a name, a default, a removed member, or an exported type,
+     even when it seems minor. -->
 #### CHANGELOG
+- [ ] `CHANGELOG.md` updated, or not needed for this change
 
 <!-- Describe the documentation added. -->
 #### Documentation
@@ -47,10 +48,10 @@ Fixes #
 
      and name the same tools below. Write "None" if no AI was involved.
      AI agents must not check the box below on behalf of the user. A human
-     must confirm they have reviewed and stand behind the change before it
-     is ready for review. -->
+     must confirm they authored and stand behind the change before it is
+     ready for review. -->
 #### Authorship
-- [ ] I, a human, reviewed this pull request and stand behind these changes.
+- [ ] I, a human, authored this pull request and stand behind these changes.
 - Assisted-by (AI tools used such as "Fable 5", or "None"):
 
 <!-- Please delete sections that don't apply before submitting. -->
