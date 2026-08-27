@@ -48,7 +48,7 @@ void main() {
       expect(gauge.name, equals('test-observable-gauge'));
       expect(gauge.unit, equals('celsius'));
       expect(gauge.description, equals('A test observable gauge'));
-      expect(gauge.enabled, isTrue);
+      expect(gauge.isEnabled(), isTrue);
       expect(gauge.meter, equals(meter));
 
       // Verify callbacks were registered
@@ -305,7 +305,7 @@ void main() {
       ) as ObservableGauge<double>;
 
       // Verify it's enabled initially
-      expect(gauge.enabled, isTrue);
+      expect(gauge.isEnabled(), isTrue);
 
       // Collect while enabled
       final measurements = gauge.collect();
@@ -314,7 +314,7 @@ void main() {
 
       // Disable the meter provider
       meterProvider.enabled = false;
-      expect(gauge.enabled, isFalse);
+      expect(gauge.isEnabled(), isFalse);
 
       // Collect while disabled - callback shouldn't be called
       final measurements2 = gauge.collect();

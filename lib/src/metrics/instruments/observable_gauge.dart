@@ -39,7 +39,7 @@ class ObservableGauge<T extends num>
   String? get description => _apiGaugeDelegate.description;
 
   @override
-  bool get enabled {
+  bool isEnabled() {
     return _meter.provider.enabled;
   }
 
@@ -96,7 +96,7 @@ class ObservableGauge<T extends num>
   /// Collects measurements from all registered callbacks.
   @override
   List<Measurement<T>> collect() {
-    if (!enabled) {
+    if (!isEnabled()) {
       return [];
     }
 
@@ -164,7 +164,7 @@ class ObservableGauge<T extends num>
   /// (collect already pushed them into [_storage]).
   @override
   List<Metric> collectMetrics() {
-    if (!enabled) {
+    if (!isEnabled()) {
       return [];
     }
 
@@ -190,7 +190,7 @@ class ObservableGauge<T extends num>
   /// Gets the current points for this gauge.
   /// This is used by the SDK to collect metrics.
   List<MetricPoint<T>> collectPoints() {
-    if (!enabled) {
+    if (!isEnabled()) {
       return [];
     }
 

@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
+- **`enabled` becomes `isEnabled()` on tracers, loggers, meters and
+  instruments**, following the same change in the API (api#105). Replace
+  `x.enabled` with `x.isEnabled()`. `Tracer.isEnabled()` accepts `kind` and
+  `context`, and `OTelLogger.isEnabled()` accepts `context`, `severityNumber`
+  and `eventName`. The `enabled` getters on `TracerProvider`, `MeterProvider`
+  and `LoggerProvider` are unchanged: those are provider lifecycle state, not
+  the per-call check. Requires `dartastic_opentelemetry_api` 1.0.0-rc.3.
 - **`OTEL_RESOURCE_ATTRIBUTES` values are always strings** (#206). They were
   previously coerced to `int` or `bool` where they looked numeric, which
   changed the type of those attributes on the wire.

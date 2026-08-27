@@ -68,7 +68,7 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
   String? get description => _apiHistogram.description;
 
   @override
-  bool get enabled => _meter.enabled;
+  bool isEnabled() => _meter.isEnabled();
 
   @override
   APIMeter get meter => _meter;
@@ -94,7 +94,7 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
     _apiHistogram.record(value, attributes);
 
     // Only record if enabled
-    if (!enabled) return;
+    if (!isEnabled()) return;
 
     // Record the measurement in our storage
     _storage.record(value, attributes, Context.current);
@@ -122,7 +122,7 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
 
   @override
   List<Metric> collectMetrics() {
-    if (!enabled) return [];
+    if (!isEnabled()) return [];
 
     // Get the points from storage
     final points = collectPoints();

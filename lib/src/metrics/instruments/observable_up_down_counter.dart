@@ -44,7 +44,7 @@ class ObservableUpDownCounter<T extends num>
   String? get description => _apiCounter.description;
 
   @override
-  bool get enabled {
+  bool isEnabled() {
     // In the SDK, metrics are enabled based on the meter provider's enabled state
     return _meter.provider.enabled;
   }
@@ -98,7 +98,7 @@ class ObservableUpDownCounter<T extends num>
   /// Collects measurements from all registered callbacks.
   @override
   List<Measurement<T>> collect() {
-    if (!enabled) {
+    if (!isEnabled()) {
       return [];
     }
 
@@ -175,7 +175,7 @@ class ObservableUpDownCounter<T extends num>
   /// Gets the current points for this counter.
   /// This is used by the SDK to collect metrics.
   List<MetricPoint<T>> collectPoints() {
-    if (!enabled) {
+    if (!isEnabled()) {
       return [];
     }
 
@@ -192,7 +192,7 @@ class ObservableUpDownCounter<T extends num>
   /// value before we read it.
   @override
   List<Metric> collectMetrics() {
-    if (!enabled) {
+    if (!isEnabled()) {
       return [];
     }
 

@@ -35,7 +35,7 @@ void main() {
 
       // Verify the properties are correctly exposed
       expect(meter.name, equals('property-test-meter'));
-      expect(meter.enabled, isTrue);
+      expect(meter.isEnabled(), isTrue);
     });
 
     test('MeterProvider can be disabled and re-enabled', () {
@@ -44,17 +44,17 @@ void main() {
 
       // Initially enabled
       expect(meterProvider.enabled, isTrue);
-      expect(meter.enabled, isTrue);
+      expect(meter.isEnabled(), isTrue);
 
       // Disable the provider
       meterProvider.enabled = false;
       expect(meterProvider.enabled, isFalse);
-      expect(meter.enabled, isFalse); // Meter should reflect provider state
+      expect(meter.isEnabled(), isFalse); // Meter should reflect provider state
 
       // Re-enable the provider
       meterProvider.enabled = true;
       expect(meterProvider.enabled, isTrue);
-      expect(meter.enabled, isTrue);
+      expect(meter.isEnabled(), isTrue);
     });
 
     test(
@@ -68,7 +68,7 @@ void main() {
         final noopMeter = OTel.meter('noop-test-meter');
 
         // Verify the meter is a NoOp implementation (API factory creates disabled meters)
-        expect(noopMeter.enabled, isFalse);
+        expect(noopMeter.isEnabled(), isFalse);
 
         // Create instruments and verify they work without errors (NoOp behavior)
         final counter = noopMeter.createCounter<int>(name: 'noop_counter');
@@ -99,13 +99,13 @@ void main() {
         );
 
         // Verify instruments are disabled (NoOp implementations)
-        expect(counter.enabled, isFalse);
-        expect(upDownCounter.enabled, isFalse);
-        expect(histogram.enabled, isFalse);
-        expect(gauge.enabled, isFalse);
-        expect(obsCounter.enabled, isFalse);
-        expect(obsUpDown.enabled, isFalse);
-        expect(obsGauge.enabled, isFalse);
+        expect(counter.isEnabled(), isFalse);
+        expect(upDownCounter.isEnabled(), isFalse);
+        expect(histogram.isEnabled(), isFalse);
+        expect(gauge.isEnabled(), isFalse);
+        expect(obsCounter.isEnabled(), isFalse);
+        expect(obsUpDown.isEnabled(), isFalse);
+        expect(obsGauge.isEnabled(), isFalse);
 
         // Exercise the APIs to ensure no exceptions - NoOp implementations should do nothing
         counter.add(10);
@@ -181,11 +181,11 @@ void main() {
         final sdkMeter = OTel.meter('sdk-test-meter');
 
         // Verify the meter is now enabled (SDK implementation)
-        expect(sdkMeter.enabled, isTrue);
+        expect(sdkMeter.isEnabled(), isTrue);
 
         // Create a new instrument with the SDK-backed meter
         final sdkCounter = sdkMeter.createCounter<int>(name: 'sdk_counter');
-        expect(sdkCounter.enabled, isTrue);
+        expect(sdkCounter.isEnabled(), isTrue);
       },
       skip:
           'APIMeterProvider cannot be cast to SDK MeterProvider after API-only init',

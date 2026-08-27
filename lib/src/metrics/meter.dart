@@ -73,7 +73,7 @@ class Meter implements APIMeter {
   /// If false, instruments created by this meter will not record measurements.
   /// This is controlled by the associated MeterProvider.
   @override
-  bool get enabled => _provider.enabled;
+  bool isEnabled() => _provider.enabled;
 
   /// Gets the MeterProvider that created this Meter.
   ///
@@ -345,7 +345,7 @@ class NoopMeter implements APIMeter {
   final Attributes? attributes = null;
 
   @override
-  final bool enabled = false;
+  bool isEnabled() => false;
 
   /// Creates a new NoopMeter with the specified name and optional version and schema URL.
   ///
@@ -461,7 +461,7 @@ class NoopCounter<T extends num> implements APICounter<T> {
   final String? unit;
 
   @override
-  final bool enabled = false;
+  bool isEnabled() => false;
 
   @override
   final APIMeter meter;
@@ -520,7 +520,7 @@ class NoopUpDownCounter<T extends num> implements APIUpDownCounter<T> {
   final String? unit;
 
   @override
-  final bool enabled = false;
+  bool isEnabled() => false;
 
   @override
   final APIMeter meter;
@@ -582,7 +582,7 @@ class NoopHistogram<T extends num> implements APIHistogram<T> {
   final List<double>? boundaries;
 
   @override
-  final bool enabled = false;
+  bool isEnabled() => false;
 
   @override
   final APIMeter meter;
@@ -646,7 +646,7 @@ class NoopGauge<T extends num> implements APIGauge<T> {
   final String? unit;
 
   @override
-  final bool enabled = false;
+  bool isEnabled() => false;
 
   @override
   final APIMeter meter;
@@ -705,7 +705,7 @@ class NoopObservableCounter<T extends num> implements APIObservableCounter<T> {
   final String? unit;
 
   @override
-  final bool enabled = false;
+  bool isEnabled() => false;
 
   @override
   final APIMeter meter;
@@ -778,7 +778,7 @@ class NoopObservableUpDownCounter<T extends num>
   final String? unit;
 
   @override
-  final bool enabled = false;
+  bool isEnabled() => false;
 
   @override
   final APIMeter meter;
@@ -850,7 +850,7 @@ class NoopObservableGauge<T extends num> implements APIObservableGauge<T> {
   final String? unit;
 
   @override
-  final bool enabled = false;
+  bool isEnabled() => false;
 
   @override
   final APIMeter meter;

@@ -316,11 +316,11 @@ void main() {
     test('enabled setter works', () {
       final tracer = OTel.tracer();
       // Exercises the enabled setter
-      expect(tracer.enabled, isTrue);
+      expect(tracer.isEnabled(), isTrue);
       tracer.enabled = false;
-      expect(tracer.enabled, isFalse);
+      expect(tracer.isEnabled(), isFalse);
       tracer.enabled = true;
-      expect(tracer.enabled, isTrue);
+      expect(tracer.isEnabled(), isTrue);
     });
   });
 
