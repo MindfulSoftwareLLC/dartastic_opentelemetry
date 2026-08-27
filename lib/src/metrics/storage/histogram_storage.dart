@@ -3,12 +3,14 @@
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
-import '../data/exemplar.dart';
 import '../data/metric_point.dart';
+import '../exemplar_filter.dart';
+import '../exemplar_reservoir.dart';
 import 'metric_storage.dart';
 
 /// HistogramStorage is used for storing and accumulating histogram data.
-class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
+class HistogramStorage<T extends num> extends HistogramStorageBase<T>
+    with ExemplarSampling<T> {
   /// Map of attribute sets to histogram data.
   final Map<Attributes, _HistogramPointData<T>> _points = {};
 
@@ -21,27 +23,47 @@ class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
   /// The start time for all points.
   final DateTime _startTime = DateTime.now();
 
-  /// Creates a new HistogramStorage instance.
-  HistogramStorage({required this.boundaries, this.recordMinMax = true});
-
-  /// Records a measurement with the given attributes.
+  /// The exemplar filter used by this storage.
   @override
-  void record(T value, [Attributes? attributes]) {
+  final ExemplarFilter exemplarFilter;
+
+  /// Creates a new HistogramStorage instance.
+  HistogramStorage(
+      {required this.boundaries,
+      this.recordMinMax = true,
+      ExemplarFilter? exemplarFilter})
+      : exemplarFilter = exemplarFilter ?? const TraceBasedExemplarFilter();
+
+  /// Records a measurement with the given attributes and context.
+  @override
+  void record(T value,
+      [Attributes? attributes, Context? context, DateTime? timestamp]) {
     // Create a normalized key for lookup
     final key = attributes ?? _emptyAttributes();
 
+    _HistogramPointData<T> pointData;
     // Find matching attributes
     final existingKey = _findMatchingKey(key);
+    var bucketIndex = boundaries.length;
     if (existingKey != null) {
       // Update existing point
-      _points[existingKey]!.record(value);
+      pointData = _points[existingKey]!;
+      bucketIndex = pointData.record(value);
     } else {
       // Create new point
-      _points[key] = _HistogramPointData<T>(
+      pointData = _HistogramPointData<T>(
         boundaries: boundaries,
         recordMinMax: recordMinMax,
-      )..record(value);
+        reservoir: boundaries.length > 1
+            ? AlignedHistogramBucketExemplarReservoir(boundaries)
+            : SimpleFixedSizeExemplarReservoir(1),
+      );
+      bucketIndex = pointData.record(value);
+      _points[key] = pointData;
     }
+
+    maybeOffer(pointData.reservoir, value, key, context ?? Context.current,
+        timestamp ?? DateTime.now(), bucketIndex);
   }
 
   /// Helper to get empty attributes safely
@@ -177,7 +199,7 @@ class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
         startTime: _startTime,
         endTime: now,
         value: histogramValue,
-        exemplars: data.exemplars,
+        exemplars: data.reservoir.collectAndReset(entry.key),
       );
     }).toList();
   }
@@ -186,19 +208,6 @@ class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
   @override
   void reset() {
     _points.clear();
-  }
-
-  /// Adds an exemplar to a specific point.
-  @override
-  void addExemplar(Exemplar exemplar, [Attributes? attributes]) {
-    // Create a normalized key for lookup
-    final key = attributes ?? _emptyAttributes();
-
-    // Find matching attributes
-    final existingKey = _findMatchingKey(key);
-    if (existingKey != null) {
-      _points[existingKey]!.exemplars.add(exemplar);
-    }
   }
 }
 
@@ -225,17 +234,21 @@ class _HistogramPointData<T extends num> {
   /// Whether to record min and max values.
   final bool recordMinMax;
 
-  /// Exemplars for this point.
-  final List<Exemplar> exemplars = [];
+  /// Reservoir for this point.
+  final ExemplarReservoir reservoir;
 
-  _HistogramPointData({required this.boundaries, required this.recordMinMax}) {
+  _HistogramPointData(
+      {required this.boundaries,
+      required this.recordMinMax,
+      required this.reservoir}) {
     // Initialize count array with one more than boundaries
     // (for the +Inf bucket)
     counts = List<int>.filled(boundaries.length + 1, 0);
   }
 
   /// Records a measurement.
-  void record(T value) {
+  /// Returns the bucket index where the measurement fell.
+  int record(T value) {
     count++;
     sum += value;
 
@@ -256,5 +269,6 @@ class _HistogramPointData<T extends num> {
 
     // Increment the bucket count
     counts[bucketIndex]++;
+    return bucketIndex;
   }
 }

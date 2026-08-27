@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   changed the type of those attributes on the wire.
 - **`OTEL_RESOURCE_ATTRIBUTES` values are percent-decoded**, so `k=a%2Cb`
   now yields `a,b`.
+- **`Exemplar.fromMeasurement` signature reverted to take a `Measurement` object** instead of spreading its fields. This restores the previous API shape and adheres to the DRY principle.
 
 ### Added
 
@@ -23,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `OTEL_LOGRECORD_*` variants, with the spec's signal-specific-then-general
   fallback. Enforcing the limits is follow-up work, so setting them has no
   effect on emitted telemetry yet.
+
+- **Metrics SDK Exemplars implementation** (#154):
+  Implemented `ExemplarFilter` and `ExemplarReservoir` as required by the OpenTelemetry Specification.
+  The metrics SDK now collects exemplars for sum, gauge, and histogram instruments according to the configured exemplar filter.
 
 ### Fixed
 

@@ -6,6 +6,7 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
 import '../../environment/otel_env.dart';
 import '../../otel.dart';
 import '../../resource/resource.dart';
+import '../exemplar_filter.dart';
 import '../meter_provider.dart';
 import '../metric_exporter.dart';
 import '../metric_reader.dart';
@@ -13,7 +14,6 @@ import 'composite_metric_exporter.dart';
 import 'metrics_sdk_config.dart';
 import 'otlp/http/otlp_http_metric_exporter.dart';
 import 'otlp/http/otlp_http_metric_exporter_config.dart';
-
 import 'otlp/otlp_grpc_metric_exporter.dart';
 import 'otlp/otlp_grpc_metric_exporter_config.dart';
 
@@ -40,6 +40,7 @@ class MetricsConfiguration {
     MetricExporter? metricExporter,
     MetricReader? metricReader,
     Resource? resource,
+    ExemplarFilter? exemplarFilter,
     OtlpEnvironmentValues? otlpConfig,
     List<String>? exporters,
   }) {
@@ -52,6 +53,17 @@ class MetricsConfiguration {
     }
 
     final metricsSdkConfig = MetricsSdkConfig.fromEnvironment();
+
+    ExemplarFilter filter;
+    switch (metricsSdkConfig.exemplarFilter) {
+      case MetricsExemplarFilter.alwaysOn:
+        filter = const AlwaysOnExemplarFilter();
+      case MetricsExemplarFilter.alwaysOff:
+        filter = const AlwaysOffExemplarFilter();
+      case MetricsExemplarFilter.traceBased:
+        filter = const TraceBasedExemplarFilter();
+    }
+    meterProvider.exemplarFilter = exemplarFilter ?? filter;
 
     // Honor OTEL_METRICS_EXPORTER, but only when the caller did not pass an
     // explicit exporter/reader — explicit args are an unambiguous opt-in and

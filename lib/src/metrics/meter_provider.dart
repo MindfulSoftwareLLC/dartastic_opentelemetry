@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:meta/meta.dart';
 
 import '../../dartastic_opentelemetry.dart';
+import 'exemplar_filter.dart';
 import 'meter.dart';
 
 part 'meter_provider_create.dart';
@@ -33,6 +34,9 @@ class MeterProvider implements APIMeterProvider {
 
   /// List of views for configuring metric collection.
   final List<View> _views = [];
+
+  /// The ExemplarFilter used by this provider's meters.
+  ExemplarFilter exemplarFilter = const TraceBasedExemplarFilter();
 
   /// Private constructor for creating MeterProvider instances.
   ///
