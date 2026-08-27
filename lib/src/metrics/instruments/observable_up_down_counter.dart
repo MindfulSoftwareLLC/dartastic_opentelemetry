@@ -18,7 +18,7 @@ class ObservableUpDownCounter<T extends num>
   final Meter _meter;
 
   /// Storage for accumulating counter measurements.
-  final SumStorage<T> _storage = SumStorage<T>(isMonotonic: false);
+  final SumStorage<T> _storage;
 
   /// The last observed values, for tracking changes.
   final Map<Attributes, T> _lastValues = {};
@@ -28,7 +28,11 @@ class ObservableUpDownCounter<T extends num>
     required APIObservableUpDownCounter<T> apiCounter,
     required Meter meter,
   })  : _apiCounter = apiCounter,
-        _meter = meter;
+        _meter = meter,
+        _storage = SumStorage<T>(
+          isMonotonic: false,
+          exemplarFilter: meter.provider.exemplarFilter,
+        );
 
   @override
   String get name => _apiCounter.name;
@@ -139,11 +143,11 @@ class ObservableUpDownCounter<T extends num>
           // directly - not the delta
           // For SDK storage, convert the num to the appropriate T type
           if (T == int) {
-            _storage.record(value.toInt() as T, attributes);
+            _storage.record(value.toInt() as T, attributes, Context.current);
           } else if (T == double) {
-            _storage.record(value.toDouble() as T, attributes);
+            _storage.record(value.toDouble() as T, attributes, Context.current);
           } else {
-            _storage.record(value as T, attributes);
+            _storage.record(value as T, attributes, Context.current);
           }
 
           // Add measurement with the absolute value to the result

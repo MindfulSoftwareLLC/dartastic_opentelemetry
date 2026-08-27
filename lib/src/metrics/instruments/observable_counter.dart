@@ -18,7 +18,7 @@ class ObservableCounter<T extends num>
   final Meter _meter;
 
   /// Storage for accumulating counter measurements.
-  final SumStorage<T> _storage = SumStorage<T>(isMonotonic: true);
+  final SumStorage<T> _storage;
 
   /// The last observed values, for tracking and detecting resets.
   final Map<Attributes, T> _lastValues = {};
@@ -28,7 +28,11 @@ class ObservableCounter<T extends num>
     required APIObservableCounter<T> apiCounter,
     required Meter meter,
   })  : _apiCounter = apiCounter,
-        _meter = meter;
+        _meter = meter,
+        _storage = SumStorage<T>(
+          isMonotonic: true,
+          exemplarFilter: meter.provider.exemplarFilter,
+        );
 
   @override
   String get name => _apiCounter.name;
@@ -146,22 +150,24 @@ class ObservableCounter<T extends num>
             // Per spec, for a reset we just record the current value
             // For SDK storage, convert the num to the appropriate T type
             if (T == int) {
-              _storage.record(value.toInt() as T, attributes);
+              _storage.record(value.toInt() as T, attributes, Context.current);
             } else if (T == double) {
-              _storage.record(value.toDouble() as T, attributes);
+              _storage.record(
+                  value.toDouble() as T, attributes, Context.current);
             } else {
-              _storage.record(value as T, attributes);
+              _storage.record(value as T, attributes, Context.current);
             }
             result.add(measurement);
           } else if (value > lastValue) {
             // Only add measurements with positive deltas
             // For SDK storage, convert the num to the appropriate T type
             if (T == int) {
-              _storage.record(value.toInt() as T, attributes);
+              _storage.record(value.toInt() as T, attributes, Context.current);
             } else if (T == double) {
-              _storage.record(value.toDouble() as T, attributes);
+              _storage.record(
+                  value.toDouble() as T, attributes, Context.current);
             } else {
-              _storage.record(value as T, attributes);
+              _storage.record(value as T, attributes, Context.current);
             }
             result.add(measurement);
           } else {
@@ -169,11 +175,12 @@ class ObservableCounter<T extends num>
             // but don't include it in the returned measurements
             // For SDK storage, convert the num to the appropriate T type
             if (T == int) {
-              _storage.record(value.toInt() as T, attributes);
+              _storage.record(value.toInt() as T, attributes, Context.current);
             } else if (T == double) {
-              _storage.record(value.toDouble() as T, attributes);
+              _storage.record(
+                  value.toDouble() as T, attributes, Context.current);
             } else {
-              _storage.record(value as T, attributes);
+              _storage.record(value as T, attributes, Context.current);
             }
             // Note: The measurement is deliberately not added to the result list
           }

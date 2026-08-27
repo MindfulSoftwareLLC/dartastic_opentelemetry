@@ -606,41 +606,6 @@ void main() {
       expect(storage.getValue(unknownAttrs), closeTo(0.0, 0.001));
     });
 
-    test('SumStorage addExemplar adds to existing point', () {
-      final storage = SumStorage<int>(isMonotonic: true);
-
-      final attrs = OTel.attributesFromMap({'key': 'val'});
-      storage.record(42, attrs);
-
-      final exemplar = Exemplar(
-        attributes: OTel.attributes(),
-        filteredAttributes: OTel.attributes(),
-        timestamp: DateTime.now(),
-        value: 42,
-      );
-      storage.addExemplar(exemplar, attrs);
-
-      final points = storage.collectPoints();
-      expect(points.length, equals(1));
-      expect(points.first.exemplars?.length, equals(1));
-    });
-
-    test('SumStorage addExemplar does nothing for non-existing point', () {
-      final storage = SumStorage<int>(isMonotonic: true);
-
-      final attrs = OTel.attributesFromMap({'key': 'val'});
-      final exemplar = Exemplar(
-        attributes: OTel.attributes(),
-        filteredAttributes: OTel.attributes(),
-        timestamp: DateTime.now(),
-        value: 42,
-      );
-      // No point exists for these attrs, so addExemplar should be a no-op.
-      storage.addExemplar(exemplar, attrs);
-
-      expect(storage.collectPoints(), isEmpty);
-    });
-
     test('SumStorage collectPoints with null attributes', () {
       final storage = SumStorage<int>(isMonotonic: true);
       storage.record(7); // null attributes

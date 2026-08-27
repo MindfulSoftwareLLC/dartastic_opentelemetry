@@ -154,36 +154,5 @@ void main() {
       expect(histogramValue.sum, equals(30.0)); // 5 + 10 + 15, but as double
       expect(histogramValue.count, equals(3));
     });
-
-    test('HistogramStorage with exemplars', () {
-      final storage = HistogramStorage<double>(boundaries: [0.0, 10.0, 20.0]);
-      final attributes = {'service': 'api'}.toAttributes();
-
-      // Record a value
-      storage.record(15.0, attributes);
-
-      // Create an exemplar
-      final traceId = OTel.traceId();
-      final spanId = OTel.spanId();
-      final exemplar = Exemplar(
-        value: 15.0,
-        timestamp: DateTime.now(),
-        traceId: traceId,
-        spanId: spanId,
-        attributes: {'request.id': '123'}.toAttributes(),
-        filteredAttributes: OTel.attributes(),
-      );
-
-      // Add the exemplar
-      storage.addExemplar(exemplar, attributes);
-
-      // Collect points and verify exemplar was added
-      final points = storage.collectPoints();
-      expect(points.length, equals(1));
-      expect(points.first.exemplars!.length, equals(1));
-      expect(points.first.exemplars!.first.value, equals(15.0));
-      expect(points.first.exemplars!.first.traceId, equals(traceId));
-      expect(points.first.exemplars!.first.spanId, equals(spanId));
-    });
   });
 }

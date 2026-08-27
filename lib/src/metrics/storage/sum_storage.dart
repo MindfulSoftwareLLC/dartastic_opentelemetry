@@ -3,8 +3,9 @@
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
-import '../data/exemplar.dart';
 import '../data/metric_point.dart';
+import '../exemplar_filter.dart';
+import '../exemplar_reservoir.dart';
 import 'metric_storage.dart';
 
 /// Storage implementation for sum-based metrics like Counter and UpDownCounter.
@@ -18,7 +19,8 @@ import 'metric_storage.dart';
 ///
 /// More information:
 /// https://opentelemetry.io/docs/specs/otel/metrics/sdk/#the-temporality-of-instruments
-class SumStorage<T extends num> extends NumericStorage<T> {
+class SumStorage<T extends num> extends NumericStorage<T>
+    with ExemplarSampling<T> {
   /// Map of attribute sets to accumulated values.
   final Map<Attributes?, _SumPointData<T>> _points = {};
 
@@ -33,20 +35,28 @@ class SumStorage<T extends num> extends NumericStorage<T> {
   /// This is used for cumulative temporality reporting.
   final DateTime _startTime = DateTime.now();
 
+  /// The exemplar filter used by this storage.
+  @override
+  final ExemplarFilter exemplarFilter;
+
   /// Creates a new SumStorage instance.
   ///
   /// @param isMonotonic Whether this storage is for a monotonic sum
-  SumStorage({required this.isMonotonic});
+  /// @param exemplarFilter Optional filter for exemplars
+  SumStorage({required this.isMonotonic, ExemplarFilter? exemplarFilter})
+      : exemplarFilter = exemplarFilter ?? const TraceBasedExemplarFilter();
 
-  /// Records a measurement with the given attributes.
+  /// Records a measurement with the given attributes and context.
   ///
   /// For synchronous instruments, this is a delta that gets added to the existing value.
   /// For asynchronous instruments, this should be the absolute value.
   ///
   /// @param value The value to record
   /// @param attributes Optional attributes to associate with this measurement
+  /// @param context Optional context associated with this measurement
   @override
-  void record(T value, [Attributes? attributes]) {
+  void record(T value,
+      [Attributes? attributes, Context? context, DateTime? timestamp]) {
     // Check constraints for monotonic counters
     if (isMonotonic && value < 0) {
       print(
@@ -56,17 +66,29 @@ class SumStorage<T extends num> extends NumericStorage<T> {
       return;
     }
 
+    _SumPointData<T> pointData;
     // Check if we already have an entry for these attributes
     if (_points.containsKey(attributes)) {
       // Add to existing data point
-      _points[attributes]!.add(value);
+      pointData = _points[attributes]!;
+      pointData.add(value);
     } else {
       // Create new data point
-      _points[attributes] = _SumPointData<T>(
+      pointData = _SumPointData<T>(
         value: value,
         lastUpdateTime: DateTime.now(),
+        reservoir:
+            SimpleFixedSizeExemplarReservoir(1), // Simple fixed size of 1
       );
+      _points[attributes] = pointData;
     }
+
+    maybeOffer(
+        pointData.reservoir,
+        value,
+        attributes ?? OTelFactory.otelFactory!.attributes(),
+        context ?? Context.current,
+        timestamp ?? DateTime.now());
   }
 
   /// Gets the current value for the given attributes.
@@ -130,7 +152,7 @@ class SumStorage<T extends num> extends NumericStorage<T> {
         time: now,
         value: typedValue,
         isMonotonic: isMonotonic,
-        exemplars: entry.value.exemplars,
+        exemplars: entry.value.reservoir.collectAndReset(attributes),
       );
     }).toList();
   }
@@ -143,20 +165,6 @@ class SumStorage<T extends num> extends NumericStorage<T> {
   @override
   void reset() {
     _points.clear();
-  }
-
-  /// Adds an exemplar to a specific point.
-  ///
-  /// Exemplars are example measurements that provide additional
-  /// context about specific observations.
-  ///
-  /// @param exemplar The exemplar to add
-  /// @param attributes The attributes identifying the point to add the exemplar to
-  @override
-  void addExemplar(Exemplar exemplar, [Attributes? attributes]) {
-    if (_points.containsKey(attributes)) {
-      _points[attributes]!.exemplars.add(exemplar);
-    }
   }
 }
 
@@ -171,14 +179,18 @@ class _SumPointData<T extends num> {
   /// The time this point was last updated.
   DateTime lastUpdateTime;
 
-  /// Exemplars for this point.
-  final List<Exemplar> exemplars = [];
+  /// Reservoir for this point.
+  final ExemplarReservoir reservoir;
 
   /// Creates a new _SumPointData instance.
   ///
   /// @param value The initial value
   /// @param lastUpdateTime The time of the initial value
-  _SumPointData({required this.value, required this.lastUpdateTime});
+  /// @param reservoir The exemplar reservoir for this point
+  _SumPointData(
+      {required this.value,
+      required this.lastUpdateTime,
+      required this.reservoir});
 
   /// Adds a value to this point (for synchronous counters).
   ///

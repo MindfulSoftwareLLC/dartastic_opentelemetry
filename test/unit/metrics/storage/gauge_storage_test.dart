@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry/src/metrics/exemplar_filter.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -121,36 +122,70 @@ void main() {
       expect(storage.getValue(attributes1), equals(0.0)); // Default value
       expect(storage.getValue(attributes2), equals(0.0)); // Default value
     });
+    test('retains sampled exemplar if followed by unsampled record', () {
+      final storage =
+          GaugeStorage<int>(); // uses default TraceBasedExemplarFilter
+      final attributes = Attributes.of({'k': 'v'});
 
-    test('GaugeStorage addExemplar adds exemplars to points', () {
-      final storage = GaugeStorage<double>();
-      final attributes1 = {'service': 'api'}.toAttributes();
+      final tracer = OTel.tracer();
+      final span = tracer.startSpan('test-span');
+      final sampledContext = Context.current.withSpan(span);
+      final unsampledContext = Context.current; // No active span
 
-      // Record a value
-      storage.record(5.5, attributes1);
+      // Record a sampled measurement
+      storage.record(10, attributes, sampledContext);
 
-      // Create an exemplar
-      final traceId = OTel.traceId();
-      final spanId = OTel.spanId();
-      final exemplar = Exemplar(
-        value: 5.5,
-        timestamp: DateTime.now(),
-        traceId: traceId,
-        spanId: spanId,
-        attributes: {'request.id': '123'}.toAttributes(),
-        filteredAttributes: OTel.attributes(),
-      );
+      // Record an unsampled measurement
+      storage.record(20, attributes, unsampledContext);
 
-      // Add the exemplar
-      storage.addExemplar(exemplar, attributes1);
-
-      // Collect points and verify exemplar was added
       final points = storage.collectPoints();
       expect(points.length, equals(1));
+
+      // Value should be latest (20)
+      expect(points.first.value, equals(20));
+
+      // Exemplar should be from the sampled measurement (value 10)
+      final exemplars = points.first.exemplars!;
+      expect(exemplars.length, equals(1));
+      expect(exemplars.first.value, equals(10));
+      expect(exemplars.first.traceId, equals(span.spanContext.traceId));
+
+      span.end();
+    });
+
+    test('reservoir survives across multiple record calls', () {
+      // Create a filter that accepts everything
+      final storage = GaugeStorage<int>(exemplarFilter: _AlwaysSampleFilter());
+      final attributes = Attributes.of({});
+      final context = Context.current;
+
+      // First record
+      storage.record(10, attributes, context);
+
+      // Second record (reservoir should be reused, not recreated)
+      storage.record(20, attributes, context);
+
+      final points = storage.collectPoints();
+      expect(points.length, equals(1));
+
+      // The reservoir size is 1, so it only retains 1 exemplar.
+      // Depending on SimpleFixedSizeExemplarReservoir random, it might keep 10 or 20,
+      // but it MUST keep at least one. If reservoir was recreated every time, it would
+      // always keep the last one.
       expect(points.first.exemplars!.length, equals(1));
-      expect(points.first.exemplars!.first.value, equals(5.5));
-      expect(points.first.exemplars!.first.traceId, equals(traceId));
-      expect(points.first.exemplars!.first.spanId, equals(spanId));
+
+      // Collecting points should have called collectAndReset.
+      // If we record another value now, the reservoir should have been cleared.
+      storage.record(30, attributes, context);
+      final nextPoints = storage.collectPoints();
+      expect(nextPoints.length, equals(1));
+      expect(nextPoints.first.exemplars!.length, equals(1));
+      expect(nextPoints.first.exemplars!.first.value, equals(30));
     });
   });
+}
+
+class _AlwaysSampleFilter implements ExemplarFilter {
+  @override
+  bool shouldSample(num value, Attributes attributes, Context context) => true;
 }

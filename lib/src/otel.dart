@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:meta/meta.dart';
 
 import '../dartastic_opentelemetry.dart';
+import 'metrics/exemplar_filter.dart';
 
 /// Main entry point for the OpenTelemetry SDK.
 ///
@@ -134,6 +135,7 @@ class OTel {
   /// @param spanKind Default span kind (default: SpanKind.server)
   /// @param metricExporter Custom metric exporter for metrics
   /// @param metricReader Custom metric reader for metrics
+  /// @param exemplarFilter Custom exemplar filter for metrics
   /// @param enableMetrics Whether to enable metrics collection (default: true)
   /// @param enableLogs Whether to enable logs collection and auto-configure exporter (default: true).
   ///   When enabled, the logs exporter is configured based on OTEL_LOGS_EXPORTER env var.
@@ -169,6 +171,7 @@ class OTel {
     SpanKind spanKind = SpanKind.server,
     MetricExporter? metricExporter,
     MetricReader? metricReader,
+    ExemplarFilter? exemplarFilter,
     bool enableMetrics = true,
     bool enableLogs = true,
     LogRecordExporter? logRecordExporter,
@@ -401,6 +404,7 @@ class OTel {
         metricExporter: metricExporter,
         metricReader: metricReader,
         resource: OTel.defaultResource,
+        exemplarFilter: exemplarFilter,
         otlpConfig: otlpMetricsConfig,
         exporters: metricsExporters,
       );

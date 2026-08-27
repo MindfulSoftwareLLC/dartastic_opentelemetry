@@ -21,12 +21,15 @@ class Gauge<T extends num> implements APIGauge<T>, SDKInstrument {
   final Meter _meter;
 
   /// Storage for gauge measurements.
-  final GaugeStorage<T> _storage = GaugeStorage<T>();
+  final GaugeStorage<T> _storage;
 
   /// Creates a new Gauge instance.
   Gauge({required APIGauge<T> apiGauge, required Meter meter})
       : _apiGauge = apiGauge,
-        _meter = meter {
+        _meter = meter,
+        _storage = GaugeStorage<T>(
+          exemplarFilter: meter.provider.exemplarFilter,
+        ) {
     // Register this instrument with the meter provider
     _meter.provider.registerInstrument(_meter.name, this);
   }
@@ -67,7 +70,7 @@ class Gauge<T extends num> implements APIGauge<T>, SDKInstrument {
     if (!enabled) return;
 
     // Record the measurement in our storage
-    _storage.record(value, attributes);
+    _storage.record(value, attributes, Context.current);
   }
 
   @override
