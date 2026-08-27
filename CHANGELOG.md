@@ -46,6 +46,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `false`**, and a malformed value is dropped with a warning instead of
   failing `OTel.initialize`.
 
+## [0.11.0]
+
+Stable-channel republication of `1.1.0-beta.15`. Depends on
+`dartastic_opentelemetry_api: ^0.11.0`.
+
+The minor bump from `0.10.0` carries four **breaking** changes:
+
+- **`enabled` becomes `isEnabled()`** on tracers, loggers, meters and
+  instruments, following the API. Replace `x.enabled` with `x.isEnabled()`.
+  The `enabled` getters on the three providers are unchanged.
+- **`OTEL_RESOURCE_ATTRIBUTES` values are always strings** ([#206](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/206)),
+  no longer coerced to `int` or `bool` where they looked numeric, which
+  changed their type on the wire.
+- **`OTEL_RESOURCE_ATTRIBUTES` values are percent-decoded**, so `k=a%2Cb`
+  now yields `a,b`.
+- **`Exemplar.fromMeasurement` takes a `Measurement` again** rather than its
+  spread fields.
+
+Also notable: exemplars are sampled through an `ExemplarFilter` and
+`ExemplarReservoir` per the metrics spec ([#154](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/277)),
+attribute limit environment variables are parsed ([#73](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/74)),
+the `secure` parameter is honored for logs and metrics ([#253](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/269)),
+and `OTEL_RESOURCE_ATTRIBUTES` is read even when `detectPlatformResources`
+is `false`.
+
 ## [1.1.0-beta.14] - 2026-08-23
 
 ### Changed
