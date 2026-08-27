@@ -31,6 +31,6 @@ dev_dependencies:
 
 # Script commands
 scripts:
-  test: dart test
-  coverage: ./tools/coverage.sh
-  coverage_unit_only: dart test --tags=unit --coverage=coverage
+  test: ./tool/test.sh
+  coverage: ./tool/coverage.sh
+  coverage_unit_only: ./tool/coverage.sh --unit
