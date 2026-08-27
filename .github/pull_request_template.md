@@ -51,6 +51,6 @@ Fixes #
      is ready for review. -->
 #### Authorship
 - [ ] I, a human, reviewed this pull request and stand behind these changes.
-- Assisted-by (AI tools used, or "None"):
+- Assisted-by (AI tools used such as "Fable 5", or "None"):
 
 <!-- Please delete sections that don't apply before submitting. -->
