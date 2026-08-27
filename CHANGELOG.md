@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
-- **`OTEL_RESOURCE_ATTRIBUTES` values are always strings** (#206). They were
+- **`OTEL_RESOURCE_ATTRIBUTES` values are always strings** ([#206](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/206)). They were
   previously coerced to `int` or `bool` where they looked numeric, which
   changed the type of those attributes on the wire.
 - **`OTEL_RESOURCE_ATTRIBUTES` values are percent-decoded**, so `k=a%2Cb`
@@ -19,19 +19,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Attribute limit environment variables are parsed** (#73):
+- **Attribute limit environment variables are parsed** ([#74](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/74)):
   `OTEL_ATTRIBUTE_COUNT_LIMIT`, `OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT` and the
   `OTEL_LOGRECORD_*` variants, with the spec's signal-specific-then-general
   fallback. Enforcing the limits is follow-up work, so setting them has no
   effect on emitted telemetry yet.
 
-- **Metrics SDK Exemplars implementation** (#154):
+- **Metrics SDK Exemplars implementation** ([#277](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/277)):
   Implemented `ExemplarFilter` and `ExemplarReservoir` as required by the OpenTelemetry Specification.
   The metrics SDK now collects exemplars for sum, gauge, and histogram instruments according to the configured exemplar filter.
 
 ### Fixed
 
-- **The `secure` parameter now works for logs and metrics** (#253, #225).
+- **The `secure` parameter now works for logs and metrics** ([#269](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/269), [#225](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/225)).
   Previously `secure` overrode the gRPC endpoint scheme; now the scheme
   (`http:`, `https:`) takes precedence and `secure` applies only to
   scheme-less endpoints.
@@ -61,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 - **BREAKING (spec compliance): sampler decisions are now honored end to end**
-  (#120, #121, #122, #123, #129). A `Drop` decision produces a non-recording
+  ([#260](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/260)). A `Drop` decision produces a non-recording
   span that reaches no processor; `RecordOnly` records without setting the
   W3C `Sampled` flag; built-in processors deliver only recording spans to
   `onStart`/`onEnd` and only sampled spans to exporters, per the spec's
@@ -71,13 +71,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dropped spans being exported must adjust its sampler configuration.
 
 - **BREAKING (spec compliance): the default sampler is now
-  `ParentBased(root: AlwaysOn)`** instead of bare `AlwaysOn` (#126). Root
+  `ParentBased(root: AlwaysOn)`** instead of bare `AlwaysOn` ([#260](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/260)). Root
   spans still sample by default, but child spans of unsampled remote or local
   parents now respect the parent's decision. Pass
   `sampler: const AlwaysOnSampler()` to restore the old behavior.
 
-- **Child spans inherit the parent `TraceState`** (#124), and
-  **`SamplingResult` gains a `traceState` field** (#125) so samplers can
+- **Child spans inherit the parent `TraceState`** ([#260](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/260)), and
+  **`SamplingResult` gains a `traceState` field** ([#260](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/260)) so samplers can
   modify or replace it: `null` keeps the inherited parent TraceState, an
   explicitly empty `TraceState` clears it. Existing custom samplers keep
   working unchanged.
@@ -95,17 +95,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Every OTLP request now carries `OTel-OTLP-Exporter-Dart/<version>` (HTTP
   headers on the HTTP exporters; `ChannelOptions.userAgent` on the gRPC
   exporters). A user-supplied `user-agent` header is prepended to the default
-  rather than replacing it (#228).
+  rather than replacing it ([#228](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/228)).
 
 - **`OTel.defaultGrpcEndpoint`** (`http://localhost:4317`), the OTLP/gRPC
   default endpoint. The endpoint default is now picked per signal after the
   protocol is resolved instead of defaulting everything to the HTTP port
-  4318 (#220).
+  4318 ([#220](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/220)).
 
 ### Fixed
 
 - **`browser.*` resource attributes and `user_agent.original` are now
-  populated on web** (#190). Invalid `@JS` bindings made the web resource
+  populated on web** ([#259](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/259)). Invalid `@JS` bindings made the web resource
   detector throw on first use; the error was swallowed and the attributes
   were silently missing. A detector failure now omits attributes instead of
   emitting blanks.
@@ -137,30 +137,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   not mobile — both signals have to agree.
 
 - **`OtlpHttpMetricExporter.forceFlush()` and `shutdown()` now await
-  in-flight exports** (#262). Both returned immediately, and `shutdown()`
+  in-flight exports** ([#263](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/263)). Both returned immediately, and `shutdown()`
   closed the HTTP client under the live request — failing an export that
   was about to succeed. Now matches the span and log HTTP exporters.
 
 - `Tracer.enabled` now returns `false` when `TracerProvider` has no span
   processor(s) registered, per the Trace SDK spec, sparing span-creation cost
-  when nothing is listening. Thanks to @abidiahmedcom (#138, #175).
+  when nothing is listening. Thanks to @abidiahmedcom ([#175](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/175)).
 
 - **OTLP/gRPC exporters now default to port 4317, not 4318.** The OTLP spec
   defaults the endpoint to `http://localhost:4317` for OTLP/gRPC and
   `http://localhost:4318` for the two HTTP protocols. Previously a single
   4318 default was applied before the protocol was known, so gRPC-only
-  deployments silently exported to the wrong port (#220).
+  deployments silently exported to the wrong port ([#220](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/220)).
 
 - **An empty environment variable value is treated as unset.** Per the spec,
   an empty value of an environment variable MUST be interpreted the same way
   as when the variable is unset. `EnvironmentService.getValue` now normalizes
   empty strings to `null`, so every consumer (endpoint, protocol, service
-  name, log level, …) reads an empty value as unset (#213).
+  name, log level, …) reads an empty value as unset ([#238](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/238)).
 
-  Thanks to @abidiahmedcom; reported by @yuzurihaaa (#213, #220, #228).
+  Thanks to @abidiahmedcom; reported by @yuzurihaaa ([#238](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/238), [#220](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/220), [#228](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/228)).
 
 - **`service.name` in `OTEL_RESOURCE_ATTRIBUTES` no longer overrides an
-  explicit `serviceName:` argument or `OTEL_SERVICE_NAME`** (#103).
+  explicit `serviceName:` argument or `OTEL_SERVICE_NAME`** ([#104](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/104)).
   Precedence is now, highest first: explicit argument, `OTEL_SERVICE_NAME`,
   `OTEL_RESOURCE_ATTRIBUTES`, default. `service.version` follows the same
   order.
@@ -171,7 +171,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Baggage values containing `=` (e.g. base64 padding) are no longer
   dropped** on extract, and an unparsable `baggage` header leaves existing
   baggage untouched instead of clearing it. Thanks to @abidiahmedcom
-  (#199, #200, #261).
+  ([#261](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/261)).
 
 ## [0.10.0] - 2026-08-23
 Stable-channel republication of `1.1.0-beta.14`. Depends on
@@ -180,11 +180,11 @@ Stable-channel republication of `1.1.0-beta.14`. Depends on
 The minor bump from `0.9.8` carries three **breaking** spec-compliance
 changes:
 
-- **Sampler decisions are honored end to end** (#120–#123, #129): dropped
+- **Sampler decisions are honored end to end** ([#260](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/260)): dropped
   spans reach no processor, `RecordOnly` no longer sets the W3C `Sampled`
   flag, and exporters receive only sampled spans. Adjust your sampler
   configuration if you relied on unsampled spans being exported.
-- **The default sampler is `ParentBased(root: AlwaysOn)`** (#126): child
+- **The default sampler is `ParentBased(root: AlwaysOn)`** ([#260](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/260)): child
   spans now respect an unsampled parent. Pass
   `sampler: const AlwaysOnSampler()` to restore the old behavior.
 - **`OTelEnv` configuration functions return typed Dart Records** instead
@@ -192,14 +192,14 @@ changes:
   `config.endpoint`).
 
 Also notable: OTLP/gRPC exporters default to port 4317 per the OTLP spec
-(#220), OTLP requests carry an identifying `User-Agent` (#228), empty
-environment variables read as unset (#213), `service.name` precedence is
-fixed (#103), `browser.*` resource attributes are populated on web (#190)
+([#220](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/220)), OTLP requests carry an identifying `User-Agent` ([#228](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/228)), empty
+environment variables read as unset ([#238](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/238)), `service.name` precedence is
+fixed ([#104](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/104)), `browser.*` resource attributes are populated on web ([#259](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/259))
 with `browser.mobile` as a boolean, and baggage values containing `=`
-survive extraction (#199). Full detail in the `1.1.0-beta.14` entry.
+survive extraction ([#261](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/261)). Full detail in the `1.1.0-beta.14` entry.
 
 - **BREAKING: W3C Baggage now percent-encodes per the W3C grammar instead of
-  form-style encoding** (#198, #197, #264). Values encode every byte outside
+  form-style encoding** ([#264](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/264), [#197](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/197)). Values encode every byte outside
   the W3C `baggage-octet` allowlist (`%` → `%25`, space → `%20`,
   `,`/`;`/`"`/`\`/`:` escaped, controls and non-ASCII UTF-8 percent-encoded)
   instead of sending space as `+`; keys travel as raw RFC 7230 tokens, and
@@ -220,7 +220,7 @@ survive extraction (#199). Full detail in the `1.1.0-beta.14` entry.
   - Debug logging logged the raw values of all `OTEL_EXPORTER_OTLP_HEADERS` and the 
     signal-specific `OTEL_EXPORTER_OTLP_{TRACES,METRICS,LOGS}_HEADERS`. The message was
     emitted above the per-header loop that redacts `Authorization`, so the credential
-    reached the log regardless of that redaction. Thanks to @arpitjain099 (#100).
+    reached the log regardless of that redaction. Thanks to @arpitjain099 ([#100](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/100)).
   - `OtlpHttpSpanExporter` and `OtlpHttpLogRecordExporter` printed every header value
     except `Authorization`, at construction and on each export request — including
     headers configured in code, which never pass through an environment variable.
@@ -237,10 +237,10 @@ survive extraction (#199). Full detail in the `1.1.0-beta.14` entry.
 ### Added
 
 - **`OTEL_DART_HEADER_LOG_ALLOWLIST`**, and `OTel.initialize(otlpHeaderLogAllowlist:)`,
-  name the OTLP headers whose values may appear in the debug log (#96). 
+  name the OTLP headers whose values may appear in the debug log ([#101](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/101)). 
   Names match exactly, case insensitively; the code parameter replaces
   the environment variable rather than adding to it; `authorization` and
-  `proxy-authorization` are never logged even when listed. Thanks to @arpitjain099 (#101).
+  `proxy-authorization` are never logged even when listed. Thanks to @arpitjain099 ([#101](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/101)).
 
 ### Changed
 
@@ -271,7 +271,7 @@ survive extraction (#199). Full detail in the `1.1.0-beta.14` entry.
   No wire change: `Enum.key` resolves to the identical registry string.
   
 ### Fixed
-- **`host.arch` no longer reports the hostname** (#90). The IO resource
+- **`host.arch` no longer reports the hostname** ([#91](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/91)). The IO resource
   detector copy-pasted `Platform.localHostname` into `host.arch`; it now
   resolves the real CPU architecture (`amd64`/`arm64`/`arm32`/`x86`/…)
   from `Platform.version`, mapped to registry values, and omits the
@@ -295,14 +295,14 @@ survive extraction (#199). Full detail in the `1.1.0-beta.14` entry.
 
 ### Fixed
 - **`W3CBaggagePropagator.extract` no longer discards the incoming
-  context when the `baggage` header is absent** (#87). It returned a
+  context when the `baggage` header is absent** ([#89](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/89)). It returned a
   fresh context instead of the passed one, so in the spec-default
   composite (tracecontext, then baggage) any request carrying
   `traceparent` but no `baggage` header lost its just-extracted span
   context — breaking traces at every service boundary unless callers
   hand-ordered extraction. Per the Propagators API spec, extract now
   returns the passed context unchanged when there is nothing to extract.
-- **OTLP endpoint schemes now determine TLS per the OTLP spec** (#88).
+- **OTLP endpoint schemes now determine TLS per the OTLP spec** ([#89](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/89)).
   `http://` endpoints connect insecure and `https://` secure;
   `OTEL_EXPORTER_OTLP_INSECURE` (and per-signal variants) applies only
   to scheme-less endpoints, and an explicit programmatic `secure` still
@@ -391,7 +391,7 @@ survive extraction (#199). Full detail in the `1.1.0-beta.14` entry.
 - Unknown `OTEL_METRICS_EXPORTER` values now warn and are ignored
   instead of silently becoming `otlp`; `prometheus` gets a dedicated
   warning pointing at programmatic `PrometheusExporter` use and the
-  planned scrape server (#82) — auto-wiring it today would be a silent
+  planned scrape server ([#82](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/82)) — auto-wiring it today would be a silent
   no-op since the env-created exporter is unreachable by the app.
 
 ### Removed
@@ -461,7 +461,7 @@ survive extraction (#199). Full detail in the `1.1.0-beta.14` entry.
 - **Configurable exception handling for `Tracer.withSpan` / `withSpanAsync`.** A new `SpanExceptionOptions` (with `recordException`, `setStatusOnException`, and an `exceptionSanitizer` callback returning a `SanitizedSpanException`) lets callers customize how a thrown exception is recorded and whether the span status is set. The defaults preserve the existing behavior (record the exception + set `SpanStatusCode.Error`), and the original exception is always rethrown. Configure globally via `OTel.initialize(spanExceptionOptions: ...)` (also available per `TracerProvider` and `OTel.addTracerProvider`) and override per call via the new `exceptionOptions:` parameter on `withSpan` / `withSpanAsync` / `startActiveSpan` / `startActiveSpanAsync` and `OTel.withSpan` / `OTel.withSpanAsync`. Per-call options are merged field-by-field over the global config (via `SpanExceptionOptions.mergeWith`), so overriding a single flag preserves a globally configured sanitizer. When a sanitizer is provided, only its returned type/message/stacktrace are recorded — the raw exception's details never leak — and if the sanitizer itself throws, the span is marked failed with a generic description. This enables SDKs and applications to redact PII before it is recorded. ([#51](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/51))
 
 ### Fixed
-- **API-first usage no longer wedges SDK initialization (#50).** The API
+- **API-first usage no longer wedges SDK initialization ([#62](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/62)).** The API
   package auto-installs its no-op `OTelAPIFactory` when API-only code runs
   before the SDK initializes (per the OTel spec). Previously
   `OTel.initialize()` then failed with "can only be initialized once", and
@@ -541,7 +541,7 @@ survive extraction (#199). Full detail in the `1.1.0-beta.14` entry.
 
 ### Fixed
 - **`BatchSpanProcessor.shutdown()` no longer drops queued spans.** Two pre-existing bugs in the shutdown path: (1) `shutdown()` set `_isShutdown = true` before calling `forceFlush()`, but `forceFlush()` early-returns when `_isShutdown == true` — so spans queued at the moment shutdown was invoked were silently dropped. (2) `_exportBatch()` only exported up to `maxExportBatchSize` spans and returned, so even when the drain was reached it stopped after one batch. Brought in line with `BatchLogRecordProcessor`, which has always drained correctly: `shutdown()` now drains the queue *before* setting `_isShutdown`, and both `shutdown()` and `forceFlush()` loop until the queue is empty (or the exporter throws — bailing on persistent failure rather than spinning forever).
-- **Process exits cleanly after `OTel.shutdown()` (#33):** short-lived Dart CLI binaries no longer hang after `await OTel.shutdown()` returns. `OTel.shutdown()` was iterating over tracer providers and meter providers but not over the default `LoggerProvider`. The default `BatchLogRecordProcessor`'s `Timer.periodic` therefore stayed alive after `main()` returned, parking the Dart isolate in `Dart_RunLoop` indefinitely (the symptom report described `await OTel.shutdown()` "never returning", but the actual symptom is that *process exit* hangs — `print` after `await` does run). `OTel.shutdown()` now also shuts down the default `LoggerProvider`. Named LoggerProviders (created via `OTel.addLoggerProvider`) still need to be shut down by the caller — a follow-up will add a `loggerProviders()` enumerator to the API so `OTel.shutdown()` can clean them up automatically.
+- **Process exits cleanly after `OTel.shutdown()` ([#37](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/37)):** short-lived Dart CLI binaries no longer hang after `await OTel.shutdown()` returns. `OTel.shutdown()` was iterating over tracer providers and meter providers but not over the default `LoggerProvider`. The default `BatchLogRecordProcessor`'s `Timer.periodic` therefore stayed alive after `main()` returned, parking the Dart isolate in `Dart_RunLoop` indefinitely (the symptom report described `await OTel.shutdown()` "never returning", but the actual symptom is that *process exit* hangs — `print` after `await` does run). `OTel.shutdown()` now also shuts down the default `LoggerProvider`. Named LoggerProviders (created via `OTel.addLoggerProvider`) still need to be shut down by the caller — a follow-up will add a `loggerProviders()` enumerator to the API so `OTel.shutdown()` can clean them up automatically.
 - **Web compatibility:** `package:dartastic_opentelemetry/dartastic_opentelemetry.dart` is now safe to import on web targets (Flutter web, `dart compile js`, `dart compile wasm`). Previously the main library transitively pulled in `dart:io` via the OTLP/HTTP exporters, certificate utilities, and the platform resource detectors — `dart compile js` accepted these imports thanks to Dart 3 stubs, but the moment any of those classes ran (`HttpClient`, `SecurityContext`, `Platform.executable`, etc.) you got `UnsupportedError` at runtime. Split into platform-conditional facades:
   - `lib/src/resource/native_detectors.dart` — exports `ProcessResourceDetector` and `HostResourceDetector` from `_io.dart` on native, from `_stub.dart` on web (stubs throw with a clear migration message if instantiated; `PlatformResourceDetector.create()` skips them on web by design).
   - `lib/src/trace/export/otlp/certificate_utils.dart` — `_io.dart` keeps `validateCertificates` + `createSecurityContext`; `_stub.dart` keeps only `validateCertificates`. The IO-only `createSecurityContext` is reachable via the IO HTTP exporter path. gRPC exporters import `certificate_utils_io.dart` directly (gRPC is IO-only by nature).
@@ -583,9 +583,9 @@ survive extraction (#199). Full detail in the `1.1.0-beta.14` entry.
 ## [1.0.2-alpha] - 2026-04-19
 ### Fixed
 - Fixed `OTel.defaultEndpoint` to use the OTLP/HTTP port `4318` instead of the gRPC port `4317`,
-  matching the default `http/protobuf` protocol per the OpenTelemetry specification (#29).
+  matching the default `http/protobuf` protocol per the OpenTelemetry specification ([#29](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/29)).
   Removed the conditional port-swap workarounds in trace and logs configuration.
-- Fixed `SimpleLogRecordProcessor.shutdown()` not flushing pending exports (#28).
+- Fixed `SimpleLogRecordProcessor.shutdown()` not flushing pending exports ([#28](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/28)).
 - Fixed flaky `OtlpGrpcLogRecordExporter endpoint empty host defaults to 127.0.0.1`
   test that depended on no process listening on port 4317.
 
@@ -636,7 +636,7 @@ Stable-channel republication of `1.1.0-beta.13`. Depends on
 ### Also in this release
 
 The `1.1.0-beta.12` changes, which never reached this channel: the `host.arch` fix
-(#90), registry-enum attribute keys throughout, and the removal of the non-registry
+([#91](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/91)), registry-enum attribute keys throughout, and the removal of the non-registry
 `host.processors`, `host.locale`, and `process.num_threads` resource attributes.
 Read the `1.1.0-beta.12` entry as well before upgrading from 0.9.7.
 
@@ -645,8 +645,8 @@ Stable-channel republication of `1.1.0-beta.11` — docs only over 0.9.6. Depend
 `dartastic_opentelemetry_api: ^0.9.1`.
 
 Adds the `1.1.0-beta.10` fixes over 0.9.6: baggage extraction preserving context and
-endpoint scheme determining TLS (#89), OTLP/JSON enum fields encoded as integers per
-spec (#86), and public `MetricTransformer.transformMetrics` (#85).
+endpoint scheme determining TLS ([#89](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/89)), OTLP/JSON enum fields encoded as integers per
+spec ([#86](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/86)), and public `MetricTransformer.transformMetrics` ([#85](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/85)).
 
 ## [0.9.6] - 2026-07-18
 Stable-channel republication of `1.1.0-beta.9`. Depends on
@@ -654,12 +654,11 @@ Stable-channel republication of `1.1.0-beta.9`. Depends on
 — note the api constraint moved off the `1.0.0-beta.x` range that 0.9.5 used.
 
 Covers everything from `1.1.0-beta.1` through `1.1.0-beta.9`; see those entries for
-the detail. Highlights for anyone coming from 0.9.5: `OTEL_PROPAGATORS` support (#42,
-#76), BatchSpanProcessor environment variables (#59), comma-separated
-`OTEL_*_EXPORTER` lists (#79), OTLP/HTTP-JSON wire format (#45), OTLP/JSON trace and
-span ids encoded as hex per spec (#60), `LoggerProvider` shutdown fixes (#33, #41),
-web/wasm safety (#36), and the removal of the non-standard `dartasticApiKey` and
-`tenantId` (#78).
+the detail. Highlights for anyone coming from 0.9.5: `OTEL_PROPAGATORS` support ([api#55](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/55), [#76](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/76)), BatchSpanProcessor environment variables ([#59](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/59)), comma-separated
+`OTEL_*_EXPORTER` lists ([#79](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/79)), OTLP/HTTP-JSON wire format ([#45](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/45)), OTLP/JSON trace and
+span ids encoded as hex per spec ([#60](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/60)), `LoggerProvider` shutdown fixes ([#37](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/37), [#41](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/41)),
+web/wasm safety ([#36](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/36)), and the removal of the non-standard `dartasticApiKey` and
+`tenantId` ([#78](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/78)).
 
 ## [0.9.5] - 2026-05-09
 Stable-channel republication of `1.1.0-beta` — the first of these. Depends on
