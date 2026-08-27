@@ -2,7 +2,10 @@
 
 # Parse command line arguments
 LOG_LEVEL="info"
-CONCURRENCY="20"
+# Serial by default: the OTLP socket and collector-backed tests bind ports
+# and race each other under concurrency. Pass --concurrency N to go faster
+# when you are not touching the exporters.
+CONCURRENCY="1"
 FAIL_FAST="false"
 
 while [[ $# -gt 0 ]]; do
