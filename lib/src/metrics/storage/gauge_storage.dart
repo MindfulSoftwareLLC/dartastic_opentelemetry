@@ -9,38 +9,45 @@ import '../exemplar_reservoir.dart';
 import 'metric_storage.dart';
 
 /// GaugeStorage is used for storing the last recorded value for each set of attributes.
-class GaugeStorage<T extends num> extends NumericStorage<T> {
+class GaugeStorage<T extends num> extends NumericStorage<T>
+    with ExemplarSampling<T> {
   /// Map of attribute sets to gauge data.
   final Map<Attributes, _GaugePointData<T>> _points = {};
 
   /// The exemplar filter used by this storage.
-  final ExemplarFilter? exemplarFilter;
+  @override
+  final ExemplarFilter exemplarFilter;
 
   /// Creates a new GaugeStorage instance.
-  GaugeStorage({this.exemplarFilter});
+  GaugeStorage({ExemplarFilter? exemplarFilter})
+      : exemplarFilter = exemplarFilter ?? const TraceBasedExemplarFilter();
 
   /// Records a measurement with the given attributes and context.
   @override
-  void record(T value, [Attributes? attributes, Context? context]) {
+  void record(T value,
+      [Attributes? attributes, Context? context, DateTime? timestamp]) {
     // Create a normalized key for lookup
     final key = attributes ?? _emptyAttributes();
+    final existingKey = _findMatchingKey(key);
 
-    final pointData = _GaugePointData<T>(
-      value: value,
-      updateTime: DateTime.now(),
-      reservoir: SimpleFixedSizeExemplarReservoir(1), // Simple fixed size of 1
-    );
-
-    // Always update with the latest value
-    _points[key] = pointData;
-
-    // Process exemplars if a filter is provided
-    if (exemplarFilter != null && context != null) {
-      if (exemplarFilter!.shouldSample(value, key, context)) {
-        pointData.reservoir
-            .offerMeasurement(value, key, context, DateTime.now());
-      }
+    _GaugePointData<T> pointData;
+    if (existingKey != null) {
+      pointData = _points[existingKey]!;
+      pointData.value = value;
+      pointData.updateTime = DateTime.now();
+    } else {
+      pointData = _GaugePointData<T>(
+        value: value,
+        updateTime: DateTime.now(),
+        reservoir:
+            SimpleFixedSizeExemplarReservoir(1), // Simple fixed size of 1
+      );
+      // Always update with the latest value
+      _points[key] = pointData;
     }
+
+    maybeOffer(pointData.reservoir, value, key, context ?? Context.current,
+        timestamp ?? DateTime.now());
   }
 
   /// Helper to get empty attributes safely
@@ -115,10 +122,10 @@ class GaugeStorage<T extends num> extends NumericStorage<T> {
 /// Data for a single gauge point.
 class _GaugePointData<T extends num> {
   /// The current value.
-  final T value;
+  T value;
 
   /// The time this value was recorded.
-  final DateTime updateTime;
+  DateTime updateTime;
 
   /// Reservoir for this point.
   final ExemplarReservoir reservoir;

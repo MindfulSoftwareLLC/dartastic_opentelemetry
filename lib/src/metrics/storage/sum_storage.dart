@@ -19,7 +19,8 @@ import 'metric_storage.dart';
 ///
 /// More information:
 /// https://opentelemetry.io/docs/specs/otel/metrics/sdk/#the-temporality-of-instruments
-class SumStorage<T extends num> extends NumericStorage<T> {
+class SumStorage<T extends num> extends NumericStorage<T>
+    with ExemplarSampling<T> {
   /// Map of attribute sets to accumulated values.
   final Map<Attributes?, _SumPointData<T>> _points = {};
 
@@ -35,13 +36,15 @@ class SumStorage<T extends num> extends NumericStorage<T> {
   final DateTime _startTime = DateTime.now();
 
   /// The exemplar filter used by this storage.
-  final ExemplarFilter? exemplarFilter;
+  @override
+  final ExemplarFilter exemplarFilter;
 
   /// Creates a new SumStorage instance.
   ///
   /// @param isMonotonic Whether this storage is for a monotonic sum
   /// @param exemplarFilter Optional filter for exemplars
-  SumStorage({required this.isMonotonic, this.exemplarFilter});
+  SumStorage({required this.isMonotonic, ExemplarFilter? exemplarFilter})
+      : exemplarFilter = exemplarFilter ?? const TraceBasedExemplarFilter();
 
   /// Records a measurement with the given attributes and context.
   ///
@@ -52,7 +55,8 @@ class SumStorage<T extends num> extends NumericStorage<T> {
   /// @param attributes Optional attributes to associate with this measurement
   /// @param context Optional context associated with this measurement
   @override
-  void record(T value, [Attributes? attributes, Context? context]) {
+  void record(T value,
+      [Attributes? attributes, Context? context, DateTime? timestamp]) {
     // Check constraints for monotonic counters
     if (isMonotonic && value < 0) {
       print(
@@ -79,17 +83,12 @@ class SumStorage<T extends num> extends NumericStorage<T> {
       _points[attributes] = pointData;
     }
 
-    // Process exemplars if a filter is provided
-    if (exemplarFilter != null && context != null) {
-      if (exemplarFilter!.shouldSample(value,
-          attributes ?? OTelFactory.otelFactory!.attributes(), context)) {
-        pointData.reservoir.offerMeasurement(
-            value,
-            attributes ?? OTelFactory.otelFactory!.attributes(),
-            context,
-            DateTime.now());
-      }
-    }
+    maybeOffer(
+        pointData.reservoir,
+        value,
+        attributes ?? OTelFactory.otelFactory!.attributes(),
+        context ?? Context.current,
+        timestamp ?? DateTime.now());
   }
 
   /// Gets the current value for the given attributes.

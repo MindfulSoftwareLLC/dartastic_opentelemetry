@@ -9,7 +9,8 @@ import '../exemplar_reservoir.dart';
 import 'metric_storage.dart';
 
 /// HistogramStorage is used for storing and accumulating histogram data.
-class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
+class HistogramStorage<T extends num> extends HistogramStorageBase<T>
+    with ExemplarSampling<T> {
   /// Map of attribute sets to histogram data.
   final Map<Attributes, _HistogramPointData<T>> _points = {};
 
@@ -23,45 +24,46 @@ class HistogramStorage<T extends num> extends HistogramStorageBase<T> {
   final DateTime _startTime = DateTime.now();
 
   /// The exemplar filter used by this storage.
-  final ExemplarFilter? exemplarFilter;
+  @override
+  final ExemplarFilter exemplarFilter;
 
   /// Creates a new HistogramStorage instance.
   HistogramStorage(
       {required this.boundaries,
       this.recordMinMax = true,
-      this.exemplarFilter});
+      ExemplarFilter? exemplarFilter})
+      : exemplarFilter = exemplarFilter ?? const TraceBasedExemplarFilter();
 
   /// Records a measurement with the given attributes and context.
   @override
-  void record(T value, [Attributes? attributes, Context? context]) {
+  void record(T value,
+      [Attributes? attributes, Context? context, DateTime? timestamp]) {
     // Create a normalized key for lookup
     final key = attributes ?? _emptyAttributes();
 
     _HistogramPointData<T> pointData;
     // Find matching attributes
     final existingKey = _findMatchingKey(key);
+    var bucketIndex = boundaries.length;
     if (existingKey != null) {
       // Update existing point
       pointData = _points[existingKey]!;
-      pointData.record(value);
+      bucketIndex = pointData.record(value);
     } else {
       // Create new point
       pointData = _HistogramPointData<T>(
         boundaries: boundaries,
         recordMinMax: recordMinMax,
-        reservoir: AlignedHistogramBucketExemplarReservoir(boundaries),
+        reservoir: boundaries.length > 1
+            ? AlignedHistogramBucketExemplarReservoir(boundaries)
+            : SimpleFixedSizeExemplarReservoir(1),
       );
-      pointData.record(value);
+      bucketIndex = pointData.record(value);
       _points[key] = pointData;
     }
 
-    // Process exemplars if a filter is provided
-    if (exemplarFilter != null && context != null) {
-      if (exemplarFilter!.shouldSample(value, key, context)) {
-        pointData.reservoir
-            .offerMeasurement(value, key, context, DateTime.now());
-      }
-    }
+    maybeOffer(pointData.reservoir, value, key, context ?? Context.current,
+        timestamp ?? DateTime.now(), bucketIndex);
   }
 
   /// Helper to get empty attributes safely
@@ -245,7 +247,8 @@ class _HistogramPointData<T extends num> {
   }
 
   /// Records a measurement.
-  void record(T value) {
+  /// Returns the bucket index where the measurement fell.
+  int record(T value) {
     count++;
     sum += value;
 
@@ -266,5 +269,6 @@ class _HistogramPointData<T extends num> {
 
     // Increment the bucket count
     counts[bucketIndex]++;
+    return bucketIndex;
   }
 }

@@ -43,8 +43,7 @@ class Exemplar {
 
   /// Creates an exemplar from a measurement.
   factory Exemplar.fromMeasurement({
-    required num value,
-    required Attributes measurementAttributes,
+    required Measurement measurement,
     required DateTime timestamp,
     required Attributes aggregationAttributes,
     SpanId? spanId,
@@ -52,7 +51,7 @@ class Exemplar {
   }) {
     // Determine which attributes are filtered out
     final filteredAttrs = _filterAttributes(
-      measurementAttributes,
+      measurement.attributes ?? OTelFactory.otelFactory!.attributes(),
       aggregationAttributes,
     );
 
@@ -60,7 +59,7 @@ class Exemplar {
       attributes: aggregationAttributes,
       filteredAttributes: filteredAttrs,
       timestamp: timestamp,
-      value: value,
+      value: measurement.value,
       traceId: traceId,
       spanId: spanId,
     );

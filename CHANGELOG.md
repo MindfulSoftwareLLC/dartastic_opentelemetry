@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   changed the type of those attributes on the wire.
 - **`OTEL_RESOURCE_ATTRIBUTES` values are percent-decoded**, so `k=a%2Cb`
   now yields `a,b`.
+- **`Exemplar.fromMeasurement` signature reverted to take a `Measurement` object** instead of spreading its fields. This restores the previous API shape and adheres to the DRY principle.
 
 ### Added
 
