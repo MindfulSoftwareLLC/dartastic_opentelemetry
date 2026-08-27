@@ -42,7 +42,14 @@ class LogsConfiguration {
     LogRecordExporter? logRecordExporter,
     LogRecordProcessor? logRecordProcessor,
     Resource? resource,
+    OtlpEnvironmentValues? otlpConfig,
+    List<String>? exporters,
+    BlrpEnvironmentValues? blrpConfig,
   }) {
+    otlpConfig ??= OTelEnv.getOtlpConfig(signal: 'logs');
+    exporters ??= OTelEnv.getExporters(signal: 'logs') ?? ['otlp'];
+    blrpConfig ??= OTelEnv.getBlrpConfig();
+
     // Get the logger provider
     final logProvider = OTel.loggerProvider();
 
@@ -59,16 +66,14 @@ class LogsConfiguration {
 
     // Explicitly provided exporter wins; otherwise read the env selection.
     if (logRecordExporter != null) {
-      logProvider.addLogRecordProcessor(_createProcessor(logRecordExporter));
+      logProvider.addLogRecordProcessor(
+          _createProcessor(logRecordExporter, blrpConfig));
       return logProvider;
     }
 
-    // Spec "Exporter Selection": OTEL_LOGS_EXPORTER, default otlp; the
-    // comma-separated list form is supported. Known: otlp, console, none.
     // Multiple exporters install one processor per exporter.
-    final requested = OTelEnv.getExporters(signal: 'logs') ?? ['otlp'];
-    if (requested.contains('none')) {
-      if (requested.length > 1 && OTelLog.isWarn()) {
+    if (exporters.contains('none')) {
+      if (exporters.length > 1 && OTelLog.isWarn()) {
         OTelLog.warn("OTEL_LOGS_EXPORTER contains 'none' alongside other "
             'values; installing no processor.');
       } else if (OTelLog.isDebug()) {
@@ -78,8 +83,8 @@ class LogsConfiguration {
       return logProvider;
     }
 
-    final exporters = <LogRecordExporter>[];
-    for (final name in requested) {
+    final createdExporters = <LogRecordExporter>[];
+    for (final name in exporters) {
       if (name == 'logging') {
         if (OTelLog.isWarn()) {
           OTelLog.warn("OTEL_LOGS_EXPORTER value 'logging' is deprecated "
@@ -87,31 +92,31 @@ class LogsConfiguration {
         }
         continue;
       }
-      final created = _createExporter(name, endpoint, secure);
+      final created = _createExporter(name, endpoint, secure, otlpConfig);
       if (created != null) {
-        exporters.add(created);
+        createdExporters.add(created);
       } else if (OTelLog.isWarn()) {
         OTelLog.warn("OTEL_LOGS_EXPORTER value '$name' is not supported; "
             'ignoring. Supported: otlp, console, none.');
       }
     }
-    if (exporters.isEmpty) {
+    if (createdExporters.isEmpty) {
       if (OTelLog.isWarn()) {
         OTelLog.warn('OTEL_LOGS_EXPORTER produced no usable exporter; '
             'falling back to the default otlp exporter.');
       }
-      final fallback = _createExporter('otlp', endpoint, secure);
+      final fallback = _createExporter('otlp', endpoint, secure, otlpConfig);
       if (fallback != null) {
-        exporters.add(fallback);
+        createdExporters.add(fallback);
       }
     }
-    for (final exporter in exporters) {
-      logProvider.addLogRecordProcessor(_createProcessor(exporter));
+    for (final exporter in createdExporters) {
+      logProvider.addLogRecordProcessor(_createProcessor(exporter, blrpConfig));
     }
 
     if (OTelLog.isDebug()) {
       OTelLog.debug('LogsConfiguration: Configured LoggerProvider with '
-          '${exporters.length} exporter(s) from OTEL_LOGS_EXPORTER');
+          '${createdExporters.length} exporter(s) from OTEL_LOGS_EXPORTER');
     }
 
     return logProvider;
@@ -122,9 +127,8 @@ class LogsConfiguration {
     String exporterType,
     String? endpoint,
     bool? secure,
+    OtlpEnvironmentValues otlpConfig,
   ) {
-    // Get OTLP config for logs signal
-    final otlpConfig = OTelEnv.getOtlpConfig(signal: 'logs');
     final protocol = otlpConfig.protocol ?? 'http/protobuf';
 
     // Use env endpoint if available, otherwise use provided endpoint. The
@@ -193,8 +197,10 @@ class LogsConfiguration {
   }
 
   /// Creates a log record processor with BLRP configuration from environment.
-  static LogRecordProcessor _createProcessor(LogRecordExporter exporter) {
-    final processorConfig = BatchLogRecordProcessorConfig.fromEnvironment();
+  static LogRecordProcessor _createProcessor(
+      LogRecordExporter exporter, BlrpEnvironmentValues blrpConfig) {
+    final processorConfig =
+        BatchLogRecordProcessorConfig.fromBlrpEnvironmentValues(blrpConfig);
     return BatchLogRecordProcessor(exporter, processorConfig);
   }
 

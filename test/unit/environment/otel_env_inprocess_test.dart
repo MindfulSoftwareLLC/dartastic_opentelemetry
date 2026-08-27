@@ -191,16 +191,16 @@ void main() {
       expect(config.serviceVersion, isNull);
     });
 
-    test('resource attributes parse int, double, bool, and string', () {
+    test('resource attributes parse all values as string', () {
       env({
         'OTEL_RESOURCE_ATTRIBUTES':
             'count=7,ratio=0.5,on=true,off=FALSE,name=svc,malformed',
       });
       final attrs = OTelEnv.getResourceAttributes();
-      expect(attrs['count'], equals(7));
-      expect(attrs['ratio'], equals(0.5));
-      expect(attrs['on'], isTrue);
-      expect(attrs['off'], isFalse);
+      expect(attrs['count'], equals('7'));
+      expect(attrs['ratio'], equals('0.5'));
+      expect(attrs['on'], equals('true'));
+      expect(attrs['off'], equals('FALSE'));
       expect(attrs['name'], equals('svc'));
       expect(attrs.containsKey('malformed'), isFalse);
     });
@@ -208,7 +208,7 @@ void main() {
     test('semicolons work as comma stand-ins (--define compatibility)', () {
       env({'OTEL_RESOURCE_ATTRIBUTES': 'a=1;b=2'});
       final attrs = OTelEnv.getResourceAttributes();
-      expect(attrs, equals({'a': 1, 'b': 2}));
+      expect(attrs, equals({'a': '1', 'b': '2'}));
     });
   });
 

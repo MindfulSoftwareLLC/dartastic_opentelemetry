@@ -40,7 +40,12 @@ class MetricsConfiguration {
     MetricExporter? metricExporter,
     MetricReader? metricReader,
     Resource? resource,
+    OtlpEnvironmentValues? otlpConfig,
+    List<String>? exporters,
   }) {
+    otlpConfig ??= OTelEnv.getOtlpConfig(signal: 'metrics');
+    exporters ??= OTelEnv.getExporters(signal: 'metrics') ?? ['otlp'];
+
     final meterProvider = OTel.meterProvider();
     if (resource != null) {
       meterProvider.resource = resource;
@@ -52,11 +57,8 @@ class MetricsConfiguration {
     // explicit exporter/reader — explicit args are an unambiguous opt-in and
     // should not be silently dropped by env config.
     if (metricExporter == null && metricReader == null) {
-      // Spec "Exporter Selection": OTEL_METRICS_EXPORTER, default otlp; the
-      // comma-separated list form is supported. Known: otlp, console, none.
-      final requested = OTelEnv.getExporters(signal: 'metrics') ?? ['otlp'];
-      if (requested.contains('none')) {
-        if (requested.length > 1 && OTelLog.isWarn()) {
+      if (exporters.contains('none')) {
+        if (exporters.length > 1 && OTelLog.isWarn()) {
           OTelLog.warn("OTEL_METRICS_EXPORTER contains 'none' alongside "
               'other values; installing no reader.');
         } else if (OTelLog.isDebug()) {
@@ -65,15 +67,15 @@ class MetricsConfiguration {
         }
         return meterProvider;
       }
-      final exporters = <MetricExporter>[];
-      for (final name in requested) {
+      final createdExporters = <MetricExporter>[];
+      for (final name in exporters) {
         switch (name) {
           case 'otlp':
           case 'console':
-            final created = _createExporter(
-                name, endpoint, secure, metricsSdkConfig.exemplarFilter);
+            final created = _createExporter(name, endpoint, secure, otlpConfig,
+                metricsSdkConfig.exemplarFilter);
             if (created != null) {
-              exporters.add(created);
+              createdExporters.add(created);
             }
           case 'prometheus':
             // Recognized spec value, but not auto-wirable yet: the SDK has
@@ -99,21 +101,21 @@ class MetricsConfiguration {
             }
         }
       }
-      if (exporters.isEmpty) {
+      if (createdExporters.isEmpty) {
         if (OTelLog.isWarn()) {
           OTelLog.warn('OTEL_METRICS_EXPORTER produced no usable exporter; '
               'falling back to the default otlp exporter.');
         }
-        exporters.add(_createExporter(
-            'otlp', endpoint, secure, metricsSdkConfig.exemplarFilter)!);
+        createdExporters.add(_createExporter('otlp', endpoint, secure,
+            otlpConfig, metricsSdkConfig.exemplarFilter)!);
       }
-      metricExporter = exporters.length == 1
-          ? exporters.single
-          : CompositeMetricExporter(exporters);
+      metricExporter = createdExporters.length == 1
+          ? createdExporters.single
+          : CompositeMetricExporter(createdExporters);
     }
 
     metricExporter ??= _createExporter(
-        'otlp', endpoint, secure, metricsSdkConfig.exemplarFilter);
+        'otlp', endpoint, secure, otlpConfig, metricsSdkConfig.exemplarFilter);
     if (metricExporter == null) {
       return meterProvider;
     }
@@ -134,6 +136,7 @@ class MetricsConfiguration {
     String exporterType,
     String? endpoint,
     bool? secure,
+    OtlpEnvironmentValues otlpConfig,
     MetricsExemplarFilter exemplarFilter,
   ) {
     if (exporterType == 'console') {
@@ -150,7 +153,6 @@ class MetricsConfiguration {
       }
     }
 
-    final otlpConfig = OTelEnv.getOtlpConfig(signal: 'metrics');
     final protocol = otlpConfig.protocol ?? 'http/protobuf';
     // The default endpoint depends on the protocol (issue #220): OTLP/gRPC
     // uses port 4317, the HTTP protocols use port 4318.

@@ -863,8 +863,8 @@ void main() {
         );
         final result = jsonDecode(output.trim().split('\n').last.trim())
             as Map<String, dynamic>;
-        expect(result['count'], equals(42));
-        expect(result['port'], equals(8080));
+        expect(result['count'], equals('42'));
+        expect(result['port'], equals('8080'));
       });
 
       test('parses double values', () async {
@@ -874,8 +874,8 @@ void main() {
         );
         final result = jsonDecode(output.trim().split('\n').last.trim())
             as Map<String, dynamic>;
-        expect(result['ratio'], equals(0.75));
-        expect(result['temp'], equals(98.6));
+        expect(result['ratio'], equals('0.75'));
+        expect(result['temp'], equals('98.6'));
       });
 
       test('parses boolean values', () async {
@@ -885,8 +885,8 @@ void main() {
         );
         final result = jsonDecode(output.trim().split('\n').last.trim())
             as Map<String, dynamic>;
-        expect(result['enabled'], isTrue);
-        expect(result['disabled'], isFalse);
+        expect(result['enabled'], equals('true'));
+        expect(result['disabled'], equals('false'));
       });
 
       test('parses boolean values case-insensitively', () async {
@@ -896,8 +896,8 @@ void main() {
         );
         final result = jsonDecode(output.trim().split('\n').last.trim())
             as Map<String, dynamic>;
-        expect(result['a'], isTrue);
-        expect(result['b'], isFalse);
+        expect(result['a'], equals('TRUE'));
+        expect(result['b'], equals('False'));
       });
 
       test('parses mixed types', () async {
@@ -908,9 +908,9 @@ void main() {
         final result = jsonDecode(output.trim().split('\n').last.trim())
             as Map<String, dynamic>;
         expect(result['name'], equals('test'));
-        expect(result['count'], equals(5));
-        expect(result['ratio'], equals(1.5));
-        expect(result['flag'], isTrue);
+        expect(result['count'], equals('5'));
+        expect(result['ratio'], equals('1.5'));
+        expect(result['flag'], equals('true'));
       });
 
       test('skips malformed entries (no equals sign)', () async {
@@ -933,7 +933,7 @@ void main() {
         final result = jsonDecode(output.trim().split('\n').last.trim())
             as Map<String, dynamic>;
         expect(result['key1'], equals('value1'));
-        expect(result['key2'], equals(42));
+        expect(result['key2'], equals('42'));
       });
 
       test('returns empty map with empty string', () async {
