@@ -102,7 +102,7 @@ Due to limitations in Dart, [Dartastic Native OTel](https://dartastic.io/otel) i
 Include this in your pubspec.yaml:
 ```
 dependencies:
-  dartastic_opentelemetry: ^1.1.0-beta.15
+  dartastic_opentelemetry: ^0.11.0
 ```
 
 ## Usage
