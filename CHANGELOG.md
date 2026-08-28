@@ -50,7 +50,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 - **`OTEL_RESOURCE_ATTRIBUTES` is honored when `detectPlatformResources` is `false`**, and a malformed value is dropped
   with a warning instead of failing `OTel.initialize`.
 
-## [0.11.0]
+## [0.11.0] - 2026-08-28
 
 Stable-channel republication of `1.1.0-beta.15`. Depends on `dartastic_opentelemetry_api: ^0.11.0`.
 
