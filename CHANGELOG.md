@@ -8,6 +8,19 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.0-beta.16-wip]
 
+### Fixed
+
+- Metrics now export the real instrumentation scope of the meter that created them, as the
+  [Metrics SDK specification](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.60.0/specification/metrics/sdk.md#exportbatch)
+  requires. Before, the OTLP transform wrote one fixed scope named `@dart/dartastic_opentelemetry`
+  with the version `1.0.0` for the whole batch, and the name, version and schema URL from `getMeter`
+  never reached the wire. The transform now writes one `ScopeMetrics` message for each distinct
+  scope. A meter with no version exports no version
+  ([#292](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/292)).
+- A batch with no metrics now produces a resource with no `ScopeMetrics` group. Before, it produced
+  one group that held the fixed scope and no metrics
+  ([#292](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/292)).
+
 ## [1.1.0-beta.15] - 2026-08-28
 
 ### Breaking Changes
