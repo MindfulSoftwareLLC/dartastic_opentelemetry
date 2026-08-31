@@ -211,6 +211,7 @@ class ObservableUpDownCounter<T extends num>
         description: description,
         unit: unit,
         temporality: AggregationTemporality.cumulative,
+        instrumentationScope: _meter.instrumentationScope,
         points: points,
         isMonotonic: false, // Up/down counters are non-monotonic
       ),

@@ -315,9 +315,9 @@ void main() {
         );
         expect(rm.scopeMetrics.length, equals(1));
         final sm = rm.scopeMetrics.first;
-        // Same scope constant the OTLP exporters have always stamped.
-        expect(sm.scope.name, equals('@dart/dartastic_opentelemetry'));
-        expect(sm.scope.version, equals('1.0.0'));
+        // A metric with no scope exports as the unknown scope.
+        expect(sm.scope.name, isEmpty);
+        expect(sm.scope.version, isEmpty);
         expect(sm.metrics.length, equals(2));
         expect(sm.metrics.first.name, equals('m.one'));
         expect(sm.metrics.last.name, equals('m.two'));
@@ -359,7 +359,7 @@ void main() {
         );
       });
 
-      test('empty metrics still produce the resource/scope envelope', () {
+      test('empty metrics produce a resource with no scope groups', () {
         final data = MetricData(
           resource: OTel.resource(Attributes.of({'service.name': 's'})),
           metrics: const [],
@@ -367,10 +367,76 @@ void main() {
 
         final request = MetricTransformer.transformMetrics(data);
 
+        // A batch with no metrics has no scope to name, so it carries no
+        // ScopeMetrics group.
         expect(request.resourceMetrics.length, equals(1));
+        expect(request.resourceMetrics.first.scopeMetrics, isEmpty);
+      });
+    });
+
+    group('instrumentation scope', () {
+      test('a counter metric carries the scope of its meter', () async {
+        final meter = OTel.meterProvider().getMeter(
+          name: 'test.library',
+          version: '2.3.4',
+          schemaUrl: 'https://opentelemetry.io/schemas/1.60.0',
+        );
+        meter.createCounter<int>(name: 'requests').add(1);
+
+        final metrics = await OTel.meterProvider().collectAllMetrics();
+        final scope = metrics.first.instrumentationScope;
+
+        expect(scope, isNotNull);
+        expect(scope!.name, equals('test.library'));
+        expect(scope.version, equals('2.3.4'));
         expect(
-          request.resourceMetrics.first.scopeMetrics.first.metrics,
-          isEmpty,
+          scope.schemaUrl,
+          equals('https://opentelemetry.io/schemas/1.60.0'),
+        );
+      });
+
+      test('a meter with no version exports no version', () async {
+        final meter = OTel.meterProvider().getMeter(name: 'test.noversion');
+        meter.createCounter<int>(name: 'plain').add(1);
+
+        final metrics = await OTel.meterProvider().collectAllMetrics();
+        final request = MetricTransformer.transformMetrics(
+          MetricData(metrics: metrics),
+        );
+
+        final sm = request.resourceMetrics.first.scopeMetrics
+            .firstWhere((sm) => sm.scope.name == 'test.noversion');
+        // The SDK must not invent a version. OTLP reads an empty version
+        // as "not set".
+        expect(sm.scope.version, isEmpty);
+      });
+
+      test('two meters export as two scope groups', () async {
+        final meterA = OTel.meterProvider().getMeter(name: 'lib.a');
+        final meterB = OTel.meterProvider().getMeter(
+          name: 'lib.b',
+          version: '9.9.9',
+        );
+        meterA.createCounter<int>(name: 'a.count').add(1);
+        meterB.createCounter<int>(name: 'b.count').add(2);
+
+        final metrics = await OTel.meterProvider().collectAllMetrics();
+        final request = MetricTransformer.transformMetrics(
+          MetricData(metrics: metrics),
+        );
+
+        final groups = request.resourceMetrics.first.scopeMetrics;
+        final byName = {for (final sm in groups) sm.scope.name: sm};
+
+        expect(byName.keys, containsAll(<String>['lib.a', 'lib.b']));
+        expect(byName['lib.b']!.scope.version, equals('9.9.9'));
+        expect(
+          byName['lib.a']!.metrics.map((m) => m.name),
+          equals(<String>['a.count']),
+        );
+        expect(
+          byName['lib.b']!.metrics.map((m) => m.name),
+          equals(<String>['b.count']),
         );
       });
     });

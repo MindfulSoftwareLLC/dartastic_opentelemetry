@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
-    show OTelLog;
+    show InstrumentationScope, OTelLog;
 import 'package:fixnum/fixnum.dart';
 
 import '../../../../proto/collector/metrics/v1/metrics_service.pb.dart';
@@ -44,19 +44,60 @@ class MetricTransformer {
         ? transformResource(effectiveResource)
         : resource_proto.Resource();
 
-    final scopeMetrics = proto.ScopeMetrics();
-    scopeMetrics.scope = common_proto.InstrumentationScope(
-      name: '@dart/dartastic_opentelemetry',
-      version: '1.0.0',
-    );
+    // The transform groups the metrics by instrumentation scope. Each
+    // scope becomes one ScopeMetrics message, as the OTLP data model
+    // requires.
+    //
+    // InstrumentationScope has no equality operator, so this map compares
+    // by identity. Each Meter builds its scope one time and gives that one
+    // object to all of its instruments. Identity therefore groups the
+    // metrics correctly, and the map needs no key allocation.
+    final scopeGroups = <InstrumentationScope?, proto.ScopeMetrics>{};
     for (final metric in data.metrics) {
+      final scope = metric.instrumentationScope;
+      final scopeMetrics = scopeGroups[scope] ??= _createScopeMetrics(scope);
       scopeMetrics.metrics
           .add(transformMetric(metric, exemplarFilter: exemplarFilter));
     }
 
-    resourceMetrics.scopeMetrics.add(scopeMetrics);
+    resourceMetrics.scopeMetrics.addAll(scopeGroups.values);
     request.resourceMetrics.add(resourceMetrics);
     return request;
+  }
+
+  /// Creates the ScopeMetrics message for one instrumentation scope.
+  ///
+  /// A null scope gives a scope message with an empty name. The OTLP data
+  /// model reads an empty name as "unknown".
+  static proto.ScopeMetrics _createScopeMetrics(InstrumentationScope? scope) {
+    final scopeMetrics = proto.ScopeMetrics();
+    if (scope == null) {
+      scopeMetrics.scope = common_proto.InstrumentationScope();
+      return scopeMetrics;
+    }
+
+    final protoScope = common_proto.InstrumentationScope()..name = scope.name;
+
+    final version = scope.version;
+    if (version != null && version.isNotEmpty) {
+      protoScope.version = version;
+    }
+
+    final attributes = scope.attributes;
+    if (attributes != null) {
+      protoScope.attributes.addAll(
+        attributes.toMap().entries.map(
+              (entry) => _createKeyValue(entry.key, entry.value.value),
+            ),
+      );
+    }
+    scopeMetrics.scope = protoScope;
+
+    final schemaUrl = scope.schemaUrl;
+    if (schemaUrl != null && schemaUrl.isNotEmpty) {
+      scopeMetrics.schemaUrl = schemaUrl;
+    }
+    return scopeMetrics;
   }
 
   /// Transforms a Resource to an OTLP Resource proto.
