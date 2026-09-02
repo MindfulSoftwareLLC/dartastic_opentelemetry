@@ -9,7 +9,9 @@ cd "$(dirname "$0")/.." || exit 1
 # Parse command line arguments
 # Need trace logging for coverage of debug and trace logs
 LOG_LEVEL="trace"
-CONCURRENCY="10"
+# Serial by default: the OTLP socket and collector-backed tests bind ports
+# and race each other under concurrency. Pass --concurrency N to go faster.
+CONCURRENCY="1"
 FAIL_FAST="false"
 TEST_PATH="./test"
 
