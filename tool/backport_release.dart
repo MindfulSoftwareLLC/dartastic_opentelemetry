@@ -81,7 +81,7 @@ const _backportedDep = 'dartastic_opentelemetry_api';
 final _betaTagRe = RegExp(r'^v1\.\d+\.\d+-beta(\.\d+)?$');
 
 /// Tag pattern for the stable channel itself.
-final _stableTagRe = RegExp(r'^v0\.9\.\d+$');
+final _stableTagRe = RegExp(r'^v0\.\d+\.\d+$');
 
 Future<void> main(List<String> args) async {
   final flags = _Flags.parse(args);
@@ -394,7 +394,7 @@ String _latestBetaTag() {
   return tags.last;
 }
 
-/// Reads the `_backportedDep` constraint from the most recent `0.9.x` tag.
+/// Reads the `_backportedDep` constraint from the most recent stable `0.x` tag.
 /// That is the constraint the previous republication shipped, which is right
 /// as long as the stable api line has not moved since.
 String _previousStableApiConstraint() {
@@ -408,8 +408,8 @@ String _previousStableApiConstraint() {
       if (m != null) return m.group(1)!;
     }
   }
-  _die('could not auto-detect the $_backportedDep constraint from any v0.9.x '
-      'tag — pass --api-constraint (e.g. --api-constraint ^0.9.1).');
+  _die('could not auto-detect the $_backportedDep constraint from any stable '
+      'v0.x tag; pass --api-constraint (e.g. --api-constraint ^0.11.0).');
 }
 
 /// Warns (does not fail) if pub.dev already lists this version. A soft check:
