@@ -164,6 +164,7 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
       description: description,
       unit: unit,
       type: MetricType.sum,
+      instrumentationScope: _meter.instrumentationScope,
       points: points,
     );
 

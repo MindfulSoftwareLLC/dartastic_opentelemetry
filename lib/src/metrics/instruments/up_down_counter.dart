@@ -110,6 +110,7 @@ class UpDownCounter<T extends num>
       description: description,
       unit: unit,
       type: MetricType.sum, // UpDownCounter is still a sum, just not monotonic
+      instrumentationScope: _meter.instrumentationScope,
       points: points,
     );
 

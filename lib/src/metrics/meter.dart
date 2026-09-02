@@ -43,6 +43,23 @@ class Meter implements APIMeter {
       : _delegate = delegate,
         _provider = provider;
 
+  /// The instrumentation scope of this meter.
+  ///
+  /// Each metric that an instrument of this meter collects carries this
+  /// object. The SDK builds the object one time and then shares it,
+  /// because the collection path runs at each export interval.
+  ///
+  /// The API factory does not accept a null version. A meter with no
+  /// version therefore gets an empty version. OTLP reads an empty version
+  /// as "not set", so the exported data stays correct.
+  late final InstrumentationScope instrumentationScope =
+      OTelAPI.instrumentationScope(
+    name: name,
+    version: version ?? '',
+    schemaUrl: schemaUrl,
+    attributes: attributes,
+  );
+
   /// Gets the name of the instrumentation scope.
   ///
   /// This name uniquely identifies the instrumentation library, such as
