@@ -1,0 +1,10 @@
+# Integration branch only. Resolves the API from its main branch so SDK
+# adaptations to unreleased API changes can be built and tested here.
+# Delete this file in the commit that merges integrate/api-rc4 to main, and
+# set the dartastic_opentelemetry_api constraint in pubspec.yaml to the
+# released version at the same time.
+dependency_overrides:
+  dartastic_opentelemetry_api:
+    git:
+      url: https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api.git
+      ref: main
