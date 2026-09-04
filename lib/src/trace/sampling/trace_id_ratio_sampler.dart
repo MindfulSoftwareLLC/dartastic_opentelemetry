@@ -15,7 +15,7 @@ class TraceIdRatioSampler implements Sampler {
   final double ratio;
 
   @override
-  String get description => 'TraceIdRatioSampler{$ratio}';
+  String get description => 'TraceIdRatioBased{${ratio.toStringAsFixed(6)}}';
 
   /// Creates a TraceIdRatioSampler with the given ratio.
   /// [ratio] must be in the range [0.0, 1.0].
