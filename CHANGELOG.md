@@ -16,20 +16,20 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.0-beta.15] - 2026-08-28
 
-### Breaking Changes
+### Changed
 
-- **`enabled` becomes `isEnabled()` on tracers, loggers, meters and instruments**, following the same change in the API
-  ([api#105](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/105)). Replace `x.enabled` with
-  `x.isEnabled()`. `Tracer.isEnabled()` accepts `kind` and `context`, and `OTelLogger.isEnabled()` accepts `context`,
-  `severityNumber` and `eventName`. The `enabled` getters on `TracerProvider`, `MeterProvider` and `LoggerProvider` are
-  unchanged: those are provider lifecycle state, not the per-call check. Requires `dartastic_opentelemetry_api`
-  1.0.0-rc.3.
-- **`OTEL_RESOURCE_ATTRIBUTES` values are always strings**
+- **BREAKING**: `enabled` becomes `isEnabled()` on tracers, loggers, meters and instruments, following the same change
+  in the API ([api#105](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/105)). Replace
+  `x.enabled` with `x.isEnabled()`. `Tracer.isEnabled()` accepts `kind` and `context`, and `OTelLogger.isEnabled()`
+  accepts `context`, `severityNumber` and `eventName`. The `enabled` getters on `TracerProvider`, `MeterProvider` and
+  `LoggerProvider` are unchanged: those are provider lifecycle state, not the per-call check. Requires
+  `dartastic_opentelemetry_api` 1.0.0-rc.3.
+- **BREAKING**: `OTEL_RESOURCE_ATTRIBUTES` values are always strings
   ([#206](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/206)). They were previously coerced to
   `int` or `bool` where they looked numeric, which changed the type of those attributes on the wire.
-- **`OTEL_RESOURCE_ATTRIBUTES` values are percent-decoded**, so `k=a%2Cb` now yields `a,b`.
-- **`Exemplar.fromMeasurement` signature reverted to take a `Measurement` object** instead of spreading its fields. This
-  restores the previous API shape and adheres to the DRY principle.
+- **BREAKING**: `OTEL_RESOURCE_ATTRIBUTES` values are percent-decoded, so `k=a%2Cb` now yields `a,b`.
+- **BREAKING**: `Exemplar.fromMeasurement` signature reverted to take a `Measurement` object instead of spreading its
+  fields. This restores the previous API shape and adheres to the DRY principle.
 
 ### Added
 
@@ -733,6 +733,11 @@ the `1.1.0-beta.x` line if your pubspec allows prereleases. It is what these ent
 ## [0.9.8] - 2026-08-13
 Stable-channel republication of `1.1.0-beta.13`. Depends on `dartastic_opentelemetry_api: ^0.9.1`.
 
+This release also carries the `1.1.0-beta.12` changes, which never reached this channel: the `host.arch` fix
+([#91](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/91)), registry-enum attribute keys throughout,
+and the removal of the non-registry `host.processors`, `host.locale`, and `process.num_threads` resource attributes.
+Read the `1.1.0-beta.12` entry as well before upgrading from 0.9.7.
+
 ### Security
 
 - **Fixes the OTLP debug-log credential leak,
@@ -744,13 +749,6 @@ Stable-channel republication of `1.1.0-beta.13`. Depends on `dartastic_opentelem
 
   **If you ran any 0.9.x release with debug logging enabled and a credential in an OTLP header, rotate that
   credential.** Upgrading alone does not undo the exposure.
-
-### Also in this release
-
-The `1.1.0-beta.12` changes, which never reached this channel: the `host.arch` fix
-([#91](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/91)), registry-enum attribute keys throughout,
-and the removal of the non-registry `host.processors`, `host.locale`, and `process.num_threads` resource attributes.
-Read the `1.1.0-beta.12` entry as well before upgrading from 0.9.7.
 
 ## [0.9.7] - 2026-07-20
 Stable-channel republication of `1.1.0-beta.11`. Docs only over 0.9.6. Depends on `dartastic_opentelemetry_api: ^0.9.1`.
@@ -846,8 +844,6 @@ release.
 - Batch processing with configurable parameters
 - Comprehensive test suite
 - Complete examples for various use cases
-
-### Compatibility
 - Implements OpenTelemetry SDK specification v1.0.0-rc3
 - Requires opentelemetry_api: ^0.8.0
 - Compatible with OpenTelemetry Protocol (OTLP) v0.18.0
