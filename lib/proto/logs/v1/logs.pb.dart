@@ -159,7 +159,8 @@ class ResourceLogs extends $pb.GeneratedMessage {
   $pb.PbList<ScopeLogs> get scopeLogs => $_getList(1);
 
   /// The Schema URL, if known. This is the identifier of the Schema that the resource data
-  /// is recorded in. To learn more about Schema URL see
+  /// is recorded in. Notably, the last part of the URL path is the version number of the
+  /// schema: http[s]://server[:port]/path/<version>. To learn more about Schema URL see
   /// https://opentelemetry.io/docs/specs/otel/schemas/#schema-url
   /// This schema_url applies to the data in the "resource" field. It does not apply
   /// to the data in the "scope_logs" field which have their own schema_url field.
@@ -245,9 +246,11 @@ class ScopeLogs extends $pb.GeneratedMessage {
   $pb.PbList<LogRecord> get logRecords => $_getList(1);
 
   /// The Schema URL, if known. This is the identifier of the Schema that the log data
-  /// is recorded in. To learn more about Schema URL see
+  /// is recorded in. Notably, the last part of the URL path is the version number of the
+  /// schema: http[s]://server[:port]/path/<version>. To learn more about Schema URL see
   /// https://opentelemetry.io/docs/specs/otel/schemas/#schema-url
-  /// This schema_url applies to all logs in the "logs" field.
+  /// This schema_url applies to the data in the "scope" field and all logs in the
+  /// "log_records" field.
   @$pb.TagNumber(3)
   $core.String get schemaUrl => $_getSZ(2);
   @$pb.TagNumber(3)
@@ -272,6 +275,7 @@ class LogRecord extends $pb.GeneratedMessage {
     $core.List<$core.int>? traceId,
     $core.List<$core.int>? spanId,
     $fixnum.Int64? observedTimeUnixNano,
+    $core.String? eventName,
   }) {
     final result = create();
     if (timeUnixNano != null) result.timeUnixNano = timeUnixNano;
@@ -286,6 +290,7 @@ class LogRecord extends $pb.GeneratedMessage {
     if (spanId != null) result.spanId = spanId;
     if (observedTimeUnixNano != null)
       result.observedTimeUnixNano = observedTimeUnixNano;
+    if (eventName != null) result.eventName = eventName;
     return result;
   }
 
@@ -323,6 +328,7 @@ class LogRecord extends $pb.GeneratedMessage {
     ..a<$fixnum.Int64>(
         11, _omitFieldNames ? '' : 'observedTimeUnixNano', $pb.PbFieldType.OF6,
         defaultOrMaker: $fixnum.Int64.ZERO)
+    ..aOS(12, _omitFieldNames ? '' : 'eventName')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -394,6 +400,7 @@ class LogRecord extends $pb.GeneratedMessage {
   /// Additional attributes that describe the specific event occurrence. [Optional].
   /// Attribute keys MUST be unique (it is not allowed to have more than one
   /// attribute with the same key).
+  /// The behavior of software that receives duplicated keys can be unpredictable.
   @$pb.TagNumber(6)
   $pb.PbList<$1.KeyValue> get attributes => $_getList(4);
 
@@ -484,6 +491,25 @@ class LogRecord extends $pb.GeneratedMessage {
   $core.bool hasObservedTimeUnixNano() => $_has(9);
   @$pb.TagNumber(11)
   void clearObservedTimeUnixNano() => $_clearField(11);
+
+  /// A unique identifier of event category/type.
+  /// All events with the same event_name are expected to conform to the same
+  /// schema for both their attributes and their body.
+  ///
+  /// Recommended to be fully qualified and short (no longer than 256 characters).
+  ///
+  /// Presence of event_name on the log record identifies this record
+  /// as an event.
+  ///
+  /// [Optional].
+  @$pb.TagNumber(12)
+  $core.String get eventName => $_getSZ(10);
+  @$pb.TagNumber(12)
+  set eventName($core.String value) => $_setString(10, value);
+  @$pb.TagNumber(12)
+  $core.bool hasEventName() => $_has(10);
+  @$pb.TagNumber(12)
+  void clearEventName() => $_clearField(12);
 }
 
 const $core.bool _omitFieldNames =

@@ -5,7 +5,7 @@ set -e
 PROTO_DIR="protos"
 OUTPUT_DIR="lib/proto"
 TEMP_DIR=".proto_gen_temp"
-OPENTELEMETRY_PROTO_VERSION="v1.1.0"  # Update this to the version you want to use
+OPENTELEMETRY_PROTO_VERSION="v1.11.0"  # Update this to the version you want to use
 
 # Create directories if they don't exist
 mkdir -p "$PROTO_DIR/opentelemetry-proto"

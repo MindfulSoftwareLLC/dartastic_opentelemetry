@@ -163,6 +163,9 @@ class OtlpLogRecordTransformer {
     if (logRecord.traceFlags != null) {
       otlpLog.flags = logRecord.traceFlags!.asByte;
     }
+    if (logRecord.eventName != null) {
+      otlpLog.eventName = logRecord.eventName!;
+    }
 
     return otlpLog;
   }

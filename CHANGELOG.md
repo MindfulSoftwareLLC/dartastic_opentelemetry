@@ -10,6 +10,11 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **The OTLP log exporters now send `event_name`.** `LogRecord.eventName` was never copied onto the wire, so every
+  event emitted with `emit(eventName: ...)` arrived at the collector as a plain log record with no name, and anything
+  filtering on `event_name` saw nothing. The bundled protobuf definitions were generated from opentelemetry-proto
+  v1.1.0, which predates the field; they are regenerated from v1.11.0, which adds `LogRecord.event_name` and the
+  `EntityRef` and string-table fields on `Resource`, `AnyValue` and `KeyValue`. No generated type was removed.
 - The `dartastic_opentelemetry_api` dependency is pinned to the current rc (`>=1.0.0-rc.3 <1.0.0-rc.4`) so a new API
   prerelease cannot break a fresh `pub get`. Widen it only after the SDK is adapted
   ([#297](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/297)).

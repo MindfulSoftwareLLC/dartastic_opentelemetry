@@ -38,9 +38,19 @@ class SpanFlags extends $pb.ProtobufEnum {
   static const SpanFlags SPAN_FLAGS_TRACE_FLAGS_MASK =
       SpanFlags._(255, _omitEnumNames ? '' : 'SPAN_FLAGS_TRACE_FLAGS_MASK');
 
+  /// Bits 8 and 9 are used to indicate that the parent span or link span is remote.
+  /// Bit 8 (`HAS_IS_REMOTE`) indicates whether the value is known.
+  /// Bit 9 (`IS_REMOTE`) indicates whether the span or link is remote.
+  static const SpanFlags SPAN_FLAGS_CONTEXT_HAS_IS_REMOTE_MASK = SpanFlags._(
+      256, _omitEnumNames ? '' : 'SPAN_FLAGS_CONTEXT_HAS_IS_REMOTE_MASK');
+  static const SpanFlags SPAN_FLAGS_CONTEXT_IS_REMOTE_MASK = SpanFlags._(
+      512, _omitEnumNames ? '' : 'SPAN_FLAGS_CONTEXT_IS_REMOTE_MASK');
+
   static const $core.List<SpanFlags> values = <SpanFlags>[
     SPAN_FLAGS_DO_NOT_USE,
     SPAN_FLAGS_TRACE_FLAGS_MASK,
+    SPAN_FLAGS_CONTEXT_HAS_IS_REMOTE_MASK,
+    SPAN_FLAGS_CONTEXT_IS_REMOTE_MASK,
   ];
 
   static final $core.Map<$core.int, SpanFlags> _byValue =

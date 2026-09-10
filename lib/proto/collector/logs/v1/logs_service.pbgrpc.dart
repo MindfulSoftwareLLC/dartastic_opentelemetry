@@ -35,8 +35,6 @@ class LogsServiceClient extends $grpc.Client {
 
   LogsServiceClient(super.channel, {super.options, super.interceptors});
 
-  /// For performance reasons, it is recommended to keep this RPC
-  /// alive for the entire life of the application.
   $grpc.ResponseFuture<$0.ExportLogsServiceResponse> export(
     $0.ExportLogsServiceRequest request, {
     $grpc.CallOptions? options,

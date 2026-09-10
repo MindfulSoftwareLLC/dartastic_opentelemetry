@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry/proto/opentelemetry_proto_dart.dart'
+    as proto;
 import 'package:fixnum/fixnum.dart';
 import 'package:test/test.dart';
 
@@ -63,6 +65,47 @@ void main() {
       expect(otlpLog.observedTimeUnixNano, equals(observedTimestamp));
       expect(otlpLog.severityText, equals('INFO'));
       expect(otlpLog.body.stringValue, equals('Test message'));
+      expect(otlpLog.eventName, equals('test.event'));
+    });
+
+    test('event name is the OTLP event_name field, not an attribute', () {
+      final logRecord = SDKLogRecord(
+        instrumentationScope: scope,
+        severityNumber: Severity.INFO,
+        body: 'Exception',
+        eventName: 'exception',
+      );
+
+      final request = OtlpLogRecordTransformer.transformLogRecords([logRecord]);
+      final otlpLog =
+          request.resourceLogs.first.scopeLogs.first.logRecords.first;
+
+      expect(otlpLog.hasEventName(), isTrue);
+      expect(otlpLog.eventName, equals('exception'));
+      expect(otlpLog.attributes.where((a) => a.key == 'event.name'), isEmpty);
+
+      // Round-trip through the wire encoding: the field must survive
+      // serialization, not just live on the in-memory message.
+      final decoded =
+          proto.ExportLogsServiceRequest.fromBuffer(request.writeToBuffer());
+      expect(
+        decoded.resourceLogs.first.scopeLogs.first.logRecords.first.eventName,
+        equals('exception'),
+      );
+    });
+
+    test('a record without an event name leaves event_name unset', () {
+      final logRecord = SDKLogRecord(
+        instrumentationScope: scope,
+        severityNumber: Severity.INFO,
+        body: 'plain log line',
+      );
+
+      final request = OtlpLogRecordTransformer.transformLogRecords([logRecord]);
+      final otlpLog =
+          request.resourceLogs.first.scopeLogs.first.logRecords.first;
+
+      expect(otlpLog.hasEventName(), isFalse);
     });
 
     test('transforms severity levels correctly', () {

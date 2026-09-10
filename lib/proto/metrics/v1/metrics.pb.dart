@@ -27,6 +27,24 @@ export 'metrics.pbenum.dart';
 /// storage, OR can be embedded by other protocols that transfer OTLP metrics
 /// data but do not implement the OTLP protocol.
 ///
+/// MetricsData
+/// └─── ResourceMetrics
+///   ├── Resource
+///   ├── SchemaURL
+///   └── ScopeMetrics
+///      ├── Scope
+///      ├── SchemaURL
+///      └── Metric
+///         ├── Name
+///         ├── Description
+///         ├── Unit
+///         └── data
+///            ├── Gauge
+///            ├── Sum
+///            ├── Histogram
+///            ├── ExponentialHistogram
+///            └── Summary
+///
 /// The main difference between this message and collector protocol is that
 /// in this message there will not be any "control" or "metadata" specific to
 /// OTLP protocol.
@@ -160,7 +178,8 @@ class ResourceMetrics extends $pb.GeneratedMessage {
   $pb.PbList<ScopeMetrics> get scopeMetrics => $_getList(1);
 
   /// The Schema URL, if known. This is the identifier of the Schema that the resource data
-  /// is recorded in. To learn more about Schema URL see
+  /// is recorded in. Notably, the last part of the URL path is the version number of the
+  /// schema: http[s]://server[:port]/path/<version>. To learn more about Schema URL see
   /// https://opentelemetry.io/docs/specs/otel/schemas/#schema-url
   /// This schema_url applies to the data in the "resource" field. It does not apply
   /// to the data in the "scope_metrics" field which have their own schema_url field.
@@ -247,9 +266,11 @@ class ScopeMetrics extends $pb.GeneratedMessage {
   $pb.PbList<Metric> get metrics => $_getList(1);
 
   /// The Schema URL, if known. This is the identifier of the Schema that the metric data
-  /// is recorded in. To learn more about Schema URL see
+  /// is recorded in. Notably, the last part of the URL path is the version number of the
+  /// schema: http[s]://server[:port]/path/<version>. To learn more about Schema URL see
   /// https://opentelemetry.io/docs/specs/otel/schemas/#schema-url
-  /// This schema_url applies to all metrics in the "metrics" field.
+  /// This schema_url applies to the data in the "scope" field and all metrics in the
+  /// "metrics" field.
   @$pb.TagNumber(3)
   $core.String get schemaUrl => $_getSZ(2);
   @$pb.TagNumber(3)
@@ -274,7 +295,6 @@ enum Metric_Data {
 ///
 ///   https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/metrics/data-model.md
 ///
-///
 /// The data model and relation between entities is shown in the
 /// diagram below. Here, "DataPoint" is the term used to refer to any
 /// one of the specific data point value types, and "points" is the term used
@@ -286,7 +306,7 @@ enum Metric_Data {
 /// - DataPoint contains timestamps, attributes, and one of the possible value type
 ///   fields.
 ///
-///     Metric
+///    Metric
 ///  +------------+
 ///  |name        |
 ///  |description |
@@ -364,6 +384,7 @@ class Metric extends $pb.GeneratedMessage {
     Histogram? histogram,
     ExponentialHistogram? exponentialHistogram,
     Summary? summary,
+    $core.Iterable<$1.KeyValue>? metadata,
   }) {
     final result = create();
     if (name != null) result.name = name;
@@ -375,6 +396,7 @@ class Metric extends $pb.GeneratedMessage {
     if (exponentialHistogram != null)
       result.exponentialHistogram = exponentialHistogram;
     if (summary != null) result.summary = summary;
+    if (metadata != null) result.metadata.addAll(metadata);
     return result;
   }
 
@@ -413,6 +435,8 @@ class Metric extends $pb.GeneratedMessage {
         subBuilder: ExponentialHistogram.create)
     ..aOM<Summary>(11, _omitFieldNames ? '' : 'summary',
         subBuilder: Summary.create)
+    ..pPM<$1.KeyValue>(12, _omitFieldNames ? '' : 'metadata',
+        subBuilder: $1.KeyValue.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -446,7 +470,7 @@ class Metric extends $pb.GeneratedMessage {
   @$pb.TagNumber(11)
   void clearData() => $_clearField($_whichOneof(0));
 
-  /// name of the metric.
+  /// The name of the metric.
   @$pb.TagNumber(1)
   $core.String get name => $_getSZ(0);
   @$pb.TagNumber(1)
@@ -456,7 +480,7 @@ class Metric extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   void clearName() => $_clearField(1);
 
-  /// description of the metric, which can be used in documentation.
+  /// A description of the metric, which can be used in documentation.
   @$pb.TagNumber(2)
   $core.String get description => $_getSZ(1);
   @$pb.TagNumber(2)
@@ -466,8 +490,8 @@ class Metric extends $pb.GeneratedMessage {
   @$pb.TagNumber(2)
   void clearDescription() => $_clearField(2);
 
-  /// unit in which the metric value is reported. Follows the format
-  /// described by http://unitsofmeasure.org/ucum.html.
+  /// The unit in which the metric value is reported. Follows the format
+  /// described by https://ucum.org/ucum and https://units-of-measurement.org/
   @$pb.TagNumber(3)
   $core.String get unit => $_getSZ(2);
   @$pb.TagNumber(3)
@@ -531,6 +555,17 @@ class Metric extends $pb.GeneratedMessage {
   void clearSummary() => $_clearField(11);
   @$pb.TagNumber(11)
   Summary ensureSummary() => $_ensure(7);
+
+  /// Additional metadata attributes that describe the metric. [Optional].
+  /// Attributes are non-identifying.
+  /// Consumers SHOULD NOT need to be aware of these attributes.
+  /// These attributes MAY be used to encode information allowing
+  /// for lossless roundtrip translation to / from another data model.
+  /// Attribute keys MUST be unique (it is not allowed to have more than one
+  /// attribute with the same key).
+  /// The behavior of software that receives duplicated keys can be unpredictable.
+  @$pb.TagNumber(12)
+  $pb.PbList<$1.KeyValue> get metadata => $_getList(8);
 }
 
 /// Gauge represents the type of a scalar metric that always exports the
@@ -587,6 +622,8 @@ class Gauge extends $pb.GeneratedMessage {
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Gauge>(create);
   static Gauge? _defaultInstance;
 
+  /// The time series data points.
+  /// Note: Multiple time series may be included (same timestamp, different attributes).
   @$pb.TagNumber(1)
   $pb.PbList<NumberDataPoint> get dataPoints => $_getList(0);
 }
@@ -647,6 +684,8 @@ class Sum extends $pb.GeneratedMessage {
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Sum>(create);
   static Sum? _defaultInstance;
 
+  /// The time series data points.
+  /// Note: Multiple time series may be included (same timestamp, different attributes).
   @$pb.TagNumber(1)
   $pb.PbList<NumberDataPoint> get dataPoints => $_getList(0);
 
@@ -662,7 +701,7 @@ class Sum extends $pb.GeneratedMessage {
   @$pb.TagNumber(2)
   void clearAggregationTemporality() => $_clearField(2);
 
-  /// If "true" means that the sum is monotonic.
+  /// Represents whether the sum is monotonic.
   @$pb.TagNumber(3)
   $core.bool get isMonotonic => $_getBF(2);
   @$pb.TagNumber(3)
@@ -726,6 +765,8 @@ class Histogram extends $pb.GeneratedMessage {
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Histogram>(create);
   static Histogram? _defaultInstance;
 
+  /// The time series data points.
+  /// Note: Multiple time series may be included (same timestamp, different attributes).
   @$pb.TagNumber(1)
   $pb.PbList<HistogramDataPoint> get dataPoints => $_getList(0);
 
@@ -796,6 +837,8 @@ class ExponentialHistogram extends $pb.GeneratedMessage {
       $pb.GeneratedMessage.$_defaultFor<ExponentialHistogram>(create);
   static ExponentialHistogram? _defaultInstance;
 
+  /// The time series data points.
+  /// Note: Multiple time series may be included (same timestamp, different attributes).
   @$pb.TagNumber(1)
   $pb.PbList<ExponentialHistogramDataPoint> get dataPoints => $_getList(0);
 
@@ -814,10 +857,13 @@ class ExponentialHistogram extends $pb.GeneratedMessage {
 
 /// Summary metric data are used to convey quantile summaries,
 /// a Prometheus (see: https://prometheus.io/docs/concepts/metric_types/#summary)
-/// and OpenMetrics (see: https://github.com/OpenObservability/OpenMetrics/blob/4dbf6075567ab43296eed941037c12951faafb92/protos/prometheus.proto#L45)
+/// and OpenMetrics (see: https://github.com/prometheus/OpenMetrics/blob/4dbf6075567ab43296eed941037c12951faafb92/protos/prometheus.proto#L45)
 /// data type. These data points cannot always be merged in a meaningful way.
 /// While they can be useful in some applications, histogram data points are
 /// recommended for new applications.
+/// Summary metrics do not have an aggregation temporality field. This is
+/// because the count and sum fields of a SummaryDataPoint are assumed to be
+/// cumulative values.
 class Summary extends $pb.GeneratedMessage {
   factory Summary({
     $core.Iterable<SummaryDataPoint>? dataPoints,
@@ -863,6 +909,8 @@ class Summary extends $pb.GeneratedMessage {
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Summary>(create);
   static Summary? _defaultInstance;
 
+  /// The time series data points.
+  /// Note: Multiple time series may be included (same timestamp, different attributes).
   @$pb.TagNumber(1)
   $pb.PbList<SummaryDataPoint> get dataPoints => $_getList(0);
 }
@@ -1010,6 +1058,7 @@ class NumberDataPoint extends $pb.GeneratedMessage {
   /// where this point belongs. The list may be empty (may contain 0 elements).
   /// Attribute keys MUST be unique (it is not allowed to have more than one
   /// attribute with the same key).
+  /// The behavior of software that receives duplicated keys can be unpredictable.
   @$pb.TagNumber(7)
   $pb.PbList<$1.KeyValue> get attributes => $_getList(5);
 
@@ -1165,7 +1214,7 @@ class HistogramDataPoint extends $pb.GeneratedMessage {
   /// events, and is assumed to be monotonic over the values of these events.
   /// Negative events *can* be recorded, but sum should not be filled out when
   /// doing so.  This is specifically to enforce compatibility w/ OpenMetrics,
-  /// see: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#histogram
+  /// see: https://github.com/prometheus/OpenMetrics/blob/v1.0.0/specification/OpenMetrics.md#histogram
   @$pb.TagNumber(5)
   $core.double get sum => $_getN(3);
   @$pb.TagNumber(5)
@@ -1181,7 +1230,9 @@ class HistogramDataPoint extends $pb.GeneratedMessage {
   /// The sum of the bucket_counts must equal the value in the count field.
   ///
   /// The number of elements in bucket_counts array must be by one greater than
-  /// the number of elements in explicit_bounds array.
+  /// the number of elements in explicit_bounds array. The exception to this rule
+  /// is when the length of bucket_counts is 0, then the length of explicit_bounds
+  /// must also be 0.
   @$pb.TagNumber(6)
   $pb.PbList<$fixnum.Int64> get bucketCounts => $_getList(4);
 
@@ -1198,6 +1249,9 @@ class HistogramDataPoint extends $pb.GeneratedMessage {
   /// Histogram buckets are inclusive of their upper boundary, except the last
   /// bucket where the boundary is at infinity. This format is intentionally
   /// compatible with the OpenMetrics histogram definition.
+  ///
+  /// If bucket_counts length is 0 then explicit_bounds length must also be 0,
+  /// otherwise the data point is invalid.
   @$pb.TagNumber(7)
   $pb.PbList<$core.double> get explicitBounds => $_getList(5);
 
@@ -1210,6 +1264,7 @@ class HistogramDataPoint extends $pb.GeneratedMessage {
   /// where this point belongs. The list may be empty (may contain 0 elements).
   /// Attribute keys MUST be unique (it is not allowed to have more than one
   /// attribute with the same key).
+  /// The behavior of software that receives duplicated keys can be unpredictable.
   @$pb.TagNumber(9)
   $pb.PbList<$1.KeyValue> get attributes => $_getList(7);
 
@@ -1301,7 +1356,7 @@ class ExponentialHistogramDataPoint_Buckets extends $pb.GeneratedMessage {
           ExponentialHistogramDataPoint_Buckets>(create);
   static ExponentialHistogramDataPoint_Buckets? _defaultInstance;
 
-  /// Offset is the bucket index of the first entry in the bucket_counts array.
+  /// The bucket index of the first entry in the bucket_counts array.
   ///
   /// Note: This uses a varint encoding as a simple form of compression.
   @$pb.TagNumber(1)
@@ -1313,7 +1368,7 @@ class ExponentialHistogramDataPoint_Buckets extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   void clearOffset() => $_clearField(1);
 
-  /// bucket_counts is an array of count values, where bucket_counts[i] carries
+  /// An array of count values, where bucket_counts[i] carries
   /// the count of the bucket at index (offset+i). bucket_counts[i] is the count
   /// of values greater than base^(offset+i) and less than or equal to
   /// base^(offset+i+1).
@@ -1434,6 +1489,7 @@ class ExponentialHistogramDataPoint extends $pb.GeneratedMessage {
   /// where this point belongs. The list may be empty (may contain 0 elements).
   /// Attribute keys MUST be unique (it is not allowed to have more than one
   /// attribute with the same key).
+  /// The behavior of software that receives duplicated keys can be unpredictable.
   @$pb.TagNumber(1)
   $pb.PbList<$1.KeyValue> get attributes => $_getList(0);
 
@@ -1464,7 +1520,7 @@ class ExponentialHistogramDataPoint extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   void clearTimeUnixNano() => $_clearField(3);
 
-  /// count is the number of values in the population. Must be
+  /// The number of values in the population. Must be
   /// non-negative. This value must be equal to the sum of the "bucket_counts"
   /// values in the positive and negative Buckets plus the "zero_count" field.
   @$pb.TagNumber(4)
@@ -1476,14 +1532,14 @@ class ExponentialHistogramDataPoint extends $pb.GeneratedMessage {
   @$pb.TagNumber(4)
   void clearCount() => $_clearField(4);
 
-  /// sum of the values in the population. If count is zero then this field
+  /// The sum of the values in the population. If count is zero then this field
   /// must be zero.
   ///
   /// Note: Sum should only be filled out when measuring non-negative discrete
   /// events, and is assumed to be monotonic over the values of these events.
   /// Negative events *can* be recorded, but sum should not be filled out when
   /// doing so.  This is specifically to enforce compatibility w/ OpenMetrics,
-  /// see: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#histogram
+  /// see: https://github.com/prometheus/OpenMetrics/blob/v1.0.0/specification/OpenMetrics.md#histogram
   @$pb.TagNumber(5)
   $core.double get sum => $_getN(4);
   @$pb.TagNumber(5)
@@ -1517,7 +1573,7 @@ class ExponentialHistogramDataPoint extends $pb.GeneratedMessage {
   @$pb.TagNumber(6)
   void clearScale() => $_clearField(6);
 
-  /// zero_count is the count of values that are either exactly zero or
+  /// The count of values that are either exactly zero or
   /// within the region considered zero by the instrumentation at the
   /// tolerated degree of precision.  This bucket stores values that
   /// cannot be expressed using the standard exponential formula as
@@ -1576,7 +1632,7 @@ class ExponentialHistogramDataPoint extends $pb.GeneratedMessage {
   @$pb.TagNumber(11)
   $pb.PbList<Exemplar> get exemplars => $_getList(10);
 
-  /// min is the minimum value over (start_time, end_time].
+  /// The minimum value over (start_time, end_time].
   @$pb.TagNumber(12)
   $core.double get min => $_getN(11);
   @$pb.TagNumber(12)
@@ -1586,7 +1642,7 @@ class ExponentialHistogramDataPoint extends $pb.GeneratedMessage {
   @$pb.TagNumber(12)
   void clearMin() => $_clearField(12);
 
-  /// max is the maximum value over (start_time, end_time].
+  /// The maximum value over (start_time, end_time].
   @$pb.TagNumber(13)
   $core.double get max => $_getN(12);
   @$pb.TagNumber(13)
@@ -1698,7 +1754,8 @@ class SummaryDataPoint_ValueAtQuantile extends $pb.GeneratedMessage {
 }
 
 /// SummaryDataPoint is a single data point in a timeseries that describes the
-/// time-varying values of a Summary metric.
+/// time-varying values of a Summary metric. The count and sum fields represent
+/// cumulative values.
 class SummaryDataPoint extends $pb.GeneratedMessage {
   factory SummaryDataPoint({
     $fixnum.Int64? startTimeUnixNano,
@@ -1814,7 +1871,7 @@ class SummaryDataPoint extends $pb.GeneratedMessage {
   /// events, and is assumed to be monotonic over the values of these events.
   /// Negative events *can* be recorded, but sum should not be filled out when
   /// doing so.  This is specifically to enforce compatibility w/ OpenMetrics,
-  /// see: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#summary
+  /// see: https://github.com/prometheus/OpenMetrics/blob/v1.0.0/specification/OpenMetrics.md#summary
   @$pb.TagNumber(5)
   $core.double get sum => $_getN(3);
   @$pb.TagNumber(5)
@@ -1834,6 +1891,7 @@ class SummaryDataPoint extends $pb.GeneratedMessage {
   /// where this point belongs. The list may be empty (may contain 0 elements).
   /// Attribute keys MUST be unique (it is not allowed to have more than one
   /// attribute with the same key).
+  /// The behavior of software that receives duplicated keys can be unpredictable.
   @$pb.TagNumber(7)
   $pb.PbList<$1.KeyValue> get attributes => $_getList(5);
 
