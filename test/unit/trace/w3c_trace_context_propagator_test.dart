@@ -157,11 +157,33 @@ void main() {
         expect(extracted, equals(context));
       });
 
-      test('rejects unsupported version', () {
+      test('parses a higher version with the version 00 layout', () {
         // Arrange
         final carrier = {
           'traceparent':
               '01-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
+        };
+        final getter = MapTextMapGetter(carrier);
+        final context = OTel.context();
+
+        // Act
+        final extracted = propagator.extract(context, carrier, getter);
+
+        // Assert
+        final spanContext = extracted.spanContext;
+        expect(spanContext, isNotNull);
+        expect(
+          spanContext!.traceId.hexString,
+          equals('4bf92f3577b34da6a3ce929d0e0e4736'),
+        );
+        expect(spanContext.traceFlags.isSampled, isTrue);
+      });
+
+      test('rejects the forbidden version ff', () {
+        // Arrange
+        final carrier = {
+          'traceparent':
+              'ff-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
         };
         final getter = MapTextMapGetter(carrier);
         final context = OTel.context();
