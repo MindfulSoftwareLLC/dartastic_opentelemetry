@@ -46,7 +46,7 @@ void main() {
 
       // Note: If these properties aren't working properly in the test environment,
       // we can just check their existence instead of their values
-      expect(counter.enabled, isNotNull);
+      expect(counter.isEnabled(), isNotNull);
       expect(counter.isCounter, isNotNull);
       expect(counter.isUpDownCounter, isNotNull);
       expect(counter.isGauge, isNotNull);

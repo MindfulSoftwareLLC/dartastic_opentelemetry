@@ -17,9 +17,12 @@
 ///      released version, not the wip bump) and runs `dart pub publish`.
 ///      pub.dev's own confirmation prompt is the publish gate.
 ///   9. Returns the working tree to the original branch.
-///  10. (If `gh` CLI is installed and authenticated and
-///      `--no-github-release` was not passed) pushes the branch + tag
-///      to origin and creates a GitHub release via `gh release create`,
+///  10. Pushes the branch and tag to origin (skipped by `--no-publish`).
+///      This does not depend on `gh`: a missing CLI must not leave the tag
+///      only on the release machine.
+///  11. (If `gh` CLI is installed and authenticated and
+///      `--no-github-release` was not passed) creates a GitHub release via
+///      `gh release create`,
 ///      using the matching CHANGELOG section as the release notes and
 ///      marking the release as a prerelease when the version contains
 ///      `-` (e.g. `1.0.0-beta.4`). Skipped silently with instructions
@@ -87,7 +90,10 @@ Future<void> main(List<String> args) async {
       '  Publish:   ${flags.publish ? "yes — pub.dev will prompt before uploading" : "no — local commits + tag only"}',
     )
     ..writeln(
-      '  GH rel:    ${flags.publish && flags.githubRelease ? "yes — push branch+tag, create release from CHANGELOG section (needs gh CLI)" : "no"}',
+      '  Push:      ${flags.publish ? "yes — branch + tag to origin" : "no — local commits + tag only"}',
+    )
+    ..writeln(
+      '  GH rel:    ${flags.publish && flags.githubRelease ? "yes — create release from CHANGELOG section (needs gh CLI)" : "no"}',
     )
     ..writeln();
 
@@ -197,19 +203,38 @@ Future<void> main(List<String> args) async {
   }
 
   // ---- GitHub release ----
-  // Only if we successfully published (publishOk implied by reaching here
-  // when flags.publish is true) AND the user hasn't opted out AND the
-  // `gh` CLI is on PATH AND we're inside a GitHub-hosted repo.
+  // Push the branch and tag. Deliberately independent of the GitHub release
+  // below: a missing `gh` CLI or --no-github-release must not leave the tag
+  // only on this machine. Coupling the two is how a released version can end
+  // up published to pub.dev with no tag on origin and no record of it.
+  var pushed = false;
+  if (flags.publish) {
+    try {
+      _runOrThrow('git', ['push', 'origin', originalRef, 'v$release']);
+      pushed = true;
+    } catch (e) {
+      stderr.writeln(
+        'warning: pushing $originalRef and v$release to origin failed ($e). '
+        'pub.dev has the release; push manually so the tag is not local only.',
+      );
+    }
+  }
+
   var ghReleaseCreated = false;
   if (flags.publish && flags.githubRelease) {
-    if (!_hasGhCli()) {
-      stdout
-        ..writeln()
-        ..writeln('(skipping GitHub release — `gh` CLI not found on PATH; '
-            'pass --no-github-release to silence this)');
+    if (!pushed) {
+      stderr.writeln(
+        'warning: skipping the GitHub release because the push failed, so '
+        'there is no tag on origin to attach it to.',
+      );
+    } else if (!_hasGhCli()) {
+      stderr.writeln(
+        'warning: skipping the GitHub release, `gh` CLI not found on PATH. '
+        'The branch and tag are pushed; create the release manually, or pass '
+        '--no-github-release to silence this.',
+      );
     } else {
       try {
-        _runOrThrow('git', ['push', 'origin', originalRef, 'v$release']);
         final notes = _extractChangelogSection(release);
         ghReleaseCreated = await _createGitHubRelease(
           tag: 'v$release',
@@ -226,8 +251,8 @@ Future<void> main(List<String> args) async {
       } catch (e) {
         stderr.writeln(
           'warning: GitHub release step failed ($e). '
-          'pub.dev publish succeeded — push and create the release manually '
-          'if you want one.',
+          'pub.dev publish and the push both succeeded; create the release '
+          'manually if you want one.',
         );
       }
     }
@@ -242,9 +267,10 @@ Future<void> main(List<String> args) async {
       ..writeln('Released $release on pub.dev and GitHub.')
       ..writeln();
   } else {
-    stdout
-      ..writeln('Next steps:')
-      ..writeln('  git push origin $originalRef v$release');
+    stdout.writeln('Next steps:');
+    if (!pushed) {
+      stdout.writeln('  git push origin $originalRef v$release');
+    }
     if (!flags.publish) {
       stdout
         ..writeln('  git checkout v$release')

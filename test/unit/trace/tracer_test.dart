@@ -25,20 +25,20 @@ void main() {
 
     test('has correct properties', () {
       expect(tracer.name, equals('test-tracer'));
-      expect(tracer.enabled, isTrue);
+      expect(tracer.isEnabled(), isTrue);
     });
 
     test('enabled is false when no span processors are registered', () {
       final bareProvider = OTel.addTracerProvider('bare-provider');
       final bareTracer = bareProvider.getTracer('bare-tracer');
 
-      expect(bareTracer.enabled, isFalse);
+      expect(bareTracer.isEnabled(), isFalse);
 
       final exporter = InMemorySpanExporter();
       final processor = SimpleSpanProcessor(exporter);
       bareProvider.addSpanProcessor(processor);
 
-      expect(bareTracer.enabled, isTrue);
+      expect(bareTracer.isEnabled(), isTrue);
 
       bareProvider.shutdown();
     });

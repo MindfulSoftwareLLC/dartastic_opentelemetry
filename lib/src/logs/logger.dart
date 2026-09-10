@@ -60,7 +60,8 @@ class OTelLogger implements APILogger {
   Attributes? get attributes => _delegate.attributes;
 
   @override
-  bool get enabled {
+  bool isEnabled(
+      {Context? context, Severity? severityNumber, String? eventName}) {
     // Check if provider is enabled
     if (!_provider.enabled || _provider.isShutdown) {
       return false;
@@ -97,7 +98,7 @@ class OTelLogger implements APILogger {
     Attributes? attributes,
     String? eventName,
   }) {
-    if (!enabled) {
+    if (!isEnabled()) {
       if (OTelLog.isDebug()) {
         OTelLog.debug('OTelLogger: emit called but logger is disabled');
       }

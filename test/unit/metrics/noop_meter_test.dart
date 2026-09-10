@@ -17,7 +17,7 @@ void main() {
       expect(noopMeter.version, isNull);
       expect(noopMeter.schemaUrl, isNull);
       expect(noopMeter.attributes, isNull);
-      expect(noopMeter.enabled, isFalse);
+      expect(noopMeter.isEnabled(), isFalse);
     });
 
     test('NoopMeter creates NoopCounter', () {
@@ -31,7 +31,7 @@ void main() {
       expect(counter.name, equals('test_counter'));
       expect(counter.unit, equals('ms'));
       expect(counter.description, equals('Test counter'));
-      expect(counter.enabled, isFalse);
+      expect(counter.isEnabled(), isFalse);
       expect(counter.meter, isNotNull);
 
       // Verify type checks
@@ -56,7 +56,7 @@ void main() {
       expect(counter.name, equals('test_up_down'));
       expect(counter.unit, equals('bytes'));
       expect(counter.description, equals('Test up-down counter'));
-      expect(counter.enabled, isFalse);
+      expect(counter.isEnabled(), isFalse);
       expect(counter.meter, isNotNull);
 
       // Verify type checks
@@ -84,7 +84,7 @@ void main() {
       expect(histogram.unit, equals('ms'));
       expect(histogram.description, equals('Test histogram'));
       expect(histogram.boundaries, equals([1, 5, 10, 50, 100]));
-      expect(histogram.enabled, isFalse);
+      expect(histogram.isEnabled(), isFalse);
       expect(histogram.meter, isNotNull);
 
       // Verify type checks
@@ -109,7 +109,7 @@ void main() {
       expect(gauge.name, equals('test_gauge'));
       expect(gauge.unit, equals('celsius'));
       expect(gauge.description, equals('Test gauge'));
-      expect(gauge.enabled, isFalse);
+      expect(gauge.isEnabled(), isFalse);
       expect(gauge.meter, isNotNull);
 
       // Verify type checks
@@ -134,7 +134,7 @@ void main() {
       expect(counter.name, equals('test_obs_counter'));
       expect(counter.unit, equals('requests'));
       expect(counter.description, equals('Test observable counter'));
-      expect(counter.enabled, isFalse);
+      expect(counter.isEnabled(), isFalse);
       expect(counter.meter, isNotNull);
 
       // Initially empty callbacks
@@ -172,7 +172,7 @@ void main() {
       expect(counter.name, equals('test_obs_up_down'));
       expect(counter.unit, equals('bytes'));
       expect(counter.description, equals('Test observable up-down counter'));
-      expect(counter.enabled, isFalse);
+      expect(counter.isEnabled(), isFalse);
       expect(counter.meter, isNotNull);
 
       // Initially empty callbacks
@@ -210,7 +210,7 @@ void main() {
       expect(gauge.name, equals('test_obs_gauge'));
       expect(gauge.unit, equals('celsius'));
       expect(gauge.description, equals('Test observable gauge'));
-      expect(gauge.enabled, isFalse);
+      expect(gauge.isEnabled(), isFalse);
       expect(gauge.meter, isNotNull);
 
       // Initially empty callbacks

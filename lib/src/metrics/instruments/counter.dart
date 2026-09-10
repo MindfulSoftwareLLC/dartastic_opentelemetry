@@ -32,7 +32,7 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
   final Meter _meter;
 
   /// Storage for accumulating counter measurements.
-  final SumStorage<T> _storage = SumStorage<T>(isMonotonic: true);
+  final SumStorage<T> _storage;
 
   /// Creates a new Counter instance.
   ///
@@ -40,7 +40,11 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
   /// @param meter The Meter that created this Counter
   Counter({required APICounter<T> apiCounter, required Meter meter})
       : _apiCounter = apiCounter,
-        _meter = meter {
+        _meter = meter,
+        _storage = SumStorage<T>(
+          isMonotonic: true,
+          exemplarFilter: meter.provider.exemplarFilter,
+        ) {
     _meter.provider.registerInstrument(_meter.name, this);
   }
 
@@ -60,7 +64,7 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
   ///
   /// If false, measurements will be dropped and not recorded.
   @override
-  bool get enabled => _meter.enabled;
+  bool isEnabled() => _meter.isEnabled();
 
   /// Gets the meter that created this counter.
   @override
@@ -101,10 +105,10 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
     }
 
     // Only record if enabled
-    if (!enabled) return;
+    if (!isEnabled()) return;
 
     // Record the measurement in our storage
-    _storage.record(value, attributes);
+    _storage.record(value, attributes, Context.current);
   }
 
   /// Records a measurement with attributes specified as a map.
@@ -148,7 +152,7 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
   /// @return A list of metrics containing the current counter values
   @override
   List<Metric> collectMetrics() {
-    if (!enabled) return [];
+    if (!isEnabled()) return [];
 
     // Get the points from storage
     final points = collectPoints();

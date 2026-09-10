@@ -34,6 +34,9 @@ class MeterProvider implements APIMeterProvider {
   /// List of views for configuring metric collection.
   final List<View> _views = [];
 
+  /// The ExemplarFilter used by this provider's meters.
+  ExemplarFilter exemplarFilter = const TraceBasedExemplarFilter();
+
   /// Private constructor for creating MeterProvider instances.
   ///
   /// @param delegate The API MeterProvider implementation to delegate to

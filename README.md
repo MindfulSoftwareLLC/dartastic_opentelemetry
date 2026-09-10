@@ -12,13 +12,11 @@ Dartastic supports all Dart and Flutter targets including, mobile, desktop, web 
 The Dartastic OTel SDK is in the process of being [Donation to the CNCF](https://github.com/open-telemetry/community/issues/2718)
 to become the official standard for Dart OpenTelemetry.
 
-Flutter developers can use the [Flutterrific OpenTelemetry SDK](https://pub.dev/packages/flutterrific_opentelemetry/) which builds on top of Dartastic OTel.
-Due to limitations in Dart, [Dartastic Native OTel](https://dartastic.io/otel) is the 
-best choice for production Flutter applications.
-
-Dartastic and Flutterrific OTel are made with 💙 by Michael Bushe at [Dartastic.io](https://dartastic.io)
+Dartastic is made with 💙 by Michael Bushe at [Dartastic.io](https://dartastic.io)
 
 ## Commercial: Dartastic.io - Pro OpenTelemetry
+
+Due to limitations in Dart, [Dartastic Native OTel](https://dartastic.io/otel) is the best choice for production Dart and Flutter applications.
 
 [Dartastic.io](https://dartastic.io) provides tools and services for Dart and Flutter, focused on OpenTelemetry.
 * **[Dartastic Native OTel](https://dartastic.io/otel/)**
@@ -99,16 +97,12 @@ Dartastic and Flutterrific OTel are made with 💙 by Michael Bushe at [Dartasti
     - Dart CloudRun functions
     - Dart Cloud Functions (Firebase Functions in Dart)
 
--  **Flutter Demo** The [Wonderous OpenTelemetry Demo](https://github.com/MindfulSoftwareLLC/wondrous_opentelemetry) demonstrates  
-  gskinner's Wonderous App with instrumentation for OpenTelemetry with [Flutterrific](https://pub.dev/packages/flutterrific_opentelemetry) . 
-
-
 ## Getting started
 
 Include this in your pubspec.yaml:
 ```
 dependencies:
-  dartastic_opentelemetry: ^1.1.0-beta.14
+  dartastic_opentelemetry: ^1.1.0-beta.15
 ```
 
 ## Usage

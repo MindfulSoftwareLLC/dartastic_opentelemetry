@@ -18,6 +18,19 @@ Examples:
 Assisted-by: ChatGPT 5.2
 Assisted-by: Claude Opus 4.5
 
+## CHANGELOG.md style
+
+Entries should be tied to their PR's by full links so that they show up on pub.dev.
+Example:
+- `getTracer`/`getLogger`/`getMeter` no longer invent a scope version or
+  schema URL when the caller omits them
+  ([#108](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/108)).
+
+
+Use - **BREAKING**: format for breaking changes.
+Example: - **BREAKING**: Replaced the `enabled` getter with `isEnabled()` method on `APITracer`, `APILogger`, `APIInstrument` and all instrument subclasses. The `enabled` parameter has also been removed from all metric instrument creation API constructors and factories. This change allows SDKs to dynamically re-evaluate instrument enablement and enables adding parameters to `isEnabled()` in the future without breaking the API.
+
+
 ## Architecture: one entrypoint, everything through factories
 
 This SDK is **not structured like most OpenTelemetry SDKs**. In most
