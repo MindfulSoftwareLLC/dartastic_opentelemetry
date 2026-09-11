@@ -1,0 +1,127 @@
+# Applied by .github/workflows/labeler.yml. Every label named here must also
+# exist in tool/create-labels.sh, which creates them.
+
+# Components, one per folder under lib/src/.
+
+trace:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'lib/src/trace/**'
+          - 'lib/proto/trace/**'
+          - 'test/unit/trace/**'
+          - 'test/integration/context_propagation_test.dart'
+
+metrics:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'lib/src/metrics/**'
+          - 'lib/proto/metrics/**'
+          - 'test/unit/metrics/**'
+          - 'test/integration/metrics/**'
+
+logs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'lib/src/logs/**'
+          - 'lib/proto/logs/**'
+          - 'test/unit/logs/**'
+
+# No folder of its own: the propagator sits under lib/src/context/propagation/
+# and the rest is in the API package.
+baggage:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'lib/src/**/*baggage*'
+          - 'test/unit/baggage/**'
+          - 'test/performance/baggage/**'
+          - 'example/baggage_*.dart'
+
+context:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'lib/src/context/**'
+          - 'test/unit/context/**'
+          - 'test/integration/context_propagation_test.dart'
+          - 'example/propagator_example.dart'
+          - 'example/isolate_context_example.dart'
+
+resource:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'lib/src/resource/**'
+          - 'lib/proto/resource/**'
+          - 'test/unit/sdk/resource*_test.dart'
+          - 'test/integration/resource_attributes_test.dart'
+          - 'test/web/web_resource_detector_test.dart'
+          - 'test/web/web_otlp_resource_e2e_test.dart'
+
+environment:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'lib/src/environment/**'
+          - 'test/unit/environment/**'
+          - 'test/integration/environment_variables_test.dart'
+          - 'tool/*env_vars*'
+          - 'tool/read_otel_config.dart'
+
+export:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'lib/src/export/**'
+          - 'lib/src/trace/export/**'
+          - 'lib/src/metrics/export/**'
+          - 'lib/src/logs/export/**'
+          - 'lib/proto/collector/**'
+          - 'test/unit/export/**'
+          - 'test/unit/**/export/**'
+          - 'example/otlp_*.dart'
+
+proto:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'lib/proto/**'
+          - 'tool/setup_protos.sh'
+
+core:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'lib/dartastic_opentelemetry.dart'
+          - 'lib/src/otel.dart'
+          - 'lib/src/version.dart'
+          - 'lib/src/factory/**'
+          - 'lib/src/util/**'
+          - 'lib/testing.dart'
+          - 'test/unit/factory/**'
+          - 'test/unit/util/**'
+
+# Everything that is not a signal.
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'test/**'
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/**'
+
+tooling:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'tool/**'
+          - 'Makefile'
+          - 'analysis_options.yaml'
+          - 'coverage.sh'
+          - '.coveragerc'
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.md'
+          - 'example/**'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'pubspec.yaml'
