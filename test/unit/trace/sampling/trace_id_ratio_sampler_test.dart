@@ -25,7 +25,7 @@ void main() {
 
     test('description returns expected value', () {
       final sampler = TraceIdRatioSampler(0.5);
-      expect(sampler.description, equals('TraceIdRatioSampler{0.5}'));
+      expect(sampler.description, equals('TraceIdRatioBased{0.500000}'));
     });
 
     test('sampler with ratio 0.0 never samples', () {
