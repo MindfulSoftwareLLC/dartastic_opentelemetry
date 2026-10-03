@@ -196,6 +196,18 @@ void main() {
       await exporter.shutdown();
     });
 
+    test('export returns false on non-retryable 500', () async {
+      statusCodes = [500, 200];
+      final exporter = createExporter();
+      final metricData = createTestMetricData();
+
+      final result = await exporter.export(metricData);
+
+      expect(result, isFalse);
+      expect(requestCount, equals(1));
+      await exporter.shutdown();
+    });
+
     test('export returns false on non-retryable 400', () async {
       statusCodes = [400];
       final exporter = createExporter();

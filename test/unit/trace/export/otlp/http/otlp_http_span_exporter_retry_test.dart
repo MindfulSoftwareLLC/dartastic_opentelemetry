@@ -118,6 +118,16 @@ void main() {
       await exporter.shutdown();
     });
 
+    test('does not retry on 500', () async {
+      statusCodes = [500, 200];
+      final exporter = createExporter();
+      final spans = createTestSpans();
+
+      await expectLater(exporter.export(spans), throwsA(anything));
+      expect(requestCount, equals(1));
+      await exporter.shutdown();
+    });
+
     test('gives up after max retries on 503', () async {
       // maxRetries=2 means 3 total attempts (initial + 2 retries)
       statusCodes = [503, 503, 503];

@@ -117,6 +117,15 @@ void main() {
       await exporter.shutdown();
     });
 
+    test('does not retry on 500', () async {
+      statusCodes = [500, 200];
+      final exporter = createExporter();
+      final result = await exporter.export([createTestLogRecord()]);
+      expect(result, equals(ExportResult.failure));
+      expect(requestCount, equals(1));
+      await exporter.shutdown();
+    });
+
     test('does not retry a non-retryable 400', () async {
       statusCodes = [400, 200];
       final exporter = createExporter();
