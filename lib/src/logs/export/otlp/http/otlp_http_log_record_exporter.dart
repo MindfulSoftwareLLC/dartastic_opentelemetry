@@ -259,9 +259,8 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
           return ExportResult.failure;
         }
 
-        final shouldRetry =
-            e is OtlpHttpException &&
-                _retryableStatusCodes.contains(e.statusCode);
+        final shouldRetry = e is OtlpHttpException &&
+            _retryableStatusCodes.contains(e.statusCode);
 
         if (!shouldRetry) {
           if (OTelLog.isError()) {

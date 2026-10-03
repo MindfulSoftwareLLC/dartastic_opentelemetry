@@ -175,9 +175,8 @@ class OtlpHttpMetricExporter implements MetricExporter {
         }
 
         // Handle status code-based retries
-        final shouldRetry =
-            e is OtlpHttpException &&
-                _retryableStatusCodes.contains(e.statusCode);
+        final shouldRetry = e is OtlpHttpException &&
+            _retryableStatusCodes.contains(e.statusCode);
 
         if (!shouldRetry) {
           if (OTelLog.isError()) {

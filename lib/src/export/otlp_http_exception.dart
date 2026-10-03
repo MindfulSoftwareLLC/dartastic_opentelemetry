@@ -5,5 +5,4 @@ class OtlpHttpException extends http.ClientException {
 
   OtlpHttpException(String message, this.statusCode, [Uri? uri])
       : super(message, uri);
-
 }
