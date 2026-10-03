@@ -9,6 +9,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
 import '../../../../../dartastic_opentelemetry.dart';
+import '../../../../export/otlp_http_exception.dart';
 import '../../../../export/otlp_json.dart';
 import '../../../../export/otlp_user_agent.dart';
 import '../../../../trace/export/otlp/http/http_client_factory.dart';
@@ -19,7 +20,9 @@ import '../metric_transformer.dart';
 class OtlpHttpMetricExporter implements MetricExporter {
   static const _retryableStatusCodes = [
     429, // Too Many Requests
+    502, // Bad Gateway
     503, // Service Unavailable
+    504, // Gateway Timeout
   ];
 
   final OtlpHttpMetricExporterConfig _config;
@@ -172,15 +175,9 @@ class OtlpHttpMetricExporter implements MetricExporter {
         }
 
         // Handle status code-based retries
-        var shouldRetry = false;
-        if (e.message.contains('status code')) {
-          for (final code in _retryableStatusCodes) {
-            if (e.message.contains('status code $code')) {
-              shouldRetry = true;
-              break;
-            }
-          }
-        }
+        final shouldRetry =
+            e is OtlpHttpException &&
+                _retryableStatusCodes.contains(e.statusCode);
 
         if (!shouldRetry) {
           if (OTelLog.isError()) {
@@ -333,7 +330,7 @@ class OtlpHttpMetricExporter implements MetricExporter {
         final errorMessage =
             'OtlpHttpMetricExporter: Export request failed with status code ${response.statusCode}';
         if (OTelLog.isError()) OTelLog.error(errorMessage);
-        throw http.ClientException(errorMessage);
+        throw OtlpHttpException(errorMessage, response.statusCode);
       }
     } on http.ClientException {
       // Let ClientException propagate to _export for retry handling

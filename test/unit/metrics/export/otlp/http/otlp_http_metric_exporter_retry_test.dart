@@ -172,6 +172,30 @@ void main() {
       await exporter.shutdown();
     });
 
+    test('retries on 502 and succeeds on second try', () async {
+      statusCodes = [502, 200];
+      final exporter = createExporter();
+      final metricData = createTestMetricData();
+
+      final result = await exporter.export(metricData);
+
+      expect(result, isTrue);
+      expect(requestCount, equals(2));
+      await exporter.shutdown();
+    });
+
+    test('retries on 504 and succeeds on second try', () async {
+      statusCodes = [504, 200];
+      final exporter = createExporter();
+      final metricData = createTestMetricData();
+
+      final result = await exporter.export(metricData);
+
+      expect(result, isTrue);
+      expect(requestCount, equals(2));
+      await exporter.shutdown();
+    });
+
     test('export returns false on non-retryable 400', () async {
       statusCodes = [400];
       final exporter = createExporter();

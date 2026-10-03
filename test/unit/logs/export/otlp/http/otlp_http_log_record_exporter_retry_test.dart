@@ -99,6 +99,24 @@ void main() {
       await exporter.shutdown();
     });
 
+    test('retries on 502 and succeeds on second try', () async {
+      statusCodes = [502, 200];
+      final exporter = createExporter();
+      final result = await exporter.export([createTestLogRecord()]);
+      expect(result, equals(ExportResult.success));
+      expect(requestCount, equals(2));
+      await exporter.shutdown();
+    });
+
+    test('retries on 504 and succeeds on second try', () async {
+      statusCodes = [504, 200];
+      final exporter = createExporter();
+      final result = await exporter.export([createTestLogRecord()]);
+      expect(result, equals(ExportResult.success));
+      expect(requestCount, equals(2));
+      await exporter.shutdown();
+    });
+
     test('does not retry a non-retryable 400', () async {
       statusCodes = [400, 200];
       final exporter = createExporter();

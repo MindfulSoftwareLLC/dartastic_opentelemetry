@@ -10,6 +10,7 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
     show OTelLog;
 import 'package:http/http.dart' as http;
 
+import '../../../../export/otlp_http_exception.dart';
 import '../../../../export/otlp_http_protocol.dart';
 import '../../../../export/otlp_json.dart';
 import '../../../../export/otlp_user_agent.dart';
@@ -26,7 +27,9 @@ import 'otlp_http_span_exporter_config.dart';
 class OtlpHttpSpanExporter implements SpanExporter {
   static const _retryableStatusCodes = [
     429, // Too Many Requests
+    502, // Bad Gateway
     503, // Service Unavailable
+    504, // Gateway Timeout
   ];
 
   final OtlpHttpExporterConfig _config;
@@ -182,7 +185,7 @@ class OtlpHttpSpanExporter implements SpanExporter {
         final errorMessage =
             'OtlpHttpSpanExporter: Export request failed with status code ${response.statusCode}';
         if (OTelLog.isError()) OTelLog.error(errorMessage);
-        throw http.ClientException(errorMessage);
+        throw OtlpHttpException(errorMessage, response.statusCode);
       }
     } catch (e, stackTrace) {
       if (OTelLog.isError()) {
@@ -290,15 +293,9 @@ class OtlpHttpSpanExporter implements SpanExporter {
         }
 
         // Handle status code-based retries
-        var shouldRetry = false;
-        if (e.message.contains('status code')) {
-          for (final code in _retryableStatusCodes) {
-            if (e.message.contains('status code $code')) {
-              shouldRetry = true;
-              break;
-            }
-          }
-        }
+        final shouldRetry =
+            e is OtlpHttpException &&
+                _retryableStatusCodes.contains(e.statusCode);
 
         if (!shouldRetry) {
           if (OTelLog.isError()) {

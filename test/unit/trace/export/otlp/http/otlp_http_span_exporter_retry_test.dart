@@ -96,6 +96,28 @@ void main() {
       await exporter.shutdown();
     });
 
+    test('retries on 502 and succeeds on second try', () async {
+      statusCodes = [502, 200];
+      final exporter = createExporter();
+      final spans = createTestSpans();
+
+      await exporter.export(spans);
+
+      expect(requestCount, equals(2));
+      await exporter.shutdown();
+    });
+
+    test('retries on 504 and succeeds on second try', () async {
+      statusCodes = [504, 200];
+      final exporter = createExporter();
+      final spans = createTestSpans();
+
+      await exporter.export(spans);
+
+      expect(requestCount, equals(2));
+      await exporter.shutdown();
+    });
+
     test('gives up after max retries on 503', () async {
       // maxRetries=2 means 3 total attempts (initial + 2 retries)
       statusCodes = [503, 503, 503];
