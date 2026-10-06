@@ -8,6 +8,12 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.0-beta.16-wip]
 
+### Fixed
+
+- The `dartastic_opentelemetry_api` dependency is pinned to the current rc (`>=1.0.0-rc.3 <1.0.0-rc.4`) so a new API
+  prerelease cannot break a fresh `pub get`. Widen it only after the SDK is adapted
+  ([#297](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/297)).
+
 ## [1.1.0-beta.15] - 2026-08-28
 
 ### Breaking Changes

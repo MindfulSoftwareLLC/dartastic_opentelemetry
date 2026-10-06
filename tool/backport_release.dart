@@ -83,6 +83,18 @@ final _betaTagRe = RegExp(r'^v1\.\d+\.\d+-beta(\.\d+)?$');
 /// Tag pattern for the stable channel itself.
 final _stableTagRe = RegExp(r'^v0\.\d+\.\d+$');
 
+/// Matches a `  <name>: <constraint>` pubspec line, capturing the indentation
+/// and key in group 1, the whole constraint value in group 2, and any trailing
+/// whitespace or comment in group 3.
+///
+/// Group 2 has to take the rest of the line rather than a single `\S+` run. A
+/// range constraint is quoted and contains a space, as in
+/// `'>=1.0.0-rc.3 <1.0.0-rc.4'`, and `\S+` stops at that space, which would
+/// read back a truncated constraint and, on rewrite, leave the tail of the old
+/// one and its unbalanced quote behind.
+RegExp _dependencyLineRe(String name) =>
+    RegExp(r'^(\s*' + RegExp.escape(name) + r':\s*)(.*?)(\s*(?:#.*)?)$');
+
 Future<void> main(List<String> args) async {
   final flags = _Flags.parse(args);
 
@@ -403,9 +415,10 @@ String _previousStableApiConstraint() {
     final r = Process.runSync('git', ['show', '$t:$_pubspecPath']);
     if (r.exitCode != 0) continue;
     for (final line in (r.stdout as String).split('\n')) {
-      final m = RegExp(r'^\s*' + RegExp.escape(_backportedDep) + r':\s*(\S+)')
-          .firstMatch(line);
-      if (m != null) return m.group(1)!;
+      final m = _dependencyLineRe(_backportedDep).firstMatch(line);
+      // An empty group 2 is a `name:` key with the constraint nested beneath
+      // it, such as a path or git dependency. Not a constraint we can read.
+      if (m != null && m.group(2)!.isNotEmpty) return m.group(2)!;
     }
   }
   _die('could not auto-detect the $_backportedDep constraint from any stable '
@@ -501,11 +514,11 @@ void _replaceDependencyConstraint({
 }) {
   final f = File(_pubspecPath);
   final lines = f.readAsLinesSync();
-  final re = RegExp(r'^(\s*' + RegExp.escape(name) + r':\s*)(\S+)(.*)$');
+  final re = _dependencyLineRe(name);
   var replaced = false;
   for (var i = 0; i < lines.length; i++) {
     final m = re.firstMatch(lines[i]);
-    if (m == null) continue;
+    if (m == null || m.group(2)!.isEmpty) continue;
     final was = m.group(2)!;
     lines[i] = '${m.group(1)}$to${m.group(3)}';
     replaced = true;
