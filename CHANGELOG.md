@@ -21,8 +21,6 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.0-beta.17-wip]
 
-## [1.1.0-beta.16] - 2026-10-08
-
 ### Changed
 
 - **BREAKING**: Built on `dartastic_opentelemetry_api` 1.0.0-rc.4. The API's breaking changes
@@ -74,6 +72,11 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 - `W3CTraceContextPropagator.extract` rejects a `traceparent` whose trace-flags field is not two lowercase hex digits,
   as context/api-propagators.md requires, instead of defaulting the flags
   ([#TBD](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/TBD)).
+
+## [1.1.0-beta.16] - 2026-10-08
+
+### Fixed
+
 - The `dartastic_opentelemetry_api` dependency is pinned to the current rc (`>=1.0.0-rc.3 <1.0.0-rc.4`) so a new API
   prerelease cannot break a fresh `pub get`. Widen it only after the SDK is adapted
   ([#297](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/297)).
