@@ -10,7 +10,7 @@ import '../../../dartastic_opentelemetry.dart';
 /// decreases where measurements are made by a callback function. For example,
 /// number of active requests, queue size, pool size.
 class ObservableUpDownCounter<T extends num>
-    implements APIObservableUpDownCounter<T>, SDKInstrument {
+    implements APIObservableUpDownCounter<T>, SDKObservableInstrument {
   /// The underlying API ObservableUpDownCounter.
   final APIObservableUpDownCounter<T> _apiCounter;
 
@@ -22,6 +22,9 @@ class ObservableUpDownCounter<T extends num>
 
   /// The last observed values, for tracking changes.
   final Map<Attributes, T> _lastValues = {};
+
+  /// Observations queued by batch callbacks, drained on the next [collect].
+  final List<Measurement<T>> _batchObservations = [];
 
   /// Creates a new ObservableUpDownCounter instance.
   ObservableUpDownCounter({
@@ -42,6 +45,9 @@ class ObservableUpDownCounter<T extends num>
 
   @override
   String? get description => _apiCounter.description;
+
+  @override
+  InstrumentAdvisory? get advisory => _apiCounter.advisory;
 
   @override
   bool isEnabled() {
@@ -95,18 +101,28 @@ class ObservableUpDownCounter<T extends num>
     return value as T;
   }
 
-  /// Collects measurements from all registered callbacks.
+  @override
+  void observeFromBatch(num value, Attributes? attributes) {
+    _batchObservations.add(
+      OTelFactory.otelFactory!
+          .createMeasurement<T>(castNum<T>(value), attributes),
+    );
+  }
+
+  /// Collects measurements from all registered callbacks and from any
+  /// batch callbacks that observed this instrument since the last collection.
   @override
   List<Measurement<T>> collect() {
     if (!isEnabled()) {
+      _batchObservations.clear();
       return [];
     }
 
     final result = <Measurement<T>>[];
     final callbackList = List<ObservableCallback<T>>.from(callbacks);
 
-    // Return early if no callbacks registered
-    if (callbackList.isEmpty) {
+    // Return early if nothing can observe
+    if (callbackList.isEmpty && _batchObservations.isEmpty) {
       return result;
     }
 
@@ -131,36 +147,8 @@ class ObservableUpDownCounter<T extends num>
 
         // Process the measurements from the observable result
         for (final measurement in observableResult.measurements) {
-          // Type checking for the generic parameter
-          final dynamic rawValue = measurement.value;
-          final value = (rawValue is num)
-              ? rawValue
-              : num.tryParse(rawValue.toString()) ?? 0;
-          final attributes =
-              measurement.attributes ?? OTelFactory.otelFactory!.attributes();
-
-          // Per the spec, for ObservableUpDownCounter we record the absolute value
-          // directly - not the delta
-          // For SDK storage, convert the num to the appropriate T type
-          if (T == int) {
-            _storage.record(value.toInt() as T, attributes, Context.current);
-          } else if (T == double) {
-            _storage.record(value.toDouble() as T, attributes, Context.current);
-          } else {
-            _storage.record(value as T, attributes, Context.current);
-          }
-
-          // Add measurement with the absolute value to the result
+          _record(measurement);
           result.add(measurement);
-
-          // Keep track of the last value for debugging and tracking
-          if (T == int) {
-            _lastValues[attributes] = value.toInt() as T;
-          } else if (T == double) {
-            _lastValues[attributes] = value.toDouble() as T;
-          } else {
-            _lastValues[attributes] = value as T;
-          }
         }
       } catch (e) {
         print(
@@ -169,7 +157,29 @@ class ObservableUpDownCounter<T extends num>
       }
     }
 
+    // Batch callbacks ran before this instrument collected; drain what they
+    // observed into the same storage.
+    for (final measurement in _batchObservations) {
+      _record(measurement);
+      result.add(measurement);
+    }
+    _batchObservations.clear();
+
     return result;
+  }
+
+  /// Records one observed absolute value into storage.
+  ///
+  /// Per the spec, for ObservableUpDownCounter we record the absolute value
+  /// directly - not the delta.
+  void _record(Measurement<T> measurement) {
+    final value = castNum<T>(measurement.value);
+    final attributes =
+        measurement.attributes ?? OTelFactory.otelFactory!.attributes();
+    _storage.record(value, attributes, Context.current);
+
+    // Keep track of the last value for debugging and tracking
+    _lastValues[attributes] = value;
   }
 
   /// Gets the current points for this counter.

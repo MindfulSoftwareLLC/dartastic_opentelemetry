@@ -39,7 +39,7 @@ class BaggageSpanProcessor implements SpanProcessor {
       return;
     }
 
-    final entries = baggage.getAllEntries();
+    final entries = baggage.getAllValues();
     if (entries.isEmpty) {
       return;
     }

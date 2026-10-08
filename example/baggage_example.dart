@@ -73,7 +73,7 @@ Future<void> main() async {
     // Or you can get all entries at once
     // Best practice: Check getAllEntries when debugging propagation issues
     print('All baggage entries:');
-    currentBaggage.getAllEntries().forEach((key, entry) {
+    currentBaggage.getAllValues().forEach((key, entry) {
       if (entry.metadata != null) {
         print('  $key: ${entry.value} (${entry.metadata})');
       } else {
@@ -89,7 +89,7 @@ Future<void> main() async {
       final isolateContext = Context.currentWithBaggage();
       final isolateBaggage = isolateContext.baggage;
       print('\nIn isolate - baggage entries:');
-      isolateBaggage!.getAllEntries().forEach((key, entry) {
+      isolateBaggage!.getAllValues().forEach((key, entry) {
         if (entry.metadata != null) {
           print('  $key: ${entry.value} (${entry.metadata})');
         } else {
@@ -138,7 +138,7 @@ Future<void> distributedTracingExample() async {
       final currentBaggage = Context.currentWithBaggage().baggage!;
 
       print('\nOutgoing request baggage:');
-      currentBaggage.getAllEntries().forEach((key, entry) {
+      currentBaggage.getAllValues().forEach((key, entry) {
         print('  $key: ${entry.value}');
       });
     });
@@ -178,7 +178,7 @@ Future<void> monitoringExample() async {
       // Useful for detailed debugging or error handling
       final debugBaggage = Context.currentWithBaggage().baggage;
       print('\nProcessing transaction with baggage:');
-      debugBaggage!.getAllEntries().forEach((key, entry) {
+      debugBaggage!.getAllValues().forEach((key, entry) {
         print('  $key: ${entry.value}');
       });
     });
@@ -186,7 +186,7 @@ Future<void> monitoringExample() async {
     // The outer context still has only low-cardinality data
     // This helps keep most operations efficient
     print('\nGeneral operations baggage:');
-    Context.currentWithBaggage().baggage!.getAllEntries().forEach((key, entry) {
+    Context.currentWithBaggage().baggage!.getAllValues().forEach((key, entry) {
       print('  $key: ${entry.value}');
     });
   });

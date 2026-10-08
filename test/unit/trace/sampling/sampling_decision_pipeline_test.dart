@@ -426,7 +426,7 @@ void main() {
       // Local parent: the child of childOfRemote inherits transitively.
       final grandChild = OTel.tracer().startSpan(
         'grandchild',
-        parentSpan: childOfRemote,
+        context: Context.current.withSpan(childOfRemote),
       );
       expect(grandChild.spanContext.traceState?.get('vendor'), 'value');
       grandChild.end();
@@ -629,23 +629,44 @@ void main() {
       expect(exporter.spans, isEmpty);
     });
 
-    test('an explicit spanContext is honored verbatim', () async {
+    test('createSpan parents to a SpanContext placed on the context', () async {
       await initWith();
-      final explicit = OTel.spanContext(
+      final parent = OTel.spanContext(
         traceId: OTel.traceIdFrom('00112233445566778899aabbccddeeff'),
         spanId: OTel.spanIdFrom('0011223344556677'),
+        traceFlags: OTel.traceFlags(TraceFlags.SAMPLED_FLAG),
       );
       final span = OTel.tracer().createSpan(
-        name: 'created-explicit',
-        spanContext: explicit,
+        name: 'created-child',
+        context: Context.root.withSpanContext(parent),
       );
 
-      expect(span.spanContext.traceId, equals(explicit.traceId));
-      expect(span.spanContext.spanId, equals(explicit.spanId));
+      // A child of the given SpanContext: same trace, a fresh span ID.
+      expect(span.spanContext.traceId, equals(parent.traceId));
+      expect(span.spanContext.spanId, isNot(equals(parent.spanId)));
+      expect(span.spanContext.parentSpanId, equals(parent.spanId));
       // The sampler still ran and the processors saw the span.
       expect(span.isRecording, isTrue);
       expect(recorder.started, hasLength(1));
       span.end();
+    });
+
+    test('root: true ignores the parent in the context', () async {
+      await initWith();
+      final parent = OTel.tracer().startSpan('parent');
+      final span = OTel.tracer().createSpan(
+        name: 'forced-root',
+        context: Context.current.withSpan(parent),
+        root: true,
+      );
+
+      expect(
+          span.spanContext.traceId, isNot(equals(parent.spanContext.traceId)));
+      expect(span.spanContext.parentSpanId?.isValid ?? false, isFalse);
+      // Both spans are recording, so the processors saw both.
+      expect(recorder.started, hasLength(2));
+      span.end();
+      parent.end();
     });
   });
 }

@@ -4,6 +4,12 @@
 library;
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
+// The API hides a span's recorded data from application code (trace/api.md
+// says a Span SHOULD NOT expose more than its SpanContext) and documents
+// this import as the way an SDK reads it for export.
+// ignore_for_file: invalid_use_of_internal_member, implementation_imports
+import 'package:dartastic_opentelemetry_api/src/api/trace/span.dart'
+    show ReadableSpan, getReadableSpan;
 import 'package:meta/meta.dart';
 
 import '../resource/resource.dart';
@@ -31,6 +37,11 @@ part 'span_create.dart';
 /// https://opentelemetry.io/docs/specs/otel/trace/sdk/
 class Span implements APISpan {
   final APISpan _delegate;
+
+  /// Read access to what [_delegate] recorded. The API keeps this off
+  /// [APISpan] itself; the SDK is the readable side (Trace SDK spec,
+  /// "ReadableSpan"), which is what the exporters consume.
+  final ReadableSpan _readable;
   final Tracer _sdkTracer;
 
   /// The recording state decided by the sampler at creation time.
@@ -47,6 +58,7 @@ class Span implements APISpan {
   /// @param isRecording Whether this span records data (sampling decision)
   Span._(APISpan delegate, Tracer sdkTracer, {bool isRecording = true})
       : _delegate = delegate,
+        _readable = getReadableSpan(delegate),
         _sdkTracer = sdkTracer,
         _isRecording = isRecording {
     if (OTelLog.isDebug()) {
@@ -278,23 +290,23 @@ class Span implements APISpan {
   @override
   SpanContext get spanContext => _delegate.spanContext;
 
-  @override
-  List<SpanEvent>? get spanEvents => _delegate.spanEvents;
+  /// The events recorded on this span, or null when none were added.
+  List<SpanEvent>? get spanEvents => _readable.spanEvents;
 
   @override
   SpanId get spanId => _delegate.spanId;
 
-  @override
-  List<SpanLink>? get spanLinks => _delegate.spanLinks;
+  /// The links recorded on this span, or null when none were added.
+  List<SpanLink>? get spanLinks => _readable.spanLinks;
 
   @override
   DateTime get startTime => _delegate.startTime;
 
-  @override
-  SpanStatusCode get status => _delegate.status;
+  /// The status code, [SpanStatusCode.Unset] when never set.
+  SpanStatusCode get status => _readable.status;
 
-  @override
-  String? get statusDescription => _delegate.statusDescription;
+  /// The status description, or null when none was set.
+  String? get statusDescription => _readable.statusDescription;
 
   @override
   void updateName(String name) {
@@ -361,10 +373,8 @@ class Span implements APISpan {
   @override
   bool get isValid => spanContext.isValid;
 
-  @visibleForTesting
-  @override
-  // ignore: invalid_use_of_visible_for_testing_member
-  Attributes get attributes => _delegate.attributes;
+  /// The attributes recorded on this span.
+  Attributes get attributes => _readable.attributes;
 
   // This check is always true because the method is part of the interface implementation
   // and the delegate is already an APISpan.

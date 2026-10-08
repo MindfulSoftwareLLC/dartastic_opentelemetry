@@ -99,9 +99,11 @@ void main() {
       final meter = meterProvider.getMeter(name: 'instrument-test-meter');
       final counter = meter.createObservableCounter<int>(
         name: 'test_counter',
-        callback: (result) {
-          result.observe(42);
-        },
+        callbacks: [
+          (result) {
+            result.observe(42);
+          },
+        ],
       );
 
       // We can't directly access the internal _instruments map, but we can

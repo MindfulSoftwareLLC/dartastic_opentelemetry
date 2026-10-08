@@ -129,6 +129,9 @@ class OTelSDKFactory extends OTelAPIFactory {
         serviceVersion: serviceVersion,
         serviceName: serviceName,
       ),
+      endpoint: endpoint,
+      serviceName: serviceName,
+      serviceVersion: serviceVersion,
       resource: resource,
     );
   }

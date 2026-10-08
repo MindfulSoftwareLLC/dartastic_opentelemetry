@@ -28,9 +28,13 @@ Span createTestSpan({
   List<SpanEvent>? events,
   List<SpanLink>? links,
 }) {
-  final context = OTel.spanContext(
+  // The span joins this trace as a child of the given span ID; the span's
+  // own ID is minted by the SDK. The parent is sampled so the default
+  // parent-based sampler records the child.
+  final parentSpanContext = OTel.spanContext(
     traceId: OTel.traceIdFrom(traceId ?? '00112233445566778899aabbccddeeff'),
     spanId: OTel.spanIdFrom(spanId ?? '0011223344556677'),
+    traceFlags: OTel.traceFlags(TraceFlags.SAMPLED_FLAG),
   );
 
   final tracer = OTel.tracerProvider().getTracer(
@@ -43,7 +47,7 @@ Span createTestSpan({
     startTime: startTime ?? DateTime.now(),
     kind: SpanKind.internal,
     attributes: attributes != null ? OTel.attributesFromMap(attributes) : null,
-    spanContext: context,
+    context: Context.root.withSpanContext(parentSpanContext),
   );
 
   if (statusCode != null) {

@@ -52,6 +52,9 @@ class UpDownCounter<T extends num>
   APIMeter get meter => _meter;
 
   @override
+  InstrumentAdvisory? get advisory => _apiCounter.advisory;
+
+  @override
   bool get isCounter => false;
 
   @override

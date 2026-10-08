@@ -23,9 +23,12 @@ void main() {
         spanId: originalSpanId,
       );
 
-      // Create a span using this explicit context
+      // Create a span parented to this span context
       final tracer = OTel.tracerProvider().getTracer('test');
-      final span = tracer.startSpan('test-span', spanContext: explicitContext);
+      final span = tracer.startSpan(
+        'test-span',
+        context: Context.root.withSpanContext(explicitContext),
+      );
 
       // Verify the span has a new ID, not the one we provided
       expect(span.spanContext.spanId, isNot(equals(originalSpanId)));

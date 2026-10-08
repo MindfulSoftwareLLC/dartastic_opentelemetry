@@ -410,7 +410,8 @@ void main() {
         name: 'test-histogram',
         boundaries: [1.0, 5.0, 10.0],
       );
-      expect(histogram.boundaries, equals([1.0, 5.0, 10.0]));
+      expect(histogram.advisory?.explicitBucketBoundaries,
+          equals([1.0, 5.0, 10.0]));
     });
   });
 

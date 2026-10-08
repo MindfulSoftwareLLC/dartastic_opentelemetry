@@ -137,16 +137,16 @@ void main() {
         final context = OTel.context(baggage: baggage);
 
         print('Context operations debug:');
-        print('Original baggage: ${baggage.getAllEntries()}');
+        print('Original baggage: ${baggage.getAllValues()}');
         print('Using BaggageContextKey directly: ${context.baggage}');
-        print('Using baggage getter: ${context.baggage!.getAllEntries()}');
+        print('Using baggage getter: ${context.baggage!.getAllValues()}');
 
         expect(context.baggage, equals(baggage));
 
         final retrievedBaggage = context.baggage;
         expect(retrievedBaggage, isA<Baggage>());
 
-        final entries = baggage.getAllEntries();
+        final entries = baggage.getAllValues();
         entries.forEach((key, value) {
           final retrievedValue = retrievedBaggage!.getEntry(key);
           expect(
@@ -172,10 +172,10 @@ void main() {
         final context2 = context1.withBaggage(baggage2);
 
         print('Immutability test debug:');
-        print('Context1 baggage: ${context1.baggage!.getAllEntries()}');
-        print('Context2 baggage: ${context2.baggage!.getAllEntries()}');
-        print('Original baggage1: ${baggage1.getAllEntries()}');
-        print('Original baggage2: ${baggage2.getAllEntries()}');
+        print('Context1 baggage: ${context1.baggage!.getAllValues()}');
+        print('Context2 baggage: ${context2.baggage!.getAllValues()}');
+        print('Original baggage1: ${baggage1.getAllValues()}');
+        print('Original baggage2: ${baggage2.getAllValues()}');
 
         final retrievedBaggage1 = context1.baggage;
         expect(
@@ -297,7 +297,7 @@ void main() {
         final deserializedContext = Context.deserialize(serializedData);
 
         final deserializedBaggage = deserializedContext.baggage;
-        for (final entry in baggage.getAllEntries().entries) {
+        for (final entry in baggage.getAllValues().entries) {
           final retrievedValue = deserializedBaggage!.getEntry(entry.key);
           expect(
             retrievedValue,

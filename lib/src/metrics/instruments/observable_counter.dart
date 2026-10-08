@@ -10,7 +10,7 @@ import '../../../dartastic_opentelemetry.dart';
 /// where measurements are made by a callback function. For example, CPU time,
 /// bytes received, or number of operations.
 class ObservableCounter<T extends num>
-    implements APIObservableCounter<T>, SDKInstrument {
+    implements APIObservableCounter<T>, SDKObservableInstrument {
   /// The underlying API ObservableCounter.
   final APIObservableCounter<T> _apiCounter;
 
@@ -22,6 +22,9 @@ class ObservableCounter<T extends num>
 
   /// The last observed values, for tracking and detecting resets.
   final Map<Attributes, T> _lastValues = {};
+
+  /// Observations queued by batch callbacks, drained on the next [collect].
+  final List<Measurement<T>> _batchObservations = [];
 
   /// Creates a new ObservableCounter instance.
   ObservableCounter({
@@ -42,6 +45,9 @@ class ObservableCounter<T extends num>
 
   @override
   String? get description => _apiCounter.description;
+
+  @override
+  InstrumentAdvisory? get advisory => _apiCounter.advisory;
 
   @override
   bool isEnabled() {
@@ -95,10 +101,20 @@ class ObservableCounter<T extends num>
     return value as T;
   }
 
-  /// Collects measurements from all registered callbacks.
+  @override
+  void observeFromBatch(num value, Attributes? attributes) {
+    _batchObservations.add(
+      OTelFactory.otelFactory!
+          .createMeasurement<T>(castNum<T>(value), attributes),
+    );
+  }
+
+  /// Collects measurements from all registered callbacks and from any
+  /// batch callbacks that observed this instrument since the last collection.
   @override
   List<Measurement<T>> collect() {
     if (!isEnabled()) {
+      _batchObservations.clear();
       return [];
     }
 
@@ -107,8 +123,8 @@ class ObservableCounter<T extends num>
     // Get a snapshot of callbacks to avoid concurrent modification issues
     final callbacksSnapshot = List<ObservableCallback<T>>.from(callbacks);
 
-    // Return early if no callbacks registered
-    if (callbacksSnapshot.isEmpty) {
+    // Return early if nothing can observe
+    if (callbacksSnapshot.isEmpty && _batchObservations.isEmpty) {
       return result;
     }
 
@@ -133,66 +149,7 @@ class ObservableCounter<T extends num>
 
         // Process the measurements from the observable result
         for (final measurement in observableResult.measurements) {
-          // Type checking for the generic parameter
-          final dynamic rawValue = measurement.value;
-          final value = (rawValue is num)
-              ? rawValue
-              : num.tryParse(rawValue.toString()) ?? 0;
-          final attributes =
-              measurement.attributes ?? OTelFactory.otelFactory!.attributes();
-
-          // Check for monotonicity - current value should be >= last value
-          final lastValue =
-              (_lastValues[attributes] ?? (T == int ? 0 : 0.0)) as T;
-
-          // If value decreased, it indicates a counter reset
-          if (value < lastValue) {
-            // Per spec, for a reset we just record the current value
-            // For SDK storage, convert the num to the appropriate T type
-            if (T == int) {
-              _storage.record(value.toInt() as T, attributes, Context.current);
-            } else if (T == double) {
-              _storage.record(
-                  value.toDouble() as T, attributes, Context.current);
-            } else {
-              _storage.record(value as T, attributes, Context.current);
-            }
-            result.add(measurement);
-          } else if (value > lastValue) {
-            // Only add measurements with positive deltas
-            // For SDK storage, convert the num to the appropriate T type
-            if (T == int) {
-              _storage.record(value.toInt() as T, attributes, Context.current);
-            } else if (T == double) {
-              _storage.record(
-                  value.toDouble() as T, attributes, Context.current);
-            } else {
-              _storage.record(value as T, attributes, Context.current);
-            }
-            result.add(measurement);
-          } else {
-            // For zero deltas, we still record the value in storage for cumulative reporting,
-            // but don't include it in the returned measurements
-            // For SDK storage, convert the num to the appropriate T type
-            if (T == int) {
-              _storage.record(value.toInt() as T, attributes, Context.current);
-            } else if (T == double) {
-              _storage.record(
-                  value.toDouble() as T, attributes, Context.current);
-            } else {
-              _storage.record(value as T, attributes, Context.current);
-            }
-            // Note: The measurement is deliberately not added to the result list
-          }
-
-          // Store the latest value for next time
-          if (T == int) {
-            _lastValues[attributes] = value.toInt() as T;
-          } else if (T == double) {
-            _lastValues[attributes] = value.toDouble() as T;
-          } else {
-            _lastValues[attributes] = value as T;
-          }
+          if (_record(measurement)) result.add(measurement);
         }
       } catch (e) {
         print(
@@ -201,7 +158,36 @@ class ObservableCounter<T extends num>
       }
     }
 
+    // Batch callbacks ran before this instrument collected; drain what they
+    // observed through the same monotonicity logic.
+    for (final measurement in _batchObservations) {
+      if (_record(measurement)) result.add(measurement);
+    }
+    _batchObservations.clear();
+
     return result;
+  }
+
+  /// Records one observed absolute value into storage.
+  ///
+  /// Returns true when the measurement carries a change (a positive delta
+  /// or a counter reset) that belongs in the collected result; a zero delta
+  /// is still stored for cumulative reporting but not returned.
+  bool _record(Measurement<T> measurement) {
+    final value = castNum<T>(measurement.value);
+    final attributes =
+        measurement.attributes ?? OTelFactory.otelFactory!.attributes();
+
+    // Check for monotonicity - current value should be >= last value.
+    // A decrease indicates a counter reset; per spec we just record the
+    // current value.
+    final lastValue = _lastValues[attributes] ?? castNum<T>(0);
+    _storage.record(value, attributes, Context.current);
+
+    // Store the latest value for next time
+    _lastValues[attributes] = value;
+
+    return value != lastValue;
   }
 
   /// Collects metrics for the SDK metric export.

@@ -4,6 +4,7 @@
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:meta/meta.dart';
 
+import 'instruments/base_instrument.dart';
 import 'instruments/counter.dart';
 import 'instruments/gauge.dart';
 import 'instruments/histogram.dart';
@@ -98,12 +99,14 @@ class Meter implements APIMeter {
     required String name,
     String? unit,
     String? description,
+    InstrumentAdvisory? advisory,
   }) {
     // First call the API implementation to get the API object
     final apiCounter = _delegate.createCounter<T>(
       name: name,
       unit: unit,
       description: description,
+      advisory: advisory,
     );
 
     // Now wrap it with our SDK implementation
@@ -127,12 +130,14 @@ class Meter implements APIMeter {
     required String name,
     String? unit,
     String? description,
+    InstrumentAdvisory? advisory,
   }) {
     // First call the API implementation to get the API object
     final apiCounter = _delegate.createUpDownCounter<T>(
       name: name,
       unit: unit,
       description: description,
+      advisory: advisory,
     );
 
     // Now wrap it with our SDK implementation
@@ -148,7 +153,11 @@ class Meter implements APIMeter {
   /// @param name The name of the instrument, which should be unique within the meter
   /// @param unit Optional unit of measurement (e.g., "ms", "bytes")
   /// @param description Optional description of what the instrument measures
-  /// @param boundaries Optional explicit histogram bucket boundaries in increasing order
+  /// @param boundaries Deprecated: use `advisory.explicitBucketBoundaries`.
+  ///   When both are given, [boundaries] wins so existing callers keep
+  ///   their buckets.
+  /// @param advisory Optional advisory parameters; the SDK honors
+  ///   `explicitBucketBoundaries` for the bucket layout
   /// @return A Histogram instrument of the specified numeric type
   ///
   /// More information:
@@ -158,22 +167,25 @@ class Meter implements APIMeter {
     required String name,
     String? unit,
     String? description,
+    @Deprecated(
+        'Use advisory: InstrumentAdvisory(explicitBucketBoundaries: ...) instead')
     List<double>? boundaries,
+    InstrumentAdvisory? advisory,
   }) {
-    // First call the API implementation to get the API object
+    // First call the API implementation to get the API object. It merges
+    // boundaries into the advisory, so the SDK Histogram reads the
+    // effective boundaries from apiHistogram.advisory.
     final apiHistogram = _delegate.createHistogram<T>(
       name: name,
       unit: unit,
       description: description,
+      // ignore: deprecated_member_use
       boundaries: boundaries,
+      advisory: advisory,
     );
 
     // Now wrap it with our SDK implementation
-    return Histogram<T>(
-      apiHistogram: apiHistogram,
-      meter: this,
-      boundaries: boundaries,
-    );
+    return Histogram<T>(apiHistogram: apiHistogram, meter: this);
   }
 
   /// Creates a Gauge instrument for recording the current value at the time of measurement.
@@ -193,12 +205,14 @@ class Meter implements APIMeter {
     required String name,
     String? unit,
     String? description,
+    InstrumentAdvisory? advisory,
   }) {
     // First call the API implementation to get the API object
     final apiGauge = _delegate.createGauge<T>(
       name: name,
       unit: unit,
       description: description,
+      advisory: advisory,
     );
 
     // Now wrap it with our SDK implementation
@@ -214,7 +228,9 @@ class Meter implements APIMeter {
   /// @param name The name of the instrument, which should be unique within the meter
   /// @param unit Optional unit of measurement (e.g., "ms", "bytes", "requests")
   /// @param description Optional description of what the instrument measures
-  /// @param callback Optional callback function that will be called when measurements are collected
+  /// @param advisory Optional advisory parameters for the instrument
+  /// @param callbacks Callback functions invoked when measurements are collected
+  /// @param callback Deprecated: use [callbacks]; a [callback] is prepended to it
   /// @return An ObservableCounter instrument of the specified numeric type
   ///
   /// More information:
@@ -224,13 +240,19 @@ class Meter implements APIMeter {
     required String name,
     String? unit,
     String? description,
-    ObservableCallback<T>? callback,
+    InstrumentAdvisory? advisory,
+    List<ObservableCallback<T>> callbacks = const [],
+    @Deprecated('Use callbacks instead') ObservableCallback<T>? callback,
   }) {
-    // First call the API implementation to get the API object
+    // First call the API implementation to get the API object. It merges
+    // the deprecated callback into callbacks.
     final apiCounter = _delegate.createObservableCounter<T>(
       name: name,
       unit: unit,
       description: description,
+      advisory: advisory,
+      callbacks: callbacks,
+      // ignore: deprecated_member_use
       callback: callback,
     );
 
@@ -252,7 +274,9 @@ class Meter implements APIMeter {
   /// @param name The name of the instrument, which should be unique within the meter
   /// @param unit Optional unit of measurement (e.g., "ms", "bytes", "requests")
   /// @param description Optional description of what the instrument measures
-  /// @param callback Optional callback function that will be called when measurements are collected
+  /// @param advisory Optional advisory parameters for the instrument
+  /// @param callbacks Callback functions invoked when measurements are collected
+  /// @param callback Deprecated: use [callbacks]; a [callback] is prepended to it
   /// @return An ObservableUpDownCounter instrument of the specified numeric type
   ///
   /// More information:
@@ -262,13 +286,19 @@ class Meter implements APIMeter {
     required String name,
     String? unit,
     String? description,
-    ObservableCallback<T>? callback,
+    InstrumentAdvisory? advisory,
+    List<ObservableCallback<T>> callbacks = const [],
+    @Deprecated('Use callbacks instead') ObservableCallback<T>? callback,
   }) {
-    // First call the API implementation to get the API object
+    // First call the API implementation to get the API object. It merges
+    // the deprecated callback into callbacks.
     final apiCounter = _delegate.createObservableUpDownCounter<T>(
       name: name,
       unit: unit,
       description: description,
+      advisory: advisory,
+      callbacks: callbacks,
+      // ignore: deprecated_member_use
       callback: callback,
     );
 
@@ -293,7 +323,9 @@ class Meter implements APIMeter {
   /// @param name The name of the instrument, which should be unique within the meter
   /// @param unit Optional unit of measurement (e.g., "ms", "bytes", "percent")
   /// @param description Optional description of what the instrument measures
-  /// @param callback Optional callback function that will be called when measurements are collected
+  /// @param advisory Optional advisory parameters for the instrument
+  /// @param callbacks Callback functions invoked when measurements are collected
+  /// @param callback Deprecated: use [callbacks]; a [callback] is prepended to it
   /// @return An ObservableGauge instrument of the specified numeric type
   ///
   /// More information:
@@ -303,13 +335,19 @@ class Meter implements APIMeter {
     required String name,
     String? unit,
     String? description,
-    ObservableCallback<T>? callback,
+    InstrumentAdvisory? advisory,
+    List<ObservableCallback<T>> callbacks = const [],
+    @Deprecated('Use callbacks instead') ObservableCallback<T>? callback,
   }) {
-    // First call the API implementation to get the API object
+    // First call the API implementation to get the API object. It merges
+    // the deprecated callback into callbacks.
     final apiGauge = _delegate.createObservableGauge<T>(
       name: name,
       unit: unit,
       description: description,
+      advisory: advisory,
+      callbacks: callbacks,
+      // ignore: deprecated_member_use
       callback: callback,
     );
 
@@ -320,6 +358,109 @@ class Meter implements APIMeter {
     _provider.registerInstrument(name, gauge);
 
     return gauge;
+  }
+
+  /// Batch callbacks registered through [registerBatchCallback], run once
+  /// per collection by [MeterProvider.collectAllMetrics].
+  final List<_BatchCallbackRegistration> _batchCallbacks = [];
+
+  /// Registers one callback that observes several of this meter's
+  /// asynchronous instruments at once.
+  ///
+  /// Per metrics/api.md the instruments MUST all belong to this meter; an
+  /// instrument from another meter, or one that is not an SDK asynchronous
+  /// instrument, is reported through [OTelErrorHandling] and the callback is
+  /// not registered. The returned registration's `unregister()` stops the
+  /// callback from being invoked on later collections.
+  @override
+  APIBatchCallbackRegistration registerBatchCallback(
+    BatchObservableCallback callback,
+    Set<APIObservableInstrument> instruments,
+  ) {
+    for (final instrument in instruments) {
+      if (!identical(instrument.meter, this) ||
+          instrument is! SDKObservableInstrument) {
+        OTelErrorHandling.report(ArgumentError(
+          'registerBatchCallback: instrument "${instrument.name}" belongs '
+          'to a different Meter; the callback was not registered.',
+        ));
+        return _NoopBatchCallbackRegistration();
+      }
+    }
+    final registration = _BatchCallbackRegistration(
+      meter: this,
+      callback: callback,
+      instruments: instruments.cast<SDKObservableInstrument>().toSet(),
+    );
+    _batchCallbacks.add(registration);
+    return registration;
+  }
+
+  /// Invokes every registered batch callback once, queuing its observations
+  /// on the instruments it covers for their next `collect()`.
+  ///
+  /// Called by [MeterProvider.collectAllMetrics] before the instruments
+  /// collect. A callback that throws is reported and the rest still run.
+  void runBatchCallbacks() {
+    if (!isEnabled() || _batchCallbacks.isEmpty) return;
+    for (final registration in List.of(_batchCallbacks)) {
+      final result = _BatchObservableResult(registration.instruments);
+      try {
+        registration.callback(result);
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
+      }
+    }
+  }
+}
+
+/// A live registration for a batch callback on an SDK [Meter].
+class _BatchCallbackRegistration implements APIBatchCallbackRegistration {
+  final Meter meter;
+  final BatchObservableCallback callback;
+  final Set<SDKObservableInstrument> instruments;
+
+  _BatchCallbackRegistration({
+    required this.meter,
+    required this.callback,
+    required this.instruments,
+  });
+
+  @override
+  void unregister() {
+    meter._batchCallbacks.remove(this);
+  }
+}
+
+/// Registration handed back when a batch callback was rejected or the meter
+/// is a no-op; unregistering it does nothing.
+class _NoopBatchCallbackRegistration implements APIBatchCallbackRegistration {
+  @override
+  void unregister() {}
+}
+
+/// The [BatchObservableResult] handed to a batch callback.
+///
+/// An observation for an instrument the callback was not registered with is
+/// dropped and reported, per metrics/api.md ("the callback SHOULD only
+/// report observations for the instruments it was registered with").
+class _BatchObservableResult implements BatchObservableResult {
+  final Set<SDKObservableInstrument> _instruments;
+
+  _BatchObservableResult(this._instruments);
+
+  @override
+  void observe(APIObservableInstrument instrument, num value,
+      [Attributes? attributes]) {
+    if (instrument is! SDKObservableInstrument ||
+        !_instruments.contains(instrument)) {
+      OTelErrorHandling.report(ArgumentError(
+        'Batch callback observed instrument "${instrument.name}", which it '
+        'was not registered with; the observation was dropped.',
+      ));
+      return;
+    }
+    instrument.observeFromBatch(value, attributes);
   }
 }
 
@@ -359,8 +500,14 @@ class NoopMeter implements APIMeter {
     required String name,
     String? unit,
     String? description,
+    InstrumentAdvisory? advisory,
   }) {
-    return NoopCounter<T>(name: name, unit: unit, description: description);
+    return NoopCounter<T>(
+      name: name,
+      unit: unit,
+      description: description,
+      advisory: advisory,
+    );
   }
 
   @override
@@ -368,11 +515,13 @@ class NoopMeter implements APIMeter {
     required String name,
     String? unit,
     String? description,
+    InstrumentAdvisory? advisory,
   }) {
     return NoopUpDownCounter<T>(
       name: name,
       unit: unit,
       description: description,
+      advisory: advisory,
     );
   }
 
@@ -381,13 +530,21 @@ class NoopMeter implements APIMeter {
     required String name,
     String? unit,
     String? description,
+    @Deprecated(
+        'Use advisory: InstrumentAdvisory(explicitBucketBoundaries: ...) instead')
     List<double>? boundaries,
+    InstrumentAdvisory? advisory,
   }) {
     return NoopHistogram<T>(
       name: name,
       unit: unit,
       description: description,
-      boundaries: boundaries,
+      advisory: boundaries != null
+          ? InstrumentAdvisory(
+              explicitBucketBoundaries: boundaries,
+              attributeKeys: advisory?.attributeKeys,
+            )
+          : advisory,
     );
   }
 
@@ -396,8 +553,14 @@ class NoopMeter implements APIMeter {
     required String name,
     String? unit,
     String? description,
+    InstrumentAdvisory? advisory,
   }) {
-    return NoopGauge<T>(name: name, unit: unit, description: description);
+    return NoopGauge<T>(
+      name: name,
+      unit: unit,
+      description: description,
+      advisory: advisory,
+    );
   }
 
   @override
@@ -405,13 +568,16 @@ class NoopMeter implements APIMeter {
     required String name,
     String? unit,
     String? description,
-    ObservableCallback<T>? callback,
+    InstrumentAdvisory? advisory,
+    List<ObservableCallback<T>> callbacks = const [],
+    @Deprecated('Use callbacks instead') ObservableCallback<T>? callback,
   }) {
     return NoopObservableCounter<T>(
       name: name,
       unit: unit,
       description: description,
-      callback: callback,
+      advisory: advisory,
+      callbacks: [if (callback != null) callback, ...callbacks],
     );
   }
 
@@ -420,13 +586,16 @@ class NoopMeter implements APIMeter {
     required String name,
     String? unit,
     String? description,
-    ObservableCallback<T>? callback,
+    InstrumentAdvisory? advisory,
+    List<ObservableCallback<T>> callbacks = const [],
+    @Deprecated('Use callbacks instead') ObservableCallback<T>? callback,
   }) {
     return NoopObservableUpDownCounter<T>(
       name: name,
       unit: unit,
       description: description,
-      callback: callback,
+      advisory: advisory,
+      callbacks: [if (callback != null) callback, ...callbacks],
     );
   }
 
@@ -435,14 +604,25 @@ class NoopMeter implements APIMeter {
     required String name,
     String? unit,
     String? description,
-    ObservableCallback<T>? callback,
+    InstrumentAdvisory? advisory,
+    List<ObservableCallback<T>> callbacks = const [],
+    @Deprecated('Use callbacks instead') ObservableCallback<T>? callback,
   }) {
     return NoopObservableGauge<T>(
       name: name,
       unit: unit,
       description: description,
-      callback: callback,
+      advisory: advisory,
+      callbacks: [if (callback != null) callback, ...callbacks],
     );
+  }
+
+  @override
+  APIBatchCallbackRegistration registerBatchCallback(
+    BatchObservableCallback callback,
+    Set<APIObservableInstrument> instruments,
+  ) {
+    return _NoopBatchCallbackRegistration();
   }
 }
 
@@ -471,7 +651,10 @@ class NoopCounter<T extends num> implements APICounter<T> {
   /// @param name The name of the instrument
   /// @param unit Optional unit of measurement
   /// @param description Optional description of what the instrument measures
-  NoopCounter({required this.name, this.unit, this.description})
+  @override
+  final InstrumentAdvisory? advisory;
+
+  NoopCounter({required this.name, this.unit, this.description, this.advisory})
       : meter = NoopMeter(name: 'noop-meter');
 
   /// Records a measurement (no-op implementation).
@@ -530,7 +713,11 @@ class NoopUpDownCounter<T extends num> implements APIUpDownCounter<T> {
   /// @param name The name of the instrument
   /// @param unit Optional unit of measurement
   /// @param description Optional description of what the instrument measures
-  NoopUpDownCounter({required this.name, this.unit, this.description})
+  @override
+  final InstrumentAdvisory? advisory;
+
+  NoopUpDownCounter(
+      {required this.name, this.unit, this.description, this.advisory})
       : meter = NoopMeter(name: 'noop-meter');
 
   /// Records a measurement (no-op implementation).
@@ -579,7 +766,11 @@ class NoopHistogram<T extends num> implements APIHistogram<T> {
   final String? unit;
 
   @override
-  final List<double>? boundaries;
+  final InstrumentAdvisory? advisory;
+
+  @Deprecated('Use advisory?.explicitBucketBoundaries instead')
+  @override
+  List<double>? get boundaries => advisory?.explicitBucketBoundaries;
 
   @override
   bool isEnabled() => false;
@@ -587,17 +778,17 @@ class NoopHistogram<T extends num> implements APIHistogram<T> {
   @override
   final APIMeter meter;
 
-  /// Creates a new NoopHistogram with the specified name, unit, description, and boundaries.
+  /// Creates a new NoopHistogram with the specified name, unit, description, and advisory.
   ///
   /// @param name The name of the instrument
   /// @param unit Optional unit of measurement
   /// @param description Optional description of what the instrument measures
-  /// @param boundaries Optional explicit histogram bucket boundaries
+  /// @param advisory Optional advisory parameters, carrying any bucket boundaries
   NoopHistogram({
     required this.name,
     this.unit,
     this.description,
-    this.boundaries,
+    this.advisory,
   }) : meter = NoopMeter(name: 'noop-meter');
 
   /// Records a measurement (no-op implementation).
@@ -656,7 +847,10 @@ class NoopGauge<T extends num> implements APIGauge<T> {
   /// @param name The name of the instrument
   /// @param unit Optional unit of measurement
   /// @param description Optional description of what the instrument measures
-  NoopGauge({required this.name, this.unit, this.description})
+  @override
+  final InstrumentAdvisory? advisory;
+
+  NoopGauge({required this.name, this.unit, this.description, this.advisory})
       : meter = NoopMeter(name: 'noop-meter');
 
   /// Records a measurement (no-op implementation).
@@ -710,21 +904,26 @@ class NoopObservableCounter<T extends num> implements APIObservableCounter<T> {
   @override
   final APIMeter meter;
 
+  @override
+  final InstrumentAdvisory? advisory;
+
   final List<ObservableCallback<T>> _callbacks = [];
 
-  /// Creates a new NoopObservableCounter with the specified name, unit, description, and callback.
+  /// Creates a new NoopObservableCounter with the specified name, unit, description, and callbacks.
   ///
   /// @param name The name of the instrument
   /// @param unit Optional unit of measurement
   /// @param description Optional description of what the instrument measures
-  /// @param callback Optional callback function that will be called when measurements are collected
+  /// @param advisory Optional advisory parameters
+  /// @param callbacks Callback functions that will be called when measurements are collected
   NoopObservableCounter({
     required this.name,
     this.unit,
     this.description,
-    ObservableCallback<T>? callback,
+    this.advisory,
+    List<ObservableCallback<T>> callbacks = const [],
   }) : meter = NoopMeter(name: 'noop-meter') {
-    if (callback != null) {
+    for (final callback in callbacks) {
       addCallback(callback);
     }
   }
@@ -783,21 +982,26 @@ class NoopObservableUpDownCounter<T extends num>
   @override
   final APIMeter meter;
 
+  @override
+  final InstrumentAdvisory? advisory;
+
   final List<ObservableCallback<T>> _callbacks = [];
 
-  /// Creates a new NoopObservableUpDownCounter with the specified name, unit, description, and callback.
+  /// Creates a new NoopObservableUpDownCounter with the specified name, unit, description, and callbacks.
   ///
   /// @param name The name of the instrument
   /// @param unit Optional unit of measurement
   /// @param description Optional description of what the instrument measures
-  /// @param callback Optional callback function that will be called when measurements are collected
+  /// @param advisory Optional advisory parameters
+  /// @param callbacks Callback functions that will be called when measurements are collected
   NoopObservableUpDownCounter({
     required this.name,
     this.unit,
     this.description,
-    ObservableCallback<T>? callback,
+    this.advisory,
+    List<ObservableCallback<T>> callbacks = const [],
   }) : meter = NoopMeter(name: 'noop-meter') {
-    if (callback != null) {
+    for (final callback in callbacks) {
       addCallback(callback);
     }
   }
@@ -855,21 +1059,26 @@ class NoopObservableGauge<T extends num> implements APIObservableGauge<T> {
   @override
   final APIMeter meter;
 
+  @override
+  final InstrumentAdvisory? advisory;
+
   final List<ObservableCallback<T>> _callbacks = [];
 
-  /// Creates a new NoopObservableGauge with the specified name, unit, description, and callback.
+  /// Creates a new NoopObservableGauge with the specified name, unit, description, and callbacks.
   ///
   /// @param name The name of the instrument
   /// @param unit Optional unit of measurement
   /// @param description Optional description of what the instrument measures
-  /// @param callback Optional callback function that will be called when measurements are collected
+  /// @param advisory Optional advisory parameters
+  /// @param callbacks Callback functions that will be called when measurements are collected
   NoopObservableGauge({
     required this.name,
     this.unit,
     this.description,
-    ObservableCallback<T>? callback,
+    this.advisory,
+    List<ObservableCallback<T>> callbacks = const [],
   }) : meter = NoopMeter(name: 'noop-meter') {
-    if (callback != null) {
+    for (final callback in callbacks) {
       addCallback(callback);
     }
   }
