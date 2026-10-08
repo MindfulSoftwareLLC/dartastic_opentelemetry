@@ -28,6 +28,9 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 - The `dartastic_opentelemetry_api` dependency is pinned to the current rc (`>=1.0.0-rc.3 <1.0.0-rc.4`) so a new API
   prerelease cannot break a fresh `pub get`. Widen it only after the SDK is adapted
   ([#297](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/297)).
+- `OtlpGrpcExporterConfig` now appends the default port 4317 to an `http://` or `https://` endpoint written without
+  one, which protocol/exporter.md sets as the OTLP/gRPC default
+  ([#308](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/308)).
 
 ## [1.1.0-beta.15] - 2026-08-28
 

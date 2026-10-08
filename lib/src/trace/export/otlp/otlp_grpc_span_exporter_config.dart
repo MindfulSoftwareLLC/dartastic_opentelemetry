@@ -123,20 +123,23 @@ class OtlpGrpcExporterConfig {
         if (uri.host.isEmpty) {
           throw ArgumentError('Invalid host in endpoint: $endpoint');
         }
-        if (uri.port == 0 && !endpoint.contains(':')) {
+        // Uri.port reports the scheme default (80/443) when no port is
+        // written, and drops an explicit default port, so read the port
+        // from the raw authority instead.
+        final authorityStart = endpoint.indexOf('://') + 3;
+        var authorityEnd = endpoint.indexOf(RegExp('[/?#]'), authorityStart);
+        if (authorityEnd == -1) authorityEnd = endpoint.length;
+        final authority = endpoint.substring(authorityStart, authorityEnd);
+        final hostPort = authority.substring(authority.lastIndexOf('@') + 1);
+        final portMatch =
+            RegExp(r'^(?:\[[^\]]*\]|[^[:][^:]*):(.*)$').firstMatch(hostPort);
+        if (portMatch == null) {
           // No port specified in URL format, add default
-          return '${uri.scheme}://${uri.host}:4317${uri.path}';
+          return '${endpoint.substring(0, authorityEnd)}:4317'
+              '${endpoint.substring(authorityEnd)}';
         }
-        if (uri.port == 0 &&
-            endpoint.contains(':') &&
-            !endpoint.contains('://:')) {
-          // Port part exists but might be invalid
-          final portStr = endpoint.split(':').last;
-          if (int.tryParse(portStr) == null) {
-            throw ArgumentError(
-              'Invalid port format in endpoint URL: $endpoint',
-            );
-          }
+        if (portMatch.group(1)!.isEmpty) {
+          throw ArgumentError('Invalid port format in endpoint URL: $endpoint');
         }
         return endpoint;
       } catch (e) {
