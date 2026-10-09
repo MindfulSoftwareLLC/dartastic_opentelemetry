@@ -1,0 +1,43 @@
+name: Commit trailers
+
+# OpenTelemetry's Generative AI policy (CONTRIBUTING.md) makes the human
+# contributor the author of every change; AI assistance is disclosed with an
+# `Assisted-by:` trailer, never a `Co-authored-by:` one. GitHub's default
+# squash body copies every commit's trailers into main, so the place to catch
+# an AI co-author line is on the pull request's commits.
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  no-ai-coauthors:
+    name: AI tools are Assisted-by, not Co-authored-by
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject Co-authored-by trailers that name an AI tool
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          # Match on the tool's name or its noreply address, case-insensitively.
+          ai='(claude|anthropic|openai|chatgpt|codex|copilot|gemini|cursor|devin|aider|windsurf|jules)'
+          # shellcheck disable=SC2016 # $s is a jq variable, not shell
+          offenders="$(gh api "repos/$REPO/pulls/$PR/commits" --paginate \
+            --jq '.[] | .sha[0:7] as $s | (.commit.message | split("\n")[]) | "\($s)\t\(.)"' \
+            | grep -i -E $'\t'"co-authored-by:.*$ai" || true)"
+          if [ -z "$offenders" ]; then
+            echo "No AI co-author trailers on this pull request's commits."
+            exit 0
+          fi
+          while IFS=$'\t' read -r sha line; do
+            echo "::error::$sha: \"$line\" — an AI tool is not an author. Disclose it with an 'Assisted-by:' trailer instead (CONTRIBUTING.md, Generative AI Policy) and rewrite the commit."
+          done <<< "$offenders"
+          exit 1
