@@ -182,6 +182,7 @@ class ObservableGauge<T extends num>
         name: name,
         description: description,
         unit: unit,
+        instrumentationScope: _meter.instrumentationScope,
         points: points,
       ),
     ];

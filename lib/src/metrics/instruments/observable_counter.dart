@@ -232,6 +232,7 @@ class ObservableCounter<T extends num>
         description: description,
         unit: unit,
         temporality: AggregationTemporality.cumulative,
+        instrumentationScope: _meter.instrumentationScope,
         points: points,
         isMonotonic: true, // Counters are monotonic
       ),
