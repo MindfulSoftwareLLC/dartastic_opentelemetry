@@ -36,11 +36,25 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.0-beta.16] - 2026-10-08
 
+### Changed
+
+- A sum `Metric` with no `isMonotonic` value is now exported as non-monotonic: OTLP sends `is_monotonic: false` and
+  the Prometheus exporter types it as `gauge`. Before, both assumed monotonic. SDK instruments always set the value, so
+  only a `Metric(type: MetricType.sum)` built by hand without `isMonotonic` is affected. `Metric.sum()` still defaults
+  to `isMonotonic: true`
+  ([#307](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/307)).
+
 ### Fixed
 
 - The `dartastic_opentelemetry_api` dependency is pinned to the current rc (`>=1.0.0-rc.3 <1.0.0-rc.4`) so a new API
   prerelease cannot break a fresh `pub get`. Widen it only after the SDK is adapted
   ([#297](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/297)).
+- A synchronous `UpDownCounter` is now exported as a non-monotonic sum, which metrics/sdk.md makes a MUST for Sum
+  aggregation. Before, OTLP exported it with `is_monotonic: true`. `Counter` now sets `isMonotonic: true` explicitly
+  ([#307](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/307)).
+- The Prometheus exporter now types a non-monotonic sum as `gauge`, not `counter`, which
+  compatibility/prometheus_and_openmetrics.md specifies
+  ([#307](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/307)).
 
 ## [1.1.0-beta.15] - 2026-08-28
 

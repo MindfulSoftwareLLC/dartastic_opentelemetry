@@ -248,6 +248,25 @@ void main() {
         final metricProto = MetricTransformer.transformMetric(metric);
         expect(metricProto.sum.isMonotonic, isFalse);
       });
+
+      test('sum with unknown monotonicity exports as non-monotonic', () {
+        final now = DateTime.now();
+        final metric = Metric(
+          name: 'test.sum.unknown',
+          type: MetricType.sum,
+          points: [
+            MetricPoint.sum(
+              attributes: OTel.attributes([]),
+              startTime: now.subtract(const Duration(minutes: 1)),
+              time: now,
+              value: 10,
+            ),
+          ],
+        );
+
+        final metricProto = MetricTransformer.transformMetric(metric);
+        expect(metricProto.sum.isMonotonic, isFalse);
+      });
     });
 
     group('number data point with exemplars', () {
