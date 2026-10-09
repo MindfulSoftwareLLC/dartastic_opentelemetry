@@ -29,6 +29,10 @@ Versioning](https://semver.org/spec/v2.0.0.html).
   v1.1.0, which predates the field; they are regenerated from v1.11.0, which adds `LogRecord.event_name` and the
   `EntityRef` and string-table fields on `Resource`, `AnyValue` and `KeyValue`. No generated type was removed
   ([#303](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/303)).
+- The OTLP log exporters write an instrumentation scope's schema URL to `ScopeLogs.schema_url`, where
+  logs/data-model.md and the OTLP proto place it, instead of to `ResourceLogs.schema_url`, which describes the resource
+  and now carries the `Resource`'s own schema URL. Loggers whose scopes differ only by schema URL are no longer merged
+  into one `ScopeLogs` ([#303](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/303)).
 
 ## [1.1.0-beta.16] - 2026-10-08
 

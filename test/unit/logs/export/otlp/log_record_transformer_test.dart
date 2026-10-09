@@ -387,6 +387,93 @@ void main() {
       expect(scopeLogs.scope.version, equals('2.0.0'));
     });
 
+    test('scope schema URL goes on ScopeLogs, not ResourceLogs', () {
+      final scopeWithSchema = OTel.instrumentationScope(
+        name: 'my-library',
+        version: '2.0.0',
+        schemaUrl: 'https://opentelemetry.io/schemas/1.30.0',
+      );
+
+      final logRecord = SDKLogRecord(
+        instrumentationScope: scopeWithSchema,
+        severityNumber: Severity.INFO,
+        body: 'Test',
+      );
+
+      final request = OtlpLogRecordTransformer.transformLogRecords([logRecord]);
+      final resourceLogs = request.resourceLogs.first;
+
+      expect(resourceLogs.scopeLogs.first.schemaUrl,
+          equals('https://opentelemetry.io/schemas/1.30.0'));
+      expect(resourceLogs.hasSchemaUrl(), isFalse,
+          reason: 'ResourceLogs.schema_url describes the resource');
+    });
+
+    test('resource schema URL goes on ResourceLogs', () {
+      final resource = OTel.resource(
+        OTel.attributesFromMap({'service.name': 'test-service'}),
+        'https://opentelemetry.io/schemas/1.29.0',
+      );
+
+      final logRecord = SDKLogRecord(
+        instrumentationScope: scope,
+        resource: resource,
+        severityNumber: Severity.INFO,
+        body: 'Test',
+      );
+
+      final request = OtlpLogRecordTransformer.transformLogRecords([logRecord]);
+      final resourceLogs = request.resourceLogs.first;
+
+      expect(resourceLogs.schemaUrl,
+          equals('https://opentelemetry.io/schemas/1.29.0'));
+      expect(resourceLogs.scopeLogs.first.hasSchemaUrl(), isFalse);
+    });
+
+    test('scopes that differ only by schema URL are separate ScopeLogs', () {
+      final scopeA = OTel.instrumentationScope(
+        name: 'same-name',
+        version: '1.0.0',
+        schemaUrl: 'https://opentelemetry.io/schemas/1.29.0',
+      );
+      final scopeB = OTel.instrumentationScope(
+        name: 'same-name',
+        version: '1.0.0',
+        schemaUrl: 'https://opentelemetry.io/schemas/1.30.0',
+      );
+      final resource = OTel.resource(OTel.attributesFromMap({
+        'service.name': 'test-service',
+      }));
+
+      final request = OtlpLogRecordTransformer.transformLogRecords([
+        SDKLogRecord(
+          instrumentationScope: scopeA,
+          resource: resource,
+          severityNumber: Severity.INFO,
+          body: 'A',
+        ),
+        SDKLogRecord(
+          instrumentationScope: scopeB,
+          resource: resource,
+          severityNumber: Severity.INFO,
+          body: 'B',
+        ),
+      ]);
+
+      final resourceLogs = request.resourceLogs.single;
+      expect(resourceLogs.hasSchemaUrl(), isFalse);
+      expect(
+          resourceLogs.scopeLogs.map((s) => s.schemaUrl),
+          unorderedEquals([
+            'https://opentelemetry.io/schemas/1.29.0',
+            'https://opentelemetry.io/schemas/1.30.0',
+          ]));
+      expect(
+          resourceLogs.scopeLogs
+              .map((s) => s.logRecords.single.body.stringValue),
+          unorderedEquals(['A', 'B']));
+    });
+
     test('transforms resource attributes correctly', () {
       final resource = OTel.resource(OTel.attributesFromMap({
         'service.name': 'test-service',
