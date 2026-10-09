@@ -27,7 +27,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
   ([api CHANGELOG](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/blob/main/CHANGELOG.md)) apply
   to SDK users through the re-exported API: `Baggage.getAllValues()` returns `Map<String, BaggageEntry>`,
   `Context.copyWithValue` is gone, `TraceFlags.fromString` returns null on invalid input, and `APISpan` no longer
-  exposes its recorded data ([#TBD](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/TBD)).
+  exposes its recorded data ([#309](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/309)).
 - **BREAKING**: `Tracer.startSpan` and `Tracer.createSpan` no longer take `parentSpan` or `spanContext`. The parent
   comes from the `Context` (or `Context.current`) with the precedence the API documents: `root` > remote `SpanContext`
   > local span > valid non-remote `SpanContext` > new root. `parentSpan: parent` becomes
@@ -35,19 +35,19 @@ Versioning](https://semver.org/spec/v2.0.0.html).
   child of it (new span ID, `parentSpanId` set), which replaces the old verbatim `spanContext:` behavior of
   `createSpan`. Both methods accept `root: true` to force a new trace, and `startSpan` accepts `startTime`
   ([api#118](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/118),
-  [#TBD](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/TBD)).
+  [#309](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/309)).
 - `Span.attributes`, `spanEvents`, `spanLinks`, `status` and `statusDescription` are SDK accessors now, read through
   the API's `ReadableSpan`, since `APISpan` no longer exposes them
   ([api#140](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/140)). Exporters and processors
   that hold the SDK `Span` are unaffected; `Span.attributes` is no longer marked `@visibleForTesting`
-  ([#TBD](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/TBD)).
+  ([#309](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/309)).
 - `MeterProvider` now owns its `endpoint`, `serviceName`, `serviceVersion`, `enabled` and `isShutdown` state instead
   of forwarding to the API provider, which no longer holds any
   ([api#113](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/113)). The SDK surface is
-  unchanged for callers ([#TBD](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/TBD)).
+  unchanged for callers ([#309](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/309)).
 - `Meter.createHistogram` reads its bucket boundaries from `advisory.explicitBucketBoundaries` when the deprecated
   `boundaries` parameter is absent; when both are given, `boundaries` wins, matching the API
-  ([#TBD](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/TBD)).
+  ([#309](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/309)).
 
 ### Added
 
@@ -55,23 +55,23 @@ Versioning](https://semver.org/spec/v2.0.0.html).
   at once, once per collection, before those instruments collect; the returned registration's `unregister()` stops it.
   An instrument from another meter is reported through `OTelErrorHandling` and the callback is not registered; an
   observation for an instrument the callback was not registered with is dropped and reported
-  ([#TBD](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/TBD)).
+  ([#309](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/309)).
 - `InstrumentAdvisory` is accepted by all seven `Meter.create*` methods and exposed as `advisory` on every SDK and no-op
   instrument. The three `createObservable*` methods accept a `callbacks` list
-  ([#TBD](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/TBD)).
+  ([#309](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/309)).
 
 ### Deprecated
 
 - The `boundaries` parameter on `Meter.createHistogram` and the `boundaries` getter on `Histogram`; use
   `InstrumentAdvisory.explicitBucketBoundaries`. The `callback` parameter on the three `createObservable*` methods; use
   `callbacks`, to which a `callback` is prepended
-  ([#TBD](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/TBD)).
+  ([#309](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/309)).
 
 ### Fixed
 
 - `W3CTraceContextPropagator.extract` rejects a `traceparent` whose trace-flags field is not two lowercase hex digits,
   as context/api-propagators.md requires, instead of defaulting the flags
-  ([#TBD](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/TBD)).
+  ([#309](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/309)).
 
 ## [1.1.0-beta.16] - 2026-10-08
 
