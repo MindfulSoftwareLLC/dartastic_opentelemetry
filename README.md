@@ -148,7 +148,7 @@ Dartastic's commercial products add native performance, advanced diagnostics, se
 Include this in your pubspec.yaml:
 ```
 dependencies:
-  dartastic_opentelemetry: ^1.1.0-beta.15
+  dartastic_opentelemetry: ^1.1.0-beta.16
 ```
 
 ## Usage
