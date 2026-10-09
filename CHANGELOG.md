@@ -74,8 +74,9 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- `W3CTraceContextPropagator.extract` rejects a `traceparent` whose trace-flags field is not two lowercase hex digits,
-  as context/api-propagators.md requires, instead of defaulting the flags
+- `W3CTraceContextPropagator.extract` rejects a `traceparent` whose trace-id, parent-id or trace-flags field is not
+  lowercase hex, as context/api-propagators.md requires. Before, uppercase or signed hex in the IDs was accepted and an
+  invalid trace-flags field defaulted the flags
   ([#309](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/309)).
 - **The OTLP log exporters now send `event_name`.** `LogRecord.eventName` was never copied onto the wire, so every
   event emitted with `emit(eventName: ...)` arrived at the collector as a plain log record with no name, and anything
