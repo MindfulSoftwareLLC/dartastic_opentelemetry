@@ -5,16 +5,34 @@ set -e
 PROTO_DIR="protos"
 OUTPUT_DIR="lib/proto"
 TEMP_DIR=".proto_gen_temp"
-OPENTELEMETRY_PROTO_VERSION="v1.1.0"  # Update this to the version you want to use
+OPENTELEMETRY_PROTO_VERSION="v1.11.0"  # Update this to the version you want to use
+
+PROTO_CHECKOUT="$PROTO_DIR/opentelemetry-proto"
 
 # Create directories if they don't exist
-mkdir -p "$PROTO_DIR/opentelemetry-proto"
+mkdir -p "$PROTO_CHECKOUT"
 
-# Download OpenTelemetry protos if they don't exist
-if [ ! -d "$PROTO_DIR/opentelemetry-proto/.git" ]; then
-  echo "Downloading OpenTelemetry protos..."
-  rm -rf "$PROTO_DIR/opentelemetry-proto"
-  git clone --depth 1 --branch $OPENTELEMETRY_PROTO_VERSION https://github.com/open-telemetry/opentelemetry-proto.git "$PROTO_DIR/opentelemetry-proto"
+# Download OpenTelemetry protos if they don't exist, otherwise move the
+# existing checkout to the requested tag. A checkout left by an earlier run
+# stays on the tag it was cloned with, so bumping OPENTELEMETRY_PROTO_VERSION
+# alone would regenerate the old schema.
+if [ ! -d "$PROTO_CHECKOUT/.git" ]; then
+  echo "Downloading OpenTelemetry protos $OPENTELEMETRY_PROTO_VERSION..."
+  rm -rf "$PROTO_CHECKOUT"
+  git clone --depth 1 --branch "$OPENTELEMETRY_PROTO_VERSION" https://github.com/open-telemetry/opentelemetry-proto.git "$PROTO_CHECKOUT"
+else
+  echo "Checking out OpenTelemetry protos $OPENTELEMETRY_PROTO_VERSION..."
+  # The clone is shallow, so the tag has to be fetched before it can be
+  # checked out. Fetching a tag that is already present is a no-op.
+  git -C "$PROTO_CHECKOUT" fetch --quiet --depth 1 origin \
+    "refs/tags/$OPENTELEMETRY_PROTO_VERSION:refs/tags/$OPENTELEMETRY_PROTO_VERSION"
+  git -C "$PROTO_CHECKOUT" checkout --quiet "$OPENTELEMETRY_PROTO_VERSION"
+fi
+
+CHECKED_OUT="$(git -C "$PROTO_CHECKOUT" describe --tags --exact-match 2>/dev/null || true)"
+if [ "$CHECKED_OUT" != "$OPENTELEMETRY_PROTO_VERSION" ]; then
+  echo "Error: $PROTO_CHECKOUT is at '${CHECKED_OUT:-an untagged commit}', expected $OPENTELEMETRY_PROTO_VERSION"
+  exit 1
 fi
 
 # Clean old generated files and temp dir

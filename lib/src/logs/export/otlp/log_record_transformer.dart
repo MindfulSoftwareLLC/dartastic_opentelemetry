@@ -64,6 +64,9 @@ class OtlpLogRecordTransformer {
 
       // Create ResourceLogs
       final resourceLogs = proto.ResourceLogs()..resource = protoResource;
+      if (resource?.schemaUrl != null) {
+        resourceLogs.schemaUrl = resource!.schemaUrl!;
+      }
 
       // Process each instrumentation scope group
       for (final scopeEntry in scopeGroups.entries) {
@@ -76,9 +79,6 @@ class OtlpLogRecordTransformer {
         if (scope.version != null) {
           otlpScope.version = scope.version!;
         }
-        if (scope.schemaUrl != null) {
-          resourceLogs.schemaUrl = scope.schemaUrl!;
-        }
 
         // Transform all log records in this scope to OTLP format
         final otlpLogRecords = <proto.LogRecord>[];
@@ -86,10 +86,15 @@ class OtlpLogRecordTransformer {
           otlpLogRecords.add(_transformLogRecord(logRecord));
         }
 
-        // Create ScopeLogs
+        // Create ScopeLogs. The scope's schema URL describes the log data of
+        // this scope, so it goes on ScopeLogs; ResourceLogs.schema_url
+        // describes the resource.
         final otlpScopeLogs = proto.ScopeLogs()
           ..scope = otlpScope
           ..logRecords.addAll(otlpLogRecords);
+        if (scope.schemaUrl != null) {
+          otlpScopeLogs.schemaUrl = scope.schemaUrl!;
+        }
 
         resourceLogs.scopeLogs.add(otlpScopeLogs);
       }
@@ -113,7 +118,7 @@ class OtlpLogRecordTransformer {
   /// Creates a key for grouping log records by instrumentation scope.
   static String _instrumentationKey(ReadableLogRecord logRecord) {
     final scope = logRecord.instrumentationScope;
-    return '${scope.name}:${scope.version ?? ''}';
+    return '${scope.name}:${scope.version ?? ''}:${scope.schemaUrl ?? ''}';
   }
 
   /// Convert a single log record to OTLP LogRecord.
@@ -162,6 +167,9 @@ class OtlpLogRecordTransformer {
     }
     if (logRecord.traceFlags != null) {
       otlpLog.flags = logRecord.traceFlags!.asByte;
+    }
+    if (logRecord.eventName != null) {
+      otlpLog.eventName = logRecord.eventName!;
     }
 
     return otlpLog;

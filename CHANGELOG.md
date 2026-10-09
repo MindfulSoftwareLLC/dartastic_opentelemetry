@@ -21,6 +21,19 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.0-beta.17-wip]
 
+### Fixed
+
+- **The OTLP log exporters now send `event_name`.** `LogRecord.eventName` was never copied onto the wire, so every
+  event emitted with `emit(eventName: ...)` arrived at the collector as a plain log record with no name, and anything
+  filtering on `event_name` saw nothing. The bundled protobuf definitions were generated from opentelemetry-proto
+  v1.1.0, which predates the field; they are regenerated from v1.11.0, which adds `LogRecord.event_name` and the
+  `EntityRef` and string-table fields on `Resource`, `AnyValue` and `KeyValue`. No generated type was removed
+  ([#303](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/303)).
+- The OTLP log exporters write an instrumentation scope's schema URL to `ScopeLogs.schema_url`, where
+  logs/data-model.md and the OTLP proto place it, instead of to `ResourceLogs.schema_url`, which describes the resource
+  and now carries the `Resource`'s own schema URL. Loggers whose scopes differ only by schema URL are no longer merged
+  into one `ScopeLogs` ([#303](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/303)).
+
 ## [1.1.0-beta.16] - 2026-10-08
 
 ### Changed

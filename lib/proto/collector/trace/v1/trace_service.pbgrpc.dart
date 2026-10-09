@@ -35,8 +35,6 @@ class TraceServiceClient extends $grpc.Client {
 
   TraceServiceClient(super.channel, {super.options, super.interceptors});
 
-  /// For performance reasons, it is recommended to keep this RPC
-  /// alive for the entire life of the application.
   $grpc.ResponseFuture<$0.ExportTraceServiceResponse> export(
     $0.ExportTraceServiceRequest request, {
     $grpc.CallOptions? options,
