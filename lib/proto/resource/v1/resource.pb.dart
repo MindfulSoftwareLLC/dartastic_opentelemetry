@@ -23,11 +23,13 @@ class Resource extends $pb.GeneratedMessage {
   factory Resource({
     $core.Iterable<$0.KeyValue>? attributes,
     $core.int? droppedAttributesCount,
+    $core.Iterable<$0.EntityRef>? entityRefs,
   }) {
     final result = create();
     if (attributes != null) result.attributes.addAll(attributes);
     if (droppedAttributesCount != null)
       result.droppedAttributesCount = droppedAttributesCount;
+    if (entityRefs != null) result.entityRefs.addAll(entityRefs);
     return result;
   }
 
@@ -49,6 +51,8 @@ class Resource extends $pb.GeneratedMessage {
         subBuilder: $0.KeyValue.create)
     ..aI(2, _omitFieldNames ? '' : 'droppedAttributesCount',
         fieldType: $pb.PbFieldType.OU3)
+    ..pPM<$0.EntityRef>(3, _omitFieldNames ? '' : 'entityRefs',
+        subBuilder: $0.EntityRef.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -72,10 +76,11 @@ class Resource extends $pb.GeneratedMessage {
   /// Set of attributes that describe the resource.
   /// Attribute keys MUST be unique (it is not allowed to have more than one
   /// attribute with the same key).
+  /// The behavior of software that receives duplicated keys can be unpredictable.
   @$pb.TagNumber(1)
   $pb.PbList<$0.KeyValue> get attributes => $_getList(0);
 
-  /// dropped_attributes_count is the number of dropped attributes. If the value is 0, then
+  /// The number of dropped attributes. If the value is 0, then
   /// no attributes were dropped.
   @$pb.TagNumber(2)
   $core.int get droppedAttributesCount => $_getIZ(1);
@@ -85,6 +90,14 @@ class Resource extends $pb.GeneratedMessage {
   $core.bool hasDroppedAttributesCount() => $_has(1);
   @$pb.TagNumber(2)
   void clearDroppedAttributesCount() => $_clearField(2);
+
+  /// Set of entities that participate in this Resource.
+  ///
+  /// Note: keys in the references MUST exist in attributes of this message.
+  ///
+  /// Status: [Development]
+  @$pb.TagNumber(3)
+  $pb.PbList<$0.EntityRef> get entityRefs => $_getList(2);
 }
 
 const $core.bool _omitFieldNames =

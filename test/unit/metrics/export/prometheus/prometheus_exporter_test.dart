@@ -23,6 +23,7 @@ void main() {
         name: 'test_counter',
         description: 'A test counter',
         type: MetricType.sum,
+        isMonotonic: true,
         unit: '1',
         points: [
           MetricPoint(
@@ -154,6 +155,7 @@ void main() {
         name: 'test.metric-name',
         description: 'Description with \\ backslash and \n newline',
         type: MetricType.sum,
+        isMonotonic: true,
         unit: '1',
         points: [
           MetricPoint(
@@ -193,6 +195,7 @@ void main() {
           name: 'counter_1',
           description: 'First counter',
           type: MetricType.sum,
+          isMonotonic: true,
           unit: '1',
           points: [
             MetricPoint(
@@ -237,6 +240,7 @@ void main() {
         name: 'no_description_metric',
         description: null,
         type: MetricType.sum,
+        isMonotonic: true,
         unit: '1',
         points: [
           MetricPoint(
@@ -267,6 +271,7 @@ void main() {
         name: 'test_metric',
         description: 'Test metric',
         type: MetricType.sum,
+        isMonotonic: true,
         unit: '1',
         points: [
           MetricPoint(

@@ -109,7 +109,8 @@ class UpDownCounter<T extends num>
       name: name,
       description: description,
       unit: unit,
-      type: MetricType.sum, // UpDownCounter is still a sum, just not monotonic
+      type: MetricType.sum,
+      isMonotonic: _storage.isMonotonic,
       points: points,
     );
 
