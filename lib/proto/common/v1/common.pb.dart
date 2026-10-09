@@ -25,10 +25,11 @@ enum AnyValue_Value {
   arrayValue,
   kvlistValue,
   bytesValue,
+  stringValueStrindex,
   notSet
 }
 
-/// AnyValue is used to represent any type of attribute value. AnyValue may contain a
+/// Represents any type of attribute value. AnyValue may contain a
 /// primitive value such as a string or integer or it may contain an arbitrary nested
 /// object containing arrays, key-value lists and primitives.
 class AnyValue extends $pb.GeneratedMessage {
@@ -40,6 +41,7 @@ class AnyValue extends $pb.GeneratedMessage {
     ArrayValue? arrayValue,
     KeyValueList? kvlistValue,
     $core.List<$core.int>? bytesValue,
+    $core.int? stringValueStrindex,
   }) {
     final result = create();
     if (stringValue != null) result.stringValue = stringValue;
@@ -49,6 +51,8 @@ class AnyValue extends $pb.GeneratedMessage {
     if (arrayValue != null) result.arrayValue = arrayValue;
     if (kvlistValue != null) result.kvlistValue = kvlistValue;
     if (bytesValue != null) result.bytesValue = bytesValue;
+    if (stringValueStrindex != null)
+      result.stringValueStrindex = stringValueStrindex;
     return result;
   }
 
@@ -69,6 +73,7 @@ class AnyValue extends $pb.GeneratedMessage {
     5: AnyValue_Value.arrayValue,
     6: AnyValue_Value.kvlistValue,
     7: AnyValue_Value.bytesValue,
+    8: AnyValue_Value.stringValueStrindex,
     0: AnyValue_Value.notSet
   };
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
@@ -76,7 +81,7 @@ class AnyValue extends $pb.GeneratedMessage {
       package: const $pb.PackageName(
           _omitMessageNames ? '' : 'opentelemetry.proto.common.v1'),
       createEmptyInstance: create)
-    ..oo(0, [1, 2, 3, 4, 5, 6, 7])
+    ..oo(0, [1, 2, 3, 4, 5, 6, 7, 8])
     ..aOS(1, _omitFieldNames ? '' : 'stringValue')
     ..aOB(2, _omitFieldNames ? '' : 'boolValue')
     ..aInt64(3, _omitFieldNames ? '' : 'intValue')
@@ -87,6 +92,7 @@ class AnyValue extends $pb.GeneratedMessage {
         subBuilder: KeyValueList.create)
     ..a<$core.List<$core.int>>(
         7, _omitFieldNames ? '' : 'bytesValue', $pb.PbFieldType.OY)
+    ..aI(8, _omitFieldNames ? '' : 'stringValueStrindex')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -114,6 +120,7 @@ class AnyValue extends $pb.GeneratedMessage {
   @$pb.TagNumber(5)
   @$pb.TagNumber(6)
   @$pb.TagNumber(7)
+  @$pb.TagNumber(8)
   AnyValue_Value whichValue() => _AnyValue_ValueByTag[$_whichOneof(0)]!;
   @$pb.TagNumber(1)
   @$pb.TagNumber(2)
@@ -122,6 +129,7 @@ class AnyValue extends $pb.GeneratedMessage {
   @$pb.TagNumber(5)
   @$pb.TagNumber(6)
   @$pb.TagNumber(7)
+  @$pb.TagNumber(8)
   void clearValue() => $_clearField($_whichOneof(0));
 
   @$pb.TagNumber(1)
@@ -190,6 +198,25 @@ class AnyValue extends $pb.GeneratedMessage {
   $core.bool hasBytesValue() => $_has(6);
   @$pb.TagNumber(7)
   void clearBytesValue() => $_clearField(7);
+
+  /// Reference to the string value in ProfilesDictionary.string_table.
+  ///
+  /// Note: This is currently used exclusively in the Profiling signal.
+  /// Implementers of OTLP receivers for signals other than Profiling should
+  /// treat the presence of this value as a non-fatal issue.
+  /// Log an error or warning indicating an unexpected field intended for the
+  /// Profiling signal and process the data as if this value were absent or
+  /// empty, ignoring its semantic content for the non-Profiling signal.
+  ///
+  /// Status: [Alpha]
+  @$pb.TagNumber(8)
+  $core.int get stringValueStrindex => $_getIZ(7);
+  @$pb.TagNumber(8)
+  set stringValueStrindex($core.int value) => $_setSignedInt32(7, value);
+  @$pb.TagNumber(8)
+  $core.bool hasStringValueStrindex() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearStringValueStrindex() => $_clearField(8);
 }
 
 /// ArrayValue is a list of AnyValue messages. We need ArrayValue as a message
@@ -297,22 +324,26 @@ class KeyValueList extends $pb.GeneratedMessage {
 
   /// A collection of key/value pairs of key-value pairs. The list may be empty (may
   /// contain 0 elements).
+  ///
   /// The keys MUST be unique (it is not allowed to have more than one
   /// value with the same key).
+  /// The behavior of software that receives duplicated keys can be unpredictable.
   @$pb.TagNumber(1)
   $pb.PbList<KeyValue> get values => $_getList(0);
 }
 
-/// KeyValue is a key-value pair that is used to store Span attributes, Link
+/// Represents a key-value pair that is used to store Span attributes, Link
 /// attributes, etc.
 class KeyValue extends $pb.GeneratedMessage {
   factory KeyValue({
     $core.String? key,
     AnyValue? value,
+    $core.int? keyStrindex,
   }) {
     final result = create();
     if (key != null) result.key = key;
     if (value != null) result.value = value;
+    if (keyStrindex != null) result.keyStrindex = keyStrindex;
     return result;
   }
 
@@ -333,6 +364,7 @@ class KeyValue extends $pb.GeneratedMessage {
     ..aOS(1, _omitFieldNames ? '' : 'key')
     ..aOM<AnyValue>(2, _omitFieldNames ? '' : 'value',
         subBuilder: AnyValue.create)
+    ..aI(3, _omitFieldNames ? '' : 'keyStrindex')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -353,6 +385,8 @@ class KeyValue extends $pb.GeneratedMessage {
       _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<KeyValue>(create);
   static KeyValue? _defaultInstance;
 
+  /// The key name of the pair.
+  /// key_strindex MUST NOT be set if key is used.
   @$pb.TagNumber(1)
   $core.String get key => $_getSZ(0);
   @$pb.TagNumber(1)
@@ -362,6 +396,7 @@ class KeyValue extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   void clearKey() => $_clearField(1);
 
+  /// The value of the pair.
   @$pb.TagNumber(2)
   AnyValue get value => $_getN(1);
   @$pb.TagNumber(2)
@@ -372,6 +407,26 @@ class KeyValue extends $pb.GeneratedMessage {
   void clearValue() => $_clearField(2);
   @$pb.TagNumber(2)
   AnyValue ensureValue() => $_ensure(1);
+
+  /// Reference to the string key in ProfilesDictionary.string_table.
+  /// key MUST NOT be set if key_strindex is used.
+  ///
+  /// Note: This is currently used exclusively in the Profiling signal.
+  /// Implementers of OTLP receivers for signals other than Profiling should
+  /// treat the presence of this key as a non-fatal issue.
+  /// Log an error or warning indicating an unexpected field intended for the
+  /// Profiling signal and process the data as if this value were absent or
+  /// empty, ignoring its semantic content for the non-Profiling signal.
+  ///
+  /// Status: [Alpha]
+  @$pb.TagNumber(3)
+  $core.int get keyStrindex => $_getIZ(2);
+  @$pb.TagNumber(3)
+  set keyStrindex($core.int value) => $_setSignedInt32(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasKeyStrindex() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearKeyStrindex() => $_clearField(3);
 }
 
 /// InstrumentationScope is a message representing the instrumentation scope information
@@ -433,6 +488,7 @@ class InstrumentationScope extends $pb.GeneratedMessage {
       $pb.GeneratedMessage.$_defaultFor<InstrumentationScope>(create);
   static InstrumentationScope? _defaultInstance;
 
+  /// A name denoting the Instrumentation scope.
   /// An empty instrumentation scope name means the name is unknown.
   @$pb.TagNumber(1)
   $core.String get name => $_getSZ(0);
@@ -443,6 +499,8 @@ class InstrumentationScope extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   void clearName() => $_clearField(1);
 
+  /// Defines the version of the instrumentation scope.
+  /// An empty instrumentation scope version means the version is unknown.
   @$pb.TagNumber(2)
   $core.String get version => $_getSZ(1);
   @$pb.TagNumber(2)
@@ -455,9 +513,13 @@ class InstrumentationScope extends $pb.GeneratedMessage {
   /// Additional attributes that describe the scope. [Optional].
   /// Attribute keys MUST be unique (it is not allowed to have more than one
   /// attribute with the same key).
+  /// The behavior of software that receives duplicated keys can be unpredictable.
   @$pb.TagNumber(3)
   $pb.PbList<KeyValue> get attributes => $_getList(2);
 
+  /// The number of attributes that were discarded. Attributes
+  /// can be discarded because their keys are too long or because there are too many
+  /// attributes. If this value is 0, then no attributes were dropped.
   @$pb.TagNumber(4)
   $core.int get droppedAttributesCount => $_getIZ(3);
   @$pb.TagNumber(4)
@@ -466,6 +528,108 @@ class InstrumentationScope extends $pb.GeneratedMessage {
   $core.bool hasDroppedAttributesCount() => $_has(3);
   @$pb.TagNumber(4)
   void clearDroppedAttributesCount() => $_clearField(4);
+}
+
+/// A reference to an Entity.
+/// Entity represents an object of interest associated with produced telemetry: e.g spans, metrics, profiles, or logs.
+///
+/// Status: [Development]
+class EntityRef extends $pb.GeneratedMessage {
+  factory EntityRef({
+    $core.String? schemaUrl,
+    $core.String? type,
+    $core.Iterable<$core.String>? idKeys,
+    $core.Iterable<$core.String>? descriptionKeys,
+  }) {
+    final result = create();
+    if (schemaUrl != null) result.schemaUrl = schemaUrl;
+    if (type != null) result.type = type;
+    if (idKeys != null) result.idKeys.addAll(idKeys);
+    if (descriptionKeys != null) result.descriptionKeys.addAll(descriptionKeys);
+    return result;
+  }
+
+  EntityRef._();
+
+  factory EntityRef.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory EntityRef.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'EntityRef',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'opentelemetry.proto.common.v1'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'schemaUrl')
+    ..aOS(2, _omitFieldNames ? '' : 'type')
+    ..pPS(3, _omitFieldNames ? '' : 'idKeys')
+    ..pPS(4, _omitFieldNames ? '' : 'descriptionKeys')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  EntityRef clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  EntityRef copyWith(void Function(EntityRef) updates) =>
+      super.copyWith((message) => updates(message as EntityRef)) as EntityRef;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static EntityRef create() => EntityRef._();
+  @$core.override
+  EntityRef createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static EntityRef getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<EntityRef>(create);
+  static EntityRef? _defaultInstance;
+
+  /// The Schema URL, if known. This is the identifier of the Schema that the entity data
+  /// is recorded in. To learn more about Schema URL see
+  /// https://opentelemetry.io/docs/specs/otel/schemas/#schema-url
+  ///
+  /// This schema_url applies to the data in this message and to the Resource attributes
+  /// referenced by id_keys and description_keys.
+  /// TODO: discuss if we are happy with this somewhat complicated definition of what
+  /// the schema_url applies to.
+  ///
+  /// This field obsoletes the schema_url field in ResourceMetrics/ResourceSpans/ResourceLogs.
+  @$pb.TagNumber(1)
+  $core.String get schemaUrl => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set schemaUrl($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasSchemaUrl() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearSchemaUrl() => $_clearField(1);
+
+  /// Defines the type of the entity. MUST not change during the lifetime of the entity.
+  /// For example: "service" or "host". This field is required and MUST not be empty
+  /// for valid entities.
+  @$pb.TagNumber(2)
+  $core.String get type => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set type($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasType() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearType() => $_clearField(2);
+
+  /// Attribute Keys that identify the entity.
+  /// MUST not change during the lifetime of the entity. The Id must contain at least one attribute.
+  /// These keys MUST exist in the containing {message}.attributes.
+  @$pb.TagNumber(3)
+  $pb.PbList<$core.String> get idKeys => $_getList(2);
+
+  /// Descriptive (non-identifying) attribute keys of the entity.
+  /// MAY change over the lifetime of the entity. MAY be empty.
+  /// These attribute keys are not part of entity's identity.
+  /// These keys MUST exist in the containing {message}.attributes.
+  @$pb.TagNumber(4)
+  $pb.PbList<$core.String> get descriptionKeys => $_getList(3);
 }
 
 const $core.bool _omitFieldNames =

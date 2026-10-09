@@ -48,6 +48,11 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 - `Meter.createHistogram` reads its bucket boundaries from `advisory.explicitBucketBoundaries` when the deprecated
   `boundaries` parameter is absent; when both are given, `boundaries` wins, matching the API
   ([#309](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/309)).
+- A sum `Metric` with no `isMonotonic` value is now exported as non-monotonic: OTLP sends `is_monotonic: false` and
+  the Prometheus exporter types it as `gauge`. Before, both assumed monotonic. SDK instruments always set the value, so
+  only a `Metric(type: MetricType.sum)` built by hand without `isMonotonic` is affected. `Metric.sum()` still defaults
+  to `isMonotonic: true`
+  ([#307](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/307)).
 
 ### Added
 
@@ -72,6 +77,22 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 - `W3CTraceContextPropagator.extract` rejects a `traceparent` whose trace-flags field is not two lowercase hex digits,
   as context/api-propagators.md requires, instead of defaulting the flags
   ([#309](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/309)).
+- **The OTLP log exporters now send `event_name`.** `LogRecord.eventName` was never copied onto the wire, so every
+  event emitted with `emit(eventName: ...)` arrived at the collector as a plain log record with no name, and anything
+  filtering on `event_name` saw nothing. The bundled protobuf definitions were generated from opentelemetry-proto
+  v1.1.0, which predates the field; they are regenerated from v1.11.0, which adds `LogRecord.event_name` and the
+  `EntityRef` and string-table fields on `Resource`, `AnyValue` and `KeyValue`. No generated type was removed
+  ([#303](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/303)).
+- The OTLP log exporters write an instrumentation scope's schema URL to `ScopeLogs.schema_url`, where
+  logs/data-model.md and the OTLP proto place it, instead of to `ResourceLogs.schema_url`, which describes the resource
+  and now carries the `Resource`'s own schema URL. Loggers whose scopes differ only by schema URL are no longer merged
+  into one `ScopeLogs` ([#303](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/303)).
+- A synchronous `UpDownCounter` is now exported as a non-monotonic sum, which metrics/sdk.md makes a MUST for Sum
+  aggregation. Before, OTLP exported it with `is_monotonic: true`. `Counter` now sets `isMonotonic: true` explicitly
+  ([#307](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/307)).
+- The Prometheus exporter now types a non-monotonic sum as `gauge`, not `counter`, which
+  compatibility/prometheus_and_openmetrics.md specifies
+  ([#307](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/307)).
 
 ## [1.1.0-beta.16] - 2026-10-08
 

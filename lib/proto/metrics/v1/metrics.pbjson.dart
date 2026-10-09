@@ -182,6 +182,14 @@ const Metric$json = {
       '9': 0,
       '10': 'summary'
     },
+    {
+      '1': 'metadata',
+      '3': 12,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.common.v1.KeyValue',
+      '10': 'metadata'
+    },
   ],
   '8': [
     {'1': 'data'},
@@ -203,7 +211,8 @@ final $typed_data.Uint8List metricDescriptor = $convert.base64Decode(
     'JrChVleHBvbmVudGlhbF9oaXN0b2dyYW0YCiABKAsyNC5vcGVudGVsZW1ldHJ5LnByb3RvLm1l'
     'dHJpY3MudjEuRXhwb25lbnRpYWxIaXN0b2dyYW1IAFIUZXhwb25lbnRpYWxIaXN0b2dyYW0SQw'
     'oHc3VtbWFyeRgLIAEoCzInLm9wZW50ZWxlbWV0cnkucHJvdG8ubWV0cmljcy52MS5TdW1tYXJ5'
-    'SABSB3N1bW1hcnlCBgoEZGF0YUoECAQQBUoECAYQB0oECAgQCQ==');
+    'SABSB3N1bW1hcnkSQwoIbWV0YWRhdGEYDCADKAsyJy5vcGVudGVsZW1ldHJ5LnByb3RvLmNvbW'
+    '1vbi52MS5LZXlWYWx1ZVIIbWV0YWRhdGFCBgoEZGF0YUoECAQQBUoECAYQB0oECAgQCQ==');
 
 @$core.Deprecated('Use gaugeDescriptor instead')
 const Gauge$json = {
