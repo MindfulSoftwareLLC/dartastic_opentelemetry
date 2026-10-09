@@ -93,6 +93,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 - The Prometheus exporter now types a non-monotonic sum as `gauge`, not `counter`, which
   compatibility/prometheus_and_openmetrics.md specifies
   ([#307](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/307)).
+- `TraceIdRatioSampler.description` is `TraceIdRatioBased{RATIO}`, the name trace/sdk.md gives the sampler, instead of
+  `TraceIdRatioSampler{RATIO}` ([#298](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/298)).
 
 ## [1.1.0-beta.16] - 2026-10-08
 

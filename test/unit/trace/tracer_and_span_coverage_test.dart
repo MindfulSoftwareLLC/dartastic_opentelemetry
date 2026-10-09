@@ -1007,6 +1007,31 @@ void main() {
       final context = propagator.extract(Context.root, map, _MapGetter(map));
       expect(context.spanContext, isNull);
     });
+
+    // The three cases above fail the overall-length check first. These keep
+    // the header at the valid 55 characters so the per-field length checks
+    // are the ones that reject it.
+    test('55-char traceparent with a 31-char traceId is rejected', () {
+      OTelLog.enableTraceLogging();
+      final map = {
+        'traceparent': '00-${'a' * 31}-${'b' * 17}-01',
+      };
+      expect(map['traceparent']!.length, 55);
+      final propagator = W3CTraceContextPropagator();
+      final context = propagator.extract(Context.root, map, _MapGetter(map));
+      expect(context.spanContext, isNull);
+    });
+
+    test('55-char traceparent with a 15-char spanId is rejected', () {
+      OTelLog.enableTraceLogging();
+      final map = {
+        'traceparent': '00-${'a' * 32}-${'b' * 15}-011',
+      };
+      expect(map['traceparent']!.length, 55);
+      final propagator = W3CTraceContextPropagator();
+      final context = propagator.extract(Context.root, map, _MapGetter(map));
+      expect(context.spanContext, isNull);
+    });
   });
 }
 
