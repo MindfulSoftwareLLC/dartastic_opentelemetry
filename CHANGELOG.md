@@ -33,6 +33,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
   logs/data-model.md and the OTLP proto place it, instead of to `ResourceLogs.schema_url`, which describes the resource
   and now carries the `Resource`'s own schema URL. Loggers whose scopes differ only by schema URL are no longer merged
   into one `ScopeLogs` ([#303](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/303)).
+- `TraceIdRatioSampler.description` is `TraceIdRatioBased{RATIO}`, the name trace/sdk.md gives the sampler, instead of
+  `TraceIdRatioSampler{RATIO}` ([#298](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/298)).
 
 ## [1.1.0-beta.16] - 2026-10-08
 
