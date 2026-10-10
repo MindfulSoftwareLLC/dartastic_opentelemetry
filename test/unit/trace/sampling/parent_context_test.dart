@@ -61,58 +61,24 @@ void main() {
       });
     });
 
-    test('validates trace ID when using explicit span context', () {
-      // Create parent span
-      final parentSpan = tracer.startSpan('parent');
-      final parentContext = Context.current.withSpan(parentSpan);
-
-      // Create span context with different trace ID
-      final differentTraceId =
-          OTel.traceId(); // This will be different from parent's
-      final spanContext = OTel.spanContext(
-        traceId: differentTraceId,
+    test('a bare SpanContext on the context parents the span', () {
+      // A valid non-remote SpanContext with no span object behind it (set
+      // via Context.withSpanContext) still identifies a parent: the child
+      // joins its trace with a new span ID and parentSpanId pointing at it.
+      final explicitSpanContext = OTel.spanContext(
+        traceId: OTel.traceId(),
         spanId: OTel.spanId(),
       );
+      final parentContext = Context.root.withSpanContext(explicitSpanContext);
 
-      // Attempt to create child span with different trace ID
-      expect(
-        () => tracer.startSpan(
-          'child',
-          context: parentContext,
-          spanContext: spanContext,
-        ),
-        throwsArgumentError,
-        reason:
-            'Should not allow creating span with different trace ID than parent',
-      );
-    });
-
-    test('uses explicit spanContext trace ID while generating new span ID', () {
-      // Create parent span and context
-      final parentSpan = tracer.startSpan('parent');
-      final parentContext = Context.current.withSpan(parentSpan);
-
-      expect(parentContext.spanContext, isNotNull);
-
-      // Create explicit span context with same trace ID but different span ID
-      final explicitSpanContext = OTel.spanContext(
-        traceId: parentContext.spanContext!.traceId, // Same trace ID
-        spanId: OTel.spanId(), // Different span ID
-      );
-
-      // Create span with both context and spanContext
-      final span = tracer.startSpan(
-        'child',
-        context: parentContext,
-        spanContext: explicitSpanContext,
-      );
+      final span = tracer.startSpan('child', context: parentContext);
 
       // Verify:
-      // 1. Trace ID matches parent (required by spec)
+      // 1. Trace ID matches the span context's
       expect(
         span.spanContext.traceId,
-        equals(parentContext.spanContext!.traceId),
-        reason: 'Child should use parent trace ID',
+        equals(explicitSpanContext.traceId),
+        reason: 'Child should use the span context\'s trace ID',
       );
 
       // 2. Span ID is new (not the same as explicitSpanContext)
@@ -122,12 +88,13 @@ void main() {
         reason: 'Child should get new span ID',
       );
 
-      // 3. Parent span ID properly set
+      // 3. Parent span ID properly set; there is no parent span object
       expect(
         span.spanContext.parentSpanId,
-        equals(parentSpan.spanContext.spanId),
-        reason: 'Child should reference parent span ID',
+        equals(explicitSpanContext.spanId),
+        reason: 'Child should reference the span context\'s span ID',
       );
+      expect(span.parentSpan, isNull);
 
       // 4. All IDs are valid
       expect(
@@ -180,7 +147,7 @@ void main() {
       // 2. Create child with explicit parent span
       final childViaParentSpan = tracer.startSpan(
         'child2',
-        parentSpan: rootSpan,
+        context: Context.current.withSpan(rootSpan),
       );
       expect(
         childViaParentSpan.spanContext.traceId,
@@ -188,63 +155,59 @@ void main() {
         reason: 'Child via parent span should inherit parent trace ID',
       );
 
-      // 3. Create child with matching spanContext
-      final matchingSpanContext = OTel.spanContext(
-        traceId: rootSpan.spanContext.traceId, // Same trace ID
-        spanId: OTel.spanId(),
-      );
+      // 3. Create child with a bare span context of the root's span
       final childViaSpanContext = tracer.startSpan(
         'child3',
-        context: rootContext,
-        spanContext: matchingSpanContext,
+        context: Context.root.withSpanContext(rootSpan.spanContext),
       );
       expect(
         childViaSpanContext.spanContext.traceId,
         equals(rootSpan.spanContext.traceId),
-        reason: 'Child via matching span context should maintain trace ID',
+        reason: 'Child via span context should maintain trace ID',
       );
     });
 
-    test('throws when parentSpan and spanContext have different spanIds', () {
-      final parentSpan = tracer.startSpan('parent');
-      final explicitSpanContext = OTel.spanContext(
+    test('a remote SpanContext on the context wins over a local span', () {
+      // The propagator extract path: a Context already carrying a local
+      // span receives a remote SpanContext from an incoming header. The
+      // remote context takes precedence (APITracer.startSpan precedence).
+      final localParent = tracer.startSpan('local-parent');
+      final remoteSpanContext = OTel.spanContext(
         traceId: OTel.traceId(),
         spanId: OTel.spanId(),
-        parentSpanId: OTel.spanId(), // Different from parentSpan's spanId
+        isRemote: true,
       );
+      final parentContext = Context.current
+          .withSpan(localParent)
+          .withSpanContext(remoteSpanContext);
 
+      final span = tracer.startSpan('child', context: parentContext);
+
+      expect(span.spanContext.traceId, equals(remoteSpanContext.traceId));
+      expect(span.spanContext.parentSpanId, equals(remoteSpanContext.spanId));
       expect(
-        () => tracer.startSpan(
-          'child',
-          parentSpan: parentSpan,
-          spanContext: explicitSpanContext,
-        ),
-        throwsArgumentError,
+        span.parentSpan,
+        isNull,
+        reason: 'the local span is not the span the remote context identifies',
       );
     });
 
-    test('uses parentSpan over context parent', () {
-      // Create two potential parent spans
+    test('root: true creates a new trace even with a parent in context', () {
       final contextParentSpan = tracer.startSpan('context-parent');
-      final explicitParentSpan = tracer.startSpan('explicit-parent');
       final parentContext = Context.current.withSpan(contextParentSpan);
 
-      // Create span with both context parent and explicit parent
       final span = tracer.startSpan(
         'child',
         context: parentContext,
-        parentSpan: explicitParentSpan,
+        root: true,
       );
 
-      // Verify explicit parent was used
       expect(
         span.spanContext.traceId,
-        equals(explicitParentSpan.spanContext.traceId),
+        isNot(equals(contextParentSpan.spanContext.traceId)),
       );
-      expect(
-        span.spanContext.parentSpanId,
-        equals(explicitParentSpan.spanContext.spanId),
-      );
+      expect(span.spanContext.parentSpanId?.isValid ?? false, isFalse);
+      expect(span.parentSpan, isNull);
     });
 
     test('creates root span when no parent context available', () {

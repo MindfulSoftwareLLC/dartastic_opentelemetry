@@ -202,7 +202,16 @@ class W3CTraceContextPropagator
       // Parse the components
       final traceId = OTel.traceIdFrom(traceIdHex);
       final spanId = OTel.spanIdFrom(spanIdHex);
+      // Null means the flags were not two lowercase hex digits. The W3C
+      // grammar is strict and the propagator MUST reject the header then
+      // (context/api-propagators.md).
       final traceFlags = TraceFlags.fromString(traceFlagsHex);
+      if (traceFlags == null) {
+        if (OTelLog.isDebug()) {
+          OTelLog.debug('Invalid trace flags: $traceFlagsHex');
+        }
+        return null;
+      }
 
       // Validate that trace ID and span ID are not all zeros
       if (!traceId.isValid) {

@@ -92,7 +92,6 @@ class TestFileExporter implements SpanExporter {
           'startTime': span.startTime.toIso8601String(),
           'endTime': span.endTime?.toIso8601String(),
           'status': span.status.toString(),
-          // ignore: invalid_use_of_visible_for_testing_member
           'attributes': span.attributes.toJson(),
         };
       }).toList();

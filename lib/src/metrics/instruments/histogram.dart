@@ -24,6 +24,10 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
   final HistogramStorage<T> _storage;
 
   /// Creates a new Histogram instance.
+  ///
+  /// Bucket boundaries come from [boundaries] when given, otherwise from
+  /// the instrument's [InstrumentAdvisory.explicitBucketBoundaries], and
+  /// otherwise from the spec's default buckets.
   Histogram({
     required APIHistogram<T> apiHistogram,
     required Meter meter,
@@ -31,7 +35,9 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
   })  : _apiHistogram = apiHistogram,
         _meter = meter,
         _storage = HistogramStorage(
-          boundaries: boundaries ?? _defaultBoundaries,
+          boundaries: boundaries ??
+              apiHistogram.advisory?.explicitBucketBoundaries ??
+              _defaultBoundaries,
           recordMinMax: true,
           exemplarFilter: meter.provider.exemplarFilter,
         ) {
@@ -74,7 +80,11 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
   APIMeter get meter => _meter;
 
   @override
-  List<double>? get boundaries => _apiHistogram.boundaries;
+  InstrumentAdvisory? get advisory => _apiHistogram.advisory;
+
+  @Deprecated('Use advisory?.explicitBucketBoundaries instead')
+  @override
+  List<double>? get boundaries => advisory?.explicitBucketBoundaries;
 
   @override
   bool get isCounter => false;

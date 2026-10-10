@@ -54,7 +54,6 @@ class ConsoleExporter extends SpanExporter {
     }
 
     // Print attributes if any
-    // ignore: invalid_use_of_visible_for_testing_member
     final attributes = span.attributes.toList();
     if (attributes.isNotEmpty) {
       buffer.writeln('Attributes:');

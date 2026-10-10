@@ -142,6 +142,42 @@ void main() {
         expect(extracted.spanContext, isNull);
       });
 
+      // W3C Trace Context defines trace-id, parent-id and trace-flags as
+      // lowercase hex only; a header with any other character is invalid and
+      // MUST be rejected whole (context/api-propagators.md), not coerced.
+      group('rejects a traceparent that is not lowercase hex', () {
+        const cases = <String, String>{
+          'uppercase trace-id (#193)':
+              '00-4BF92F3577B34DA6A3CE929D0E0E4736-00f067aa0ba902b7-01',
+          'uppercase parent-id (#193)':
+              '00-4bf92f3577b34da6a3ce929d0e0e4736-00F067AA0BA902B7-01',
+          'signed hex in trace-id (#193)':
+              '00-+bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01',
+          'non-hex parent-id (#193)':
+              '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902zz-01',
+          'uppercase trace-flags (#194)':
+              '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-0A',
+          'non-hex trace-flags (#194)':
+              '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-zz',
+        };
+
+        for (final entry in cases.entries) {
+          test(entry.key, () {
+            final carrier = <String, String>{'traceparent': entry.value};
+            final context = OTel.context();
+
+            final extracted = propagator.extract(
+              context,
+              carrier,
+              MapTextMapGetter(carrier),
+            );
+
+            expect(extracted.spanContext, isNull,
+                reason: 'the header must be dropped, not normalized');
+          });
+        }
+      });
+
       test('extract handles missing traceparent', () {
         final carrier = <String, String>{};
         final mapGetter = MapTextMapGetter(carrier);
