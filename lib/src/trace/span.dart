@@ -204,7 +204,7 @@ class Span implements APISpan {
     if (spanEvent.name.isEmpty) return;
     final enforcer = _enforcer;
     if (enforcer != null) {
-      final currentCount = _delegate.spanEvents?.length ?? 0;
+      final currentCount = _readable.spanEvents?.length ?? 0;
       final limited = enforcer.processAddEvent(spanEvent, currentCount);
       if (limited != null) {
         _delegate.addEvent(limited);
@@ -249,7 +249,7 @@ class Span implements APISpan {
     if (!_isRecording || isEnded) return;
     final enforcer = _enforcer;
     if (enforcer != null) {
-      final currentCount = _delegate.spanLinks?.length ?? 0;
+      final currentCount = _readable.spanLinks?.length ?? 0;
       final limited = enforcer.processAddLink(spanLink, currentCount);
       if (limited != null) {
         _delegate.addSpanLink(limited);
