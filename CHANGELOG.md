@@ -100,15 +100,21 @@ were filed by @yuzurihaaa; the API changes it adopts are credited on each entry.
   ([#307](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/307)).
 - `TraceIdRatioSampler.description` is `TraceIdRatioBased{RATIO}`, the name trace/sdk.md gives the sampler, instead of
   `TraceIdRatioSampler{RATIO}` ([#298](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/298)).
+- OTLP/HTTP exporters now retry transient errors for the retryable HTTP status codes 429, 502, 503 and 504, as
+  protocol/exporter.md requires (MUST). Before, 502 and 504 failed the export without a retry, and retryability was
+  decided by matching the exception message instead of the status code
+  ([#224](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/224),
+  [#305](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/305)).
+
+## [0.12.0] - unreleased
+
+Stable-channel republication of `1.1.0-beta.17`. Depends on `dartastic_opentelemetry_api: ^0.12.0`, the API's
+republication of `1.0.0-rc.4`. It carries every change in `1.1.0-beta.16` and `1.1.0-beta.17` below; the **breaking**
+ones are in `1.1.0-beta.17` under Changed.
 
 ## [1.1.0-beta.16] - 2026-10-08
 
 ### Fixed
-
-- OTLP/HTTP exporters now retry transient errors for the retryable HTTP status codes
-  429, 502, 503 and 504, as required by `protocol/exporter.md` (MUST)
-  ([#224](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/224),
-  [#305](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/305)).
 
 - The `dartastic_opentelemetry_api` dependency is pinned to the current rc (`>=1.0.0-rc.3 <1.0.0-rc.4`) so a new API
   prerelease cannot break a fresh `pub get`. Widen it only after the SDK is adapted
