@@ -19,7 +19,7 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 -->
 
 
-## [1.1.0-beta.17-wip]
+## [1.1.0-beta.17] - 2026-10-11
 
 The spec-compliance issues this release closes ([#106](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/106), 
 [#111](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/111), 
