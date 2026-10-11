@@ -186,9 +186,6 @@ class MockSpan implements Span {
   }
 
   @override
-  SpanLimits get spanLimits => const SpanLimits();
-
-  @override
   int get droppedAttributesCount => 0;
 
   @override

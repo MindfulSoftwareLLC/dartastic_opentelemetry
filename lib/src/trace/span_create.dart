@@ -28,7 +28,6 @@ class SDKSpanCreate {
     return Span._(
       delegateSpan,
       sdkTracer,
-      spanLimits: effectiveLimits,
       enforcer:
           enforcer ?? (isRecording ? SpanLimitEnforcer(effectiveLimits) : null),
       isRecording: isRecording,

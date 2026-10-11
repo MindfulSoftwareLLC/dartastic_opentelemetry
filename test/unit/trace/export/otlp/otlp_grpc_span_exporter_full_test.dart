@@ -202,9 +202,6 @@ class _TestSpan implements Span {
   void setStringAttribute<T>(String name, String value) {}
 
   @override
-  SpanLimits get spanLimits => const SpanLimits();
-
-  @override
   int get droppedAttributesCount => 0;
 
   @override

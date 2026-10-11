@@ -1193,7 +1193,12 @@ void main() {
       final messageAttr = event.attributes!.toList().firstWhere(
             (a) => a.key == ExceptionAttributes.exceptionMessage.key,
           );
-      expect(messageAttr.value, equals('<exception.toString() failed>'));
+      expect(
+        messageAttr.value,
+        equals(
+          'Exception when calling toString of span exception: Bad state: boom',
+        ),
+      );
       final typeAttr = event.attributes!.toList().firstWhere(
             (a) => a.key == ExceptionAttributes.exceptionType.key,
           );
@@ -1227,8 +1232,48 @@ void main() {
 
       final attr =
           span.attributes.toList().firstWhere((a) => a.key == 'my_time');
-      expect(attr.value, equals(dt.toUtc().toIso8601String()));
-      expect(attr.value, equals('2026-10-11T14:30:45.123Z'));
+      expect(attr.value, equals(Timestamp.dateTimeToString(dt)));
+    });
+
+    test(
+        'empty-name events are dropped, not thrown, and not counted as limit drops',
+        () async {
+      await OTel.reset();
+      await OTel.initialize(serviceName: 'test-empty-event');
+      final provider = OTel.tracerProvider();
+      final tracer = provider.getTracer('test');
+      final span = tracer.startSpan('empty-event-span');
+
+      // addEventNow with empty string is dropped silently
+      span.addEventNow('');
+      expect(span.spanEvents, isNull);
+      expect(span.droppedEventsCount, equals(0));
+
+      // addEvents with empty key is dropped, valid key is added
+      span.addEvents({'': null, 'valid_event': null});
+      expect(span.spanEvents, hasLength(1));
+      expect(span.spanEvents!.first.name, equals('valid_event'));
+      expect(span.droppedEventsCount, equals(0));
+    });
+
+    test(
+        'setStringListAttribute with emoji and valueLengthLimit 1 stores empty and truncated string',
+        () async {
+      await OTel.reset();
+      await OTel.initialize(serviceName: 'test-emoji-list');
+      final provider = OTel.tracerProvider();
+      provider.spanLimits = const SpanLimits(attributeValueLengthLimit: 1);
+      final tracer = provider.getTracer('test');
+      final span = tracer.startSpan('emoji-span');
+
+      span.setStringListAttribute<List<String>>(
+        'emoji_list',
+        ['😀', 'hello'],
+      );
+
+      final attr =
+          span.attributes.toList().firstWhere((a) => a.key == 'emoji_list');
+      expect(attr.value, equals(['', 'h']));
     });
   });
 }

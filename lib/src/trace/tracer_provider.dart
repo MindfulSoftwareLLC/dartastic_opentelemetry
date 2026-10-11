@@ -56,6 +56,7 @@ class TracerProvider implements APITracerProvider {
   bool _hasExplicitSpanLimits = false;
 
   /// Whether span limits have been explicitly set on this provider.
+  @internal
   bool get hasExplicitSpanLimits => _hasExplicitSpanLimits;
 
   /// Gets the span limits configured for this provider.

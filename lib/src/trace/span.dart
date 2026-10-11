@@ -54,9 +54,6 @@ class Span implements APISpan {
   /// state, so the SDK span holds it.
   final bool _isRecording;
 
-  /// The span limits snapshot active for this span.
-  final SpanLimits spanLimits;
-
   /// The limit enforcer for recording spans. `null` for non-recording spans.
   final SpanLimitEnforcer? _enforcer;
 
@@ -64,19 +61,16 @@ class Span implements APISpan {
   ///
   /// @param delegate The API Span implementation to delegate to
   /// @param sdkTracer The SDK Tracer that created this Span
-  /// @param spanLimits The snapshot of limits active for this span
   /// @param enforcer The limit enforcer for recording spans
   /// @param isRecording Whether this span records data (sampling decision)
   Span._(
     APISpan delegate,
     Tracer sdkTracer, {
-    SpanLimits? spanLimits,
     SpanLimitEnforcer? enforcer,
     bool isRecording = true,
   })  : _delegate = delegate,
         _readable = getReadableSpan(delegate),
         _sdkTracer = sdkTracer,
-        spanLimits = spanLimits ?? const SpanLimits(),
         _enforcer = enforcer,
         _isRecording = isRecording {
     if (OTelLog.isDebug()) {
@@ -208,6 +202,7 @@ class Span implements APISpan {
   @override
   void addEvent(SpanEvent spanEvent) {
     if (!_isRecording || isEnded) return;
+    if (spanEvent.name.isEmpty) return;
     final enforcer = _enforcer;
     if (enforcer != null) {
       final currentCount = _delegate.spanEvents?.length ?? 0;
@@ -223,6 +218,7 @@ class Span implements APISpan {
   @override
   void addEventNow(String name, [Attributes? attributes]) {
     if (!_isRecording || isEnded) return;
+    if (name.isEmpty) return;
     final timestamp = _sdkTracer.provider.timeProvider.nowDateTime();
     addEvent(OTel.spanEvent(name, attributes ?? OTel.attributes(), timestamp));
   }
@@ -232,6 +228,7 @@ class Span implements APISpan {
     if (!_isRecording || isEnded) return;
     final timestamp = _sdkTracer.provider.timeProvider.nowDateTime();
     for (final entry in spanEvents.entries) {
+      if (entry.key.isEmpty) continue;
       addEvent(OTel.spanEvent(
         entry.key,
         entry.value ?? OTel.attributes(),
@@ -292,8 +289,9 @@ class Span implements APISpan {
     String exceptionMessage;
     try {
       exceptionMessage = exception.toString();
-    } catch (_) {
-      exceptionMessage = '<exception.toString() failed>';
+    } catch (e) {
+      exceptionMessage =
+          'Exception when calling toString of span exception: $e';
     }
     final eventAttrs = <String, Object>{
       ExceptionAttributes.exceptionType.key: exception.runtimeType.toString(),
@@ -441,7 +439,7 @@ class Span implements APISpan {
   @override
   void setDateTimeAsStringAttribute(String name, DateTime value) {
     if (!_isRecording || isEnded) return;
-    setStringAttribute<String>(name, value.toUtc().toIso8601String());
+    setStringAttribute<String>(name, Timestamp.dateTimeToString(value));
   }
 
   @override

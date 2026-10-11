@@ -14,7 +14,11 @@ import 'span_limits.dart';
 /// with a snapshot of [SpanLimits] at span creation time.
 @internal
 class SpanLimitEnforcer {
-  /// The log message prescribed by the OpenTelemetry v1.60.0 specification.
+  /// The warning message logged when an attribute is truncated, discarded, or
+  /// replaced due to a limit.
+  ///
+  /// Note: The OpenTelemetry specification requires logging discards and
+  /// truncations, but does not prescribe the exact log message text.
   static const String discardLogMessage =
       'Attribute was truncated, discarded, or replaced due to a limit.';
 
@@ -73,7 +77,7 @@ class SpanLimitEnforcer {
   int droppedAttributesCountForLink(SpanLink link) =>
       _droppedAttributesPerLink[link] ?? 0;
 
-  /// Emits the specification debug log for the span record, at most once.
+  /// Emits the debug log for the span record, at most once.
   void logSpanDiscard() {
     if (!_loggedSpanDiscard) {
       _loggedSpanDiscard = true;
@@ -83,14 +87,14 @@ class SpanLimitEnforcer {
     }
   }
 
-  /// Emits the specification debug log for an event record directly.
+  /// Emits the debug log for an event record directly.
   void logEventDiscard() {
     if (OTelLog.isDebug()) {
       OTelLog.debug(discardLogMessage);
     }
   }
 
-  /// Emits the specification debug log for a link record directly.
+  /// Emits the debug log for a link record directly.
   void logLinkDiscard() {
     if (OTelLog.isDebug()) {
       OTelLog.debug(discardLogMessage);
@@ -134,9 +138,6 @@ class SpanLimitEnforcer {
       }
 
       final attrResult = linkAttributeLimiter.limitAttributes(link.attributes);
-      if (attrResult.droppedCount > 0) {
-        _droppedAttributesPerLink[link] = attrResult.droppedCount;
-      }
       if (attrResult.hadDiscardOrTruncation) {
         logLinkDiscard();
         anyModified = true;
@@ -166,6 +167,10 @@ class SpanLimitEnforcer {
     var anyModified = false;
     final keptEvents = <SpanEvent>[];
     for (final event in events) {
+      if (event.name.isEmpty) {
+        anyModified = true;
+        continue;
+      }
       if (keptEvents.length >= spanLimits.eventCountLimit) {
         _droppedEventsCount++;
         anyModified = true;
@@ -179,9 +184,6 @@ class SpanLimitEnforcer {
 
       final attrResult =
           eventAttributeLimiter.limitAttributes(event.attributes);
-      if (attrResult.droppedCount > 0) {
-        _droppedAttributesPerEvent[event] = attrResult.droppedCount;
-      }
       if (attrResult.hadDiscardOrTruncation) {
         logEventDiscard();
         anyModified = true;
@@ -274,6 +276,9 @@ class SpanLimitEnforcer {
 
   /// Processes adding a span event. Returns the limited event, or `null` if dropped.
   SpanEvent? processAddEvent(SpanEvent spanEvent, int currentEventCount) {
+    if (spanEvent.name.isEmpty) {
+      return null;
+    }
     if (currentEventCount >= spanLimits.eventCountLimit) {
       _droppedEventsCount++;
       return null;
