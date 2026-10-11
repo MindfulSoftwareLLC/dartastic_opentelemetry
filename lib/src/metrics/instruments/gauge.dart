@@ -50,6 +50,9 @@ class Gauge<T extends num> implements APIGauge<T>, SDKInstrument {
   APIMeter get meter => _meter;
 
   @override
+  InstrumentAdvisory? get advisory => _apiGauge.advisory;
+
+  @override
   bool get isCounter => false;
 
   @override

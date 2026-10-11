@@ -70,7 +70,7 @@ void main() async {
     // Create a child span.
     final childSpan = tracer.startSpan(
       'child-operation-dartastic',
-      parentSpan: rootSpan,
+      context: Context.current.withSpan(rootSpan),
     );
 
     try {

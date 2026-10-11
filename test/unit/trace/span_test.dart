@@ -47,7 +47,8 @@ void main() {
       final parentSpan = tracer.startSpan('parent-span');
 
       // Create a child span by using the parent span
-      final childSpan = tracer.startSpan('child-span', parentSpan: parentSpan);
+      final childSpan = tracer.startSpan('child-span',
+          context: Context.current.withSpan(parentSpan));
 
       // Verify the parent span context
       expect(childSpan.parentSpanContext, isNotNull);

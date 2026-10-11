@@ -70,6 +70,9 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
   @override
   APIMeter get meter => _meter;
 
+  @override
+  InstrumentAdvisory? get advisory => _apiCounter.advisory;
+
   /// Always true for Counter instruments.
   @override
   bool get isCounter => true;

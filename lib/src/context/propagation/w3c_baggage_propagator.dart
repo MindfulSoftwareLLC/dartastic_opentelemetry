@@ -127,7 +127,7 @@ class W3CBaggagePropagator
       }
 
       final baggage = contextBaggage;
-      final entries = baggage.getAllEntries();
+      final entries = baggage.getAllValues();
       if (OTelLog.isDebug()) OTelLog.debug('Baggage entries: $entries');
 
       if (entries.isEmpty) {

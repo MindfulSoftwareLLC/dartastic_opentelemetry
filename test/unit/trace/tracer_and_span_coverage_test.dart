@@ -153,8 +153,6 @@ class _InvalidSpanWrapper implements APISpan {
   @override
   SpanKind get kind => _delegate.kind;
   @override
-  Attributes get attributes => _delegate.attributes;
-  @override
   set attributes(Attributes newAttributes) =>
       _delegate.attributes = newAttributes;
   @override
@@ -166,17 +164,9 @@ class _InvalidSpanWrapper implements APISpan {
   @override
   bool get isRecording => _delegate.isRecording;
   @override
-  SpanStatusCode get status => _delegate.status;
-  @override
-  String? get statusDescription => _delegate.statusDescription;
-  @override
   APISpan? get parentSpan => _delegate.parentSpan;
   @override
   SpanContext? get parentSpanContext => _delegate.parentSpanContext;
-  @override
-  List<SpanEvent>? get spanEvents => _delegate.spanEvents;
-  @override
-  List<SpanLink>? get spanLinks => _delegate.spanLinks;
   @override
   SpanId get spanId => _delegate.spanId;
   @override
@@ -382,12 +372,11 @@ void main() {
       // Create a parent span first
       final parentSpan = tracer.startSpan('parent-span');
 
-      // Now start a child span passing parentSpan explicitly, but on Context.root
-      // so there's no spanContext on the context. This exercises the parentSpan fallback.
+      // Start a child span with the parent placed on an otherwise empty
+      // context, so the parent comes from the context's span slot alone.
       final childSpan = tracer.startSpan(
         'child-span',
-        context: Context.root,
-        parentSpan: parentSpan,
+        context: Context.root.withSpan(parentSpan),
       );
 
       // The child should inherit the parent's trace ID
