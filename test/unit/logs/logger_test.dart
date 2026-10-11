@@ -171,13 +171,13 @@ void main() {
       final logger = OTel.logger('test-logger');
 
       // OTelLogger should be disabled without processors
-      expect(logger.enabled, isFalse);
+      expect(logger.isEnabled(), isFalse);
     });
 
     test('OTelLogger is enabled with processors', () {
       final logger = OTel.logger('test-logger');
 
-      expect(logger.enabled, isTrue);
+      expect(logger.isEnabled(), isTrue);
     });
 
     test('OTelLogger does not emit when disabled', () async {
@@ -195,7 +195,7 @@ void main() {
 
       // Nothing should be exported since we haven't added a processor
       // to this new instance
-      expect(logger.enabled, isFalse);
+      expect(logger.isEnabled(), isFalse);
     });
 
     test('OTelLogger captures trace context from current span', () async {

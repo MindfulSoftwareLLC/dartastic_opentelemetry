@@ -16,7 +16,6 @@ import 'package:protobuf/protobuf.dart' as $pb;
 
 /// Possible values for LogRecord.SeverityNumber.
 class SeverityNumber extends $pb.ProtobufEnum {
-  /// UNSPECIFIED is the default SeverityNumber, it MUST NOT be used.
   static const SeverityNumber SEVERITY_NUMBER_UNSPECIFIED =
       SeverityNumber._(0, _omitEnumNames ? '' : 'SEVERITY_NUMBER_UNSPECIFIED');
   static const SeverityNumber SEVERITY_NUMBER_TRACE =

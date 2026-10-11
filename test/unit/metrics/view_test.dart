@@ -114,15 +114,15 @@ void main() {
         gauge = meter.createGauge<double>(name: 'my_gauge');
         obsCounter = meter.createObservableCounter<int>(
           name: 'my_obs_counter',
-          callback: (_) {},
+          callbacks: [(_) {}],
         );
         obsUpDown = meter.createObservableUpDownCounter<int>(
           name: 'my_obs_updown',
-          callback: (_) {},
+          callbacks: [(_) {}],
         );
         obsGauge = meter.createObservableGauge<double>(
           name: 'my_obs_gauge',
-          callback: (_) {},
+          callbacks: [(_) {}],
         );
       });
 

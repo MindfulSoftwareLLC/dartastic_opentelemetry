@@ -159,7 +159,8 @@ class ResourceSpans extends $pb.GeneratedMessage {
   $pb.PbList<ScopeSpans> get scopeSpans => $_getList(1);
 
   /// The Schema URL, if known. This is the identifier of the Schema that the resource data
-  /// is recorded in. To learn more about Schema URL see
+  /// is recorded in. Notably, the last part of the URL path is the version number of the
+  /// schema: http[s]://server[:port]/path/<version>. To learn more about Schema URL see
   /// https://opentelemetry.io/docs/specs/otel/schemas/#schema-url
   /// This schema_url applies to the data in the "resource" field. It does not apply
   /// to the data in the "scope_spans" field which have their own schema_url field.
@@ -244,9 +245,11 @@ class ScopeSpans extends $pb.GeneratedMessage {
   $pb.PbList<Span> get spans => $_getList(1);
 
   /// The Schema URL, if known. This is the identifier of the Schema that the span data
-  /// is recorded in. To learn more about Schema URL see
+  /// is recorded in. Notably, the last part of the URL path is the version number of the
+  /// schema: http[s]://server[:port]/path/<version>. To learn more about Schema URL see
   /// https://opentelemetry.io/docs/specs/otel/schemas/#schema-url
-  /// This schema_url applies to all spans and span events in the "spans" field.
+  /// This schema_url applies to the data in the "scope" field and all spans and span
+  /// events in the "spans" field.
   @$pb.TagNumber(3)
   $core.String get schemaUrl => $_getSZ(2);
   @$pb.TagNumber(3)
@@ -317,7 +320,7 @@ class Span_Event extends $pb.GeneratedMessage {
       $pb.GeneratedMessage.$_defaultFor<Span_Event>(create);
   static Span_Event? _defaultInstance;
 
-  /// time_unix_nano is the time the event occurred.
+  /// The time the event occurred.
   @$pb.TagNumber(1)
   $fixnum.Int64 get timeUnixNano => $_getI64(0);
   @$pb.TagNumber(1)
@@ -327,7 +330,7 @@ class Span_Event extends $pb.GeneratedMessage {
   @$pb.TagNumber(1)
   void clearTimeUnixNano() => $_clearField(1);
 
-  /// name of the event.
+  /// The name of the event.
   /// This field is semantically required to be set to non-empty string.
   @$pb.TagNumber(2)
   $core.String get name => $_getSZ(1);
@@ -338,13 +341,14 @@ class Span_Event extends $pb.GeneratedMessage {
   @$pb.TagNumber(2)
   void clearName() => $_clearField(2);
 
-  /// attributes is a collection of attribute key/value pairs on the event.
+  /// A collection of attribute key/value pairs on the event.
   /// Attribute keys MUST be unique (it is not allowed to have more than one
   /// attribute with the same key).
+  /// The behavior of software that receives duplicated keys can be unpredictable.
   @$pb.TagNumber(3)
   $pb.PbList<$1.KeyValue> get attributes => $_getList(2);
 
-  /// dropped_attributes_count is the number of dropped attributes. If the value is 0,
+  /// The number of dropped attributes. If the value is 0,
   /// then no attributes were dropped.
   @$pb.TagNumber(4)
   $core.int get droppedAttributesCount => $_getIZ(3);
@@ -455,13 +459,14 @@ class Span_Link extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   void clearTraceState() => $_clearField(3);
 
-  /// attributes is a collection of attribute key/value pairs on the link.
+  /// A collection of attribute key/value pairs on the link.
   /// Attribute keys MUST be unique (it is not allowed to have more than one
   /// attribute with the same key).
+  /// The behavior of software that receives duplicated keys can be unpredictable.
   @$pb.TagNumber(4)
   $pb.PbList<$1.KeyValue> get attributes => $_getList(3);
 
-  /// dropped_attributes_count is the number of dropped attributes. If the value is 0,
+  /// The number of dropped attributes. If the value is 0,
   /// then no attributes were dropped.
   @$pb.TagNumber(5)
   $core.int get droppedAttributesCount => $_getIZ(4);
@@ -472,14 +477,23 @@ class Span_Link extends $pb.GeneratedMessage {
   @$pb.TagNumber(5)
   void clearDroppedAttributesCount() => $_clearField(5);
 
-  /// Flags, a bit field. 8 least significant bits are the trace
-  /// flags as defined in W3C Trace Context specification. Readers
-  /// MUST not assume that 24 most significant bits will be zero.
-  /// When creating new spans, the most-significant 24-bits MUST be
-  /// zero.  To read the 8-bit W3C trace flag (use flags &
-  /// SPAN_FLAGS_TRACE_FLAGS_MASK).  [Optional].
+  /// Flags, a bit field.
+  ///
+  /// Bits 0-7 (8 least significant bits) are the trace flags as defined in W3C Trace
+  /// Context specification. To read the 8-bit W3C trace flag, use
+  /// `flags & SPAN_FLAGS_TRACE_FLAGS_MASK`.
   ///
   /// See https://www.w3.org/TR/trace-context-2/#trace-flags for the flag definitions.
+  ///
+  /// Bits 8 and 9 represent the 3 states of whether the link is remote.
+  /// The states are (unknown, is not remote, is remote).
+  /// To read whether the value is known, use `(flags & SPAN_FLAGS_CONTEXT_HAS_IS_REMOTE_MASK) != 0`.
+  /// To read whether the link is remote, use `(flags & SPAN_FLAGS_CONTEXT_IS_REMOTE_MASK) != 0`.
+  ///
+  /// Readers MUST NOT assume that bits 10-31 (22 most significant bits) will be zero.
+  /// When creating new spans, bits 10-31 (most-significant 22-bits) MUST be zero.
+  ///
+  /// [Optional].
   @$pb.TagNumber(6)
   $core.int get flags => $_getIZ(5);
   @$pb.TagNumber(6)
@@ -684,7 +698,7 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(6)
   void clearKind() => $_clearField(6);
 
-  /// start_time_unix_nano is the start time of the span. On the client side, this is the time
+  /// The start time of the span. On the client side, this is the time
   /// kept by the local machine where the span execution starts. On the server side, this
   /// is the time when the server's application handler starts running.
   /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
@@ -699,7 +713,7 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(7)
   void clearStartTimeUnixNano() => $_clearField(7);
 
-  /// end_time_unix_nano is the end time of the span. On the client side, this is the time
+  /// The end time of the span. On the client side, this is the time
   /// kept by the local machine where the span execution ends. On the server side, this
   /// is the time when the server application handler stops running.
   /// Value is UNIX Epoch time in nanoseconds since 00:00:00 UTC on 1 January 1970.
@@ -714,7 +728,7 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(8)
   void clearEndTimeUnixNano() => $_clearField(8);
 
-  /// attributes is a collection of key/value pairs. Note, global attributes
+  /// A collection of key/value pairs. Note, global attributes
   /// like server name can be set using the resource API. Examples of attributes:
   ///
   ///     "/http/user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.98 Safari/537.36"
@@ -722,14 +736,13 @@ class Span extends $pb.GeneratedMessage {
   ///     "example.com/myattribute": true
   ///     "example.com/score": 10.239
   ///
-  /// The OpenTelemetry API specification further restricts the allowed value types:
-  /// https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/common/README.md#attribute
   /// Attribute keys MUST be unique (it is not allowed to have more than one
   /// attribute with the same key).
+  /// The behavior of software that receives duplicated keys can be unpredictable.
   @$pb.TagNumber(9)
   $pb.PbList<$1.KeyValue> get attributes => $_getList(8);
 
-  /// dropped_attributes_count is the number of attributes that were discarded. Attributes
+  /// The number of attributes that were discarded. Attributes
   /// can be discarded because their keys are too long or because there are too many
   /// attributes. If this value is 0, then no attributes were dropped.
   @$pb.TagNumber(10)
@@ -741,11 +754,11 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(10)
   void clearDroppedAttributesCount() => $_clearField(10);
 
-  /// events is a collection of Event items.
+  /// A collection of Event items.
   @$pb.TagNumber(11)
   $pb.PbList<Span_Event> get events => $_getList(10);
 
-  /// dropped_events_count is the number of dropped events. If the value is 0, then no
+  /// The number of dropped events. If the value is 0, then no
   /// events were dropped.
   @$pb.TagNumber(12)
   $core.int get droppedEventsCount => $_getIZ(11);
@@ -756,12 +769,12 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(12)
   void clearDroppedEventsCount() => $_clearField(12);
 
-  /// links is a collection of Links, which are references from this span to a span
+  /// A collection of Links, which are references from this span to a span
   /// in the same or different trace.
   @$pb.TagNumber(13)
   $pb.PbList<Span_Link> get links => $_getList(12);
 
-  /// dropped_links_count is the number of dropped links after the maximum size was
+  /// The number of dropped links after the maximum size was
   /// enforced. If this value is 0, then no links were dropped.
   @$pb.TagNumber(14)
   $core.int get droppedLinksCount => $_getIZ(13);
@@ -785,20 +798,27 @@ class Span extends $pb.GeneratedMessage {
   @$pb.TagNumber(15)
   Status ensureStatus() => $_ensure(14);
 
-  /// Flags, a bit field. 8 least significant bits are the trace
-  /// flags as defined in W3C Trace Context specification. Readers
-  /// MUST not assume that 24 most significant bits will be zero.
-  /// To read the 8-bit W3C trace flag, use `flags & SPAN_FLAGS_TRACE_FLAGS_MASK`.
+  /// Flags, a bit field.
+  ///
+  /// Bits 0-7 (8 least significant bits) are the trace flags as defined in W3C Trace
+  /// Context specification. To read the 8-bit W3C trace flag, use
+  /// `flags & SPAN_FLAGS_TRACE_FLAGS_MASK`.
+  ///
+  /// See https://www.w3.org/TR/trace-context-2/#trace-flags for the flag definitions.
+  ///
+  /// Bits 8 and 9 represent the 3 states of whether a span's parent
+  /// is remote. The states are (unknown, is not remote, is remote).
+  /// To read whether the value is known, use `(flags & SPAN_FLAGS_CONTEXT_HAS_IS_REMOTE_MASK) != 0`.
+  /// To read whether the span is remote, use `(flags & SPAN_FLAGS_CONTEXT_IS_REMOTE_MASK) != 0`.
   ///
   /// When creating span messages, if the message is logically forwarded from another source
   /// with an equivalent flags fields (i.e., usually another OTLP span message), the field SHOULD
   /// be copied as-is. If creating from a source that does not have an equivalent flags field
-  /// (such as a runtime representation of an OpenTelemetry span), the high 24 bits MUST
+  /// (such as a runtime representation of an OpenTelemetry span), the high 22 bits MUST
   /// be set to zero.
+  /// Readers MUST NOT assume that bits 10-31 (22 most significant bits) will be zero.
   ///
   /// [Optional].
-  ///
-  /// See https://www.w3.org/TR/trace-context-2/#trace-flags for the flag definitions.
   @$pb.TagNumber(16)
   $core.int get flags => $_getIZ(15);
   @$pb.TagNumber(16)

@@ -7,7 +7,6 @@ import 'dart:typed_data';
 import 'package:meta/meta.dart';
 
 import '../dartastic_opentelemetry.dart';
-import 'metrics/exemplar_filter.dart';
 
 /// Main entry point for the OpenTelemetry SDK.
 ///

@@ -80,7 +80,7 @@ class UserPreferenceService {
     if (entry == null) {
       throw BaggageException(
         'Missing required baggage entry: $key',
-        context: {'availableKeys': baggage.getAllEntries().keys.toList()},
+        context: {'availableKeys': baggage.getAllValues().keys.toList()},
       );
     }
     return entry.value;

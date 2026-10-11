@@ -153,8 +153,6 @@ class _InvalidSpanWrapper implements APISpan {
   @override
   SpanKind get kind => _delegate.kind;
   @override
-  Attributes get attributes => _delegate.attributes;
-  @override
   set attributes(Attributes newAttributes) =>
       _delegate.attributes = newAttributes;
   @override
@@ -166,17 +164,9 @@ class _InvalidSpanWrapper implements APISpan {
   @override
   bool get isRecording => _delegate.isRecording;
   @override
-  SpanStatusCode get status => _delegate.status;
-  @override
-  String? get statusDescription => _delegate.statusDescription;
-  @override
   APISpan? get parentSpan => _delegate.parentSpan;
   @override
   SpanContext? get parentSpanContext => _delegate.parentSpanContext;
-  @override
-  List<SpanEvent>? get spanEvents => _delegate.spanEvents;
-  @override
-  List<SpanLink>? get spanLinks => _delegate.spanLinks;
   @override
   SpanId get spanId => _delegate.spanId;
   @override
@@ -316,11 +306,11 @@ void main() {
     test('enabled setter works', () {
       final tracer = OTel.tracer();
       // Exercises the enabled setter
-      expect(tracer.enabled, isTrue);
+      expect(tracer.isEnabled(), isTrue);
       tracer.enabled = false;
-      expect(tracer.enabled, isFalse);
+      expect(tracer.isEnabled(), isFalse);
       tracer.enabled = true;
-      expect(tracer.enabled, isTrue);
+      expect(tracer.isEnabled(), isTrue);
     });
   });
 
@@ -382,12 +372,11 @@ void main() {
       // Create a parent span first
       final parentSpan = tracer.startSpan('parent-span');
 
-      // Now start a child span passing parentSpan explicitly, but on Context.root
-      // so there's no spanContext on the context. This exercises the parentSpan fallback.
+      // Start a child span with the parent placed on an otherwise empty
+      // context, so the parent comes from the context's span slot alone.
       final childSpan = tracer.startSpan(
         'child-span',
-        context: Context.root,
-        parentSpan: parentSpan,
+        context: Context.root.withSpan(parentSpan),
       );
 
       // The child should inherit the parent's trace ID
@@ -1014,6 +1003,31 @@ void main() {
       final map = {
         'traceparent': '00-abcdef1234567890abcdef12345678-1234567890abcdef-0',
       };
+      final propagator = W3CTraceContextPropagator();
+      final context = propagator.extract(Context.root, map, _MapGetter(map));
+      expect(context.spanContext, isNull);
+    });
+
+    // The three cases above fail the overall-length check first. These keep
+    // the header at the valid 55 characters so the per-field length checks
+    // are the ones that reject it.
+    test('55-char traceparent with a 31-char traceId is rejected', () {
+      OTelLog.enableTraceLogging();
+      final map = {
+        'traceparent': '00-${'a' * 31}-${'b' * 17}-01',
+      };
+      expect(map['traceparent']!.length, 55);
+      final propagator = W3CTraceContextPropagator();
+      final context = propagator.extract(Context.root, map, _MapGetter(map));
+      expect(context.spanContext, isNull);
+    });
+
+    test('55-char traceparent with a 15-char spanId is rejected', () {
+      OTelLog.enableTraceLogging();
+      final map = {
+        'traceparent': '00-${'a' * 32}-${'b' * 15}-011',
+      };
+      expect(map['traceparent']!.length, 55);
       final propagator = W3CTraceContextPropagator();
       final context = propagator.extract(Context.root, map, _MapGetter(map));
       expect(context.spanContext, isNull);

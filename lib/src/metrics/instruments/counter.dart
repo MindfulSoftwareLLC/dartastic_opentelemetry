@@ -64,11 +64,14 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
   ///
   /// If false, measurements will be dropped and not recorded.
   @override
-  bool get enabled => _meter.enabled;
+  bool isEnabled() => _meter.isEnabled();
 
   /// Gets the meter that created this counter.
   @override
   APIMeter get meter => _meter;
+
+  @override
+  InstrumentAdvisory? get advisory => _apiCounter.advisory;
 
   /// Always true for Counter instruments.
   @override
@@ -105,7 +108,7 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
     }
 
     // Only record if enabled
-    if (!enabled) return;
+    if (!isEnabled()) return;
 
     // Record the measurement in our storage
     _storage.record(value, attributes, Context.current);
@@ -152,7 +155,7 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
   /// @return A list of metrics containing the current counter values
   @override
   List<Metric> collectMetrics() {
-    if (!enabled) return [];
+    if (!isEnabled()) return [];
 
     // Get the points from storage
     final points = collectPoints();
@@ -164,6 +167,7 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
       description: description,
       unit: unit,
       type: MetricType.sum,
+      isMonotonic: _storage.isMonotonic,
       points: points,
     );
 

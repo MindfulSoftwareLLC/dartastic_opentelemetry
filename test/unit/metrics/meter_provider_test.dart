@@ -58,19 +58,19 @@ void main() {
 
       // Create a meter and verify it's also enabled
       final meter = meterProvider.getMeter(name: 'test-meter');
-      expect(meter.enabled, isTrue);
+      expect(meter.isEnabled(), isTrue);
 
       // Disable meter provider
       meterProvider.enabled = false;
 
       // Verify both meter provider and meter are disabled
       expect(meterProvider.enabled, isFalse);
-      expect(meter.enabled, isFalse);
+      expect(meter.isEnabled(), isFalse);
 
       // Re-enable
       meterProvider.enabled = true;
       expect(meterProvider.enabled, isTrue);
-      expect(meter.enabled, isTrue);
+      expect(meter.isEnabled(), isTrue);
     });
 
     test('MeterProvider returns same meter for same configuration', () {
@@ -99,9 +99,11 @@ void main() {
       final meter = meterProvider.getMeter(name: 'instrument-test-meter');
       final counter = meter.createObservableCounter<int>(
         name: 'test_counter',
-        callback: (result) {
-          result.observe(42);
-        },
+        callbacks: [
+          (result) {
+            result.observe(42);
+          },
+        ],
       );
 
       // We can't directly access the internal _instruments map, but we can

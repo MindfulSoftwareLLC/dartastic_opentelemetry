@@ -128,8 +128,9 @@ class Metric {
 
   /// Whether this metric is monotonic (sum metrics only).
   ///
-  /// A monotonic metric only increases or only decreases over time.
-  /// This is applicable only for sum metrics.
+  /// A monotonic sum only increases over time, like a Counter. A
+  /// non-monotonic sum can increase and decrease, like an UpDownCounter.
+  /// Exporters treat a null value as non-monotonic.
   final bool? isMonotonic;
 
   /// Creates a new Metric instance.

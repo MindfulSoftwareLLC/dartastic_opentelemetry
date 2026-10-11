@@ -35,8 +35,6 @@ class MetricsServiceClient extends $grpc.Client {
 
   MetricsServiceClient(super.channel, {super.options, super.interceptors});
 
-  /// For performance reasons, it is recommended to keep this RPC
-  /// alive for the entire life of the application.
   $grpc.ResponseFuture<$0.ExportMetricsServiceResponse> export(
     $0.ExportMetricsServiceRequest request, {
     $grpc.CallOptions? options,

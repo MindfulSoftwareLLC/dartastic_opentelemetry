@@ -46,7 +46,7 @@ void main() {
       expect(counter.name, equals('test-observable-counter'));
       expect(counter.unit, equals('items'));
       expect(counter.description, equals('A test observable counter'));
-      expect(counter.enabled, isTrue);
+      expect(counter.isEnabled(), isTrue);
       expect(counter.meter, equals(meter));
 
       // Verify callbacks were registered
@@ -341,7 +341,7 @@ void main() {
       ) as ObservableCounter<int>;
 
       // Verify it's enabled initially
-      expect(counter.enabled, isTrue);
+      expect(counter.isEnabled(), isTrue);
 
       // Collect while enabled
       final measurements = counter.collect();
@@ -350,7 +350,7 @@ void main() {
 
       // Disable the meter provider
       meterProvider.enabled = false;
-      expect(counter.enabled, isFalse);
+      expect(counter.isEnabled(), isFalse);
 
       // Collect while disabled - callback shouldn't be called
       final measurements2 = counter.collect();

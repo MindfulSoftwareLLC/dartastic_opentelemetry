@@ -24,6 +24,10 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
   final HistogramStorage<T> _storage;
 
   /// Creates a new Histogram instance.
+  ///
+  /// Bucket boundaries come from [boundaries] when given, otherwise from
+  /// the instrument's [InstrumentAdvisory.explicitBucketBoundaries], and
+  /// otherwise from the spec's default buckets.
   Histogram({
     required APIHistogram<T> apiHistogram,
     required Meter meter,
@@ -31,7 +35,9 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
   })  : _apiHistogram = apiHistogram,
         _meter = meter,
         _storage = HistogramStorage(
-          boundaries: boundaries ?? _defaultBoundaries,
+          boundaries: boundaries ??
+              apiHistogram.advisory?.explicitBucketBoundaries ??
+              _defaultBoundaries,
           recordMinMax: true,
           exemplarFilter: meter.provider.exemplarFilter,
         ) {
@@ -68,13 +74,17 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
   String? get description => _apiHistogram.description;
 
   @override
-  bool get enabled => _meter.enabled;
+  bool isEnabled() => _meter.isEnabled();
 
   @override
   APIMeter get meter => _meter;
 
   @override
-  List<double>? get boundaries => _apiHistogram.boundaries;
+  InstrumentAdvisory? get advisory => _apiHistogram.advisory;
+
+  @Deprecated('Use advisory?.explicitBucketBoundaries instead')
+  @override
+  List<double>? get boundaries => advisory?.explicitBucketBoundaries;
 
   @override
   bool get isCounter => false;
@@ -94,7 +104,7 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
     _apiHistogram.record(value, attributes);
 
     // Only record if enabled
-    if (!enabled) return;
+    if (!isEnabled()) return;
 
     // Record the measurement in our storage
     _storage.record(value, attributes, Context.current);
@@ -122,7 +132,7 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
 
   @override
   List<Metric> collectMetrics() {
-    if (!enabled) return [];
+    if (!isEnabled()) return [];
 
     // Get the points from storage
     final points = collectPoints();

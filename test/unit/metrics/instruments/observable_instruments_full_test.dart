@@ -43,7 +43,7 @@ void main() {
         expect(counter.name, equals('prop_counter'));
         expect(counter.unit, equals('items'));
         expect(counter.description, equals('A test counter'));
-        expect(counter.enabled, isTrue);
+        expect(counter.isEnabled(), isTrue);
         expect(counter.meter, equals(meter));
       });
 
@@ -325,7 +325,7 @@ void main() {
         expect(counter.name, equals('prop_updown'));
         expect(counter.unit, equals('connections'));
         expect(counter.description, equals('Active connections'));
-        expect(counter.enabled, isTrue);
+        expect(counter.isEnabled(), isTrue);
         expect(counter.meter, equals(meter));
       });
 
@@ -542,7 +542,7 @@ void main() {
         expect(gauge.name, equals('prop_gauge'));
         expect(gauge.unit, equals('celsius'));
         expect(gauge.description, equals('Temperature reading'));
-        expect(gauge.enabled, isTrue);
+        expect(gauge.isEnabled(), isTrue);
         expect(gauge.meter, equals(meter));
       });
 

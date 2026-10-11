@@ -46,10 +46,13 @@ class UpDownCounter<T extends num>
   String? get description => _apiCounter.description;
 
   @override
-  bool get enabled => _meter.enabled;
+  bool isEnabled() => _meter.isEnabled();
 
   @override
   APIMeter get meter => _meter;
+
+  @override
+  InstrumentAdvisory? get advisory => _apiCounter.advisory;
 
   @override
   bool get isCounter => false;
@@ -69,7 +72,7 @@ class UpDownCounter<T extends num>
     _apiCounter.add(value, attributes);
 
     // In the SDK, we only check the meter's enabled state
-    if (!_meter.enabled) return;
+    if (!_meter.isEnabled()) return;
 
     // Record the measurement in our storage
     _storage.record(value, attributes, Context.current);
@@ -97,7 +100,7 @@ class UpDownCounter<T extends num>
 
   @override
   List<Metric> collectMetrics() {
-    if (!enabled) return [];
+    if (!isEnabled()) return [];
 
     // Get the points from storage
     final points = collectPoints();
@@ -109,7 +112,8 @@ class UpDownCounter<T extends num>
       name: name,
       description: description,
       unit: unit,
-      type: MetricType.sum, // UpDownCounter is still a sum, just not monotonic
+      type: MetricType.sum,
+      isMonotonic: _storage.isMonotonic,
       points: points,
     );
 

@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry/src/metrics/export/otlp/metric_transformer.dart';
 import 'package:test/test.dart';
 import '../../../testing_utils/memory_metric_exporter.dart';
 
@@ -230,6 +231,35 @@ void main() {
       // Verify no metrics are collected when disabled
       metrics = counter.collectMetrics();
       expect(metrics.isEmpty, isTrue);
+    });
+
+    test('UpDownCounter exports a non-monotonic sum', () async {
+      final counter = meter.createUpDownCounter<int>(name: 'queue-depth');
+      counter.add(5);
+      counter.add(-3);
+
+      final metric = (counter as UpDownCounter<int>).collectMetrics().single;
+      expect(metric.isMonotonic, isFalse);
+      expect(
+        MetricTransformer.transformMetric(metric).sum.isMonotonic,
+        isFalse,
+      );
+
+      final prometheus = PrometheusExporter();
+      await prometheus.export(MetricData(metrics: [metric]));
+      expect(prometheus.prometheusData, contains('# TYPE queue_depth gauge'));
+    });
+
+    test('Counter exports a monotonic sum', () async {
+      final counter = meter.createCounter<int>(name: 'requests');
+      counter.add(1);
+
+      final metric = (counter as Counter<int>).collectMetrics().single;
+      expect(metric.isMonotonic, isTrue);
+      expect(
+        MetricTransformer.transformMetric(metric).sum.isMonotonic,
+        isTrue,
+      );
     });
   });
 }

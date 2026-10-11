@@ -42,6 +42,14 @@ const AnyValue$json = {
       '10': 'kvlistValue'
     },
     {'1': 'bytes_value', '3': 7, '4': 1, '5': 12, '9': 0, '10': 'bytesValue'},
+    {
+      '1': 'string_value_strindex',
+      '3': 8,
+      '4': 1,
+      '5': 5,
+      '9': 0,
+      '10': 'stringValueStrindex'
+    },
   ],
   '8': [
     {'1': 'value'},
@@ -56,7 +64,8 @@ final $typed_data.Uint8List anyValueDescriptor = $convert.base64Decode(
     'EoCzIpLm9wZW50ZWxlbWV0cnkucHJvdG8uY29tbW9uLnYxLkFycmF5VmFsdWVIAFIKYXJyYXlW'
     'YWx1ZRJQCgxrdmxpc3RfdmFsdWUYBiABKAsyKy5vcGVudGVsZW1ldHJ5LnByb3RvLmNvbW1vbi'
     '52MS5LZXlWYWx1ZUxpc3RIAFILa3ZsaXN0VmFsdWUSIQoLYnl0ZXNfdmFsdWUYByABKAxIAFIK'
-    'Ynl0ZXNWYWx1ZUIHCgV2YWx1ZQ==');
+    'Ynl0ZXNWYWx1ZRI0ChVzdHJpbmdfdmFsdWVfc3RyaW5kZXgYCCABKAVIAFITc3RyaW5nVmFsdW'
+    'VTdHJpbmRleEIHCgV2YWx1ZQ==');
 
 @$core.Deprecated('Use arrayValueDescriptor instead')
 const ArrayValue$json = {
@@ -111,13 +120,15 @@ const KeyValue$json = {
       '6': '.opentelemetry.proto.common.v1.AnyValue',
       '10': 'value'
     },
+    {'1': 'key_strindex', '3': 3, '4': 1, '5': 5, '10': 'keyStrindex'},
   ],
 };
 
 /// Descriptor for `KeyValue`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List keyValueDescriptor = $convert.base64Decode(
     'CghLZXlWYWx1ZRIQCgNrZXkYASABKAlSA2tleRI9CgV2YWx1ZRgCIAEoCzInLm9wZW50ZWxlbW'
-    'V0cnkucHJvdG8uY29tbW9uLnYxLkFueVZhbHVlUgV2YWx1ZQ==');
+    'V0cnkucHJvdG8uY29tbW9uLnYxLkFueVZhbHVlUgV2YWx1ZRIhCgxrZXlfc3RyaW5kZXgYAyAB'
+    'KAVSC2tleVN0cmluZGV4');
 
 @$core.Deprecated('Use instrumentationScopeDescriptor instead')
 const InstrumentationScope$json = {
@@ -149,3 +160,20 @@ final $typed_data.Uint8List instrumentationScopeDescriptor = $convert.base64Deco
     'ABKAlSB3ZlcnNpb24SRwoKYXR0cmlidXRlcxgDIAMoCzInLm9wZW50ZWxlbWV0cnkucHJvdG8u'
     'Y29tbW9uLnYxLktleVZhbHVlUgphdHRyaWJ1dGVzEjgKGGRyb3BwZWRfYXR0cmlidXRlc19jb3'
     'VudBgEIAEoDVIWZHJvcHBlZEF0dHJpYnV0ZXNDb3VudA==');
+
+@$core.Deprecated('Use entityRefDescriptor instead')
+const EntityRef$json = {
+  '1': 'EntityRef',
+  '2': [
+    {'1': 'schema_url', '3': 1, '4': 1, '5': 9, '10': 'schemaUrl'},
+    {'1': 'type', '3': 2, '4': 1, '5': 9, '10': 'type'},
+    {'1': 'id_keys', '3': 3, '4': 3, '5': 9, '10': 'idKeys'},
+    {'1': 'description_keys', '3': 4, '4': 3, '5': 9, '10': 'descriptionKeys'},
+  ],
+};
+
+/// Descriptor for `EntityRef`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List entityRefDescriptor = $convert.base64Decode(
+    'CglFbnRpdHlSZWYSHQoKc2NoZW1hX3VybBgBIAEoCVIJc2NoZW1hVXJsEhIKBHR5cGUYAiABKA'
+    'lSBHR5cGUSFwoHaWRfa2V5cxgDIAMoCVIGaWRLZXlzEikKEGRlc2NyaXB0aW9uX2tleXMYBCAD'
+    'KAlSD2Rlc2NyaXB0aW9uS2V5cw==');

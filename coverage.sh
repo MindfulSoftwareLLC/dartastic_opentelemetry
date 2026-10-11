@@ -1,0 +1,105 @@
+#!/bin/bash
+# Coverage script for Dartastic OpenTelemetry SDK
+
+set -e  # Exit on any error
+
+# Always operate from the repo root, wherever the script is invoked from.
+cd "$(dirname "$0")/.." || exit 1
+
+# Parse command line arguments
+# Need trace logging for coverage of debug and trace logs
+LOG_LEVEL="trace"
+CONCURRENCY="10"
+FAIL_FAST="false"
+TEST_PATH="./test"
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --log)
+      LOG_LEVEL="$2"
+      shift 2
+      ;;
+    --concurrency)
+      CONCURRENCY="$2"
+      shift 2
+      ;;
+    --fail-fast)
+      FAIL_FAST="true"
+      shift
+      ;;
+    --unit)
+      TEST_PATH="./test/unit"
+      shift
+      ;;
+    *)
+      echo "Unknown option: $1"
+      echo "Usage: $0 [--log LEVEL] [--concurrency N] [--fail-fast] [--unit]"
+      echo "  --log LEVEL        Set log level (trace, debug, info, warn, error, fatal)"
+      echo "  --concurrency N    Set test concurrency (default: 10 for coverage)"
+      echo "  --fail-fast        Stop after the first failing test. Suites already"
+      echo "                     in flight still report, so pair with"
+      echo "                     --concurrency 1 to stop at exactly one failure."
+      echo "                     The coverage report is skipped when tests fail."
+      echo "  --unit             Restrict the run to test/unit, skipping the"
+      echo "                     collector-backed integration and web suites."
+      exit 1
+      ;;
+  esac
+done
+
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Source the otelcol download script
+source "$SCRIPT_DIR/download_otelcol.sh"
+
+# Download otelcol if needed
+download_otelcol
+
+echo "Starting test coverage collection..."
+# Set environment variables to enable logging during tests
+export OTEL_LOG_LEVEL="$LOG_LEVEL"
+export OTEL_DART_LOG_METRICS=true
+export OTEL_DART_LOG_SPANS=true
+export OTEL_DART_LOG_EXPORT=true
+# Environment variable to signal tests they are running in isolation
+export DART_OTEL_ISOLATED_TESTING=true
+
+echo "Log level: $LOG_LEVEL"
+echo "Concurrency: $CONCURRENCY"
+
+# Ensure the coverage directory exists and is clean
+rm -rf coverage
+echo "Starting test coverage collection..."
+
+mkdir -p coverage
+
+# Run tests with coverage. Use the whole `./test` tree so any new
+# top-level test file is covered automatically. Browser-only tests under
+# `test/web/` are tagged `@TestOn('browser')` and are skipped on the VM
+# target.
+echo "Running tests with coverage..."
+FAIL_FAST_FLAG=""
+if [ "$FAIL_FAST" = "true" ]; then
+  FAIL_FAST_FLAG="--fail-fast"
+  echo "Stopping after the first failure"
+fi
+dart test --chain-stack-traces --coverage=coverage --concurrency="$CONCURRENCY" --exclude-tags="fail" $FAIL_FAST_FLAG "$TEST_PATH"
+
+# Generate LCOV coverage report, excluding certain directories
+dart run coverage:format_coverage  --in=./coverage --package=./lib --report-on=lib/ --lcov --out=coverage/lcov.info --check-ignore
+
+# Filter out proto files from coverage report
+lcov --remove coverage/lcov.info '**/proto/**' '**/test/**' --ignore-errors unused -o coverage/lcov.info
+
+# Generate HTML report
+genhtml coverage/lcov.info -o coverage/html
+
+# Open the report in the default browser on macOS (CI runs Linux, where
+# `open` does not exist and would fail the script under set -e).
+if [[ "$OSTYPE" == darwin* ]]; then
+  open coverage/html/index.html
+fi
+
+echo "Coverage process completed successfully"
+exit 0
