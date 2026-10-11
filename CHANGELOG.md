@@ -38,7 +38,13 @@ were filed by @yuzurihaaa; the API changes it adopts are credited on each entry.
   ([api CHANGELOG](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/blob/main/CHANGELOG.md)) apply
   to SDK users through the re-exported API: `Baggage.getAllValues()` returns `Map<String, BaggageEntry>`,
   `Context.copyWithValue` is gone, `TraceFlags.fromString` returns null on invalid input, and `APISpan` no longer
-  exposes its recorded data ([api#127](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/127) by @harshitt13, 
+  exposes its recorded data. `OTel.traceIdFrom` and `OTel.spanIdFrom` accept only lowercase hex and return an invalid
+  (all-zero) id for malformed input instead of throwing `FormatException`. `APIMeterProvider` no longer has
+  `endpoint`, `serviceName`, `serviceVersion`, `enabled` or `isShutdown`; the SDK `MeterProvider` that
+  `OTel.meterProvider()` returns keeps them
+  ([api#112](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/112) by @robert-northmind,
+  [api#113](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/113) by @harshitt13,
+  [api#127](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/127) by @harshitt13, 
   [api#130](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/130) by @harshitt13,
   [api#114](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/114) by @robert-northmind, 
   [api#137](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/137) by @i-am-paradox, 
@@ -67,6 +73,10 @@ were filed by @yuzurihaaa; the API changes it adopts are credited on each entry.
   the Prometheus exporter types it as `gauge`. Before, both assumed monotonic. SDK instruments always set the value, so
   only a `Metric(type: MetricType.sum)` built by hand without `isMonotonic` is affected. `Metric.sum()` still defaults
   to `isMonotonic: true`
+  ([#307](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/307) by @yuzurihaaa).
+- **BREAKING**: The Prometheus exporter now types a non-monotonic sum, including every `UpDownCounter`, as `gauge`,
+  not `counter`, which compatibility/prometheus_and_openmetrics.md specifies. PromQL that applies `rate()` or
+  `increase()` to these series needs updating
   ([#307](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/307) by @yuzurihaaa).
 
 ### Added
@@ -103,15 +113,12 @@ were filed by @yuzurihaaa; the API changes it adopts are credited on each entry.
 - The OTLP log exporters write an instrumentation scope's schema URL to `ScopeLogs.schema_url`, where
   logs/data-model.md and the OTLP proto place it, instead of to `ResourceLogs.schema_url`, which describes the resource
   and now carries the `Resource`'s own schema URL. Loggers whose scopes differ only by schema URL are no longer merged
-  into one `ScopeLogs` ([#303](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/303)  by @michaelbushe).
+  into one `ScopeLogs` ([#303](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/303) by @michaelbushe).
 - A synchronous `UpDownCounter` is now exported as a non-monotonic sum, which metrics/sdk.md makes a MUST for Sum
   aggregation. Before, OTLP exported it with `is_monotonic: true`. `Counter` now sets `isMonotonic: true` explicitly
   ([#307](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/307) by @yuzurihaaa).
-- The Prometheus exporter now types a non-monotonic sum as `gauge`, not `counter`, which
-  compatibility/prometheus_and_openmetrics.md specifies
-  ([#307](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/307) by @yuzurihaaa).
 - `TraceIdRatioSampler.description` is `TraceIdRatioBased{RATIO}`, the name trace/sdk.md gives the sampler, instead of
-  `TraceIdRatioSampler{RATIO}` ([#298](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/298) @LaPyaeOo).
+  `TraceIdRatioSampler{RATIO}` ([#298](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/298) by @LaPyaeOo).
 - OTLP/HTTP exporters now retry transient errors for the retryable HTTP status codes 429, 502, 503 and 504, as
   protocol/exporter.md requires (MUST). Before, 502 and 504 failed the export without a retry, and retryability was
   decided by matching the exception message instead of the status code
