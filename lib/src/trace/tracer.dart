@@ -19,6 +19,7 @@ import '../resource/resource.dart';
 import 'sampling/sampler.dart';
 import 'span.dart';
 import 'span_exception_options.dart';
+import 'span_limit_enforcer.dart';
 import 'tracer_provider.dart';
 
 part 'tracer_create.dart';
@@ -452,6 +453,27 @@ class Tracer implements APITracer {
       traceState: traceState,
     );
 
+    // Snapshot the provider's span limits at span start time.
+    final limits = _provider.spanLimits;
+    final SpanLimitEnforcer? enforcer;
+    final Attributes? limitedAttributes;
+    final List<SpanLink>? limitedLinks;
+    final List<SpanEvent>? limitedEvents;
+
+    if (recording) {
+      final e = SpanLimitEnforcer(limits);
+      enforcer = e;
+      limitedAttributes = e.processCreationAttributes(attributes);
+      limitedLinks = links != null ? e.processCreationLinks(links) : null;
+      limitedEvents =
+          spanEvents != null ? e.processCreationEvents(spanEvents) : null;
+    } else {
+      enforcer = null;
+      limitedAttributes = attributes;
+      limitedLinks = links;
+      limitedEvents = spanEvents;
+    }
+
     // Build the API span around the SpanContext decided above. The API
     // tracer's createSpan mints its own IDs and flags, so the SDK
     // constructs the span directly, the way the API package intends an
@@ -462,9 +484,9 @@ class Tracer implements APITracer {
       parentSpan: parent.parentSpan,
       instrumentationScope: _instrumentationScope,
       spanKind: kind,
-      attributes: attributes,
-      links: links,
-      spanEvents: spanEvents,
+      attributes: limitedAttributes,
+      links: limitedLinks,
+      spanEvents: limitedEvents,
       startTime: startTime,
       isRecording: recording,
       timeProvider: timeProvider,
@@ -474,6 +496,8 @@ class Tracer implements APITracer {
     final sdkSpan = SDKSpanCreate.create(
       delegateSpan: delegateSpan,
       sdkTracer: this,
+      spanLimits: limits,
+      enforcer: enforcer,
       isRecording: recording,
     );
 

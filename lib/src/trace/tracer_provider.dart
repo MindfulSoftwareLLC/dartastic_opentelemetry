@@ -52,6 +52,16 @@ class TracerProvider implements APITracerProvider {
   /// status) is used.
   SpanExceptionOptions? spanExceptionOptions;
 
+  SpanLimits? _spanLimits;
+
+  /// Gets the span limits configured for this provider.
+  ///
+  /// Lazily defaults to [SpanLimits.fromEnvironment()] if not explicitly set.
+  SpanLimits get spanLimits => _spanLimits ??= SpanLimits.fromEnvironment();
+
+  /// Sets the span limits for this provider.
+  set spanLimits(SpanLimits? value) => _spanLimits = value;
+
   /// Clock used for span start, end, and event timestamps. Delegates to the
   /// underlying [APITracerProvider] so the SDK and API share a single
   /// source of truth. Defaults are platform-aware (native:
@@ -75,11 +85,13 @@ class TracerProvider implements APITracerProvider {
   /// @param delegate The API TracerProvider implementation to delegate to
   /// @param resource Optional Resource describing the entity producing telemetry
   /// @param sampler Optional default sampler for tracers created by this provider
+  /// @param spanLimits Optional span limits configuration for this provider
   TracerProvider._({
     required APITracerProvider delegate,
     this.resource,
-    Sampler? sampler,
-  }) : _delegate = delegate {
+    SpanLimits? spanLimits,
+  })  : _delegate = delegate,
+        _spanLimits = spanLimits {
     if (OTelLog.isDebug()) {
       OTelLog.debug(
         'TracerProvider: Created with resource: $resource, sampler: $sampler',

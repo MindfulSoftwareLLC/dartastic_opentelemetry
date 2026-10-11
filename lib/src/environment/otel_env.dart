@@ -116,6 +116,31 @@ typedef AttributeLimitsEnvironmentValues = ({
   int? attributeCountLimit,
 });
 
+/// Raw span limit values parsed by [OTelEnv.getSpanLimits].
+///
+/// All fields are nullable — `null` means the corresponding env var was
+/// unset or contained a non-numeric or negative value (a warning is logged
+/// in that case).
+typedef SpanLimitsEnvironmentValues = ({
+  /// Parsed from `OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT` or `OTEL_ATTRIBUTE_COUNT_LIMIT`
+  int? attributeCountLimit,
+
+  /// Parsed from `OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT` or `OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT`
+  int? attributeValueLengthLimit,
+
+  /// Parsed from `OTEL_SPAN_EVENT_COUNT_LIMIT`
+  int? eventCountLimit,
+
+  /// Parsed from `OTEL_SPAN_LINK_COUNT_LIMIT`
+  int? linkCountLimit,
+
+  /// Parsed from `OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT`
+  int? attributePerEventCountLimit,
+
+  /// Parsed from `OTEL_LINK_ATTRIBUTE_COUNT_LIMIT`
+  int? attributePerLinkCountLimit,
+});
+
 /// Raw metrics environment values parsed by [OTelEnv.getMetricsConfig].
 ///
 /// All fields are nullable — `null` means the corresponding env var was
@@ -728,6 +753,55 @@ class OTelEnv {
       countVar: otelLogrecordAttributeCountLimit,
       fallbackLengthVar: otelAttributeValueLengthLimit,
       fallbackCountVar: otelAttributeCountLimit,
+    );
+  }
+
+  /// Get span limits from environment variables.
+  ///
+  /// Returns a [SpanLimitsEnvironmentValues] containing the span limits read
+  /// from environment variables.
+  ///
+  /// `attributeCountLimit` and `attributeValueLengthLimit` fall back to
+  /// general attribute limits (`OTEL_ATTRIBUTE_COUNT_LIMIT` and
+  /// `OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT`). All other limits have no fallback.
+  /// Unset or invalid values (not a non-negative integer) give null, with a
+  /// warning logged for invalid ones.
+  static SpanLimitsEnvironmentValues getSpanLimits() {
+    int? parseLimit(String primaryVar, [String? fallbackVar]) {
+      var val = _getEnv(primaryVar);
+      var varName = primaryVar;
+
+      if (val == null && fallbackVar != null) {
+        val = _getEnv(fallbackVar);
+        varName = fallbackVar;
+      }
+
+      if (val != null) {
+        final limit = int.tryParse(val);
+        if (limit != null && limit >= 0) {
+          return limit;
+        }
+        if (OTelLog.isWarn()) {
+          OTelLog.warn('OTelEnv: Invalid value "$val" for $varName. '
+              'Limit must be a non-negative integer.');
+        }
+      }
+      return null;
+    }
+
+    return (
+      attributeCountLimit: parseLimit(
+        otelSpanAttributeCountLimit,
+        otelAttributeCountLimit,
+      ),
+      attributeValueLengthLimit: parseLimit(
+        otelSpanAttributeValueLengthLimit,
+        otelAttributeValueLengthLimit,
+      ),
+      eventCountLimit: parseLimit(otelSpanEventCountLimit),
+      linkCountLimit: parseLimit(otelSpanLinkCountLimit),
+      attributePerEventCountLimit: parseLimit(otelEventAttributeCountLimit),
+      attributePerLinkCountLimit: parseLimit(otelLinkAttributeCountLimit),
     );
   }
 

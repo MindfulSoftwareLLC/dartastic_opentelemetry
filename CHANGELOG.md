@@ -21,6 +21,10 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.0-beta.18-wip]
 
+### Added
+
+- Trace SDK span limits: `SpanLimits`, the six `OTEL_SPAN_*` / `OTEL_EVENT_*` / `OTEL_LINK_*` env vars, and dropped counts on `Span`, exported by the OTLP span transformer. Closes [#130](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/130) and [#112](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/112) ([#PR](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/PR)).
+
 ## [1.1.0-beta.17] - 2026-10-11
 
 The spec-compliance issues this release closes ([#106](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/106), 
@@ -99,6 +103,10 @@ were written by @michaelbushe and @yuzurihaaa; each entry credits the pull reque
   `InstrumentAdvisory.explicitBucketBoundaries`. The `callback` parameter on the three `createObservable*` methods; use
   `callbacks`, to which a `callback` is prepended
   ([api#113](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/113) by @harshitt13, [#309](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/309)).
+
+### Changed
+
+- **BREAKING**: Implemented OpenTelemetry Trace SDK span limits (#130) and dropped count tracking (#112) per OpenTelemetry Specification v1.60.0 ("Span Limits", "Additional Span Interfaces", and "Attribute Limits"). The default limits now apply to spans: span attribute count limit (128), span event count limit (128), span link count limit (128), attribute per event count limit (128), and attribute per link count limit (128), with attribute value length limit defaulting to unlimited. Excess attributes, events, or links are dropped and strings exceeding length limits are truncated without splitting UTF-16 surrogate pairs. Added immutable `SpanLimits` configuration, environment variable support (`OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT`, `OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT`, `OTEL_ATTRIBUTE_COUNT_LIMIT`, `OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT`, `OTEL_SPAN_EVENT_COUNT_LIMIT`, `OTEL_SPAN_LINK_COUNT_LIMIT`, `OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT`, `OTEL_LINK_ATTRIBUTE_COUNT_LIMIT`), dropped counts on `Span` (`droppedAttributesCount`, `droppedEventsCount`, `droppedLinksCount`, and per-event / per-link dropped attribute counts), and wire serialization in `OtlpSpanTransformer` ([#304](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/304)).
 
 ### Fixed
 

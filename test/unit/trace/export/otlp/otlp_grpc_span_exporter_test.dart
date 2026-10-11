@@ -184,6 +184,30 @@ class MockSpan implements Span {
   void setStringAttribute<T>(String name, String value) {
     // TODO: implement setStringAttribute
   }
+
+  @override
+  SpanLimits get spanLimits => const SpanLimits();
+
+  @override
+  int get droppedAttributesCount => 0;
+
+  @override
+  int get droppedEventsCount => 0;
+
+  @override
+  int get droppedLinksCount => 0;
+
+  @override
+  int droppedAttributesCountForEvent(SpanEvent event) => 0;
+
+  @override
+  int droppedAttributesCountForLink(SpanLink link) => 0;
+
+  @override
+  Map<SpanEvent, int> get droppedEventAttributesCounts => const {};
+
+  @override
+  Map<SpanLink, int> get droppedLinkAttributesCounts => const {};
 }
 
 // Helper function to create a test span

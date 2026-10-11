@@ -127,7 +127,10 @@ class OtlpSpanTransformer {
       ..spanId = context.spanId.bytes
       ..name = span.name
       ..kind = transformSpanKind(span.kind)
-      ..startTimeUnixNano = Int64(span.startTime.microsecondsSinceEpoch * 1000);
+      ..startTimeUnixNano = Int64(span.startTime.microsecondsSinceEpoch * 1000)
+      ..droppedAttributesCount = span.droppedAttributesCount
+      ..droppedEventsCount = span.droppedEventsCount
+      ..droppedLinksCount = span.droppedLinksCount;
 
     if (span.endTime != null) {
       otlpSpan.endTimeUnixNano = Int64(
@@ -158,13 +161,13 @@ class OtlpSpanTransformer {
     // Add events
     final events = span.spanEvents;
     if (events != null && events.isNotEmpty) {
-      otlpSpan.events.addAll(transformEvents(events));
+      otlpSpan.events.addAll(transformEvents(events, span));
     }
 
     // Add links
     final links = span.spanLinks;
     if (links != null && links.isNotEmpty) {
-      otlpSpan.links.addAll(transformLinks(links));
+      otlpSpan.links.addAll(transformLinks(links, span));
     }
 
     // Add status
@@ -217,11 +220,19 @@ class OtlpSpanTransformer {
   }
 
   /// Convert events to OTLP Event list
-  static List<proto.Span_Event> transformEvents(List<SpanEvent> events) {
+  static List<proto.Span_Event> transformEvents(
+    List<SpanEvent> events, [
+    Span? span,
+  ]) {
     return events.map((event) {
       final spanEvent = proto.Span_Event()
         ..timeUnixNano = Int64(event.timestamp.microsecondsSinceEpoch * 1000)
         ..name = event.name;
+
+      if (span != null) {
+        spanEvent.droppedAttributesCount =
+            span.droppedAttributesCountForEvent(event);
+      }
 
       if (event.attributes != null) {
         spanEvent.attributes.addAll(transformAttributeMap(event.attributes!));
@@ -232,7 +243,10 @@ class OtlpSpanTransformer {
   }
 
   /// Convert links to OTLP Link list
-  static List<proto.Span_Link> transformLinks(List<dynamic> links) {
+  static List<proto.Span_Link> transformLinks(
+    List<dynamic> links, [
+    Span? span,
+  ]) {
     return links.map((link) {
       final spanLink = proto.Span_Link();
 
@@ -241,6 +255,11 @@ class OtlpSpanTransformer {
         spanLink
           ..traceId = spanContext.traceId.bytes
           ..spanId = spanContext.spanId.bytes;
+
+        if (span != null) {
+          spanLink.droppedAttributesCount =
+              span.droppedAttributesCountForLink(link);
+        }
 
         spanLink.attributes.addAll(transformAttributeMap(link.attributes));
       }
