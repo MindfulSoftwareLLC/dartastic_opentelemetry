@@ -125,7 +125,7 @@ were written by @michaelbushe and @yuzurihaaa; each entry credits the pull reque
   decided by matching the exception message instead of the status code
   ([#305](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/305) by @LaPyaeOo).
 
-## [0.12.0] - 2026-10-08
+## [0.12.0] - 2026-10-11
 
 Stable-channel republication of `1.1.0-beta.17`. Depends on `dartastic_opentelemetry_api: ^0.12.0`, the API's
 republication of `1.0.0-rc.4`. It carries every change in `1.1.0-beta.16` and `1.1.0-beta.17` below; the **breaking**
