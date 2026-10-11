@@ -40,8 +40,6 @@ class SpanLimitEnforcer {
   final Map<SpanLink, int> _droppedAttributesPerLink = {};
 
   bool _loggedSpanDiscard = false;
-  final Set<SpanEvent> _loggedEventDiscards = {};
-  final Set<SpanLink> _loggedLinkDiscards = {};
 
   /// Creates a new [SpanLimitEnforcer] configured with [spanLimits].
   SpanLimitEnforcer(this.spanLimits)
@@ -75,14 +73,6 @@ class SpanLimitEnforcer {
   int droppedAttributesCountForLink(SpanLink link) =>
       _droppedAttributesPerLink[link] ?? 0;
 
-  /// Unmodifiable view of dropped attributes counts per event.
-  Map<SpanEvent, int> get droppedEventAttributesCounts =>
-      Map.unmodifiable(_droppedAttributesPerEvent);
-
-  /// Unmodifiable view of dropped attributes counts per link.
-  Map<SpanLink, int> get droppedLinkAttributesCounts =>
-      Map.unmodifiable(_droppedAttributesPerLink);
-
   /// Emits the specification debug log for the span record, at most once.
   void logSpanDiscard() {
     if (!_loggedSpanDiscard) {
@@ -93,93 +83,123 @@ class SpanLimitEnforcer {
     }
   }
 
-  /// Emits the specification debug log for an event record, at most once.
-  void logEventDiscard(SpanEvent event) {
-    if (_loggedEventDiscards.add(event)) {
-      if (OTelLog.isDebug()) {
-        OTelLog.debug(discardLogMessage);
-      }
+  /// Emits the specification debug log for an event record directly.
+  void logEventDiscard() {
+    if (OTelLog.isDebug()) {
+      OTelLog.debug(discardLogMessage);
     }
   }
 
-  /// Emits the specification debug log for a link record, at most once.
-  void logLinkDiscard(SpanLink link) {
-    if (_loggedLinkDiscards.add(link)) {
-      if (OTelLog.isDebug()) {
-        OTelLog.debug(discardLogMessage);
-      }
+  /// Emits the specification debug log for a link record directly.
+  void logLinkDiscard() {
+    if (OTelLog.isDebug()) {
+      OTelLog.debug(discardLogMessage);
     }
   }
 
   /// Processes creation-time span attributes.
-  Attributes processCreationAttributes(Attributes? attributes) {
-    if (attributes == null) return OTel.attributesFromMap({});
+  Attributes? processCreationAttributes(Attributes? attributes) {
+    if (attributes == null) return null;
     final result = spanAttributeLimiter.limitAttributes(attributes);
     _droppedAttributesCount += result.droppedCount;
     if (result.hadDiscardOrTruncation) {
       logSpanDiscard();
     }
     final limitedAttrs = result.attributes;
-    for (final attr in limitedAttrs.toList()) {
-      _spanAttributeKeys.add(attr.key);
+    if (limitedAttrs != null) {
+      for (final attr in limitedAttrs.toList()) {
+        _spanAttributeKeys.add(attr.key);
+      }
     }
     return limitedAttrs;
   }
 
   /// Processes creation-time links.
-  List<SpanLink> processCreationLinks(List<SpanLink>? links) {
-    if (links == null || links.isEmpty) return const [];
+  List<SpanLink>? processCreationLinks(List<SpanLink>? links) {
+    if (links == null) return null;
+    if (links.isEmpty) return links;
 
+    var anyModified = false;
     final keptLinks = <SpanLink>[];
     for (final link in links) {
       if (keptLinks.length >= spanLimits.linkCountLimit) {
         _droppedLinksCount++;
-        logSpanDiscard();
+        anyModified = true;
+        continue;
+      }
+
+      if (link.attributes.isEmpty) {
+        keptLinks.add(link);
         continue;
       }
 
       final attrResult = linkAttributeLimiter.limitAttributes(link.attributes);
-      final limitedLink = OTel.spanLink(
-        link.spanContext,
-        attributes: attrResult.attributes,
-      );
       if (attrResult.droppedCount > 0) {
-        _droppedAttributesPerLink[limitedLink] = attrResult.droppedCount;
+        _droppedAttributesPerLink[link] = attrResult.droppedCount;
       }
       if (attrResult.hadDiscardOrTruncation) {
-        logLinkDiscard(limitedLink);
+        logLinkDiscard();
+        anyModified = true;
+        final limitedLink = OTel.spanLink(
+          link.spanContext,
+          attributes: attrResult.attributes,
+        );
+        if (attrResult.droppedCount > 0) {
+          _droppedAttributesPerLink[limitedLink] = attrResult.droppedCount;
+        }
+        keptLinks.add(limitedLink);
+      } else {
+        keptLinks.add(link);
       }
-      keptLinks.add(limitedLink);
+    }
+    if (!anyModified && keptLinks.length == links.length) {
+      return links;
     }
     return keptLinks;
   }
 
   /// Processes creation-time events.
-  List<SpanEvent> processCreationEvents(List<SpanEvent>? events) {
-    if (events == null || events.isEmpty) return const [];
+  List<SpanEvent>? processCreationEvents(List<SpanEvent>? events) {
+    if (events == null) return null;
+    if (events.isEmpty) return events;
 
+    var anyModified = false;
     final keptEvents = <SpanEvent>[];
     for (final event in events) {
       if (keptEvents.length >= spanLimits.eventCountLimit) {
         _droppedEventsCount++;
-        logSpanDiscard();
+        anyModified = true;
+        continue;
+      }
+
+      if (event.attributes == null) {
+        keptEvents.add(event);
         continue;
       }
 
       final attrResult =
           eventAttributeLimiter.limitAttributes(event.attributes);
-      final limitedEvent = OTel.spanEvent(
-        event.name,
-        attrResult.attributes,
-        event.timestamp,
-      );
       if (attrResult.droppedCount > 0) {
-        _droppedAttributesPerEvent[limitedEvent] = attrResult.droppedCount;
+        _droppedAttributesPerEvent[event] = attrResult.droppedCount;
       }
       if (attrResult.hadDiscardOrTruncation) {
-        logEventDiscard(limitedEvent);
+        logEventDiscard();
+        anyModified = true;
+        final limitedEvent = OTel.spanEvent(
+          event.name,
+          attrResult.attributes,
+          event.timestamp,
+        );
+        if (attrResult.droppedCount > 0) {
+          _droppedAttributesPerEvent[limitedEvent] = attrResult.droppedCount;
+        }
+        keptEvents.add(limitedEvent);
+      } else {
+        keptEvents.add(event);
       }
-      keptEvents.add(limitedEvent);
+    }
+    if (!anyModified && keptEvents.length == events.length) {
+      return events;
     }
     return keptEvents;
   }
@@ -219,21 +239,35 @@ class SpanLimitEnforcer {
     _droppedAttributesCount += result.droppedCount;
     if (result.hadDiscardOrTruncation) {
       logSpanDiscard();
+      for (final attr in result.attributes!.toList()) {
+        _spanAttributeKeys.add(attr.key);
+      }
+      return result.attributes!;
+    } else {
+      for (final attr in newAttributes.toList()) {
+        _spanAttributeKeys.add(attr.key);
+      }
+      return newAttributes;
     }
-    for (final attr in result.attributes.toList()) {
-      _spanAttributeKeys.add(attr.key);
-    }
-    return result.attributes;
   }
 
   /// Processes adding multiple span attributes via [addAttributes].
   Attributes addSpanAttributes(Attributes attributes) {
+    var anyModified = false;
     final keptMap = <String, Object>{};
     for (final attr in attributes.toList()) {
       final limited = evaluateSpanAttribute(attr.key, attr.value);
       if (limited != null) {
         keptMap[attr.key] = limited;
+        if (!identical(limited, attr.value) && limited != attr.value) {
+          anyModified = true;
+        }
+      } else {
+        anyModified = true;
       }
+    }
+    if (!anyModified && keptMap.length == attributes.length) {
+      return attributes;
     }
     return OTel.attributesFromMap(keptMap);
   }
@@ -242,50 +276,58 @@ class SpanLimitEnforcer {
   SpanEvent? processAddEvent(SpanEvent spanEvent, int currentEventCount) {
     if (currentEventCount >= spanLimits.eventCountLimit) {
       _droppedEventsCount++;
-      logSpanDiscard();
       return null;
+    }
+
+    if (spanEvent.attributes == null) {
+      return spanEvent;
     }
 
     final attrResult =
         eventAttributeLimiter.limitAttributes(spanEvent.attributes);
-    final limitedEvent = OTel.spanEvent(
-      spanEvent.name,
-      attrResult.attributes,
-      spanEvent.timestamp,
-    );
 
-    if (attrResult.droppedCount > 0) {
-      _droppedAttributesPerEvent[limitedEvent] = attrResult.droppedCount;
-    }
     if (attrResult.hadDiscardOrTruncation) {
-      logEventDiscard(limitedEvent);
+      logEventDiscard();
+      final limitedEvent = OTel.spanEvent(
+        spanEvent.name,
+        attrResult.attributes,
+        spanEvent.timestamp,
+      );
+      if (attrResult.droppedCount > 0) {
+        _droppedAttributesPerEvent[limitedEvent] = attrResult.droppedCount;
+      }
+      return limitedEvent;
     }
 
-    return limitedEvent;
+    return spanEvent;
   }
 
   /// Processes adding a span link. Returns the limited link, or `null` if dropped.
   SpanLink? processAddLink(SpanLink spanLink, int currentLinkCount) {
     if (currentLinkCount >= spanLimits.linkCountLimit) {
       _droppedLinksCount++;
-      logSpanDiscard();
       return null;
+    }
+
+    if (spanLink.attributes.isEmpty) {
+      return spanLink;
     }
 
     final attrResult =
         linkAttributeLimiter.limitAttributes(spanLink.attributes);
-    final limitedLink = OTel.spanLink(
-      spanLink.spanContext,
-      attributes: attrResult.attributes,
-    );
 
-    if (attrResult.droppedCount > 0) {
-      _droppedAttributesPerLink[limitedLink] = attrResult.droppedCount;
-    }
     if (attrResult.hadDiscardOrTruncation) {
-      logLinkDiscard(limitedLink);
+      logLinkDiscard();
+      final limitedLink = OTel.spanLink(
+        spanLink.spanContext,
+        attributes: attrResult.attributes,
+      );
+      if (attrResult.droppedCount > 0) {
+        _droppedAttributesPerLink[limitedLink] = attrResult.droppedCount;
+      }
+      return limitedLink;
     }
 
-    return limitedLink;
+    return spanLink;
   }
 }

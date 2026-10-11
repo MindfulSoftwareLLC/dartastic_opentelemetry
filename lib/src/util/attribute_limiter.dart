@@ -58,27 +58,35 @@ class AttributeLimiter {
     return value.substring(0, end);
   }
 
-  /// Truncates each element of [list] using [truncateString].
+  /// Truncates each element of [list] without splitting surrogate pairs.
   ///
   /// If [limit] is `null`, returns [list] unchanged.
-  /// If [limit] is 0, returns `null` (dropped).
-  /// If [list] is empty, returns [list] (unless [limit] is 0).
-  /// Drops any element that would truncate to empty (or null).
-  /// If all elements are dropped (resulting list is empty but original was not),
-  /// returns `null` (dropped).
+  /// If [limit] is 0, returns `null` (the attribute is dropped per OTel rules).
+  /// If [list] is empty, returns [list].
+  ///
+  /// Elements that truncate to empty are retained as empty strings (`""`) to keep
+  /// the element count stable rather than silently removing elements from the list.
   static List<String>? truncateStringList(List<String> list, int? limit) {
     if (limit == null) return list;
     if (limit <= 0) return null;
     if (list.isEmpty) return list;
 
+    var anyTruncated = false;
     final truncated = <String>[];
     for (final item in list) {
-      final s = truncateString(item, limit);
-      if (s != null) {
+      if (item.length <= limit) {
+        truncated.add(item);
+      } else {
+        var end = limit;
+        if (isLeadSurrogate(item.codeUnitAt(end - 1))) {
+          end -= 1;
+        }
+        final s = end <= 0 ? '' : item.substring(0, end);
         truncated.add(s);
+        anyTruncated = true;
       }
     }
-    if (truncated.isEmpty) return null;
+    if (!anyTruncated) return list;
     return truncated;
   }
 
@@ -103,6 +111,7 @@ class AttributeLimiter {
       return limited.length < original.length;
     }
     if (original is List<String> && limited is List<String>) {
+      if (identical(original, limited)) return false;
       if (limited.length < original.length) return true;
       for (var i = 0; i < limited.length; i++) {
         if (limited[i].length < original[i].length) return true;
@@ -111,17 +120,18 @@ class AttributeLimiter {
     return false;
   }
 
-  /// Applies limits to an incoming map of attributes, starting from an empty collection.
+  /// Applies limits to an incoming map of attributes.
   ///
   /// Returns a record with:
-  /// - `attributes`: the limited [Attributes]
+  /// - `attributes`: the limited [Attributes], or `null` if [input] was `null`,
+  ///   or the original [input] if nothing was dropped or truncated.
   /// - `droppedCount`: the number of attributes dropped
   /// - `hadDiscardOrTruncation`: whether any attribute was dropped or truncated
-  ({Attributes attributes, int droppedCount, bool hadDiscardOrTruncation})
+  ({Attributes? attributes, int droppedCount, bool hadDiscardOrTruncation})
       limitAttributes(Attributes? input) {
     if (input == null) {
       return (
-        attributes: OTel.attributesFromMap({}),
+        attributes: null,
         droppedCount: 0,
         hadDiscardOrTruncation: false,
       );
@@ -164,6 +174,14 @@ class AttributeLimiter {
           }
         }
       }
+    }
+
+    if (!hadDiscardOrTruncation && droppedCount == 0) {
+      return (
+        attributes: input,
+        droppedCount: 0,
+        hadDiscardOrTruncation: false,
+      );
     }
 
     return (

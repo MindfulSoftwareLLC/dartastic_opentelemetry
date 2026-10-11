@@ -101,14 +101,6 @@ class Span implements APISpan {
   int droppedAttributesCountForLink(SpanLink link) =>
       _enforcer?.droppedAttributesCountForLink(link) ?? 0;
 
-  /// Unmodifiable view of dropped attributes counts per event.
-  Map<SpanEvent, int> get droppedEventAttributesCounts =>
-      _enforcer?.droppedEventAttributesCounts ?? const {};
-
-  /// Unmodifiable view of dropped attributes counts per link.
-  Map<SpanLink, int> get droppedLinkAttributesCounts =>
-      _enforcer?.droppedLinkAttributesCounts ?? const {};
-
   /// Gets the resource associated with this span's tracer.
   ///
   /// @return The resource associated with this span
@@ -231,14 +223,20 @@ class Span implements APISpan {
   @override
   void addEventNow(String name, [Attributes? attributes]) {
     if (!_isRecording || isEnded) return;
-    addEvent(OTel.spanEventNow(name, attributes ?? OTel.attributes()));
+    final timestamp = _sdkTracer.provider.timeProvider.nowDateTime();
+    addEvent(OTel.spanEvent(name, attributes ?? OTel.attributes(), timestamp));
   }
 
   @override
   void addEvents(Map<String, Attributes?> spanEvents) {
     if (!_isRecording || isEnded) return;
+    final timestamp = _sdkTracer.provider.timeProvider.nowDateTime();
     for (final entry in spanEvents.entries) {
-      addEvent(OTel.spanEventNow(entry.key, entry.value ?? OTel.attributes()));
+      addEvent(OTel.spanEvent(
+        entry.key,
+        entry.value ?? OTel.attributes(),
+        timestamp,
+      ));
     }
   }
 
@@ -291,9 +289,15 @@ class Span implements APISpan {
     bool? escaped,
   }) {
     if (!_isRecording || isEnded) return;
+    String exceptionMessage;
+    try {
+      exceptionMessage = exception.toString();
+    } catch (_) {
+      exceptionMessage = '<exception.toString() failed>';
+    }
     final eventAttrs = <String, Object>{
       ExceptionAttributes.exceptionType.key: exception.runtimeType.toString(),
-      ExceptionAttributes.exceptionMessage.key: exception.toString(),
+      ExceptionAttributes.exceptionMessage.key: exceptionMessage,
     };
     if (stackTrace != null) {
       eventAttrs[ExceptionAttributes.exceptionStacktrace.key] =
@@ -307,7 +311,8 @@ class Span implements APISpan {
     if (attributes != null) {
       merged = merged.copyWithAttributes(attributes);
     }
-    addEvent(OTel.spanEventNow('exception', merged));
+    final timestamp = _sdkTracer.provider.timeProvider.nowDateTime();
+    addEvent(OTel.spanEvent('exception', merged, timestamp));
   }
 
   @override

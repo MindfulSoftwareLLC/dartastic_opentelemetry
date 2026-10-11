@@ -141,20 +141,89 @@ void main() {
       const limiter = AttributeLimiter(countLimit: 2);
       final initial = OTel.attributesFromMap({'a': 1, 'b': 2});
       final res1 = limiter.limitAttributes(initial);
-      expect(res1.attributes.toList(), hasLength(2));
+      expect(res1.attributes!.toList(), hasLength(2));
       expect(res1.droppedCount, equals(0));
 
       // Adding a 3rd key exceeds limit
       final withThird = OTel.attributesFromMap({'a': 1, 'b': 2, 'c': 3});
       final res2 = limiter.limitAttributes(withThird);
-      expect(res2.attributes.toList(), hasLength(2));
+      expect(res2.attributes!.toList(), hasLength(2));
       expect(res2.droppedCount, equals(1));
 
       // Updating an existing key is allowed at limit
       final updated = OTel.attributesFromMap({'a': 1, 'b': 20});
       final res3 = limiter.limitAttributes(updated);
-      expect(res3.attributes.getInt('b'), equals(20));
+      expect(res3.attributes!.getInt('b'), equals(20));
       expect(res3.droppedCount, equals(0));
+    });
+
+    test('string list truncation keeps element count stable', () {
+      // 😀 is '\uD83D\uDE00'
+      final list = ['😀', 'hello'];
+      final truncated = AttributeLimiter.truncateStringList(list, 1);
+      // '😀' at limit 1 cannot split surrogate, truncates to empty string ''
+      // 'hello' at limit 1 truncates to 'h'
+      // Element count remains 2 (not silently removed!)
+      expect(truncated, equals(['', 'h']));
+      expect(truncated, hasLength(2));
+    });
+
+    test('string list all-elements-vanish case (limit 0 drops attribute)', () {
+      final list = ['a', 'b'];
+      expect(AttributeLimiter.truncateStringList(list, 0), isNull);
+      expect(AttributeLimiter.truncateStringList(<String>[], 0), isNull);
+    });
+
+    test(
+        'returns original Attributes when nothing dropped or truncated and keeps null attributes null',
+        () {
+      const limiter = AttributeLimiter(countLimit: 10, valueLengthLimit: 20);
+      final original = OTel.attributesFromMap({'k': 'v', 'num': 42});
+      final res = limiter.limitAttributes(original);
+      expect(identical(res.attributes, original), isTrue);
+      expect(res.droppedCount, equals(0));
+      expect(res.hadDiscardOrTruncation, isFalse);
+
+      final resNull = limiter.limitAttributes(null);
+      expect(resNull.attributes, isNull);
+      expect(resNull.droppedCount, equals(0));
+      expect(resNull.hadDiscardOrTruncation, isFalse);
+    });
+
+    test(
+        'SpanLimitEnforcer returns original event/link when nothing was dropped or truncated, and keeps null event attributes null',
+        () async {
+      await OTel.reset();
+      await OTel.initialize(serviceName: 'test-enforcer');
+      final enforcer = SpanLimitEnforcer(const SpanLimits());
+      final ctx = OTel.spanContext(
+        traceId: OTel.traceIdFrom('00112233445566778899aabbccddeeff'),
+        spanId: OTel.spanIdFrom('0011223344556601'),
+      );
+
+      // Event with null attributes
+      final eventWithNullAttrs = OTel.spanEvent('ev1', null, DateTime.now());
+      final processedEvent = enforcer.processAddEvent(eventWithNullAttrs, 0);
+      expect(identical(processedEvent, eventWithNullAttrs), isTrue);
+      expect(processedEvent!.attributes, isNull);
+
+      // Link with null attributes
+      final linkWithNullAttrs = OTel.spanLink(ctx, attributes: null);
+      final processedLink = enforcer.processAddLink(linkWithNullAttrs, 0);
+      expect(identical(processedLink, linkWithNullAttrs), isTrue);
+      expect(identical(processedLink!.attributes, linkWithNullAttrs.attributes),
+          isTrue);
+
+      // Event with non-empty attributes that are not truncated
+      final attrs = OTel.attributesFromMap({'k': 'v'});
+      final eventWithAttrs = OTel.spanEvent('ev2', attrs, DateTime.now());
+      final processedEvent2 = enforcer.processAddEvent(eventWithAttrs, 0);
+      expect(identical(processedEvent2, eventWithAttrs), isTrue);
+
+      // Link with non-empty attributes that are not truncated
+      final linkWithAttrs = OTel.spanLink(ctx, attributes: attrs);
+      final processedLink2 = enforcer.processAddLink(linkWithAttrs, 0);
+      expect(identical(processedLink2, linkWithAttrs), isTrue);
     });
   });
 
@@ -718,6 +787,38 @@ void main() {
 
       provider.shutdown();
     });
+
+    test('event and link COUNT drops do not emit discard log', () {
+      final provider = OTel.tracerProvider();
+      provider.spanLimits = const SpanLimits(
+        eventCountLimit: 1,
+        linkCountLimit: 1,
+      );
+      final tracer = provider.getTracer('test');
+      final span = tracer.startSpan('count-drop-span');
+
+      span.addEventNow('ev1');
+      span.addEventNow('ev2'); // dropped due to eventCountLimit
+      expect(span.droppedEventsCount, equals(1));
+      expect(
+        logs.where((l) => l.contains(SpanLimitEnforcer.discardLogMessage)),
+        isEmpty,
+      );
+
+      final ctx = OTel.spanContext(
+        traceId: OTel.traceIdFrom('00112233445566778899aabbccddeeff'),
+        spanId: OTel.spanIdFrom('0011223344556601'),
+      );
+      span.addLink(ctx);
+      span.addLink(ctx); // dropped due to linkCountLimit
+      expect(span.droppedLinksCount, equals(1));
+      expect(
+        logs.where((l) => l.contains(SpanLimitEnforcer.discardLogMessage)),
+        isEmpty,
+      );
+
+      provider.shutdown();
+    });
   });
 
   group('Non-recording and post-end spans', () {
@@ -983,6 +1084,166 @@ void main() {
       provider.shutdown();
     });
   });
+
+  group('Provider overrides, environment limiting, and Span edge cases', () {
+    tearDown(() async {
+      EnvironmentService.testOverrides = null;
+      await OTel.reset();
+    });
+
+    test('per-provider override survives OTel.tracerProvider()', () async {
+      await OTel.reset();
+      await OTel.initialize(
+        serviceName: 'test-svc',
+        spanLimits: const SpanLimits(attributeCountLimit: 10),
+      );
+
+      final provider = OTel.tracerProvider();
+      expect(provider.spanLimits.attributeCountLimit, equals(10));
+
+      // Override on this provider
+      provider.spanLimits = const SpanLimits(attributeCountLimit: 5);
+
+      // Subsequent call to OTel.tracerProvider() must not overwrite the per-provider override
+      final providerAgain = OTel.tracerProvider();
+      expect(providerAgain.spanLimits.attributeCountLimit, equals(5));
+
+      // Spans created from provider use the override
+      final span = providerAgain.getTracer('test').startSpan('override-span');
+      for (var i = 0; i < 7; i++) {
+        span.setIntAttribute('k$i', i);
+      }
+      expect(span.droppedAttributesCount, equals(2));
+
+      // Also named provider override survives OTel.tracerProvider(name:)
+      final named = OTel.addTracerProvider(
+        'named-override',
+        spanLimits: const SpanLimits(attributeCountLimit: 3),
+      );
+      expect(named.spanLimits.attributeCountLimit, equals(3));
+      final namedAgain = OTel.tracerProvider(name: 'named-override');
+      expect(namedAgain.spanLimits.attributeCountLimit, equals(3));
+    });
+
+    test('end-to-end env var limiting through the lazy provider getter',
+        () async {
+      await OTel.reset();
+      EnvironmentService.testOverrides = {
+        'OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT': '2',
+        'OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT': '5',
+        'OTEL_SPAN_EVENT_COUNT_LIMIT': '1',
+        'OTEL_SPAN_LINK_COUNT_LIMIT': '1',
+      };
+      await OTel.initialize(serviceName: 'test-lazy');
+
+      // Lazy provider getter without explicit spanLimits in OTel.initialize()
+      final provider = OTel.tracerProvider();
+      expect(provider.spanLimits.attributeCountLimit, equals(2));
+      expect(provider.spanLimits.attributeValueLengthLimit, equals(5));
+      expect(provider.spanLimits.eventCountLimit, equals(1));
+      expect(provider.spanLimits.linkCountLimit, equals(1));
+
+      final tracer = provider.getTracer('test');
+      final span = tracer.startSpan('lazy-span');
+
+      // Attribute count and value length limiting
+      span.setStringAttribute<String>('short', '12345');
+      span.setStringAttribute<String>('long', '1234567890');
+      span.setStringAttribute<String>('dropped', 'value');
+
+      expect(span.attributes.toList(), hasLength(2));
+      final longAttr =
+          span.attributes.toList().firstWhere((a) => a.key == 'long');
+      expect(longAttr.value, equals('12345'));
+      expect(span.droppedAttributesCount, equals(1));
+
+      // Event count limiting
+      span.addEventNow('event1');
+      span.addEventNow('event2');
+      expect(span.spanEvents, hasLength(1));
+      expect(span.droppedEventsCount, equals(1));
+
+      // Link count limiting
+      final ctx1 = OTel.spanContext(
+        traceId: OTel.traceIdFrom('00112233445566778899aabbccddeeff'),
+        spanId: OTel.spanIdFrom('0011223344556601'),
+      );
+      final ctx2 = OTel.spanContext(
+        traceId: OTel.traceIdFrom('00112233445566778899aabbccddeeff'),
+        spanId: OTel.spanIdFrom('0011223344556602'),
+      );
+      span.addLink(ctx1);
+      span.addLink(ctx2);
+      expect(span.spanLinks, hasLength(1));
+      expect(span.droppedLinksCount, equals(1));
+    });
+
+    test('recordException with a throwing toString() does not crash', () async {
+      await OTel.reset();
+      await OTel.initialize(serviceName: 'test-exc');
+      final provider = OTel.tracerProvider();
+      final tracer = provider.getTracer('test');
+      final span = tracer.startSpan('exc-span');
+
+      span.recordException(_ThrowingToStringException());
+
+      expect(span.spanEvents, hasLength(1));
+      final event = span.spanEvents!.first;
+      expect(event.name, equals('exception'));
+      final messageAttr = event.attributes!.toList().firstWhere(
+            (a) => a.key == ExceptionAttributes.exceptionMessage.key,
+          );
+      expect(messageAttr.value, equals('<exception.toString() failed>'));
+      final typeAttr = event.attributes!.toList().firstWhere(
+            (a) => a.key == ExceptionAttributes.exceptionType.key,
+          );
+      expect(typeAttr.value, equals('_ThrowingToStringException'));
+    });
+
+    test('addEventNow honoring a custom TimeProvider', () async {
+      await OTel.reset();
+      await OTel.initialize(serviceName: 'test-time');
+      final fixedTime = DateTime.utc(2026, 10, 11, 15, 30, 0);
+      final provider = OTel.tracerProvider();
+      provider.timeProvider = _CustomTimeProvider(fixedTime);
+
+      final tracer = provider.getTracer('test');
+      final span = tracer.startSpan('event-time-span');
+      span.addEventNow('custom_time_event');
+
+      expect(span.spanEvents, hasLength(1));
+      expect(span.spanEvents!.first.timestamp, equals(fixedTime));
+    });
+
+    test('setDateTimeAsStringAttribute format unchanged', () async {
+      await OTel.reset();
+      await OTel.initialize(serviceName: 'test-dt');
+      final provider = OTel.tracerProvider();
+      final tracer = provider.getTracer('test');
+      final span = tracer.startSpan('dt-span');
+
+      final dt = DateTime.utc(2026, 10, 11, 14, 30, 45, 123);
+      span.setDateTimeAsStringAttribute('my_time', dt);
+
+      final attr =
+          span.attributes.toList().firstWhere((a) => a.key == 'my_time');
+      expect(attr.value, equals(dt.toUtc().toIso8601String()));
+      expect(attr.value, equals('2026-10-11T14:30:45.123Z'));
+    });
+  });
+}
+
+class _ThrowingToStringException {
+  @override
+  String toString() => throw StateError('boom');
+}
+
+class _CustomTimeProvider implements TimeProvider {
+  final DateTime fixedTime;
+  _CustomTimeProvider(this.fixedTime);
+
+  @override
+  DateTime nowDateTime() => fixedTime;
 }
 
 class _AttributeAddingSampler implements Sampler {

@@ -542,7 +542,7 @@ class OTel {
 
     tracerProvider.sampler ??= _defaultSampler;
     tracerProvider.spanExceptionOptions ??= _defaultSpanExceptionOptions;
-    if (_defaultSpanLimits != null) {
+    if (_defaultSpanLimits != null && !tracerProvider.hasExplicitSpanLimits) {
       tracerProvider.spanLimits = _defaultSpanLimits!;
     }
     if (_defaultTimeProvider != null) {

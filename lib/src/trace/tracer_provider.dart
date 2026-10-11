@@ -53,6 +53,10 @@ class TracerProvider implements APITracerProvider {
   SpanExceptionOptions? spanExceptionOptions;
 
   SpanLimits? _spanLimits;
+  bool _hasExplicitSpanLimits = false;
+
+  /// Whether span limits have been explicitly set on this provider.
+  bool get hasExplicitSpanLimits => _hasExplicitSpanLimits;
 
   /// Gets the span limits configured for this provider.
   ///
@@ -60,7 +64,10 @@ class TracerProvider implements APITracerProvider {
   SpanLimits get spanLimits => _spanLimits ??= SpanLimits.fromEnvironment();
 
   /// Sets the span limits for this provider.
-  set spanLimits(SpanLimits? value) => _spanLimits = value;
+  set spanLimits(SpanLimits? value) {
+    _spanLimits = value;
+    _hasExplicitSpanLimits = value != null;
+  }
 
   /// Clock used for span start, end, and event timestamps. Delegates to the
   /// underlying [APITracerProvider] so the SDK and API share a single
@@ -91,7 +98,8 @@ class TracerProvider implements APITracerProvider {
     this.resource,
     SpanLimits? spanLimits,
   })  : _delegate = delegate,
-        _spanLimits = spanLimits {
+        _spanLimits = spanLimits,
+        _hasExplicitSpanLimits = spanLimits != null {
     if (OTelLog.isDebug()) {
       OTelLog.debug(
         'TracerProvider: Created with resource: $resource, sampler: $sampler',

@@ -294,10 +294,4 @@ class _TestSpan implements Span {
 
   @override
   int droppedAttributesCountForLink(SpanLink link) => 0;
-
-  @override
-  Map<SpanEvent, int> get droppedEventAttributesCounts => const {};
-
-  @override
-  Map<SpanLink, int> get droppedLinkAttributesCounts => const {};
 }
