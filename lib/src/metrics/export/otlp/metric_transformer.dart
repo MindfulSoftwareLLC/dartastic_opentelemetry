@@ -128,8 +128,10 @@ class MetricTransformer {
 
         // Create a new sum with the correct temporality and data points
         final sum = proto.Sum(
-          isMonotonic: metric.isMonotonic ??
-              true, // Assuming sum metrics are monotonic by default
+          // Unknown monotonicity is exported as non-monotonic: a backend
+          // reading a non-monotonic sum as monotonic treats every decrease
+          // as a reset, which corrupts the data.
+          isMonotonic: metric.isMonotonic ?? false,
           aggregationTemporality: metric.temporality ==
                   AggregationTemporality.delta
               ? proto.AggregationTemporality.AGGREGATION_TEMPORALITY_DELTA

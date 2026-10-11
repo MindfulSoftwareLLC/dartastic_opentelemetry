@@ -905,8 +905,11 @@ void main() {
 
       final request = OtlpLogRecordTransformer.transformLogRecords([logRecord]);
 
-      expect(request.resourceLogs.first.schemaUrl,
+      // The scope schema URL belongs on ScopeLogs; ResourceLogs.schema_url
+      // describes the resource.
+      expect(request.resourceLogs.first.scopeLogs.first.schemaUrl,
           equals('https://opentelemetry.io/schemas/1.17.0'));
+      expect(request.resourceLogs.first.hasSchemaUrl(), isFalse);
     });
 
     test('transforms all severity levels including sub-levels', () {

@@ -9,8 +9,17 @@ class SDKMeterProviderCreate {
   /// Creates a TracerProvider, only accessible within library
   static MeterProvider create({
     required APIMeterProvider delegate,
+    required String endpoint,
+    required String serviceName,
+    String? serviceVersion,
     Resource? resource,
   }) {
-    return MeterProvider._(delegate: delegate, resource: resource);
+    return MeterProvider._(
+      delegate: delegate,
+      endpoint: endpoint,
+      serviceName: serviceName,
+      serviceVersion: serviceVersion,
+      resource: resource,
+    );
   }
 }

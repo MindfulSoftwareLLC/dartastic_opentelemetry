@@ -69,6 +69,13 @@ dependencies:
   dartastic_opentelemetry:
     path: $repoRoot
 ''');
+    // On an integration branch the repo resolves the API through
+    // pubspec_overrides.yaml; a package depending on the repo by path does
+    // not inherit that, so carry the override over.
+    final overrides = File('$repoRoot/pubspec_overrides.yaml');
+    if (overrides.existsSync()) {
+      overrides.copySync('${tmpDir.path}/pubspec_overrides.yaml');
+    }
     final src = File('${tmpDir.path}/main.dart');
     src.writeAsStringSync(reproSource);
 

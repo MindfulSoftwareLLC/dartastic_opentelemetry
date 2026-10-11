@@ -34,6 +34,14 @@ const Resource$json = {
       '5': 13,
       '10': 'droppedAttributesCount'
     },
+    {
+      '1': 'entity_refs',
+      '3': 3,
+      '4': 3,
+      '5': 11,
+      '6': '.opentelemetry.proto.common.v1.EntityRef',
+      '10': 'entityRefs'
+    },
   ],
 };
 
@@ -41,4 +49,5 @@ const Resource$json = {
 final $typed_data.Uint8List resourceDescriptor = $convert.base64Decode(
     'CghSZXNvdXJjZRJHCgphdHRyaWJ1dGVzGAEgAygLMicub3BlbnRlbGVtZXRyeS5wcm90by5jb2'
     '1tb24udjEuS2V5VmFsdWVSCmF0dHJpYnV0ZXMSOAoYZHJvcHBlZF9hdHRyaWJ1dGVzX2NvdW50'
-    'GAIgASgNUhZkcm9wcGVkQXR0cmlidXRlc0NvdW50');
+    'GAIgASgNUhZkcm9wcGVkQXR0cmlidXRlc0NvdW50EkkKC2VudGl0eV9yZWZzGAMgAygLMigub3'
+    'BlbnRlbGVtZXRyeS5wcm90by5jb21tb24udjEuRW50aXR5UmVmUgplbnRpdHlSZWZz');

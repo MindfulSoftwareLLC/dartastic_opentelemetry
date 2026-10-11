@@ -37,53 +37,42 @@ class MeterProvider implements APIMeterProvider {
   /// The ExemplarFilter used by this provider's meters.
   ExemplarFilter exemplarFilter = const TraceBasedExemplarFilter();
 
+  /// The endpoint URL this provider was configured with.
+  ///
+  /// The API's [APIMeterProvider] holds no configuration or operational
+  /// state (metrics/noop.md), so the SDK keeps it here.
+  String endpoint;
+
+  /// The name of the service being instrumented.
+  String serviceName;
+
+  /// The version of the service being instrumented.
+  String? serviceVersion;
+
+  /// Whether this provider records measurements.
+  ///
+  /// When false, every meter and instrument created by this provider reports
+  /// `isEnabled() == false` and drops measurements.
+  bool enabled = true;
+
+  /// Whether [shutdown] has completed.
+  bool isShutdown = false;
+
   /// Private constructor for creating MeterProvider instances.
   ///
   /// @param delegate The API MeterProvider implementation to delegate to
   /// @param resource Optional Resource describing the entity producing telemetry
-  MeterProvider._({required this.delegate, this.resource}) {
+  MeterProvider._({
+    required this.delegate,
+    required this.endpoint,
+    required this.serviceName,
+    this.serviceVersion,
+    this.resource,
+  }) {
     if (OTelLog.isDebug()) {
       OTelLog.debug('MeterProvider: Created with resource: $resource');
     }
   }
-
-  @override
-  String get endpoint => delegate.endpoint;
-
-  @override
-  set endpoint(String value) => delegate.endpoint = value;
-
-  @override
-  String get serviceName => delegate.serviceName;
-
-  @override
-  set serviceName(String value) => delegate.serviceName = value;
-
-  @override
-  String? get serviceVersion => delegate.serviceVersion;
-
-  @override
-  set serviceVersion(String? value) => delegate.serviceVersion = value;
-
-  @override
-  bool get enabled {
-    return _enabledOverride ?? true;
-  }
-
-  // Track explicit enablement settings
-  bool? _enabledOverride;
-
-  @override
-  set enabled(bool value) {
-    _enabledOverride = value;
-    delegate.enabled = value;
-  }
-
-  @override
-  bool get isShutdown => delegate.isShutdown;
-
-  @override
-  set isShutdown(bool value) => delegate.isShutdown = value;
 
   @override
   APIMeter getMeter({
@@ -210,6 +199,13 @@ class MeterProvider implements APIMeterProvider {
     }
 
     final allMetrics = <Metric>[];
+
+    // Batch callbacks observe several instruments at once, so they run
+    // once per collection before any instrument collects; each instrument
+    // then drains what was observed for it alongside its own callbacks.
+    for (final meter in _meters.values) {
+      meter.runBatchCallbacks();
+    }
 
     // Collect from each meter's instruments
     for (final entry in _instruments.entries) {

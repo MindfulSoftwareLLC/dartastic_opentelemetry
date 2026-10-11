@@ -23,9 +23,21 @@ void main() {
       expect(() => TraceIdRatioSampler(1.0), returnsNormally);
     });
 
-    test('description returns expected value', () {
-      final sampler = TraceIdRatioSampler(0.5);
-      expect(sampler.description, equals('TraceIdRatioSampler{0.5}'));
+    test('description preserves ratio precision', () {
+      // Verify that description does not lose precision for distinct or very small ratios.
+      final firstSampler = TraceIdRatioSampler(0.1234561);
+      final secondSampler = TraceIdRatioSampler(0.1234562);
+      final smallSampler = TraceIdRatioSampler(0.0000001);
+
+      expect(firstSampler.description, equals('TraceIdRatioBased{0.1234561}'));
+      expect(
+        secondSampler.description,
+        equals('TraceIdRatioBased{0.1234562}'),
+      );
+      expect(
+        smallSampler.description,
+        equals('TraceIdRatioBased{1e-7}'),
+      );
     });
 
     test('sampler with ratio 0.0 never samples', () {

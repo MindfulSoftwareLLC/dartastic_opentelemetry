@@ -14,8 +14,11 @@ In short: AI assistance is welcome for code, documentation, and tests, but
 **you remain in control and bear full responsibility** — review and validate
 everything before submitting, never post raw AI output as an issue, PR, or
 reply, and when AI generates the bulk of a commit, disclose it with an
-`Assisted-by:` commit trailer (e.g. `Assisted-by: Claude Opus 4.5`).
-Maintainers may close low-effort AI-generated contributions.
+`Assisted-by:` commit trailer (e.g. `Assisted-by: Claude Opus 4.5`). Do not
+add a `Co-authored-by:` trailer naming an AI tool: you are the author and the
+one who signs for the change, the tool is not — CI rejects pull requests whose
+commits carry one. Maintainers may close low-effort AI-generated
+contributions.
 
 **First-time contributors:** your first three contributions should be
 primarily human-written, and PR descriptions must be your own words — see
