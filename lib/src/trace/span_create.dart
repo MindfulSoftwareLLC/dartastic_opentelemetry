@@ -20,16 +20,16 @@ class SDKSpanCreate {
   static Span create({
     required APISpan delegateSpan,
     required Tracer sdkTracer,
-    SpanLimits? spanLimits,
     SpanLimitEnforcer? enforcer,
     bool isRecording = true,
   }) {
-    final effectiveLimits = spanLimits ?? sdkTracer.provider.spanLimits;
     return Span._(
       delegateSpan,
       sdkTracer,
-      enforcer:
-          enforcer ?? (isRecording ? SpanLimitEnforcer(effectiveLimits) : null),
+      enforcer: enforcer ??
+          (isRecording
+              ? SpanLimitEnforcer(sdkTracer.provider.spanLimits)
+              : null),
       isRecording: isRecording,
     );
   }

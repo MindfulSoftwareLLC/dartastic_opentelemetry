@@ -496,7 +496,6 @@ class Tracer implements APITracer {
     final sdkSpan = SDKSpanCreate.create(
       delegateSpan: delegateSpan,
       sdkTracer: this,
-      spanLimits: limits,
       enforcer: enforcer,
       isRecording: recording,
     );

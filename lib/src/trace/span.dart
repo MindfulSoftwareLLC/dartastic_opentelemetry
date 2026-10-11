@@ -15,7 +15,6 @@ import 'package:meta/meta.dart';
 import '../otel.dart';
 import '../resource/resource.dart';
 import 'span_limit_enforcer.dart';
-import 'span_limits.dart';
 import 'tracer.dart';
 
 part 'span_create.dart';

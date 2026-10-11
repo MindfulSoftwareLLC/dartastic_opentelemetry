@@ -14,7 +14,7 @@ import 'span_limits.dart';
 /// with a snapshot of [SpanLimits] at span creation time.
 @internal
 class SpanLimitEnforcer {
-  /// The warning message logged when an attribute is truncated, discarded, or
+  /// The debug message logged when an attribute is truncated, discarded, or
   /// replaced due to a limit.
   ///
   /// Note: The OpenTelemetry specification requires logging discards and
