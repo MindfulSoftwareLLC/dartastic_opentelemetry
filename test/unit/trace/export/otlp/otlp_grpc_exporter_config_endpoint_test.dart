@@ -13,19 +13,58 @@ import 'package:test/test.dart';
 
 void main() {
   group('OtlpGrpcExporterConfig endpoint validation', () {
-    test(
-      'a URL with no port gets the default gRPC port appended',
-      () {
-        expect(
-          OtlpGrpcExporterConfig(endpoint: 'http://collector.example.com')
-              .endpoint,
-          equals('http://collector.example.com:4317'),
-        );
-      },
-      skip: 'Blocked on #281: the branch that appends 4317 is guarded on '
-          '!endpoint.contains(":"), which no URL-form endpoint can satisfy, '
-          'so it is dead code and the port is never added.',
-    );
+    test('a URL with no port gets the default gRPC port appended', () {
+      expect(
+        OtlpGrpcExporterConfig(endpoint: 'http://collector.example.com')
+            .endpoint,
+        equals('http://collector.example.com:4317'),
+      );
+    });
+
+    test('the default port goes before the path, query and fragment', () {
+      expect(
+        OtlpGrpcExporterConfig(endpoint: 'https://c.example.com/ingest?a=b#f')
+            .endpoint,
+        equals('https://c.example.com:4317/ingest?a=b#f'),
+      );
+    });
+
+    test('an IPv6 URL with no port keeps its brackets', () {
+      expect(
+        OtlpGrpcExporterConfig(endpoint: 'http://[::1]').endpoint,
+        equals('http://[::1]:4317'),
+      );
+    });
+
+    test('userinfo is not mistaken for a port', () {
+      expect(
+        OtlpGrpcExporterConfig(endpoint: 'http://user:pw@c.example.com')
+            .endpoint,
+        equals('http://user:pw@c.example.com:4317'),
+      );
+    });
+
+    test('an explicit scheme-default port is left alone', () {
+      expect(
+        OtlpGrpcExporterConfig(endpoint: 'http://c.example.com:80').endpoint,
+        equals('http://c.example.com:80'),
+      );
+      expect(
+        OtlpGrpcExporterConfig(endpoint: 'http://[::1]:4317').endpoint,
+        equals('http://[::1]:4317'),
+      );
+    });
+
+    test('a URL with an empty or non-numeric port is rejected', () {
+      expect(
+        () => OtlpGrpcExporterConfig(endpoint: 'http://c.example.com:'),
+        throwsA(isA<ArgumentError>()),
+      );
+      expect(
+        () => OtlpGrpcExporterConfig(endpoint: 'http://c.example.com:abc'),
+        throwsA(isA<ArgumentError>()),
+      );
+    });
 
     test('a bare host with no port gets the default gRPC port appended', () {
       expect(
