@@ -364,6 +364,54 @@ void main() {
       expect(fallback.attributeValueLengthLimit, equals(256));
       expect(fallback.attributeCountLimit, equals(32));
     });
+
+    test('getSpanLimits parses valid values and drops invalid ones', () {
+      env({
+        'OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT': '100',
+        'OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT': '50',
+        'OTEL_SPAN_EVENT_COUNT_LIMIT': '20',
+        'OTEL_SPAN_LINK_COUNT_LIMIT': '30',
+        'OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT': '15',
+        'OTEL_LINK_ATTRIBUTE_COUNT_LIMIT': '25',
+      });
+      final config = OTelEnv.getSpanLimits();
+      expect(config.attributeValueLengthLimit, equals(100));
+      expect(config.attributeCountLimit, equals(50));
+      expect(config.eventCountLimit, equals(20));
+      expect(config.linkCountLimit, equals(30));
+      expect(config.attributePerEventCountLimit, equals(15));
+      expect(config.attributePerLinkCountLimit, equals(25));
+
+      env({
+        'OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT': 'bad',
+        'OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT': '-1',
+        'OTEL_SPAN_EVENT_COUNT_LIMIT': 'bad',
+        'OTEL_SPAN_LINK_COUNT_LIMIT': '-2',
+        'OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT': 'bad',
+        'OTEL_LINK_ATTRIBUTE_COUNT_LIMIT': '-3',
+      });
+      final invalid = OTelEnv.getSpanLimits();
+      expect(invalid.attributeValueLengthLimit, isNull);
+      expect(invalid.attributeCountLimit, isNull);
+      expect(invalid.eventCountLimit, isNull);
+      expect(invalid.linkCountLimit, isNull);
+      expect(invalid.attributePerEventCountLimit, isNull);
+      expect(invalid.attributePerLinkCountLimit, isNull);
+    });
+
+    test('getSpanLimits falls back to general attribute limits', () {
+      env({
+        'OTEL_ATTRIBUTE_VALUE_LENGTH_LIMIT': '256',
+        'OTEL_ATTRIBUTE_COUNT_LIMIT': '32',
+      });
+      final fallback = OTelEnv.getSpanLimits();
+      expect(fallback.attributeValueLengthLimit, equals(256));
+      expect(fallback.attributeCountLimit, equals(32));
+      expect(fallback.eventCountLimit, isNull);
+      expect(fallback.linkCountLimit, isNull);
+      expect(fallback.attributePerEventCountLimit, isNull);
+      expect(fallback.attributePerLinkCountLimit, isNull);
+    });
   });
 
   group('invalid limit values warn', () {
@@ -427,6 +475,52 @@ void main() {
       expect(
         logs.where(
             (l) => l.contains('for OTEL_LOGRECORD_ATTRIBUTE_COUNT_LIMIT.')),
+        hasLength(1),
+      );
+    });
+
+    test('getSpanLimits warns for each invalid value', () {
+      captureWarnings();
+      env({
+        'OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT': 'long',
+        'OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT': '-5',
+        'OTEL_SPAN_EVENT_COUNT_LIMIT': '-10',
+        'OTEL_SPAN_LINK_COUNT_LIMIT': 'abc',
+        'OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT': '-15',
+        'OTEL_LINK_ATTRIBUTE_COUNT_LIMIT': 'xyz',
+      });
+
+      final config = OTelEnv.getSpanLimits();
+
+      expect(config.attributeValueLengthLimit, isNull);
+      expect(config.attributeCountLimit, isNull);
+      expect(config.eventCountLimit, isNull);
+      expect(config.linkCountLimit, isNull);
+      expect(config.attributePerEventCountLimit, isNull);
+      expect(config.attributePerLinkCountLimit, isNull);
+      expect(
+        logs.where(
+            (l) => l.contains('for OTEL_SPAN_ATTRIBUTE_VALUE_LENGTH_LIMIT.')),
+        hasLength(1),
+      );
+      expect(
+        logs.where((l) => l.contains('for OTEL_SPAN_ATTRIBUTE_COUNT_LIMIT.')),
+        hasLength(1),
+      );
+      expect(
+        logs.where((l) => l.contains('for OTEL_SPAN_EVENT_COUNT_LIMIT.')),
+        hasLength(1),
+      );
+      expect(
+        logs.where((l) => l.contains('for OTEL_SPAN_LINK_COUNT_LIMIT.')),
+        hasLength(1),
+      );
+      expect(
+        logs.where((l) => l.contains('for OTEL_EVENT_ATTRIBUTE_COUNT_LIMIT.')),
+        hasLength(1),
+      );
+      expect(
+        logs.where((l) => l.contains('for OTEL_LINK_ATTRIBUTE_COUNT_LIMIT.')),
         hasLength(1),
       );
     });

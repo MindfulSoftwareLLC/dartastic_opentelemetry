@@ -4,6 +4,7 @@
 import 'package:dartastic_opentelemetry/src/otel.dart';
 import 'package:dartastic_opentelemetry/src/trace/export/otlp/span_transformer.dart';
 import 'package:dartastic_opentelemetry/src/trace/span.dart';
+import 'package:dartastic_opentelemetry/src/trace/span_limits.dart';
 import 'package:dartastic_opentelemetry/src/trace/tracer.dart';
 import 'package:dartastic_opentelemetry/src/trace/tracer_provider.dart';
 import 'package:test/test.dart';
@@ -128,6 +129,7 @@ void main() {
         ),
       );
 
+      tracerProvider!.spanLimits = const SpanLimits(eventCountLimit: 1000);
       final span = tracer!.startSpan('event-test');
 
       for (final event in events) {

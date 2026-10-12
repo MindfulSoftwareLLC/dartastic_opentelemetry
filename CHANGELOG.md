@@ -21,6 +21,10 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.0-beta.18-wip]
 
+### Added
+
+- Trace SDK span limits: `SpanLimits`, the six `OTEL_SPAN_*` / `OTEL_EVENT_*` / `OTEL_LINK_*` env vars, and dropped counts on `Span`, exported by the OTLP span transformer. Closes [#130](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/130) and [#112](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/112) ([#317](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/317)).
+
 ## [1.1.0-beta.17] - 2026-10-11
 
 The spec-compliance issues this release closes ([#106](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/106), 

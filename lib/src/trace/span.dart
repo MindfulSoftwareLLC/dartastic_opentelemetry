@@ -12,7 +12,9 @@ import 'package:dartastic_opentelemetry_api/src/api/trace/span.dart'
     show ReadableSpan, getReadableSpan;
 import 'package:meta/meta.dart';
 
+import '../otel.dart';
 import '../resource/resource.dart';
+import 'span_limit_enforcer.dart';
 import 'tracer.dart';
 
 part 'span_create.dart';
@@ -51,20 +53,46 @@ class Span implements APISpan {
   /// state, so the SDK span holds it.
   final bool _isRecording;
 
+  /// The limit enforcer for recording spans. `null` for non-recording spans.
+  final SpanLimitEnforcer? _enforcer;
+
   /// Private constructor for creating Span instances.
   ///
   /// @param delegate The API Span implementation to delegate to
   /// @param sdkTracer The SDK Tracer that created this Span
+  /// @param enforcer The limit enforcer for recording spans
   /// @param isRecording Whether this span records data (sampling decision)
-  Span._(APISpan delegate, Tracer sdkTracer, {bool isRecording = true})
-      : _delegate = delegate,
+  Span._(
+    APISpan delegate,
+    Tracer sdkTracer, {
+    SpanLimitEnforcer? enforcer,
+    bool isRecording = true,
+  })  : _delegate = delegate,
         _readable = getReadableSpan(delegate),
         _sdkTracer = sdkTracer,
+        _enforcer = enforcer,
         _isRecording = isRecording {
     if (OTelLog.isDebug()) {
       OTelLog.debug('SDKSpan: Created new span with name ${delegate.name}');
     }
   }
+
+  /// Number of attributes dropped on this span due to limits.
+  int get droppedAttributesCount => _enforcer?.droppedAttributesCount ?? 0;
+
+  /// Number of events dropped on this span due to limits.
+  int get droppedEventsCount => _enforcer?.droppedEventsCount ?? 0;
+
+  /// Number of links dropped on this span due to limits.
+  int get droppedLinksCount => _enforcer?.droppedLinksCount ?? 0;
+
+  /// Number of dropped attributes for [event].
+  int droppedAttributesCountForEvent(SpanEvent event) =>
+      _enforcer?.droppedAttributesCountForEvent(event) ?? 0;
+
+  /// Number of dropped attributes for [link].
+  int droppedAttributesCountForLink(SpanLink link) =>
+      _enforcer?.droppedAttributesCountForLink(link) ?? 0;
 
   /// Gets the resource associated with this span's tracer.
   ///
@@ -148,44 +176,87 @@ class Span implements APISpan {
 
   @override
   set attributes(Attributes newAttributes) {
-    if (!_isRecording) return;
-    _delegate.attributes = newAttributes;
+    if (!_isRecording || isEnded) return;
+    final enforcer = _enforcer;
+    if (enforcer != null) {
+      final limited = enforcer.replaceSpanAttributes(newAttributes);
+      _delegate.attributes = limited;
+    } else {
+      _delegate.attributes = newAttributes;
+    }
   }
 
   @override
   void addAttributes(Attributes attributes) {
-    if (!_isRecording) return;
-    _delegate.addAttributes(attributes);
+    if (!_isRecording || isEnded) return;
+    final enforcer = _enforcer;
+    if (enforcer != null) {
+      final limited = enforcer.addSpanAttributes(attributes);
+      _delegate.addAttributes(limited);
+    } else {
+      _delegate.addAttributes(attributes);
+    }
   }
 
   @override
   void addEvent(SpanEvent spanEvent) {
-    if (!_isRecording) return;
-    _delegate.addEvent(spanEvent);
+    if (!_isRecording || isEnded) return;
+    if (spanEvent.name.isEmpty) return;
+    final enforcer = _enforcer;
+    if (enforcer != null) {
+      final currentCount = _readable.spanEvents?.length ?? 0;
+      final limited = enforcer.processAddEvent(spanEvent, currentCount);
+      if (limited != null) {
+        _delegate.addEvent(limited);
+      }
+    } else {
+      _delegate.addEvent(spanEvent);
+    }
   }
 
   @override
   void addEventNow(String name, [Attributes? attributes]) {
-    if (!_isRecording) return;
-    _delegate.addEventNow(name, attributes);
+    if (!_isRecording || isEnded) return;
+    if (name.isEmpty) return;
+    final timestamp = _sdkTracer.provider.timeProvider.nowDateTime();
+    addEvent(OTel.spanEvent(name, attributes ?? OTel.attributes(), timestamp));
   }
 
   @override
   void addEvents(Map<String, Attributes?> spanEvents) {
-    if (!_isRecording) return;
-    _delegate.addEvents(spanEvents);
+    if (!_isRecording || isEnded) return;
+    final timestamp = _sdkTracer.provider.timeProvider.nowDateTime();
+    for (final entry in spanEvents.entries) {
+      if (entry.key.isEmpty) continue;
+      addEvent(OTel.spanEvent(
+        entry.key,
+        entry.value ?? OTel.attributes(),
+        timestamp,
+      ));
+    }
   }
 
   @override
   void addLink(SpanContext spanContext, [Attributes? attributes]) {
-    if (!_isRecording) return;
-    _delegate.addLink(spanContext, attributes);
+    if (!_isRecording || isEnded) return;
+    addSpanLink(
+      OTel.spanLink(spanContext, attributes: attributes ?? OTel.attributes()),
+    );
   }
 
   @override
   void addSpanLink(SpanLink spanLink) {
-    if (!_isRecording) return;
-    _delegate.addSpanLink(spanLink);
+    if (!_isRecording || isEnded) return;
+    final enforcer = _enforcer;
+    if (enforcer != null) {
+      final currentCount = _readable.spanLinks?.length ?? 0;
+      final limited = enforcer.processAddLink(spanLink, currentCount);
+      if (limited != null) {
+        _delegate.addSpanLink(limited);
+      }
+    } else {
+      _delegate.addSpanLink(spanLink);
+    }
   }
 
   @override
@@ -213,54 +284,121 @@ class Span implements APISpan {
     Attributes? attributes,
     bool? escaped,
   }) {
-    if (!_isRecording) return;
-    _delegate.recordException(
-      exception,
-      stackTrace: stackTrace,
-      attributes: attributes,
-      escaped: escaped,
-    );
+    if (!_isRecording || isEnded) return;
+    String exceptionMessage;
+    try {
+      exceptionMessage = exception.toString();
+    } catch (e) {
+      exceptionMessage =
+          'Exception when calling toString of span exception: $e';
+    }
+    final eventAttrs = <String, Object>{
+      ExceptionAttributes.exceptionType.key: exception.runtimeType.toString(),
+      ExceptionAttributes.exceptionMessage.key: exceptionMessage,
+    };
+    if (stackTrace != null) {
+      eventAttrs[ExceptionAttributes.exceptionStacktrace.key] =
+          stackTrace.toString();
+    }
+    if (escaped != null) {
+      // ignore: deprecated_member_use
+      eventAttrs[ExceptionAttributes.exceptionEscaped.key] = escaped;
+    }
+    var merged = OTel.attributesFromMap(eventAttrs);
+    if (attributes != null) {
+      merged = merged.copyWithAttributes(attributes);
+    }
+    final timestamp = _sdkTracer.provider.timeProvider.nowDateTime();
+    addEvent(OTel.spanEvent('exception', merged, timestamp));
   }
 
   @override
   void setBoolAttribute(String name, bool value) {
-    if (!_isRecording) return;
-    _delegate.setBoolAttribute(name, value);
+    if (!_isRecording || isEnded) return;
+    final enforcer = _enforcer;
+    if (enforcer != null) {
+      final limited = enforcer.evaluateSpanAttribute(name, value);
+      if (limited != null) {
+        _delegate.setBoolAttribute(name, limited as bool);
+      }
+    } else {
+      _delegate.setBoolAttribute(name, value);
+    }
   }
 
   @override
   void setBoolListAttribute(String name, List<bool> value) {
-    if (!_isRecording) return;
-    _delegate.setBoolListAttribute(name, value);
+    if (!_isRecording || isEnded) return;
+    final enforcer = _enforcer;
+    if (enforcer != null) {
+      final limited = enforcer.evaluateSpanAttribute(name, value);
+      if (limited != null) {
+        _delegate.setBoolListAttribute(name, limited as List<bool>);
+      }
+    } else {
+      _delegate.setBoolListAttribute(name, value);
+    }
   }
 
   @override
   void setDoubleAttribute(String name, double value) {
-    if (!_isRecording) return;
-    _delegate.setDoubleAttribute(name, value);
+    if (!_isRecording || isEnded) return;
+    final enforcer = _enforcer;
+    if (enforcer != null) {
+      final limited = enforcer.evaluateSpanAttribute(name, value);
+      if (limited != null) {
+        _delegate.setDoubleAttribute(name, limited as double);
+      }
+    } else {
+      _delegate.setDoubleAttribute(name, value);
+    }
   }
 
   @override
   void setDoubleListAttribute(String name, List<double> value) {
-    if (!_isRecording) return;
-    _delegate.setDoubleListAttribute(name, value);
+    if (!_isRecording || isEnded) return;
+    final enforcer = _enforcer;
+    if (enforcer != null) {
+      final limited = enforcer.evaluateSpanAttribute(name, value);
+      if (limited != null) {
+        _delegate.setDoubleListAttribute(name, limited as List<double>);
+      }
+    } else {
+      _delegate.setDoubleListAttribute(name, value);
+    }
   }
 
   @override
   void setIntAttribute(String name, int value) {
-    if (!_isRecording) return;
-    _delegate.setIntAttribute(name, value);
+    if (!_isRecording || isEnded) return;
+    final enforcer = _enforcer;
+    if (enforcer != null) {
+      final limited = enforcer.evaluateSpanAttribute(name, value);
+      if (limited != null) {
+        _delegate.setIntAttribute(name, limited as int);
+      }
+    } else {
+      _delegate.setIntAttribute(name, value);
+    }
   }
 
   @override
   void setIntListAttribute(String name, List<int> value) {
-    if (!_isRecording) return;
-    _delegate.setIntListAttribute(name, value);
+    if (!_isRecording || isEnded) return;
+    final enforcer = _enforcer;
+    if (enforcer != null) {
+      final limited = enforcer.evaluateSpanAttribute(name, value);
+      if (limited != null) {
+        _delegate.setIntListAttribute(name, limited as List<int>);
+      }
+    } else {
+      _delegate.setIntListAttribute(name, value);
+    }
   }
 
   @override
   void setStatus(SpanStatusCode statusCode, [String? description]) {
-    if (!_isRecording) return;
+    if (!_isRecording || isEnded) return;
     _delegate.setStatus(statusCode, description);
     if (OTelLog.isDebug()) {
       OTelLog.debug(
@@ -271,20 +409,36 @@ class Span implements APISpan {
 
   @override
   void setStringAttribute<T>(String name, String value) {
-    if (!_isRecording) return;
-    _delegate.setStringAttribute<T>(name, value);
+    if (!_isRecording || isEnded) return;
+    final enforcer = _enforcer;
+    if (enforcer != null) {
+      final limited = enforcer.evaluateSpanAttribute(name, value);
+      if (limited != null) {
+        _delegate.setStringAttribute<T>(name, limited as String);
+      }
+    } else {
+      _delegate.setStringAttribute<T>(name, value);
+    }
   }
 
   @override
   void setStringListAttribute<T>(String name, List<String> value) {
-    if (!_isRecording) return;
-    _delegate.setStringListAttribute<T>(name, value);
+    if (!_isRecording || isEnded) return;
+    final enforcer = _enforcer;
+    if (enforcer != null) {
+      final limited = enforcer.evaluateSpanAttribute(name, value);
+      if (limited != null) {
+        _delegate.setStringListAttribute<T>(name, limited as List<String>);
+      }
+    } else {
+      _delegate.setStringListAttribute<T>(name, value);
+    }
   }
 
   @override
   void setDateTimeAsStringAttribute(String name, DateTime value) {
-    if (!_isRecording) return;
-    _delegate.setDateTimeAsStringAttribute(name, value);
+    if (!_isRecording || isEnded) return;
+    setStringAttribute<String>(name, Timestamp.dateTimeToString(value));
   }
 
   @override
@@ -310,7 +464,7 @@ class Span implements APISpan {
 
   @override
   void updateName(String name) {
-    if (!_isRecording) return;
+    if (!_isRecording || isEnded) return;
     _delegate.updateName(name);
 
     final provider = _sdkTracer.provider;

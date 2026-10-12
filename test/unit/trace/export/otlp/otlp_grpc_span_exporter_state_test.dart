@@ -276,4 +276,19 @@ class _TestSpan implements Span {
 
   @override
   void setStringAttribute<T>(String name, String value) {}
+
+  @override
+  int get droppedAttributesCount => 0;
+
+  @override
+  int get droppedEventsCount => 0;
+
+  @override
+  int get droppedLinksCount => 0;
+
+  @override
+  int droppedAttributesCountForEvent(SpanEvent event) => 0;
+
+  @override
+  int droppedAttributesCountForLink(SpanLink link) => 0;
 }

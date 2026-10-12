@@ -20,8 +20,17 @@ class SDKSpanCreate {
   static Span create({
     required APISpan delegateSpan,
     required Tracer sdkTracer,
+    SpanLimitEnforcer? enforcer,
     bool isRecording = true,
   }) {
-    return Span._(delegateSpan, sdkTracer, isRecording: isRecording);
+    return Span._(
+      delegateSpan,
+      sdkTracer,
+      enforcer: enforcer ??
+          (isRecording
+              ? SpanLimitEnforcer(sdkTracer.provider.spanLimits)
+              : null),
+      isRecording: isRecording,
+    );
   }
 }
