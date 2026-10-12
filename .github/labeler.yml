@@ -117,9 +117,8 @@ tooling:
 
 documentation:
   - changed-files:
-      - any-glob-to-any-file:
-          - '**/*.md'
-          - 'example/**'
+      - any-glob-to-any-file: 'example/**'
+      - all-globs-to-any-file: ['**/*.md', '!CHANGELOG.md']
 
 dependencies:
   - changed-files:
