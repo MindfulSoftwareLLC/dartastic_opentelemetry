@@ -30,7 +30,7 @@ class BaggageOperationsBenchmark extends DartasticBenchmark {
       _testBaggage = _testBaggage.copyWith('test.key', 'test.value');
       _testBaggage.getEntry('key.1');
       _testBaggage = _testBaggage.copyWithout('test.key');
-      _testBaggage.getAllEntries();
+      _testBaggage.getAllValues();
     }
   }
 
@@ -61,7 +61,7 @@ class BaggageIsolateBenchmark extends DartasticBenchmark {
   void run() async {
     for (var i = 0; i < numIterations; i++) {
       await Context.current.runIsolate(() async {
-        return Context.currentWithBaggage().baggage!.getAllEntries().length;
+        return Context.currentWithBaggage().baggage!.getAllValues().length;
       });
     }
   }
@@ -99,7 +99,7 @@ class BaggageMemoryBenchmark extends DartasticBenchmark {
   @override
   void run() {
     for (var baggage in _baggages.take(100)) {
-      baggage.getAllEntries();
+      baggage.getAllValues();
     }
   }
 

@@ -165,7 +165,7 @@ class PrometheusExporter implements MetricExporter {
     if (metric.points.isNotEmpty &&
         metric.points.first.value is HistogramValue) {
       return 'histogram';
-    } else if (metric.type == MetricType.sum) {
+    } else if (metric.type == MetricType.sum && metric.isMonotonic == true) {
       return 'counter';
     } else {
       return 'gauge';

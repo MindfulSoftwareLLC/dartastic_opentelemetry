@@ -122,7 +122,8 @@ void main() {
     test('exports child span (with parent) without error', () async {
       final tracer = OTel.tracer();
       final parentSpan = tracer.startSpan('parent-span');
-      final childSpan = tracer.startSpan('child-span', parentSpan: parentSpan);
+      final childSpan = tracer.startSpan('child-span',
+          context: Context.current.withSpan(parentSpan));
       childSpan.end();
       parentSpan.end();
 

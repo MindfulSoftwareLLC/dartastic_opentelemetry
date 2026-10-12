@@ -11,3 +11,6 @@
 /.run/
 /dartastic_opentelemetry.iml
 /.claude/settings.local.json
+
+# Cloned by tool/setup_protos.sh; generated output lives in lib/proto
+protos/

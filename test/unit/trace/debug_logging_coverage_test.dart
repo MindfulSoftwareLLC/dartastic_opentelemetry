@@ -506,7 +506,8 @@ void main() {
     final parentSpan = tracer.startSpan('parent-span');
     logOutput.clear();
 
-    final childSpan = tracer.startSpan('child-span', parentSpan: parentSpan);
+    final childSpan = tracer.startSpan('child-span',
+        context: Context.current.withSpan(parentSpan));
 
     expect(
       logOutput.any(

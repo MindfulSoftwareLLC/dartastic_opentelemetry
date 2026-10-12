@@ -18,6 +18,13 @@ Examples:
 Assisted-by: ChatGPT 5.2
 Assisted-by: Claude Opus 4.5
 
+Never add a `Co-authored-by:` trailer naming an AI tool. Under the
+OpenTelemetry Generative AI policy the human contributor is the author and
+signs for the change; the tool is not a co-author. The `Commit trailers`
+workflow fails a pull request whose commits carry one, and GitHub's default
+squash message copies every commit trailer into `main`, so strip them before
+pushing (your agent's harness may add one on its own — tell it not to).
+
 ## CHANGELOG.md style
 
 Entries should be tied to their PR's by full links so that they show up on pub.dev.

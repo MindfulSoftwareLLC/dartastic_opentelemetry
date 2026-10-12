@@ -83,7 +83,8 @@ void main() {
       expect(histogram.name, equals('test_histogram'));
       expect(histogram.unit, equals('ms'));
       expect(histogram.description, equals('Test histogram'));
-      expect(histogram.boundaries, equals([1, 5, 10, 50, 100]));
+      expect(histogram.advisory?.explicitBucketBoundaries,
+          equals([1, 5, 10, 50, 100]));
       expect(histogram.isEnabled(), isFalse);
       expect(histogram.meter, isNotNull);
 

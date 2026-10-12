@@ -9,7 +9,7 @@ import '../../../dartastic_opentelemetry.dart';
 /// An ObservableGauge is used to asynchronously measure a non-additive current value
 /// that cannot be calculated synchronously.
 class ObservableGauge<T extends num>
-    implements APIObservableGauge<T>, SDKInstrument {
+    implements APIObservableGauge<T>, SDKObservableInstrument {
   /// The underlying API ObservableGauge.
   final APIObservableGauge<T> _apiGaugeDelegate;
 
@@ -18,6 +18,9 @@ class ObservableGauge<T extends num>
 
   /// Storage for gauge measurements.
   final GaugeStorage<T> _storage;
+
+  /// Observations queued by batch callbacks, drained on the next [collect].
+  final List<Measurement<T>> _batchObservations = [];
 
   /// Creates a new ObservableGauge instance.
   ObservableGauge({
@@ -37,6 +40,9 @@ class ObservableGauge<T extends num>
 
   @override
   String? get description => _apiGaugeDelegate.description;
+
+  @override
+  InstrumentAdvisory? get advisory => _apiGaugeDelegate.advisory;
 
   @override
   bool isEnabled() {
@@ -93,10 +99,20 @@ class ObservableGauge<T extends num>
     return value as T;
   }
 
-  /// Collects measurements from all registered callbacks.
+  @override
+  void observeFromBatch(num value, Attributes? attributes) {
+    _batchObservations.add(
+      OTelFactory.otelFactory!
+          .createMeasurement<T>(castNum<T>(value), attributes),
+    );
+  }
+
+  /// Collects measurements from all registered callbacks and from any
+  /// batch callbacks that observed this instrument since the last collection.
   @override
   List<Measurement<T>> collect() {
     if (!isEnabled()) {
+      _batchObservations.clear();
       return [];
     }
 
@@ -122,25 +138,7 @@ class ObservableGauge<T extends num>
 
         // Process the measurements from the observable result
         for (final measurement in observableResult.measurements) {
-          // Type checking for the generic parameter
-          final value = measurement.value;
-
-          final num numValue;
-          numValue = value;
-
-          // For observable gauges, we just record the latest value
-          // For SDK storage, convert the num to the appropriate T type
-          final attributes =
-              measurement.attributes ?? OTelFactory.otelFactory!.attributes();
-          if (T == int) {
-            _storage.record(numValue.toInt() as T, attributes, Context.current);
-          } else if (T == double) {
-            _storage.record(
-                numValue.toDouble() as T, attributes, Context.current);
-          } else {
-            _storage.record(numValue as T, attributes, Context.current);
-          }
-
+          _record(measurement);
           result.add(measurement);
         }
       } catch (e) {
@@ -150,7 +148,22 @@ class ObservableGauge<T extends num>
       }
     }
 
+    // Batch callbacks ran before this instrument collected; drain what they
+    // observed into the same storage.
+    for (final measurement in _batchObservations) {
+      _record(measurement);
+      result.add(measurement);
+    }
+    _batchObservations.clear();
+
     return result;
+  }
+
+  /// Records one observed value; a gauge keeps only the latest per attributes.
+  void _record(Measurement<T> measurement) {
+    final attributes =
+        measurement.attributes ?? OTelFactory.otelFactory!.attributes();
+    _storage.record(castNum<T>(measurement.value), attributes, Context.current);
   }
 
   /// Collects metrics for the SDK metric export.
