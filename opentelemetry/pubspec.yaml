@@ -1,0 +1,14 @@
+name: opentelemetry
+description: OpenTelemetry for Dart and Flutter. A cross-post of dartastic_opentelemetry, which is being donated 
+  by Dartastic.io to become the official OpenTelemetry SDK.
+version: 1.0.0-beta.17
+repository: https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/tree/workiva_opentelemetry/opentelemetry
+issue_tracker: https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues
+
+environment:
+  sdk: ^3.0.0
+
+dependencies:
+  # Only the release this version cross-posts. tool/opentelemetry_release.dart
+  # rewrites this line and `version:` together.
+  dartastic_opentelemetry: '>=1.1.0-beta.17 <1.1.0-beta.18'

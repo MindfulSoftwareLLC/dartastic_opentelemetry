@@ -10,6 +10,9 @@ include: package:dart_flutter_team_lints/analysis_options.yaml
 analyzer:
   exclude:
     - lib/proto/**
+    # The opentelemetry cross-post is its own package with its own
+    # analysis_options.yaml; tool/opentelemetry_release.dart analyzes it.
+    - opentelemetry/**
   errors:
     lines_longer_than_80_chars: ignore
     comment_references: ignore

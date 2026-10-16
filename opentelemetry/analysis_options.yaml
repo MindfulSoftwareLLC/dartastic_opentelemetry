@@ -1,0 +1,8 @@
+# The cross-post package's own settings. Without this file the analyzer and
+# formatter fall back to the SDK's analysis_options.yaml one level up, whose
+# lint include does not resolve from this package.
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
