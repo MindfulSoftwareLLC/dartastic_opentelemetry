@@ -218,18 +218,25 @@ Future<void> main(List<String> args) async {
     _runOrThrow('dart', ['analyze', '--fatal-infos']);
 
     if (flags.dryRun) {
-      // pub's validation always warns here that the regenerated files are
-      // modified in git, so a warning (exit 65) is expected and not fatal.
-      // The real release validates again after committing, with no slack.
+      // pub's validation warns that regenerated files are modified in git,
+      // so a warning (exit 65) is expected here and not fatal. The real
+      // release validates again after committing, with no slack.
       _runOrThrow('dart', ['pub', 'publish', '--dry-run'], allowExit: 65);
-      stdout
-        ..writeln()
-        ..writeln('✓ dry run done. The regenerated files in $_pkgDir/ are '
-            'uncommitted:')
-        ..writeln('  git diff -- $_pkgDir')
-        ..writeln('Discard them with:')
-        ..writeln('  git checkout -- $_pkgDir && git clean -fd -- $_pkgDir')
-        ..writeln();
+      stdout.writeln();
+      if (_isWorkingTreeClean()) {
+        stdout
+          ..writeln('✓ dry run done. $_pkgDir/ already matches what $from '
+              'generates; nothing changed.')
+          ..writeln();
+      } else {
+        stdout
+          ..writeln('✓ dry run done. The regenerated files in $_pkgDir/ are '
+              'uncommitted:')
+          ..writeln('  git status -- $_pkgDir && git diff -- $_pkgDir')
+          ..writeln('Discard them with:')
+          ..writeln('  git checkout -- $_pkgDir && git clean -fd -- $_pkgDir')
+          ..writeln();
+      }
       return;
     }
 
