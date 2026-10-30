@@ -241,15 +241,15 @@ void main() {
         expect(extract('00-$traceIdHex-$spanIdHex-0A'), isNull);
       });
 
-      test('preserves every bit of a well-formed trace-flags byte', () {
-        // Pass-through, matching opentelemetry-java and opentelemetry-js. Masking
-        // to the flags this SDK models would drop the random-trace-id bit, which
-        // §3.2.2.5.2 requires to survive.
+      test('accepts reserved trace-flags bits but clears them', () {
+        // §3.2.2.5.3: reserved bits MUST be set to zero, which is not a reason
+        // to reject the header. Sampled and random-trace-id survive.
         final spanContext = extract('00-$traceIdHex-$spanIdHex-ff');
 
         expect(spanContext, isNotNull);
-        expect(spanContext!.traceFlags.asByte, equals(0xff));
+        expect(spanContext!.traceFlags.asByte, equals(0x03));
         expect(spanContext.traceFlags.isSampled, isTrue);
+        expect(spanContext.traceFlags.isRandom, isTrue);
       });
 
       test('preserves the random-trace-id bit without the sampled bit', () {
@@ -263,8 +263,7 @@ void main() {
     });
 
     group('round trip and rejection', () {
-      test('round-trips all 256 flags bytes for current and future versions',
-          () {
+      test('round-trips the defined bits of all 256 flags bytes', () {
         for (final version in ['00', 'cc']) {
           for (var flags = 0; flags < 256; flags++) {
             final hex = flags.toRadixString(16).padLeft(2, '0');
@@ -273,12 +272,30 @@ void main() {
             };
             final context = propagator.extract(
                 OTel.context(), carrier, _MapGetter(carrier));
-            expect(context.spanContext!.traceFlags.asByte, flags);
+            final defined = flags & 0x03;
+            expect(context.spanContext!.traceFlags.asByte, defined);
             final outgoing = <String, String>{};
             propagator.inject(context, outgoing, _MapSetter(outgoing));
-            expect(outgoing['traceparent'], '00-$traceIdHex-$spanIdHex-$hex');
+            expect(
+              outgoing['traceparent'],
+              '00-$traceIdHex-$spanIdHex-0$defined',
+            );
           }
         }
+      });
+
+      test('inject clears reserved bits of locally built flags', () {
+        final context = OTel.context().withSpanContext(
+          OTel.spanContext(
+            traceId: OTel.traceIdFrom(traceIdHex),
+            spanId: OTel.spanIdFrom(spanIdHex),
+            traceFlags: OTel.traceFlags(0xff),
+          ),
+        );
+        final outgoing = <String, String>{};
+        propagator.inject(context, outgoing, _MapSetter(outgoing));
+
+        expect(outgoing['traceparent'], '00-$traceIdHex-$spanIdHex-03');
       });
 
       test('malformed flags preserve an existing context including tracestate',

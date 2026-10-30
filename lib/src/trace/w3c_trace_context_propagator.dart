@@ -37,6 +37,10 @@ class W3CTraceContextPropagator
   /// The version reserved as invalid by the specification.
   static const _forbiddenVersion = 'ff';
 
+  /// The trace flags W3C Trace Context Level 2 defines. Other bits are
+  /// reserved, and vendors MUST set them to zero (§3.2.2.5.3).
+  static const _definedFlags = TraceFlags.SAMPLED_FLAG | TraceFlags.RANDOM_FLAG;
+
   static const _versionLength = 2;
   static const _traceIdLength = 32;
   static const _spanIdLength = 16;
@@ -121,7 +125,7 @@ class W3CTraceContextPropagator
     final traceparent = '$_version-'
         '${spanContext.traceId.hexString}-'
         '${spanContext.spanId.hexString}-'
-        '${spanContext.traceFlags}';
+        '${(spanContext.traceFlags.asByte & _definedFlags).toRadixString(16).padLeft(2, '0')}';
 
     setter.set(_traceparentHeader, traceparent);
 
@@ -246,8 +250,9 @@ class W3CTraceContextPropagator
       return null;
     }
 
-    // The whole byte is kept, so flags this SDK does not model still
-    // propagate, and the random-trace-id bit survives as W3C Level 2 requires.
+    // Any two lowercase hex digits are valid flags. Reserved bits are cleared
+    // below rather than rejecting the header; the random-trace-id bit is kept,
+    // since W3C Level 2 requires it to survive a continued trace.
     final traceFlagsHex = traceparent.substring(
       _traceFlagsOffset,
       _traceFlagsOffset + _traceFlagsLength,
@@ -286,7 +291,7 @@ class W3CTraceContextPropagator
       return OTel.spanContext(
         traceId: traceId,
         spanId: spanId,
-        traceFlags: traceFlags,
+        traceFlags: OTel.traceFlags(traceFlags.asByte & _definedFlags),
         isRemote: true,
       );
       // ignore: avoid_catching_errors
