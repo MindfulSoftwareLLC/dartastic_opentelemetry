@@ -142,21 +142,6 @@ void main() {
         expect(extracted, equals(context));
       });
 
-      test('rejects traceparent with wrong number of parts', () {
-        // Arrange
-        final carrier = {
-          'traceparent': '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7',
-        };
-        final getter = MapTextMapGetter(carrier);
-        final context = OTel.context();
-
-        // Act
-        final extracted = propagator.extract(context, carrier, getter);
-
-        // Assert
-        expect(extracted, equals(context));
-      });
-
       test('parses a higher version with the version 00 layout', () {
         // Arrange
         final carrier = {

@@ -51,12 +51,7 @@ class W3CTraceContextPropagator
 
   /// The exact length of a version 00 traceparent, and the minimum length of
   /// any traceparent.
-  static const _traceparentLength = 55; // 00-{32}-{16}-{2}
-
-  /// The specification's grammar allows lowercase hex only.
-  static final _hexPairPattern = RegExp(r'^[0-9a-f]{2}$');
-  static final _traceIdPattern = RegExp('^[0-9a-f]{$_traceIdLength}\$');
-  static final _spanIdPattern = RegExp('^[0-9a-f]{$_spanIdLength}\$');
+  static const _traceparentLength = _traceFlagsOffset + _traceFlagsLength;
 
   @override
   Context extract(
@@ -155,7 +150,7 @@ class W3CTraceContextPropagator
   /// Example: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
   ///
   /// A version above [_version] may append further dash-delimited fields, which
-  /// are ignored. Version [_version] itself must carry no trailing data. Every
+  /// are ignored. Versions up to [_version] must carry no trailing data. Every
   /// field must be lowercase hex, and version `ff` is always invalid.
   ///
   /// Returns null if the format is invalid.
@@ -178,8 +173,11 @@ class W3CTraceContextPropagator
       return null;
     }
 
+    // The API's hex parser accepts lowercase hex only, as the W3C grammar
+    // requires, and returns null rather than reporting an error: a malformed
+    // incoming header is not API misuse.
     final version = traceparent.substring(0, _versionLength);
-    if (!_hexPairPattern.hasMatch(version)) {
+    if (IdGenerator.hexToBytes(version) == null) {
       if (OTelLog.isDebug()) {
         OTelLog.debug(
           'Invalid traceparent version, expected only 0-9 and a-f: $version',
@@ -197,14 +195,15 @@ class W3CTraceContextPropagator
       return null;
     }
 
-    // Version 00 has a closed grammar, so trailing data makes it malformed. A
-    // higher version may append dash-delimited fields, which this propagator
-    // must tolerate and ignore.
-    if (version == _version) {
+    // A known version has a closed grammar, so trailing data makes it
+    // malformed. A higher version may append dash-delimited fields, which this
+    // propagator must tolerate and ignore. Lowercase hex pairs order the same
+    // way as their values, so compareTo ranks versions.
+    if (version.compareTo(_version) <= 0) {
       if (traceparent.length != _traceparentLength) {
         if (OTelLog.isDebug()) {
           OTelLog.debug(
-            'Version $_version traceparent must be exactly $_traceparentLength characters, got ${traceparent.length}',
+            'Version $version traceparent must be exactly $_traceparentLength characters, got ${traceparent.length}',
           );
         }
         return null;
@@ -223,18 +222,8 @@ class W3CTraceContextPropagator
       _traceIdOffset,
       _traceIdOffset + _traceIdLength,
     );
-    final spanIdHex = traceparent.substring(
-      _spanIdOffset,
-      _spanIdOffset + _spanIdLength,
-    );
-    final traceFlagsHex = traceparent.substring(
-      _traceFlagsOffset,
-      _traceFlagsOffset + _traceFlagsLength,
-    );
-
-    // Not left to the ID and flag factories: they use int.tryParse, which
-    // accepts uppercase, signs and leading whitespace ('-1' wraps to 255).
-    if (!_traceIdPattern.hasMatch(traceIdHex)) {
+    final traceIdBytes = IdGenerator.hexToBytes(traceIdHex);
+    if (traceIdBytes == null) {
       if (OTelLog.isDebug()) {
         OTelLog.debug(
           'Invalid trace ID, expected only 0-9 and a-f: $traceIdHex',
@@ -243,7 +232,12 @@ class W3CTraceContextPropagator
       return null;
     }
 
-    if (!_spanIdPattern.hasMatch(spanIdHex)) {
+    final spanIdHex = traceparent.substring(
+      _spanIdOffset,
+      _spanIdOffset + _spanIdLength,
+    );
+    final spanIdBytes = IdGenerator.hexToBytes(spanIdHex);
+    if (spanIdBytes == null) {
       if (OTelLog.isDebug()) {
         OTelLog.debug(
           'Invalid span ID, expected only 0-9 and a-f: $spanIdHex',
@@ -252,7 +246,14 @@ class W3CTraceContextPropagator
       return null;
     }
 
-    if (!_hexPairPattern.hasMatch(traceFlagsHex)) {
+    // The whole byte is kept, so flags this SDK does not model still
+    // propagate, and the random-trace-id bit survives as W3C Level 2 requires.
+    final traceFlagsHex = traceparent.substring(
+      _traceFlagsOffset,
+      _traceFlagsOffset + _traceFlagsLength,
+    );
+    final traceFlags = TraceFlags.fromString(traceFlagsHex);
+    if (traceFlags == null) {
       if (OTelLog.isDebug()) {
         OTelLog.debug(
           'Invalid trace flags, expected only 0-9 and a-f: $traceFlagsHex',
@@ -261,49 +262,29 @@ class W3CTraceContextPropagator
       return null;
     }
 
-    try {
-      // Parse the components
-      final traceId = OTel.traceIdFrom(traceIdHex);
-      final spanId = OTel.spanIdFrom(spanIdHex);
-      // Null means the flags were not two lowercase hex digits. The W3C
-      // grammar is strict and the propagator MUST reject the header then
-      // (context/api-propagators.md).
-      final traceFlags = TraceFlags.fromString(traceFlagsHex);
-      if (traceFlags == null) {
-        if (OTelLog.isDebug()) {
-          OTelLog.debug('Invalid trace flags: $traceFlagsHex');
-        }
-        return null;
-      }
-
-      // Validate that trace ID and span ID are not all zeros
-      if (!traceId.isValid) {
-        if (OTelLog.isDebug()) {
-          OTelLog.debug('Invalid trace ID: all zeros');
-        }
-        return null;
-      }
-
-      if (!spanId.isValid) {
-        if (OTelLog.isDebug()) {
-          OTelLog.debug('Invalid span ID: all zeros');
-        }
-        return null;
-      }
-
-      // Create the span context with isRemote=true since it came from a carrier
-      return OTel.spanContext(
-        traceId: traceId,
-        spanId: spanId,
-        traceFlags: traceFlags,
-        isRemote: true,
-      );
-    } catch (e) {
+    final traceId = OTel.traceIdOf(traceIdBytes);
+    if (!traceId.isValid) {
       if (OTelLog.isDebug()) {
-        OTelLog.debug('Error parsing traceparent: $e');
+        OTelLog.debug('Invalid trace ID: all zeros');
       }
       return null;
     }
+
+    final spanId = OTel.spanIdOf(spanIdBytes);
+    if (!spanId.isValid) {
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('Invalid span ID: all zeros');
+      }
+      return null;
+    }
+
+    // Create the span context with isRemote=true since it came from a carrier
+    return OTel.spanContext(
+      traceId: traceId,
+      spanId: spanId,
+      traceFlags: traceFlags,
+      isRemote: true,
+    );
   }
 
   /// Parses a tracestate header value into a map.

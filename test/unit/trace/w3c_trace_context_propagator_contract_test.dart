@@ -4,6 +4,8 @@
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
 import 'package:test/test.dart';
 
+import '../../testing_utils/in_memory_span_exporter.dart';
+
 /// W3C Trace Context Level 2 conformance tests for traceparent parsing.
 ///
 /// Covers three spec deviations:
@@ -19,7 +21,7 @@ void main() {
   setUpAll(() async {
     await OTel.initialize(
       serviceName: 'test-service',
-      endpoint: 'http://localhost:4317',
+      spanProcessor: SimpleSpanProcessor(InMemorySpanExporter()),
       detectPlatformResources: false,
     );
   });
@@ -149,8 +151,8 @@ void main() {
         expect(extract('0A-$traceIdHex-$spanIdHex-01'), isNull);
       });
 
-      test('rejects a single-character version', () {
-        expect(extract('0-$traceIdHex-$spanIdHex-01'), isNull);
+      test('rejects a malformed version in a full-length header', () {
+        expect(extract('0 -$traceIdHex-$spanIdHex-01'), isNull);
       });
 
       test('rejects a header whose delimiters are misplaced', () {
@@ -208,6 +210,18 @@ void main() {
       test('applies lowercase hex validation above version 00 too', () {
         expect(extract('01-${traceIdHex.toUpperCase()}-$spanIdHex-01'), isNull);
       });
+
+      test('a malformed header is not reported to the error handler', () {
+        // A bad incoming header is ignored, not reported as API misuse the
+        // way OTel.traceIdFrom reports a malformed argument.
+        final reported = <Object>[];
+        OTelErrorHandling.handler = (error, stackTrace) => reported.add(error);
+        addTearDown(OTelErrorHandling.resetToDefault);
+
+        expect(extract('00-${traceIdHex.toUpperCase()}-$spanIdHex-01'), isNull);
+        expect(extract('00-$traceIdHex-${'z' * 16}-01'), isNull);
+        expect(reported, isEmpty);
+      });
     });
 
     group('trace-flags syntax', () {
@@ -230,7 +244,7 @@ void main() {
       test('preserves every bit of a well-formed trace-flags byte', () {
         // Pass-through, matching opentelemetry-java and opentelemetry-js. Masking
         // to the flags this SDK models would drop the random-trace-id bit, which
-        // §3.2.2.5.2 requires to survive; TraceFlags gains that bit in #132.
+        // §3.2.2.5.2 requires to survive.
         final spanContext = extract('00-$traceIdHex-$spanIdHex-ff');
 
         expect(spanContext, isNotNull);
@@ -244,6 +258,47 @@ void main() {
         expect(spanContext, isNotNull);
         expect(spanContext!.traceFlags.asByte, equals(0x02));
         expect(spanContext.traceFlags.isSampled, isFalse);
+        expect(spanContext.traceFlags.isRandom, isTrue);
+      });
+    });
+
+    group('round trip and rejection', () {
+      test('round-trips all 256 flags bytes for current and future versions',
+          () {
+        for (final version in ['00', 'cc']) {
+          for (var flags = 0; flags < 256; flags++) {
+            final hex = flags.toRadixString(16).padLeft(2, '0');
+            final carrier = {
+              'traceparent': '$version-$traceIdHex-$spanIdHex-$hex'
+            };
+            final context = propagator.extract(
+                OTel.context(), carrier, _MapGetter(carrier));
+            expect(context.spanContext!.traceFlags.asByte, flags);
+            final outgoing = <String, String>{};
+            propagator.inject(context, outgoing, _MapSetter(outgoing));
+            expect(outgoing['traceparent'], '00-$traceIdHex-$spanIdHex-$hex');
+          }
+        }
+      });
+
+      test('malformed flags preserve an existing context including tracestate',
+          () {
+        final parent = OTel.spanContext(
+          traceId: OTel.traceIdFrom(traceIdHex),
+          spanId: OTel.spanIdFrom(spanIdHex),
+          traceFlags: OTel.traceFlags(3),
+          traceState: OTel.traceState({'existing': 'state'}),
+        );
+        final context = OTel.context().withSpanContext(parent);
+        for (final flags in ['zz', '+1', '-1', '0A', ' 1']) {
+          final carrier = {
+            'traceparent': '00-$traceIdHex-$spanIdHex-$flags',
+            'tracestate': 'incoming=value'
+          };
+          expect(propagator.extract(context, carrier, _MapGetter(carrier)),
+              same(context));
+          expect(context.spanContext, same(parent));
+        }
       });
     });
 

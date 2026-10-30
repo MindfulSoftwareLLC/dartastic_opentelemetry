@@ -21,6 +21,18 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.0-beta.18-wip]
 
+### Fixed
+
+- `traceparent` headers with a version above `00` are parsed with the version
+  `00` field layout and may carry trailing dash-delimited fields, instead of
+  being rejected; version `00` keeps its strict grammar and `ff` stays invalid.
+  context/api-propagators.md makes W3C Trace Context Level 2 parsing a MUST
+  ([#271](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/271)).
+- A malformed `traceparent` is rejected using the API's lowercase-hex parsing
+  without reporting an error to `OTelErrorHandling`, since an invalid incoming
+  header is not API misuse
+  ([#271](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/271)).
+
 ## [1.1.0-beta.17] - 2026-10-11
 
 The spec-compliance issues this release closes ([#106](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/106), 
@@ -202,15 +214,6 @@ Also notable: exemplars are sampled through an `ExemplarFilter` and `ExemplarRes
 are parsed ([#73](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/74)), the `secure` parameter is
 honored for logs and metrics ([#253](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/269)), and
 `OTEL_RESOURCE_ATTRIBUTES` is read even when `detectPlatformResources` is `false`.
-
-### Fixed
-
-- **`traceparent` parsing now follows W3C Trace Context Level 2** (#192, #193,
-  #194). Higher versions from `01` through `fe` are parsed using the version
-  `00` field layout and may carry trailing fields, while version `00` retains
-  its strict grammar. Version, trace ID, parent ID, and trace flags now require
-  fixed-width lowercase hexadecimal syntax, preventing malformed identifiers
-  from being accepted and invalid flags from being coerced to unsampled.
 
 ## [1.1.0-beta.14] - 2026-08-23
 
