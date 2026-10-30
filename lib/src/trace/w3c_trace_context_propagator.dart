@@ -262,29 +262,40 @@ class W3CTraceContextPropagator
       return null;
     }
 
-    final traceId = OTel.traceIdOf(traceIdBytes);
-    if (!traceId.isValid) {
+    // Header content can no longer fail past this point. The SDK factory can:
+    // it throws a StateError before OTel.initialize(), and extract must not
+    // throw on that, so the header is dropped instead.
+    try {
+      final traceId = OTel.traceIdOf(traceIdBytes);
+      if (!traceId.isValid) {
+        if (OTelLog.isDebug()) {
+          OTelLog.debug('Invalid trace ID: all zeros');
+        }
+        return null;
+      }
+
+      final spanId = OTel.spanIdOf(spanIdBytes);
+      if (!spanId.isValid) {
+        if (OTelLog.isDebug()) {
+          OTelLog.debug('Invalid span ID: all zeros');
+        }
+        return null;
+      }
+
+      // Create the span context with isRemote=true since it came from a carrier
+      return OTel.spanContext(
+        traceId: traceId,
+        spanId: spanId,
+        traceFlags: traceFlags,
+        isRemote: true,
+      );
+      // ignore: avoid_catching_errors
+    } on StateError catch (e) {
       if (OTelLog.isDebug()) {
-        OTelLog.debug('Invalid trace ID: all zeros');
+        OTelLog.debug('Error parsing traceparent: $e');
       }
       return null;
     }
-
-    final spanId = OTel.spanIdOf(spanIdBytes);
-    if (!spanId.isValid) {
-      if (OTelLog.isDebug()) {
-        OTelLog.debug('Invalid span ID: all zeros');
-      }
-      return null;
-    }
-
-    // Create the span context with isRemote=true since it came from a carrier
-    return OTel.spanContext(
-      traceId: traceId,
-      spanId: spanId,
-      traceFlags: traceFlags,
-      isRemote: true,
-    );
   }
 
   /// Parses a tracestate header value into a map.

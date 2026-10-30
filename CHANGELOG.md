@@ -28,9 +28,10 @@ Versioning](https://semver.org/spec/v2.0.0.html).
   being rejected; version `00` keeps its strict grammar and `ff` stays invalid.
   context/api-propagators.md makes W3C Trace Context Level 2 parsing a MUST
   ([#271](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/271)).
-- A malformed `traceparent` is rejected using the API's lowercase-hex parsing
+- A malformed `traceparent` is ignored using the API's lowercase-hex parsing,
   without reporting an error to `OTelErrorHandling`, since an invalid incoming
-  header is not API misuse
+  header is not API misuse. W3C Trace Context Level 2, which
+  context/api-propagators.md requires (MUST), says to ignore an invalid header
   ([#271](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/271)).
 
 ## [1.1.0-beta.17] - 2026-10-11
