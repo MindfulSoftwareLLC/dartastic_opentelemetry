@@ -115,7 +115,7 @@ void main() {
       final span = OTel.tracer().startSpan('doomed')..end();
       await processor.onEnd(span);
       await Future<void>.delayed(const Duration(milliseconds: 120));
-      expect(logs.join('\n'), contains('Error exporting batch of spans'));
+      expect(logs.join('\n'), contains('Bad state: export always fails'));
       await processor.shutdown().catchError((_) => true);
     });
   });

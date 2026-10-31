@@ -5,7 +5,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
-    show OTelLog;
+    show OTelErrorHandling, OTelLog;
 import 'package:grpc/grpc.dart';
 import 'package:meta/meta.dart';
 
@@ -80,11 +80,8 @@ class OtlpGrpcLogRecordExporter implements LogRecordExporter {
         authority: null,
         onBadCertificate: null,
       );
-    } catch (e) {
-      if (OTelLog.isError()) {
-        OTelLog.error(
-            'OtlpGrpcLogRecordExporter: Failed to load certificates: $e');
-      }
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
       return const ChannelCredentials.secure();
     }
   }
@@ -98,30 +95,17 @@ class OtlpGrpcLogRecordExporter implements LogRecordExporter {
       }
 
       try {
-        try {
-          await _channel!.shutdown();
-          await Future<void>.delayed(const Duration(milliseconds: 100));
-        } catch (e) {
-          if (OTelLog.isDebug()) {
-            OTelLog.debug(
-                'OtlpGrpcLogRecordExporter: Error during graceful shutdown: $e');
-          }
-        }
+        await _channel!.shutdown();
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
+      }
 
-        try {
-          unawaited(_channel!.terminate());
-          await Future<void>.delayed(const Duration(milliseconds: 100));
-        } catch (e) {
-          if (OTelLog.isDebug()) {
-            OTelLog.debug(
-                'OtlpGrpcLogRecordExporter: Error terminating channel: $e');
-          }
-        }
-      } catch (e) {
-        if (OTelLog.isError()) {
-          OTelLog.error(
-              'OtlpGrpcLogRecordExporter: Error shutting down channel: $e');
-        }
+      try {
+        await _channel!.terminate();
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
       }
 
       _channel = null;
@@ -144,58 +128,40 @@ class OtlpGrpcLogRecordExporter implements LogRecordExporter {
     String host;
     int port;
 
-    try {
-      final endpoint = _config.endpoint
-          .trim()
-          .replaceAll(RegExp(r'^(http://|https://)'), '');
-      final parts = endpoint.split(':');
-      host = parts[0].isEmpty ? '127.0.0.1' : parts[0];
-      port = parts.length > 1 ? int.parse(parts[1]) : 4317;
+    final endpoint =
+        _config.endpoint.trim().replaceAll(RegExp(r'^(http://|https://)'), '');
+    final parts = endpoint.split(':');
+    host = parts[0].isEmpty ? '127.0.0.1' : parts[0];
+    port = parts.length > 1 ? int.parse(parts[1]) : 4317;
 
-      if (host == 'localhost') {
-        host = '127.0.0.1';
-      }
+    if (host == 'localhost') {
+      host = '127.0.0.1';
+    }
 
-      if (OTelLog.isDebug()) {
-        OTelLog.debug(
-            'OtlpGrpcLogRecordExporter: Setting up gRPC channel to $host:$port');
-      }
+    if (OTelLog.isDebug()) {
+      OTelLog.debug(
+          'OtlpGrpcLogRecordExporter: Setting up gRPC channel to $host:$port');
+    }
 
-      _channel ??= ClientChannel(
-        host,
-        port: port,
-        options: ChannelOptions(
-          credentials: _createChannelCredentials(),
-          userAgent: otlpUserAgent,
-          connectTimeout: const Duration(seconds: 5),
-          idleTimeout: const Duration(seconds: 30),
-          codecRegistry: CodecRegistry(codecs: const [
-            GzipCodec(),
-            IdentityCodec(),
-          ]),
-        ),
-      );
+    _channel ??= ClientChannel(
+      host,
+      port: port,
+      options: ChannelOptions(
+        credentials: _createChannelCredentials(),
+        userAgent: otlpUserAgent,
+        connectTimeout: const Duration(seconds: 5),
+        idleTimeout: const Duration(seconds: 30),
+        codecRegistry: CodecRegistry(codecs: const [
+          GzipCodec(),
+          IdentityCodec(),
+        ]),
+      ),
+    );
 
-      try {
-        _logsService = proto.LogsServiceClient(_channel!);
-        if (OTelLog.isDebug()) {
-          OTelLog.debug(
-              'OtlpGrpcLogRecordExporter: Successfully created LogsServiceClient');
-        }
-      } catch (e) {
-        if (OTelLog.isError()) {
-          OTelLog.error(
-              'OtlpGrpcLogRecordExporter: Failed to create LogsServiceClient: $e');
-        }
-        rethrow;
-      }
-    } catch (e, stackTrace) {
-      if (OTelLog.isError()) {
-        OTelLog.error(
-            'OtlpGrpcLogRecordExporter: Failed to setup gRPC channel: $e');
-        OTelLog.error('Stack trace: $stackTrace');
-      }
-      rethrow;
+    _logsService = proto.LogsServiceClient(_channel!);
+    if (OTelLog.isDebug()) {
+      OTelLog.debug(
+          'OtlpGrpcLogRecordExporter: Successfully created LogsServiceClient');
     }
   }
 
@@ -266,12 +232,7 @@ class OtlpGrpcLogRecordExporter implements LogRecordExporter {
         OTelLog.debug('OtlpGrpcLogRecordExporter: Response: $response');
       }
       return ExportResult.success;
-    } catch (e, stackTrace) {
-      if (OTelLog.isError()) {
-        OTelLog.error('OtlpGrpcLogRecordExporter: Export request failed: $e');
-        OTelLog.error('Stack trace: $stackTrace');
-      }
-
+    } catch (e) {
       if (e is GrpcError &&
           (e.code == StatusCode.unavailable ||
               e.code == StatusCode.unknown ||
@@ -316,7 +277,8 @@ class OtlpGrpcLogRecordExporter implements LogRecordExporter {
             'OtlpGrpcLogRecordExporter: Export completed with result: $result');
       }
       return result;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
       if (_isShutdown &&
           e is StateError &&
           e.message.contains('shut down during')) {
@@ -353,31 +315,17 @@ class OtlpGrpcLogRecordExporter implements LogRecordExporter {
         }
 
         return await _tryExport(logRecords);
-      } on GrpcError catch (e, stackTrace) {
-        if (OTelLog.isError()) {
-          OTelLog.error(
-              'OtlpGrpcLogRecordExporter: gRPC error: ${e.code} - ${e.message}');
-          OTelLog.error('Stack trace: $stackTrace');
-        }
-
+      } on GrpcError catch (e) {
         if (wasShutdownDuringRetry) {
-          return ExportResult.failure;
+          rethrow;
         }
 
         if (!_retryableStatusCodes.contains(e.code)) {
-          if (OTelLog.isError()) {
-            OTelLog.error(
-                'OtlpGrpcLogRecordExporter: Non-retryable gRPC error (${e.code})');
-          }
-          return ExportResult.failure;
+          rethrow;
         }
 
         if (attempts >= maxAttempts - 1) {
-          if (OTelLog.isError()) {
-            OTelLog.error(
-                'OtlpGrpcLogRecordExporter: Max attempts reached, giving up');
-          }
-          return ExportResult.failure;
+          rethrow;
         }
 
         final delay = _calculateJitteredDelay(attempts);
@@ -390,19 +338,13 @@ class OtlpGrpcLogRecordExporter implements LogRecordExporter {
           await _setupChannel();
         }
         attempts++;
-      } catch (e, stackTrace) {
-        if (OTelLog.isError()) {
-          OTelLog.error(
-              'OtlpGrpcLogRecordExporter: Unexpected error during export: $e');
-          OTelLog.error('Stack trace: $stackTrace');
-        }
-
+      } catch (e) {
         if (wasShutdownDuringRetry) {
-          return ExportResult.failure;
+          rethrow;
         }
 
         if (attempts >= maxAttempts - 1) {
-          return ExportResult.failure;
+          rethrow;
         }
 
         final delay = _calculateJitteredDelay(attempts);
@@ -437,11 +379,8 @@ class OtlpGrpcLogRecordExporter implements LogRecordExporter {
           OTelLog.debug(
               'OtlpGrpcLogRecordExporter: All pending exports completed');
         }
-      } catch (e) {
-        if (OTelLog.isError()) {
-          OTelLog.error(
-              'OtlpGrpcLogRecordExporter: Error during force flush: $e');
-        }
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
       }
     }
   }
@@ -473,10 +412,8 @@ class OtlpGrpcLogRecordExporter implements LogRecordExporter {
           }
           return Future.value([]);
         });
-      } catch (e) {
-        if (OTelLog.isDebug()) {
-          OTelLog.debug('OtlpGrpcLogRecordExporter: Error during shutdown: $e');
-        }
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
       }
     }
 

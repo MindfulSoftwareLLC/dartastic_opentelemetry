@@ -210,8 +210,8 @@ class BatchSpanProcessor implements SpanProcessor {
         // last-resort guard so an unexpected failure can never become an
         // unhandled async error inside a periodic timer.
         // coverage:ignore-start
-      } catch (e) {
-        if (OTelLog.isError()) OTelLog.error('Error in batch export timer: $e');
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
       }
       // coverage:ignore-end
     });
@@ -291,10 +291,8 @@ class BatchSpanProcessor implements SpanProcessor {
     try {
       await exporter.export(spansToExport).timeout(_config.exportTimeout);
       return true;
-    } catch (e) {
-      if (OTelLog.isError()) {
-        OTelLog.error('Error exporting batch of spans: $e');
-      }
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
       // Bail out — don't loop forever on a broken exporter.
       return false;
     }
@@ -337,6 +335,10 @@ class BatchSpanProcessor implements SpanProcessor {
     _isShutdown = true;
 
     // Shutdown the exporter
-    await exporter.shutdown();
+    try {
+      await exporter.shutdown();
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
+    }
   }
 }

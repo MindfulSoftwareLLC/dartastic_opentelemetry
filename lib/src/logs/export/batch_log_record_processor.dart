@@ -204,11 +204,8 @@ class BatchLogRecordProcessor implements LogRecordProcessor {
     _timer = Timer.periodic(_config.scheduleDelay, (_) async {
       try {
         await _exportBatch();
-      } catch (e) {
-        if (OTelLog.isError()) {
-          OTelLog.error(
-              'BatchLogRecordProcessor: Error in batch export timer: $e');
-        }
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
       }
     });
   }
@@ -272,23 +269,14 @@ class BatchLogRecordProcessor implements LogRecordProcessor {
     }
 
     try {
-      final result = await exporter.export(logsToExport).timeout(
-        _config.exportTimeout,
-        onTimeout: () {
-          if (OTelLog.isError()) {
-            OTelLog.error('BatchLogRecordProcessor: Export timed out');
-          }
-          return ExportResult.failure;
-        },
-      );
+      final result =
+          await exporter.export(logsToExport).timeout(_config.exportTimeout);
 
-      if (result == ExportResult.failure && OTelLog.isError()) {
-        OTelLog.error('BatchLogRecordProcessor: Export failed');
+      if (result == ExportResult.failure) {
+        throw StateError('BatchLogRecordProcessor: Export failed');
       }
-    } catch (e) {
-      if (OTelLog.isError()) {
-        OTelLog.error('BatchLogRecordProcessor: Error exporting batch: $e');
-      }
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
     }
   }
 
@@ -303,7 +291,11 @@ class BatchLogRecordProcessor implements LogRecordProcessor {
       await _exportBatch();
     }
 
-    await exporter.forceFlush();
+    try {
+      await exporter.forceFlush();
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
+    }
   }
 
   @override
@@ -320,13 +312,21 @@ class BatchLogRecordProcessor implements LogRecordProcessor {
     while (_logQueue.isNotEmpty) {
       await _exportBatchForShutdown();
     }
-    await exporter.forceFlush();
+    try {
+      await exporter.forceFlush();
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
+    }
 
     // Now mark as shutdown
     _isShutdown = true;
 
     // Shutdown the exporter
-    await exporter.shutdown();
+    try {
+      await exporter.shutdown();
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
+    }
   }
 
   /// Internal export batch method for shutdown that doesn't check _isShutdown.
@@ -349,21 +349,14 @@ class BatchLogRecordProcessor implements LogRecordProcessor {
     }
 
     try {
-      await exporter.export(logsToExport).timeout(
-        _config.exportTimeout,
-        onTimeout: () {
-          if (OTelLog.isError()) {
-            OTelLog.error(
-                'BatchLogRecordProcessor: Export timed out during shutdown');
-          }
-          return ExportResult.failure;
-        },
-      );
-    } catch (e) {
-      if (OTelLog.isError()) {
-        OTelLog.error(
-            'BatchLogRecordProcessor: Error exporting batch during shutdown: $e');
+      final result =
+          await exporter.export(logsToExport).timeout(_config.exportTimeout);
+      if (result == ExportResult.failure) {
+        throw StateError(
+            'BatchLogRecordProcessor: Export failed during shutdown');
       }
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
     }
   }
 }

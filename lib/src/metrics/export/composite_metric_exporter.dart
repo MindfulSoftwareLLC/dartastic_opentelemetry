@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
-    show OTelLog;
+    show OTelErrorHandling, OTelLog;
 
 import '../data/metric_data.dart';
 import '../metric_exporter.dart';
@@ -56,13 +56,12 @@ class CompositeMetricExporter implements MetricExporter {
     for (final exporter in _exporters) {
       try {
         final result = await exporter.export(data);
-        success = success && result;
-      } catch (e) {
-        if (OTelLog.isLogExport()) {
-          OTelLog.logExport(
-            'CompositeMetricExporter: Export failed for $exporter: $e',
-          );
+        if (!result) {
+          throw StateError('CompositeMetricExporter: export failed');
         }
+        success = success && result;
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
         success = false;
       }
     }
@@ -87,8 +86,12 @@ class CompositeMetricExporter implements MetricExporter {
     for (final exporter in _exporters) {
       try {
         final result = await exporter.forceFlush();
+        if (!result) {
+          throw StateError('CompositeMetricExporter: forceFlush failed');
+        }
         success = success && result;
-      } catch (e) {
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
         success = false;
       }
     }
@@ -113,8 +116,12 @@ class CompositeMetricExporter implements MetricExporter {
     for (final exporter in _exporters) {
       try {
         final result = await exporter.shutdown();
+        if (!result) {
+          throw StateError('CompositeMetricExporter: shutdown failed');
+        }
         success = success && result;
-      } catch (e) {
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
         success = false;
       }
     }

@@ -8,6 +8,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:test/test.dart';
 
 /// Tests targeting every uncovered line in otlp_http_metriccreateExporter.dart.
@@ -340,22 +342,26 @@ void main() {
     });
 
     test('error during flush returns false', () async {
-      // Start server then close it so in-flight export fails
-      await startServer(delay: const Duration(milliseconds: 200));
-      final exp = createExporter();
-
-      // Start export
-      // ignore: unawaited_futures
-      exp.export(makeMetrics()).catchError((_) => false);
-      await Future<void>.delayed(const Duration(milliseconds: 20));
-
-      // Kill the server mid-request
-      await server.close(force: true);
-
-      // forceFlush should catch the error from the failed export
-      // It may return true or false depending on timing
-      await exp.forceFlush();
-      await exp.shutdown();
+      final response = Completer<http.Response>();
+      final requestStarted = Completer<void>();
+      await http.runWithClient(() async {
+        final exp = OtlpHttpMetricExporter(
+          OtlpHttpMetricExporterConfig(maxRetries: 0),
+        );
+        final export = exp.export(makeMetrics());
+        await requestStarted.future;
+        final flush = exp.forceFlush();
+        // Fail only after both export and flush are waiting on the request.
+        response
+            .completeError(http.ClientException('forced transport failure'));
+        expect(await export, isFalse);
+        expect(await flush, isFalse);
+        await exp.shutdown();
+      },
+          () => MockClient((_) {
+                requestStarted.complete();
+                return response.future;
+              }));
     });
   });
 

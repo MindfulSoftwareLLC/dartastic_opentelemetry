@@ -3,7 +3,7 @@
 
 import 'dart:convert';
 import 'dart:io';
-import '../../../dartastic_opentelemetry.dart' show OTelLog;
+import '../../../dartastic_opentelemetry.dart' show OTelErrorHandling, OTelLog;
 import '../span.dart';
 import 'span_exporter.dart';
 
@@ -107,12 +107,7 @@ class TestFileExporter implements SpanExporter {
         );
       }
     } catch (e, stackTrace) {
-      print('TestFileExporter ERROR: Failed to export spans: $e');
-      print('Stack trace: $stackTrace');
-      if (OTelLog.isError()) {
-        OTelLog.error('TestFileExporter: Failed to export spans: $e');
-        OTelLog.error('Stack trace: $stackTrace');
-      }
+      OTelErrorHandling.report(e, stackTrace);
       rethrow;
     }
   }

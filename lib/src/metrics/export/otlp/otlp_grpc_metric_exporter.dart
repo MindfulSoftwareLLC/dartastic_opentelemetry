@@ -63,12 +63,8 @@ class OtlpGrpcMetricExporter implements MetricExporter {
         authority: null,
         onBadCertificate: null,
       );
-    } catch (e) {
-      if (OTelLog.isError()) {
-        OTelLog.error(
-          'OtlpGrpcMetricExporter: Failed to load certificates: $e',
-        );
-      }
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
       // Fall back to default secure credentials on error
       return const ChannelCredentials.secure();
     }
@@ -162,10 +158,7 @@ class OtlpGrpcMetricExporter implements MetricExporter {
       }
       return true;
     } catch (e, stackTrace) {
-      if (OTelLog.isLogExport()) {
-        OTelLog.logExport('OtlpGrpcMetricExporter: Export failed: $e');
-        OTelLog.logExport('Stack trace: $stackTrace');
-      }
+      OTelErrorHandling.report(e, stackTrace);
       return false;
     }
   }
@@ -203,10 +196,8 @@ class OtlpGrpcMetricExporter implements MetricExporter {
         OTelLog.logExport('OtlpGrpcMetricExporter: Channel shutdown completed');
       }
       return true;
-    } catch (e) {
-      if (OTelLog.isLogExport()) {
-        OTelLog.logExport('OtlpGrpcMetricExporter: Shutdown failed: $e');
-      }
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
       return false;
     }
   }
