@@ -81,14 +81,10 @@ class Meter implements APIMeter {
   /// @return The MeterProvider instance
   MeterProvider get provider => _provider;
 
-  /// The instruments created by this meter.
-  ///
-  /// Each meter is its own namespace for instruments, as the metrics SDK
-  /// requires of distinct meters (metrics/sdk.md, duplicate instrument
-  /// registration).
+  /// This meter's instrument namespace.
   final Set<SDKInstrument> _instruments = {};
 
-  /// The instruments created by this meter, for collection.
+  /// The instruments created by this meter.
   @internal
   Set<SDKInstrument> get instruments => Set.unmodifiable(_instruments);
 
