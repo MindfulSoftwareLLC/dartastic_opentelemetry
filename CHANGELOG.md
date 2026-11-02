@@ -35,8 +35,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
   ([#271](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/271)).
 - The W3C propagator clears reserved `traceparent` trace-flags bits, keeping
   only sampled and random-trace-id, on extract and inject. W3C Trace Context
-  Level 2 §3.2.2.5.3 says vendors MUST set them to zero; previously the whole
-  byte was re-emitted
+  Level 2 §3.2.2.5.3, which context/api-propagators.md requires (MUST), says
+  vendors MUST set them to zero; previously the whole byte was re-emitted
   ([#271](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/271)).
 
 ## [1.1.0-beta.17] - 2026-10-11
