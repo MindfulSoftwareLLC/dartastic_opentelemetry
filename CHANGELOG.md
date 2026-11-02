@@ -23,21 +23,15 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- `traceparent` headers with a version above `00` are parsed with the version
-  `00` field layout and may carry trailing dash-delimited fields, instead of
-  being rejected; version `00` keeps its strict grammar and `ff` stays invalid.
-  context/api-propagators.md makes W3C Trace Context Level 2 parsing a MUST
-  ([#271](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/271)).
-- A malformed `traceparent` is ignored using the API's lowercase-hex parsing,
-  without reporting an error to `OTelErrorHandling`, since an invalid incoming
-  header is not API misuse. W3C Trace Context Level 2, which
-  context/api-propagators.md requires (MUST), says to ignore an invalid header
-  ([#271](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/271)).
-- The W3C propagator clears reserved `traceparent` trace-flags bits, keeping
-  only sampled and random-trace-id, on extract and inject. W3C Trace Context
-  Level 2 §3.2.2.5.3, which context/api-propagators.md requires (MUST), says
-  vendors MUST set them to zero; previously the whole byte was re-emitted
-  ([#271](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/271)).
+- `W3CTraceContextPropagator.extract` accepts a `traceparent` with a version above `00`,
+  reading the version `00` fields and ignoring any extra dash-delimited fields, as
+  context/api-propagators.md requires (MUST). Before, such headers were dropped. A
+  malformed `traceparent` is still ignored but is no longer reported to `OTelErrorHandling`
+  ([#271](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/271) by @robert-northmind).
+- The W3C propagator keeps only the sampled and random-trace-id trace flags and clears
+  reserved bits on extract and inject, as W3C Trace Context Level 2 requires (MUST). Before,
+  a header with flags `ff` was forwarded unchanged; it now becomes `03`
+  ([#271](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/271) by @robert-northmind).
 
 ## [1.1.0-beta.17] - 2026-10-11
 
