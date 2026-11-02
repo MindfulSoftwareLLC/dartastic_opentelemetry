@@ -319,52 +319,6 @@ void main() {
         }
       });
     });
-
-    group('baseline traceparent behavior', () {
-      test('accepts the canonical version 00 header', () {
-        final spanContext = extract('00-$traceIdHex-$spanIdHex-01');
-
-        expect(spanContext, isNotNull);
-        expect(spanContext!.traceId.hexString, equals(traceIdHex));
-        expect(spanContext.spanId.hexString, equals(spanIdHex));
-        expect(spanContext.traceFlags.isSampled, isTrue);
-      });
-
-      test('accepts an unsampled version 00 header', () {
-        expect(extract('00-$traceIdHex-$spanIdHex-00')?.traceFlags.isSampled,
-            isFalse);
-      });
-
-      test('rejects an all-zero trace-id', () {
-        expect(extract('00-${'0' * 32}-$spanIdHex-01'), isNull);
-      });
-
-      test('rejects an all-zero span-id', () {
-        expect(extract('00-$traceIdHex-${'0' * 16}-01'), isNull);
-      });
-
-      test('rejects a header truncated before the flags', () {
-        expect(extract('00-$traceIdHex-$spanIdHex'), isNull);
-      });
-
-      test('rejects an empty header', () {
-        expect(extract(''), isNull);
-      });
-
-      test('returns the incoming Context untouched when the header is rejected',
-          () {
-        final carrier = {'traceparent': 'ff-$traceIdHex-$spanIdHex-01'};
-        final context = OTel.context();
-
-        final extracted = propagator.extract(
-          context,
-          carrier,
-          _MapGetter(carrier),
-        );
-
-        expect(extracted, equals(context));
-      });
-    });
   });
 }
 

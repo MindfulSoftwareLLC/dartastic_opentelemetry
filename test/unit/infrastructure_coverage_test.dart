@@ -370,8 +370,10 @@ void main() {
       final bogus = 'X' * 55;
       final carrier = {'traceparent': bogus};
       logOutput.clear();
-      propagator.extract(OTel.context(), carrier, _MapGetter(carrier));
+      final extracted =
+          propagator.extract(OTel.context(), carrier, _MapGetter(carrier));
 
+      expect(extracted.spanContext, isNull);
       expect(
         logOutput.any(
           (m) => m.contains(
