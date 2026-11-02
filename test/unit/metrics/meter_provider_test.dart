@@ -112,6 +112,108 @@ void main() {
       expect(counter, isNotNull);
     });
 
+    group('meter identity and instrument namespaces', () {
+      test(
+          'meters differing only in version or schemaUrl own separate '
+          'instruments', () {
+        final meterProvider = OTel.meterProvider();
+        final v1 =
+            meterProvider.getMeter(name: 'shared', version: '1.0.0') as Meter;
+        final v2 =
+            meterProvider.getMeter(name: 'shared', version: '2.0.0') as Meter;
+        final s1 = meterProvider.getMeter(
+          name: 'shared',
+          version: '1.0.0',
+          schemaUrl: 'https://opentelemetry.io/schemas/1.0.0',
+        ) as Meter;
+
+        expect(identical(v1, v2), isFalse);
+        expect(identical(v1, s1), isFalse);
+
+        final c1 = v1.createCounter<int>(name: 'requests');
+        final c2 = v2.createCounter<int>(name: 'requests');
+        final c3 = s1.createCounter<int>(name: 'requests');
+
+        expect(v1.instruments, equals({c1}));
+        expect(v2.instruments, equals({c2}));
+        expect(s1.instruments, equals({c3}));
+      });
+
+      test(
+          'meters differing only in attributes are distinct, and attribute '
+          'order does not matter', () {
+        final meterProvider = OTel.meterProvider();
+        final a = meterProvider.getMeter(
+          name: 'scoped',
+          attributes: OTel.attributesFromMap({'k1': 'v1', 'k2': 'v2'}),
+        );
+        final sameReordered = meterProvider.getMeter(
+          name: 'scoped',
+          attributes: OTel.attributesFromMap({'k2': 'v2', 'k1': 'v1'}),
+        );
+        final different = meterProvider.getMeter(
+          name: 'scoped',
+          attributes: OTel.attributesFromMap({'k1': 'other'}),
+        );
+        final none = meterProvider.getMeter(name: 'scoped');
+
+        expect(identical(a, sameReordered), isTrue);
+        expect(identical(a, different), isFalse);
+        expect(identical(a, none), isFalse);
+      });
+
+      test('omitted and empty identity fields return the same meter', () {
+        final meterProvider = OTel.meterProvider();
+        final omitted = meterProvider.getMeter(name: 'defaults');
+        final empty = meterProvider.getMeter(
+          name: 'defaults',
+          version: '',
+          schemaUrl: '',
+          attributes: OTel.attributesFromMap({}),
+        );
+
+        expect(identical(omitted, empty), isTrue);
+      });
+
+      test('a colon in the name cannot collide with the version', () {
+        final meterProvider = OTel.meterProvider();
+        final colonName = meterProvider.getMeter(name: 'a:b');
+        final colonVersion = meterProvider.getMeter(name: 'a', version: 'b');
+
+        expect(identical(colonName, colonVersion), isFalse);
+      });
+
+      test('collectAllMetrics collects instruments of every meter', () async {
+        final meterProvider = OTel.meterProvider();
+        meterProvider
+            .getMeter(name: 'collect', version: '1')
+            .createCounter<int>(name: 'c_v1')
+            .add(1);
+        meterProvider
+            .getMeter(name: 'collect', version: '2')
+            .createCounter<int>(name: 'c_v2')
+            .add(2);
+
+        final names =
+            (await meterProvider.collectAllMetrics()).map((m) => m.name);
+
+        expect(names, containsAll(<String>['c_v1', 'c_v2']));
+      });
+
+      test(
+          'deprecated MeterProvider.registerInstrument registers with the '
+          'meter', () {
+        final meterProvider = OTel.meterProvider();
+        final meter = meterProvider.getMeter(name: 'legacy') as Meter;
+        final counter =
+            meter.createCounter<int>(name: 'legacy_counter') as SDKInstrument;
+
+        meterProvider.registerInstrument('ignored', counter);
+
+        expect(meter.instruments, equals({counter}));
+      });
+    });
+
     test('MeterProvider.forceFlush fails after shutdown', () async {
       final meterProvider = OTel.meterProvider();
 

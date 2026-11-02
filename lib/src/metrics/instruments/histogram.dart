@@ -41,8 +41,7 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
           recordMinMax: true,
           exemplarFilter: meter.provider.exemplarFilter,
         ) {
-    // Register this instrument with the meter provider
-    _meter.provider.registerInstrument(_meter.name, this);
+    _meter.registerInstrument(this);
   }
 
   /// Default bucket boundaries.
