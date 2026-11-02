@@ -165,19 +165,10 @@ class MeterProvider implements APIMeterProvider {
   /// @return An unmodifiable list of all metric readers
   List<MetricReader> get metricReaders => List.unmodifiable(_metricReaders);
 
-  /// Registry of all meters created by this provider, keyed by meter
-  /// identity.
-  ///
-  /// Meters are distinct when any of name, version, schema URL or
-  /// attributes differ (metrics/api.md, get a meter). Each [Meter] holds
-  /// its own instruments, so distinct meters are separate instrument
-  /// namespaces (metrics/sdk.md, duplicate instrument registration).
+  /// Meters by identity; each [Meter] is its own instrument namespace.
   final Map<_MeterKey, Meter> _meters = {};
 
-  /// Builds the identity key for a meter.
-  ///
-  /// An omitted version or schema URL is the same as an empty one, and
-  /// omitted attributes are the same as empty attributes.
+  /// Omitted and empty version, schema URL and attributes are equivalent.
   static _MeterKey _meterKey(
     String name,
     String? version,
@@ -192,10 +183,7 @@ class MeterProvider implements APIMeterProvider {
             (attributes == null || attributes.isEmpty) ? null : attributes,
       );
 
-  /// Registers an instrument with the meter that created it.
-  ///
-  /// @param instrumentName Unused
-  /// @param instrument The instrument to register
+  /// Registers [instrument] with its meter; [instrumentName] is unused.
   @Deprecated(
     'Instruments register with their Meter. This method will be removed.',
   )
