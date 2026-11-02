@@ -23,6 +23,14 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Console span/event/link attributes and log bodies/attributes use the API's
+  non-OTLP encoder: nested values render as JSON, bytes as base64, and
+  non-finite numbers as strings. The debug JSON file exporter uses the same
+  JSON conversion, so NaN and Infinity no longer prevent export. Prometheus
+  reuses the encoder before applying label escaping. OTLP encoding is
+  unchanged. This requires the
+  API non-OTLP encoder follow-up to PR #123, not PR #123 alone.
+
 - **BREAKING**: Migrate to API rc.5's full `AnyValue` hierarchy
   ([API #123](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/123)).
   The API dependency is now `>=1.0.0-rc.5 <1.0.0-rc.6`.

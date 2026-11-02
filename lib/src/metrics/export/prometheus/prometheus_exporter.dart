@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import '../../data/metric.dart';
@@ -223,11 +222,7 @@ class PrometheusExporter implements MetricExporter {
     // Prometheus labels are strings. Follow common.md's non-OTLP mapping:
     // JSON for collections, base64 for bytes, and an empty string for null.
     if (value is Attribute) {
-      final anyValue = value.value;
-      final jsonValue = _labelJson(anyValue);
-      value = anyValue is AnyValueArray || anyValue is AnyValueMap
-          ? jsonEncode(jsonValue)
-          : jsonValue?.toString() ?? '';
+      value = value.value.toNonOtlpString();
     }
 
     // Escape quotes, backslashes, and newlines
@@ -236,36 +231,6 @@ class PrometheusExporter implements MetricExporter {
         .replaceAll(r'\', r'\\')
         .replaceAll('"', r'\"')
         .replaceAll('\n', '\\n');
-  }
-
-  Object? _labelJson(AnyValue value) {
-    // Keep reporting state local to this label conversion, including when
-    // several leaves exceed the depth limit or the exporter is reused.
-    var depthReported = false;
-    Object? convert(AnyValue value, int depth) {
-      if (depth >= 32 && value is! AnyValueNull) {
-        if (!depthReported) {
-          depthReported = true;
-          OTelErrorHandling.report(ArgumentError(
-              'AnyValue export nesting exceeds the maximum depth of 32'));
-        }
-        return null;
-      }
-      return switch (value) {
-        AnyValueNull() => null,
-        AnyValueString(value: final v) => v,
-        AnyValueBool(value: final v) => v,
-        AnyValueInt(value: final v) => v,
-        AnyValueDouble(value: final v) => v.isFinite ? v : v.toString(),
-        AnyValueBytes(value: final v) => base64Encode(v),
-        AnyValueArray(value: final v) =>
-          v.map((item) => convert(item, depth + 1)).toList(),
-        AnyValueMap(value: final v) =>
-          v.map((key, item) => MapEntry(key, convert(item, depth + 1))),
-      };
-    }
-
-    return convert(value, 0);
   }
 
   @override
