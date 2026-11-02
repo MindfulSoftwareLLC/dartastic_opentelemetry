@@ -9,9 +9,9 @@ import '../../testing_utils/in_memory_span_exporter.dart';
 /// W3C Trace Context Level 2 conformance tests for traceparent parsing.
 ///
 /// Covers three spec deviations:
-/// - #192 a higher traceparent version must be parsed, not rejected (§3.2.4)
-/// - #193 trace-id and span-id are lowercase hex only (§3.2.2.3, §3.2.2.4)
-/// - #194 malformed trace-flags invalidate the header (§3.2.2.5)
+/// - #192 a higher traceparent version must be parsed, not rejected
+/// - #193 trace-id and span-id are lowercase hex only
+/// - #194 malformed trace-flags invalidate the header
 void main() {
   const traceIdHex = '4bf92f3577b34da6a3ce929d0e0e4736';
   const spanIdHex = '00f067aa0ba902b7';
@@ -102,13 +102,14 @@ void main() {
       });
 
       test('accepts a higher version whose additive field is empty', () {
-        // §3.2.4 requires the flags to be at the end of the string or followed by
-        // a dash. Java, Go and JS all accept a bare trailing dash.
+        // W3C requires the flags of a higher version to be at the end of the
+        // string or followed by a dash. Java, Go and JS all accept a bare trailing dash.
         expect(extract('01-$traceIdHex-$spanIdHex-01-'), isNotNull);
       });
 
       test('parses tracestate alongside a higher-version traceparent', () {
-        // §3.3.5: tracestate must still be attempted for a higher version.
+        // W3C still has tracestate parsed when the traceparent is a higher
+        // version.
         final carrier = {
           'traceparent': '01-$traceIdHex-$spanIdHex-01-extradata',
           'tracestate': 'rojo=00f067aa0ba902b7',
@@ -130,7 +131,7 @@ void main() {
       });
 
       test('rejects a version 00 header carrying additive fields', () {
-        // §3.2.2.2 closes the version 00 grammar, so trailing data is malformed.
+        // The version 00 grammar is closed, so trailing data is malformed.
         expect(extract('00-$traceIdHex-$spanIdHex-01-extradata'), isNull);
       });
 
@@ -242,8 +243,8 @@ void main() {
       });
 
       test('accepts reserved trace-flags bits but clears them', () {
-        // §3.2.2.5.3: reserved bits MUST be set to zero, which is not a reason
-        // to reject the header. Sampled and random-trace-id survive.
+        // W3C says reserved bits MUST be set to zero, which is not a reason to
+        // reject the header. Sampled and random-trace-id survive.
         final spanContext = extract('00-$traceIdHex-$spanIdHex-ff');
 
         expect(spanContext, isNotNull);

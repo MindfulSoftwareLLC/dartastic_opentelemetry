@@ -38,7 +38,7 @@ class W3CTraceContextPropagator
   static const _forbiddenVersion = 'ff';
 
   /// The trace flags W3C Trace Context Level 2 defines. Other bits are
-  /// reserved, and vendors MUST set them to zero (§3.2.2.5.3).
+  /// reserved, and W3C says vendors MUST set them to zero.
   static const _definedFlags = TraceFlags.SAMPLED_FLAG | TraceFlags.RANDOM_FLAG;
 
   static const _versionLength = 2;
