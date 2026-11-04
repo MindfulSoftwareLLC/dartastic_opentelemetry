@@ -144,7 +144,7 @@ class WebResourceDetector implements ResourceDetector {
         // ignore: experimental_member_use
         attributes[BrowserCandidate.browserLanguages.key] = languages;
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       // Resource detection is BEST EFFORT and must never interrupt
       // initialization: only `initialize` may throw, and a browser we have
       // never seen is not a reason to take the caller's app down. Whatever
@@ -155,7 +155,7 @@ class WebResourceDetector implements ResourceDetector {
       // are dropped at attribute creation, so the `?? ''` fallbacks above
       // produce absent attributes rather than blank ones for the same
       // reason.
-      if (OTelLog.isError()) OTelLog.error('Error detecting web resources: $e');
+      OTelErrorHandling.report(e, stackTrace);
     }
 
     return ResourceCreate.create(

@@ -4,7 +4,7 @@
 import 'dart:async';
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
-    show OTelLog;
+    show OTelErrorHandling, OTelLog;
 
 import 'data/metric_data.dart';
 import 'meter_provider.dart';
@@ -99,17 +99,13 @@ class PeriodicExportingMetricReader extends MetricReader {
       if (data.metrics.isNotEmpty) {
         final exportFuture = _exporter.export(data);
 
-        // Apply timeout to export
-        await exportFuture.timeout(
-          _timeout,
-          onTimeout: () {
-            print('Metric export timed out after $_timeout');
-            return false;
-          },
-        );
+        final success = await exportFuture.timeout(_timeout);
+        if (!success) {
+          throw StateError('PeriodicExportingMetricReader: Export failed');
+        }
       }
-    } catch (e) {
-      print('Error during metric collection/export: $e');
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
     }
   }
 
@@ -142,12 +138,12 @@ class PeriodicExportingMetricReader extends MetricReader {
 
   @override
   Future<bool> forceFlush() async {
+    // Collect and export immediately. Handler exceptions propagate.
+    await _collectAndExport();
     try {
-      // Collect and export immediately
-      await _collectAndExport();
       return await _exporter.forceFlush();
-    } catch (e) {
-      print('Error during forceFlush: $e');
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
       return false;
     }
   }
@@ -157,12 +153,12 @@ class PeriodicExportingMetricReader extends MetricReader {
     _timer?.cancel();
     _timer = null;
 
+    // Perform one final collection and export. Handler exceptions propagate.
+    await _collectAndExport();
     try {
-      // Perform one final collection and export
-      await _collectAndExport();
       return await _exporter.shutdown();
-    } catch (e) {
-      print('Error during shutdown: $e');
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
       return false;
     }
   }

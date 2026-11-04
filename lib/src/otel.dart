@@ -37,6 +37,22 @@ import '../dartastic_opentelemetry.dart';
 /// The values must be valid Attribute types (String, bool, int, double, or
 /// List\<String>, List\<bool>, List\<int> or List\<double>).
 class OTel {
+  /// Sets the shared API and SDK error handler, including before [initialize].
+  ///
+  /// The handler receives errors even when diagnostic logging is disabled.
+  /// Pass `null` to restore the installed factory's default logging handler,
+  /// or a no-op callback to suppress errors. A handler may throw deliberately
+  /// for strict error handling, as supported by [OTelErrorHandling].
+  ///
+  /// ```dart
+  /// OTel.setErrorHandler((error, stackTrace) {
+  ///   // Send the error to your application's diagnostic system.
+  /// });
+  /// ```
+  static void setErrorHandler(OTelErrorHandler? handler) {
+    OTelAPI.setErrorHandler(handler);
+  }
+
   static OTelSDKFactory? _otelFactory;
   static Sampler? _defaultSampler;
   static TimeProvider? _defaultTimeProvider;
@@ -96,7 +112,8 @@ class OTel {
 
   /// Initializes the OpenTelemetry SDK with the specified configuration.
   ///
-  /// This method must be called before any other OpenTelemetry operations.
+  /// Call this before creating SDK objects. [setErrorHandler] can be called
+  /// before initialization to handle errors during SDK setup as well.
   /// It sets up the global configuration and installs the SDK implementation.
   ///
   /// @param endpoint The endpoint URL for the OpenTelemetry collector (default: http://localhost:4318)

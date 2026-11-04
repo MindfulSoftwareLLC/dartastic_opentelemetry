@@ -102,7 +102,8 @@ class OtlpHttpMetricExporter implements MetricExporter {
         OTelLog.debug('OtlpHttpMetricExporter: Export completed successfully');
       }
       return result;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
       if (_isShutdown &&
           e is StateError &&
           e.message.contains('shut down during')) {
@@ -114,8 +115,7 @@ class OtlpHttpMetricExporter implements MetricExporter {
         }
         return false;
       } else {
-        // Re-throw other errors
-        rethrow;
+        return false;
       }
     } finally {
       _pendingExports.remove(exportFuture);
@@ -158,19 +158,9 @@ class OtlpHttpMetricExporter implements MetricExporter {
           );
         }
         return success;
-      } on http.ClientException catch (e, stackTrace) {
-        if (OTelLog.isError()) {
-          OTelLog.error('OtlpHttpMetricExporter: HTTP error during export: $e');
-        }
-        if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
-
+      } on http.ClientException catch (e) {
         // Check if the exporter was shut down while we were waiting
         if (wasShutdownDuringRetry) {
-          if (OTelLog.isError()) {
-            OTelLog.error(
-              'OtlpHttpMetricExporter: Export interrupted by shutdown',
-            );
-          }
           throw StateError('Exporter was shut down during export');
         }
 
@@ -179,21 +169,11 @@ class OtlpHttpMetricExporter implements MetricExporter {
             _retryableStatusCodes.contains(e.statusCode);
 
         if (!shouldRetry) {
-          if (OTelLog.isError()) {
-            OTelLog.error(
-              'OtlpHttpMetricExporter: Non-retryable HTTP error, stopping retry attempts',
-            );
-          }
-          return false;
+          rethrow;
         }
 
         if (attempts >= maxAttempts - 1) {
-          if (OTelLog.isError()) {
-            OTelLog.error(
-              'OtlpHttpMetricExporter: Max attempts reached ($attempts out of $maxAttempts), giving up',
-            );
-          }
-          return false;
+          rethrow;
         }
 
         final delay = _calculateJitteredDelay(attempts);
@@ -204,21 +184,14 @@ class OtlpHttpMetricExporter implements MetricExporter {
         }
         await Future<void>.delayed(delay);
         attempts++;
-      } catch (e, stackTrace) {
-        if (OTelLog.isError()) {
-          OTelLog.error(
-            'OtlpHttpMetricExporter: Unexpected error during export: $e',
-          );
-        }
-        if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
-
+      } catch (e) {
         // Check if we should stop retrying due to shutdown
         if (wasShutdownDuringRetry) {
           throw StateError('Exporter was shut down during export');
         }
 
         if (attempts >= maxAttempts - 1) {
-          return false;
+          rethrow;
         }
 
         final delay = _calculateJitteredDelay(attempts);
@@ -313,33 +286,22 @@ class OtlpHttpMetricExporter implements MetricExporter {
       );
     }
 
-    try {
-      final response = await _client
-          .post(Uri.parse(endpointUrl), headers: headers, body: bodyBytes)
-          .timeout(_config.timeout);
+    final response = await _client
+        .post(Uri.parse(endpointUrl), headers: headers, body: bodyBytes)
+        .timeout(_config.timeout);
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        if (OTelLog.isDebug()) {
-          OTelLog.debug(
-            'OtlpHttpMetricExporter: Export request completed successfully',
-          );
-        }
-        return true;
-      } else {
-        final errorMessage =
-            'OtlpHttpMetricExporter: Export request failed with status code ${response.statusCode}';
-        if (OTelLog.isError()) OTelLog.error(errorMessage);
-        throw OtlpHttpException(errorMessage, response.statusCode);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+          'OtlpHttpMetricExporter: Export request completed successfully',
+        );
       }
-    } on http.ClientException {
-      // Let ClientException propagate to _export for retry handling
-      rethrow;
-    } catch (e, stackTrace) {
-      if (OTelLog.isError()) {
-        OTelLog.error('OtlpHttpMetricExporter: Export request failed: $e');
-        OTelLog.error('Stack trace: $stackTrace');
-      }
-      return false;
+      return true;
+    } else {
+      final errorMessage =
+          'OtlpHttpMetricExporter: Export request failed with status code ${response.statusCode}';
+
+      throw OtlpHttpException(errorMessage, response.statusCode);
     }
   }
 
@@ -372,10 +334,8 @@ class OtlpHttpMetricExporter implements MetricExporter {
           );
         }
         return true;
-      } catch (e) {
-        if (OTelLog.isError()) {
-          OTelLog.error('OtlpHttpMetricExporter: Error during force flush: $e');
-        }
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
         return false;
       }
     } else {
@@ -427,12 +387,8 @@ class OtlpHttpMetricExporter implements MetricExporter {
             return Future.value([]);
           },
         );
-      } catch (e) {
-        if (OTelLog.isDebug()) {
-          OTelLog.debug(
-            'OtlpHttpMetricExporter: Error during shutdown while waiting for exports: $e',
-          );
-        }
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
         // Don't return false here - we still want to close the client
       }
     }

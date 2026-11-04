@@ -9,7 +9,7 @@
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
-    show OTelLog;
+    show OTelErrorHandling;
 import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
 
@@ -44,12 +44,8 @@ http.Client createOtlpHttpClient({
       return http.Client();
     }
     return IOClient(HttpClient(context: context));
-  } catch (e) {
-    if (OTelLog.isError()) {
-      OTelLog.error(
-        '$exporterName: Failed to create HTTP client with certificates: $e',
-      );
-    }
+  } catch (e, stackTrace) {
+    OTelErrorHandling.report(e, stackTrace);
     return http.Client();
   }
 }

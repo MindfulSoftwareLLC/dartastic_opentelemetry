@@ -415,15 +415,10 @@ void main() {
       // Shutdown should complete without throwing
       await OTel.shutdown();
 
-      expect(
-        logOutput.any(
-          (m) =>
-              m.contains('Error during tracer provider') ||
-              m.contains('Error during'),
-        ),
-        isTrue,
-        reason: 'Expected error log during shutdown',
-      );
+      // The default handler logs the original errors from both operations.
+      expect(logOutput.join('\n'), contains('Exception: forceFlush fail'));
+      expect(logOutput.join('\n'), contains('Exception: shutdown fail'));
+      expect(logOutput.join('\n'), contains('Stack trace:'));
     });
 
     test('shutdown with failing meter provider logs error', () async {

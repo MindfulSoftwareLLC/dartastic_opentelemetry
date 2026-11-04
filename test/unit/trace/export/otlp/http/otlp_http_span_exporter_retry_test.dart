@@ -434,7 +434,7 @@ void main() {
       await exporter.shutdown();
     });
 
-    test('error log paths exercised on 503 failure', () async {
+    test('default handler logs exhausted retries once', () async {
       final logMessages = <String>[];
       OTelLog.logFunction = logMessages.add;
 
@@ -451,13 +451,16 @@ void main() {
       final allLogs = logMessages.join('\n');
       // Should have error logs for the failed request
       expect(allLogs, contains('status code 503'));
-      expect(allLogs, contains('HTTP error during export'));
-      expect(allLogs, contains('Max attempts reached'));
+      expect(
+        logMessages.where((message) =>
+            message.contains('[ERROR]') && !message.contains('Stack trace:')),
+        hasLength(1),
+      );
 
       await exporter.shutdown();
     });
 
-    test('error log paths exercised on non-retryable error', () async {
+    test('default handler logs non-retryable HTTP error', () async {
       final logMessages = <String>[];
       OTelLog.logFunction = logMessages.add;
 
@@ -472,7 +475,8 @@ void main() {
       }
 
       final allLogs = logMessages.join('\n');
-      expect(allLogs, contains('Non-retryable HTTP error'));
+      expect(allLogs, contains('status code 400'));
+      expect(requestCount, 1);
 
       await exporter.shutdown();
     });
@@ -541,8 +545,9 @@ void main() {
       }
 
       final allLogs = logMessages.join('\n');
-      // Should hit either the ClientException or generic catch block
-      expect(allLogs, contains('error'));
+      // The default handler preserves the transport error and its stack.
+      expect(allLogs, contains('ClientException'));
+      expect(allLogs, contains('Stack trace:'));
 
       // Re-bind server for tearDown to close
       server = await HttpServer.bind('localhost', 0);

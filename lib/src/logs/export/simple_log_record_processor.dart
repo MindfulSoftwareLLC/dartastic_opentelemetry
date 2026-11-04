@@ -35,15 +35,16 @@ class SimpleLogRecordProcessor implements LogRecordProcessor {
       return;
     }
 
+    ExportResult result;
     try {
-      final result = await exporter.export([logRecord]);
-      if (result == ExportResult.failure && OTelLog.isError()) {
-        OTelLog.error('SimpleLogRecordProcessor: Export failed');
-      }
-    } catch (e) {
-      if (OTelLog.isError()) {
-        OTelLog.error('SimpleLogRecordProcessor: Error exporting log: $e');
-      }
+      result = await exporter.export([logRecord]);
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
+      return;
+    }
+    if (result == ExportResult.failure) {
+      OTelErrorHandling.report(
+          StateError('SimpleLogRecordProcessor: Export failed'));
     }
   }
 
@@ -64,7 +65,11 @@ class SimpleLogRecordProcessor implements LogRecordProcessor {
       return;
     }
 
-    await exporter.forceFlush();
+    try {
+      await exporter.forceFlush();
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
+    }
   }
 
   @override
@@ -79,6 +84,10 @@ class SimpleLogRecordProcessor implements LogRecordProcessor {
     _isShutdown = true;
 
     // Shutdown the exporter
-    await exporter.shutdown();
+    try {
+      await exporter.shutdown();
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
+    }
   }
 }
