@@ -81,6 +81,26 @@ class Meter implements APIMeter {
   /// @return The MeterProvider instance
   MeterProvider get provider => _provider;
 
+  /// This meter's instrument namespace.
+  final Set<SDKInstrument> _instruments = {};
+
+  /// The instruments created by this meter.
+  @internal
+  Set<SDKInstrument> get instruments => Set.unmodifiable(_instruments);
+
+  /// Registers [instrument] in this meter's namespace.
+  @internal
+  void registerInstrument(SDKInstrument instrument) {
+    _instruments.add(instrument);
+
+    if (OTelLog.isLogMetrics()) {
+      OTelLog.logMetric(
+        'Meter: Registered instrument "${instrument.name}" for meter '
+        '"$name" (version: $version, schemaUrl: $schemaUrl)',
+      );
+    }
+  }
+
   /// Creates a Counter instrument for recording cumulative, monotonically increasing values.
   ///
   /// Counters are used to measure a non-negative, monotonically increasing value. They only
@@ -259,8 +279,7 @@ class Meter implements APIMeter {
     // Now wrap it with our SDK implementation
     final counter = ObservableCounter<T>(apiCounter: apiCounter, meter: this);
 
-    // Register the instrument with the meter provider
-    _provider.registerInstrument(name, counter);
+    registerInstrument(counter);
 
     return counter;
   }
@@ -308,8 +327,7 @@ class Meter implements APIMeter {
       meter: this,
     );
 
-    // Register the instrument with the meter provider
-    _provider.registerInstrument(name, counter);
+    registerInstrument(counter);
 
     return counter;
   }
@@ -354,8 +372,7 @@ class Meter implements APIMeter {
     // Now wrap it with our SDK implementation
     final gauge = ObservableGauge<T>(apiGauge: apiGauge, meter: this);
 
-    // Register the instrument with the meter provider
-    _provider.registerInstrument(name, gauge);
+    registerInstrument(gauge);
 
     return gauge;
   }

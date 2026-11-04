@@ -21,6 +21,19 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.0-beta.18-wip]
 
+### Deprecated
+
+- `MeterProvider.registerInstrument`; instruments register with their `Meter`
+  ([#321](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/321)).
+
+### Fixed
+
+- Meters that differ only in version or schema URL no longer share one instrument namespace, which metrics/sdk.md
+  makes a MUST
+  ([#321](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/321)).
+- `getMeter` returns distinct meters for differing scope attributes, which metrics/api.md makes a MUST
+  ([#321](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/321)).
+
 ## [1.1.0-beta.17] - 2026-10-11
 
 The spec-compliance issues this release closes ([#106](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/106), 

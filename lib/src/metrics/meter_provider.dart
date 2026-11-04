@@ -10,6 +10,14 @@ import 'meter.dart';
 
 part 'meter_provider_create.dart';
 
+/// Identity of a meter within a [MeterProvider].
+typedef _MeterKey = ({
+  String name,
+  String version,
+  String schemaUrl,
+  Attributes? attributes,
+});
+
 /// SDK implementation of the APIMeterProvider interface.
 ///
 /// The MeterProvider is the entry point to the metrics API. It is responsible
@@ -92,8 +100,7 @@ class MeterProvider implements APIMeterProvider {
       return NoopMeter(name: name, version: version, schemaUrl: schemaUrl);
     }
 
-    // Create a unique key for this meter
-    final meterKey = '$name:${version ?? ''}:${schemaUrl ?? ''}';
+    final meterKey = _meterKey(name, version, schemaUrl, attributes);
 
     // Return an existing meter if we already have one with this configuration
     if (_meters.containsKey(meterKey)) {
@@ -113,9 +120,6 @@ class MeterProvider implements APIMeterProvider {
 
     // Store the meter in the registry
     _meters[meterKey] = meter;
-
-    // Initialize the instruments set for this meter
-    _instruments[meterKey] = {};
 
     if (OTelLog.isLogMetrics()) {
       OTelLog.logMetric(
@@ -161,30 +165,32 @@ class MeterProvider implements APIMeterProvider {
   /// @return An unmodifiable list of all metric readers
   List<MetricReader> get metricReaders => List.unmodifiable(_metricReaders);
 
-  /// Registry of all meters created by this provider
-  final Map<String, Meter> _meters = {};
+  /// Meters by identity; each [Meter] is its own instrument namespace.
+  final Map<_MeterKey, Meter> _meters = {};
 
-  /// Registry of active instruments across all meters
-  final Map<String, Set<SDKInstrument>> _instruments = {};
-
-  /// Registers an instrument with this provider.
-  ///
-  /// This allows the provider to track all active instruments for metrics collection.
-  ///
-  /// @param instrumentName The name of the instrument
-  /// @param instrument The instrument to register
-  void registerInstrument(String instrumentName, SDKInstrument instrument) {
-    final meterKey = instrument.meter.name;
-    if (!_instruments.containsKey(meterKey)) {
-      _instruments[meterKey] = {};
-    }
-
-    _instruments[meterKey]!.add(instrument);
-
-    if (OTelLog.isLogMetrics()) {
-      OTelLog.logMetric(
-        'MeterProvider: Registered instrument "${instrument.name}" for meter "${instrument.meter.name}"',
+  /// Omitted and empty version, schema URL and attributes are equivalent.
+  static _MeterKey _meterKey(
+    String name,
+    String? version,
+    String? schemaUrl,
+    Attributes? attributes,
+  ) =>
+      (
+        name: name,
+        version: version ?? '',
+        schemaUrl: schemaUrl ?? '',
+        attributes:
+            (attributes == null || attributes.isEmpty) ? null : attributes,
       );
+
+  /// Registers [instrument] with its meter; [instrumentName] is unused.
+  @Deprecated(
+    'Instruments register with their Meter. This method will be removed.',
+  )
+  void registerInstrument(String instrumentName, SDKInstrument instrument) {
+    final meter = instrument.meter;
+    if (meter is Meter) {
+      meter.registerInstrument(instrument);
     }
   }
 
@@ -208,13 +214,12 @@ class MeterProvider implements APIMeterProvider {
     }
 
     // Collect from each meter's instruments
-    for (final entry in _instruments.entries) {
-      final meterName = entry.key;
-      final instruments = entry.value;
+    for (final meter in _meters.values) {
+      final instruments = meter.instruments;
 
       if (OTelLog.isLogMetrics()) {
         OTelLog.logMetric(
-          'MeterProvider: Collecting metrics from ${instruments.length} instruments in meter "$meterName"',
+          'MeterProvider: Collecting metrics from ${instruments.length} instruments in meter "${meter.name}"',
         );
       }
 

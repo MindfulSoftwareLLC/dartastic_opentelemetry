@@ -30,8 +30,7 @@ class Gauge<T extends num> implements APIGauge<T>, SDKInstrument {
         _storage = GaugeStorage<T>(
           exemplarFilter: meter.provider.exemplarFilter,
         ) {
-    // Register this instrument with the meter provider
-    _meter.provider.registerInstrument(_meter.name, this);
+    _meter.registerInstrument(this);
   }
 
   @override

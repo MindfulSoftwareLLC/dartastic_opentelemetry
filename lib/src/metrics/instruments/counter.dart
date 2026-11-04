@@ -45,7 +45,7 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
           isMonotonic: true,
           exemplarFilter: meter.provider.exemplarFilter,
         ) {
-    _meter.provider.registerInstrument(_meter.name, this);
+    _meter.registerInstrument(this);
   }
 
   /// Gets the name of this counter.
