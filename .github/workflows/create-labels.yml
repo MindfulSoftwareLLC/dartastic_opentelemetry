@@ -1,0 +1,31 @@
+name: Create labels
+
+# Keeps the repository's labels in sync with tool/create-labels.sh, which is
+# the source of truth for them.
+on:
+  push:
+    branches: [main]
+    paths:
+      - tool/create-labels.sh
+      - .github/workflows/create-labels.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  create-labels:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write # labels are created through the issues API
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Create labels
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          chmod +x tool/create-labels.sh
+          ./tool/create-labels.sh
