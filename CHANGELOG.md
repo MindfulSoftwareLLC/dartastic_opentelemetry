@@ -21,6 +21,19 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.0-beta.18-wip]
 
+### Changed
+
+- **BREAKING**: `Span` adds five dropped-count members for span attributes, events, links, event attributes, and link
+  attributes. Manual `Span` implementations and mocks must implement them
+  ([#317](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/317)).
+- Recording spans now enforce the OpenTelemetry defaults of at most 128 attributes, events, and links per span and 128
+  attributes per event or link. Configure `SpanLimits` when higher caps are required
+  ([#317](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/317)).
+
+### Added
+
+- Trace SDK span limits: `SpanLimits`, the six `OTEL_SPAN_*` / `OTEL_EVENT_*` / `OTEL_LINK_*` env vars, and dropped counts on `Span`, exported by the OTLP span transformer. Closes [#130](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/130) and [#112](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/112) ([#317](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/317)).
+
 ## [1.1.0-beta.17] - 2026-10-11
 
 The spec-compliance issues this release closes ([#106](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/106), 

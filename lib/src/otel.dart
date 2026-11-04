@@ -40,6 +40,7 @@ class OTel {
   static OTelSDKFactory? _otelFactory;
   static Sampler? _defaultSampler;
   static TimeProvider? _defaultTimeProvider;
+  static SpanLimits? _defaultSpanLimits;
 
   /// The global default exception handling options applied by the withSpan
   /// family of methods. Configured via `OTel.initialize(...)` and propagated
@@ -180,6 +181,7 @@ class OTel {
     String logPrintLoggerName = 'dart.print',
     List<String>? otlpHeaderLogAllowlist,
     TimeProvider? timeProvider,
+    SpanLimits? spanLimits,
     OTelFactoryCreationFunction? oTelFactoryCreationFunction =
         otelSDKFactoryFactoryFunction,
   }) async {
@@ -318,6 +320,7 @@ class OTel {
         oTelFactoryCreationFunction ?? otelSDKFactoryFactoryFunction;
     _defaultSampler = sampler ?? ParentBasedSampler(const AlwaysOnSampler());
     _defaultSpanExceptionOptions = spanExceptionOptions;
+    _defaultSpanLimits = spanLimits;
     _defaultTimeProvider = timeProvider;
     OTel.defaultTracerName = tracerName ?? _defaultTracerName;
     OTel.defaultTracerVersion = tracerVersion ?? defaultTracerVersion;
@@ -393,6 +396,7 @@ class OTel {
         otlpConfig: otlpTracesConfig,
         exporters: tracesExporters,
         bspConfig: bspConfig,
+        spanLimits: spanLimits,
       );
     }
 
@@ -538,6 +542,9 @@ class OTel {
 
     tracerProvider.sampler ??= _defaultSampler;
     tracerProvider.spanExceptionOptions ??= _defaultSpanExceptionOptions;
+    if (_defaultSpanLimits != null && !tracerProvider.hasExplicitSpanLimits) {
+      tracerProvider.spanLimits = _defaultSpanLimits!;
+    }
     if (_defaultTimeProvider != null) {
       tracerProvider.timeProvider = _defaultTimeProvider!;
     }
@@ -574,6 +581,7 @@ class OTel {
   /// @param sampler Optional custom sampler
   /// @param spanExceptionOptions Optional default exception handling options;
   ///   defaults to the options set in initialize()
+  /// @param spanLimits Optional custom span limits; defaults to limits set in initialize()
   /// @return The newly created or replaced TracerProvider
   static TracerProvider addTracerProvider(
     String name, {
@@ -583,6 +591,7 @@ class OTel {
     Resource? resource,
     Sampler? sampler,
     SpanExceptionOptions? spanExceptionOptions,
+    SpanLimits? spanLimits,
   }) {
     _getAndCacheOtelFactory();
     final sdkTracerProvider = OTelAPI.addTracerProvider(name) as TracerProvider;
@@ -590,6 +599,9 @@ class OTel {
     sdkTracerProvider.sampler = sampler ?? _defaultSampler;
     sdkTracerProvider.spanExceptionOptions =
         spanExceptionOptions ?? _defaultSpanExceptionOptions;
+    if (spanLimits != null || _defaultSpanLimits != null) {
+      sdkTracerProvider.spanLimits = spanLimits ?? _defaultSpanLimits;
+    }
     if (_defaultTimeProvider != null) {
       sdkTracerProvider.timeProvider = _defaultTimeProvider!;
     }
@@ -1432,6 +1444,7 @@ class OTel {
     _otelFactory = null;
     _defaultSampler = null;
     _defaultSpanExceptionOptions = null;
+    _defaultSpanLimits = null;
     _defaultTimeProvider = null;
     defaultResource = null;
 

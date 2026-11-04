@@ -10,6 +10,7 @@ import '../../otel.dart';
 import '../../resource/resource.dart';
 import '../sampling/sampler.dart';
 import '../span_exception_options.dart';
+import '../span_limits.dart';
 import '../span_processor.dart';
 import '../tracer_provider.dart';
 import 'batch_span_processor.dart';
@@ -41,8 +42,13 @@ class TracesConfiguration {
     required OtlpEnvironmentValues otlpConfig,
     required List<String> exporters,
     required BspEnvironmentValues bspConfig,
+    SpanLimits? spanLimits,
   }) {
     final tracerProvider = OTel.tracerProvider();
+
+    if (spanLimits != null) {
+      tracerProvider.spanLimits = spanLimits;
+    }
 
     if (resource != null) {
       tracerProvider.resource = resource;
