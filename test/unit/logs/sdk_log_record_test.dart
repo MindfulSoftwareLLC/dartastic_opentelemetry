@@ -52,7 +52,7 @@ void main() {
       expect(logRecord.observedTimestamp, equals(observedTimestamp));
       expect(logRecord.severityNumber, equals(Severity.INFO));
       expect(logRecord.severityText, equals('INFO'));
-      expect(logRecord.body, equals('Test message'));
+      expect(logRecord.body?.unwrap(), equals('Test message'));
       expect(logRecord.attributes, isNotNull);
       expect(logRecord.eventName, equals('test.event'));
       expect(logRecord.instrumentationScope, equals(scope));
@@ -76,7 +76,7 @@ void main() {
       expect(logRecord.observedTimestamp, equals(Int64(1234567891)));
       expect(logRecord.severityNumber, equals(Severity.ERROR));
       expect(logRecord.severityText, equals('ERROR'));
-      expect(logRecord.body, equals('Updated body'));
+      expect(logRecord.body?.unwrap(), equals('Updated body'));
       expect(logRecord.eventName, equals('updated.event'));
     });
 
@@ -91,7 +91,7 @@ void main() {
       final attrs = logRecord.attributes!.toList();
       expect(attrs.length, equals(1));
       expect(attrs.first.key, equals('key1'));
-      expect(attrs.first.value, equals('value1'));
+      expect(attrs.first.value.unwrap(), equals('value1'));
     });
 
     test('SDKLogRecord addAttribute appends to existing attributes', () {
@@ -148,7 +148,7 @@ void main() {
       clone.body = 'Modified body';
       clone.severityNumber = Severity.ERROR;
 
-      expect(original.body, equals('Original body'));
+      expect(original.body?.unwrap(), equals('Original body'));
       expect(original.severityNumber, equals(Severity.WARN));
     });
 
@@ -264,7 +264,7 @@ void main() {
         body: null,
       );
 
-      expect(logRecord.body, isNull);
+      expect(logRecord.body?.unwrap(), isNull);
     });
 
     test('SDKLogRecord handles various body types', () {
@@ -273,28 +273,28 @@ void main() {
         instrumentationScope: scope,
         body: 'String body',
       );
-      expect(logRecord.body, equals('String body'));
+      expect(logRecord.body?.unwrap(), equals('String body'));
 
       // Int body
       logRecord = SDKLogRecord(
         instrumentationScope: scope,
         body: 42,
       );
-      expect(logRecord.body, equals(42));
+      expect(logRecord.body?.unwrap(), equals(42));
 
       // Map body
       logRecord = SDKLogRecord(
         instrumentationScope: scope,
         body: {'key': 'value'},
       );
-      expect(logRecord.body, isA<Map<String, String>>());
+      expect(logRecord.body, isA<AnyValueMap>());
 
       // List body
       logRecord = SDKLogRecord(
         instrumentationScope: scope,
         body: [1, 2, 3],
       );
-      expect(logRecord.body, isA<List<int>>());
+      expect(logRecord.body, isA<AnyValueArray>());
     });
   });
 }

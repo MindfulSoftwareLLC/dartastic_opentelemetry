@@ -67,7 +67,7 @@ void main() {
 
         // The executable name should be a non-empty string matching
         // Platform.executable (the dart binary path).
-        final executableName = attrs['process.executable.name']?.value;
+        final executableName = attrs['process.executable.name']?.value.unwrap();
         expect(executableName, isA<String>());
         expect((executableName as String).isNotEmpty, isTrue);
         expect(executableName, equals(io.Platform.executable));
@@ -78,7 +78,7 @@ void main() {
         final resource = await detector.detect();
         final attrs = resource.attributes.toMap();
 
-        expect(attrs['process.runtime.name']?.value, equals('dart'));
+        expect(attrs['process.runtime.name']?.value.unwrap(), equals('dart'));
       });
 
       test('detect() includes process.runtime.version', () async {
@@ -86,7 +86,7 @@ void main() {
         final resource = await detector.detect();
         final attrs = resource.attributes.toMap();
 
-        final version = attrs['process.runtime.version']?.value;
+        final version = attrs['process.runtime.version']?.value.unwrap();
         expect(version, isA<String>());
         expect(version, equals(io.Platform.version));
       });
@@ -99,7 +99,7 @@ void main() {
         // command_line is the joined executable arguments; it may be empty
         // in a test context but should be present.
         expect(attrs.containsKey('process.command_line'), isTrue);
-        expect(attrs['process.command_line']?.value, isA<String>());
+        expect(attrs['process.command_line']?.value.unwrap(), isA<String>());
       });
     });
 
@@ -129,10 +129,10 @@ void main() {
             's390x',
             'x86'
           },
-          contains(attrs['host.arch']?.value),
+          contains(attrs['host.arch']?.value.unwrap()),
           reason: 'host.arch must be a registry architecture, not the hostname',
         );
-        expect(attrs['host.arch']?.value,
+        expect(attrs['host.arch']?.value.unwrap(),
             isNot(equals(io.Platform.localHostname)));
         // os.name (registry), not the malformed 'host.os.name' (#90).
         expect(attrs.containsKey('os.name'), isTrue);
@@ -144,7 +144,7 @@ void main() {
         final resource = await detector.detect();
         final attrs = resource.attributes.toMap();
 
-        final hostName = attrs['host.name']?.value;
+        final hostName = attrs['host.name']?.value.unwrap();
         expect(hostName, isA<String>());
         expect((hostName as String).isNotEmpty, isTrue);
         expect(hostName, equals(io.Platform.localHostname));
@@ -156,7 +156,7 @@ void main() {
         final attrs = resource.attributes.toMap();
 
         expect(attrs.containsKey('os.type'), isTrue);
-        final osType = attrs['os.type']?.value as String;
+        final osType = attrs['os.type']?.value.unwrap() as String;
 
         if (io.Platform.isLinux) {
           expect(osType, equals('linux'));
@@ -176,7 +176,7 @@ void main() {
         final resource = await detector.detect();
         final attrs = resource.attributes.toMap();
 
-        final osName = attrs['os.name']?.value;
+        final osName = attrs['os.name']?.value.unwrap();
         expect(osName, isA<String>());
         expect((osName as String).isNotEmpty, isTrue);
         expect(osName, equals(io.Platform.operatingSystem));
@@ -187,7 +187,7 @@ void main() {
         final resource = await detector.detect();
         final attrs = resource.attributes.toMap();
 
-        final osVersion = attrs['os.version']?.value;
+        final osVersion = attrs['os.version']?.value.unwrap();
         expect(osVersion, isA<String>());
         expect((osVersion as String).isNotEmpty, isTrue);
         expect(osVersion, equals(io.Platform.operatingSystemVersion));
@@ -252,12 +252,12 @@ void main() {
         final attrs = resource.attributes.toMap();
 
         // Both detectors' unique keys should be present.
-        expect(attrs['key1']?.value, equals('value1'));
-        expect(attrs['key2']?.value, equals('value2'));
+        expect(attrs['key1']?.value.unwrap(), equals('value1'));
+        expect(attrs['key2']?.value.unwrap(), equals('value2'));
 
         // When keys overlap, the later detector's value takes precedence
         // (because Resource.merge gives precedence to the "other" resource).
-        expect(attrs['shared']?.value, equals('from-second'));
+        expect(attrs['shared']?.value.unwrap(), equals('from-second'));
       });
 
       test('detect() merges resources from three detectors', () async {
@@ -273,9 +273,9 @@ void main() {
         final resource = await composite.detect();
         final attrs = resource.attributes.toMap();
 
-        expect(attrs['a']?.value, equals('alpha'));
-        expect(attrs['b']?.value, equals('bravo'));
-        expect(attrs['c']?.value, equals('charlie'));
+        expect(attrs['a']?.value.unwrap(), equals('alpha'));
+        expect(attrs['b']?.value.unwrap(), equals('bravo'));
+        expect(attrs['c']?.value.unwrap(), equals('charlie'));
       });
 
       test('detect() continues even if one detector throws', () async {
@@ -287,8 +287,8 @@ void main() {
         final attrs = resource.attributes.toMap();
 
         // The working detector's attributes should still be present.
-        expect(attrs['survived']?.value, equals('yes'));
-        expect(attrs['answer']?.value, equals(42));
+        expect(attrs['survived']?.value.unwrap(), equals('yes'));
+        expect(attrs['answer']?.value.unwrap(), equals(42));
       });
 
       test(
@@ -302,8 +302,8 @@ void main() {
           final resource = await composite.detect();
           final attrs = resource.attributes.toMap();
 
-          expect(attrs['first']?.value, equals('one'));
-          expect(attrs['last']?.value, equals('three'));
+          expect(attrs['first']?.value.unwrap(), equals('one'));
+          expect(attrs['last']?.value.unwrap(), equals('three'));
         },
       );
 
@@ -324,7 +324,8 @@ void main() {
           final composite = CompositeResourceDetector([single]);
           final resource = await composite.detect();
 
-          expect(resource.attributes.toMap()['solo']?.value, equals('value'));
+          expect(resource.attributes.toMap()['solo']?.value.unwrap(),
+              equals('value'));
         },
       );
 
@@ -338,11 +339,11 @@ void main() {
         final attrs = resource.attributes.toMap();
 
         // Process attributes present.
-        expect(attrs['process.runtime.name']?.value, equals('dart'));
-        expect(attrs['process.executable.name']?.value, isNotEmpty);
+        expect(attrs['process.runtime.name']?.value.unwrap(), equals('dart'));
+        expect(attrs['process.executable.name']?.value.unwrap(), isNotEmpty);
 
         // Host attributes present.
-        expect(attrs['host.name']?.value, isNotEmpty);
+        expect(attrs['host.name']?.value.unwrap(), isNotEmpty);
         expect(attrs.containsKey('os.type'), isTrue);
       });
     });
@@ -416,8 +417,8 @@ void main() {
         final attrs = resource.attributes.toMap();
 
         // On native platforms, should have process and host info.
-        expect(attrs['process.runtime.name']?.value, equals('dart'));
-        expect(attrs['host.name']?.value, isNotEmpty);
+        expect(attrs['process.runtime.name']?.value.unwrap(), equals('dart'));
+        expect(attrs['host.name']?.value.unwrap(), isNotEmpty);
       });
 
       test('create() result includes EnvVarResourceDetector output', () async {
@@ -440,7 +441,7 @@ void main() {
         final resource = await custom.detect();
 
         expect(
-          resource.attributes.toMap()['custom.key']?.value,
+          resource.attributes.toMap()['custom.key']?.value.unwrap(),
           equals('custom.value'),
         );
       });
@@ -455,10 +456,10 @@ void main() {
         final resource = await custom.detect();
         final attrs = resource.attributes.toMap();
 
-        expect(attrs['string.attr']?.value, equals('hello'));
-        expect(attrs['int.attr']?.value, equals(42));
-        expect(attrs['double.attr']?.value, equals(3.14));
-        expect(attrs['bool.attr']?.value, equals(true));
+        expect(attrs['string.attr']?.value.unwrap(), equals('hello'));
+        expect(attrs['int.attr']?.value.unwrap(), equals(42));
+        expect(attrs['double.attr']?.value.unwrap(), equals(3.14));
+        expect(attrs['bool.attr']?.value.unwrap(), equals(true));
       });
 
       test('failing detector throws as expected', () async {

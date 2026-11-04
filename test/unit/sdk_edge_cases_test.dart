@@ -149,8 +149,10 @@ void main() {
       }));
       final resource = await detector.detect();
       final attrs = resource.attributes.toList();
-      expect(attrs.any((a) => a.key == 'key1' && a.value == 'value1'), isTrue);
-      expect(attrs.any((a) => a.key == 'key2' && a.value == 'value2'), isTrue);
+      expect(attrs.any((a) => a.key == 'key1' && a.value.unwrap() == 'value1'),
+          isTrue);
+      expect(attrs.any((a) => a.key == 'key2' && a.value.unwrap() == 'value2'),
+          isTrue);
     });
 
     test('decodes percent-encoded values', () async {
@@ -159,7 +161,9 @@ void main() {
       }));
       final resource = await detector.detect();
       final attrs = resource.attributes.toList();
-      expect(attrs.any((a) => a.key == 'path' && a.value == '/usr/local/bin'),
+      expect(
+          attrs.any(
+              (a) => a.key == 'path' && a.value.unwrap() == '/usr/local/bin'),
           isTrue);
     });
 
@@ -183,8 +187,10 @@ void main() {
       }));
       final resource = await detector.detect();
       final attrs = resource.attributes.toList();
-      expect(attrs.any((a) => a.key == 'good' && a.value == 'value'), isTrue);
-      expect(attrs.any((a) => a.key == 'also' && a.value == 'good'), isTrue);
+      expect(attrs.any((a) => a.key == 'good' && a.value.unwrap() == 'value'),
+          isTrue);
+      expect(attrs.any((a) => a.key == 'also' && a.value.unwrap() == 'good'),
+          isTrue);
       expect(attrs.any((a) => a.key == 'badentry'), isFalse);
     });
 
@@ -195,7 +201,8 @@ void main() {
       final resource = await detector.detect();
       final attrs = resource.attributes.toList();
       expect(
-          attrs.any((a) => a.key == 'msg' && a.value == 'hello,world'), isTrue);
+          attrs.any((a) => a.key == 'msg' && a.value.unwrap() == 'hello,world'),
+          isTrue);
     });
   });
 
@@ -396,8 +403,7 @@ void main() {
   // =========================================================================
   group('Counter', () {
     test('addWithMap converts map to attributes', () async {
-      final counter =
-          OTel.meter().createCounter<int>(name: 'test-counter') as Counter<int>;
+      final counter = OTel.meter().createCounter<int>(name: 'test-counter');
       counter.addWithMap(5, {'env': 'test', 'count': 1});
       counter.addWithMap(3, {});
       expect(counter.getValue(), greaterThanOrEqualTo(8));

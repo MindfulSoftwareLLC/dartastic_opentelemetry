@@ -115,7 +115,9 @@ void main() {
       );
 
       final hasServiceName = OTel.defaultResource!.attributes.toList().any(
-            (a) => a.key == 'service.name' && a.value == 'configured-service',
+            (a) =>
+                a.key == 'service.name' &&
+                a.value.unwrap() == 'configured-service',
           );
       expect(hasServiceName, isTrue);
       expect(OTel.tracerProvider(), isA<TracerProvider>());

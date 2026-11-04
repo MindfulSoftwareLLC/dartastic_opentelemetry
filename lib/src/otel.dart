@@ -943,7 +943,7 @@ class OTel {
   /// @param name The name of the attribute
   /// @param value The string value of the attribute
   /// @return A new Attribute instance
-  static Attribute<String> attributeString(String name, String value) {
+  static Attribute attributeString(String name, String value) {
     _getAndCacheOtelFactory();
     return _otelFactory!.attributeString(name, value);
   }
@@ -953,7 +953,7 @@ class OTel {
   /// @param name The name of the attribute
   /// @param value The boolean value of the attribute
   /// @return A new Attribute instance
-  static Attribute<bool> attributeBool(String name, bool value) {
+  static Attribute attributeBool(String name, bool value) {
     _getAndCacheOtelFactory();
     return _otelFactory!.attributeBool(name, value);
   }
@@ -963,7 +963,7 @@ class OTel {
   /// @param name The name of the attribute
   /// @param value The integer value of the attribute
   /// @return A new Attribute instance
-  static Attribute<int> attributeInt(String name, int value) {
+  static Attribute attributeInt(String name, int value) {
     _getAndCacheOtelFactory();
     return _otelFactory!.attributeInt(name, value);
   }
@@ -973,7 +973,7 @@ class OTel {
   /// @param name The name of the attribute
   /// @param value The double value of the attribute
   /// @return A new Attribute instance
-  static Attribute<double> attributeDouble(String name, double value) {
+  static Attribute attributeDouble(String name, double value) {
     _getAndCacheOtelFactory();
     return _otelFactory!.attributeDouble(name, value);
   }
@@ -983,7 +983,7 @@ class OTel {
   /// @param name The name of the attribute
   /// @param value The list of string values
   /// @return A new Attribute instance
-  static Attribute<List<String>> attributeStringList(
+  static Attribute attributeStringList(
     String name,
     List<String> value,
   ) {
@@ -996,7 +996,7 @@ class OTel {
   /// @param name The name of the attribute
   /// @param value The list of boolean values
   /// @return A new Attribute instance
-  static Attribute<List<bool>> attributeBoolList(
+  static Attribute attributeBoolList(
     String name,
     List<bool> value,
   ) {
@@ -1009,7 +1009,7 @@ class OTel {
   /// @param name The name of the attribute
   /// @param value The list of integer values
   /// @return A new Attribute instance
-  static Attribute<List<int>> attributeIntList(String name, List<int> value) {
+  static Attribute attributeIntList(String name, List<int> value) {
     _getAndCacheOtelFactory();
     return _otelFactory!.attributeIntList(name, value);
   }
@@ -1019,7 +1019,7 @@ class OTel {
   /// @param name The name of the attribute
   /// @param value The list of double values
   /// @return A new Attribute instance
-  static Attribute<List<double>> attributeDoubleList(
+  static Attribute attributeDoubleList(
     String name,
     List<double> value,
   ) {
@@ -1051,9 +1051,9 @@ class OTel {
 
   /// Creates an Attributes collection from a map of named values.
   ///
-  /// String, bool, int, double, or Lists of those types get converted
-  /// to the matching typed attribute. DateTime gets converted to a
-  /// String attribute with the UTC time string.
+  /// Values are converted through [AnyValue.fromObject], preserving maps,
+  /// nested or mixed arrays, bytes, and null. Existing [AnyValue] instances
+  /// pass through unchanged. DateTime becomes a full-precision UTC string.
   ///
   /// Unlike most methods, this does not create the OTelFactory if
   /// one does not exist, instead it uses the OTelAPI's attributesFromMap.
@@ -1062,7 +1062,7 @@ class OTel {
   /// extension on \<String, Map>{}.
   /// @param namedMap Map of attribute names to values
   /// @return A new Attributes collection
-  static Attributes attributesFromMap(Map<String, Object> namedMap) {
+  static Attributes attributesFromMap(Map<String, Object?> namedMap) {
     if (_otelFactory == null) {
       return OTelAPI.attributesFromMap(namedMap);
     } else {
@@ -1082,13 +1082,14 @@ class OTel {
   /// ```
   ///
   /// instead of `attributesFromMap({Http.httpRequestMethod.key: 'GET', …})`.
-  /// Mixing enum types in one map is fine — the param is `Map<OTelSemantic, Object>`,
+  /// Mixing enum types in one map is fine; the param is `Map<OTelSemantic, Object?>`,
   /// and every semconv enum implements `OTelSemantic`.
+  /// Null values become [AnyValueNull], just as with [attributesFromMap].
   ///
   /// Passthrough to [OTelAPI.attributesFromSemanticMap] for symmetry with
   /// the [attributesFromMap] convenience.
   static Attributes attributesFromSemanticMap(
-    Map<OTelSemantic, Object> semanticMap,
+    Map<OTelSemantic, Object?> semanticMap,
   ) {
     return OTelAPI.attributesFromSemanticMap(semanticMap);
   }
@@ -1113,25 +1114,25 @@ class OTel {
   /// ```
   ///
   /// **Mix and match**: each typed-enum map can be spread into a wider
-  /// `Map<OTelSemantic, Object>` literal, which is exactly what
-  /// [attributesFromSemanticMap] takes — so combining HTTP + Database
+  /// `Map<OTelSemantic, Object?>` literal, which is exactly what
+  /// [attributesFromSemanticMap] takes, so combining HTTP + Database
   /// keys with full dot-shorthand looks like:
   ///
   /// ```dart
   /// OTel.attributesFromSemanticMap({
-  ///   ...<Http, Object>{
+  ///   ...<Http, Object?>{
   ///     Http.httpRequestMethod: 'GET',
   ///     Http.httpResponseStatusCode: 200,
   ///   },
-  ///   ...<Database, Object>{
+  ///   ...<Db, Object?>{
   ///     Db.dbSystemName: DbSystem.postgresql.value,
   ///   },
   /// });
   /// ```
   ///
-  /// Passthrough to [OTelAPI.attributesOf].
+  /// Null values become [AnyValueNull]. Passthrough to [OTelAPI.attributesOf].
   static Attributes attributesOf<E extends OTelSemantic>(
-    Map<E, Object> typedMap,
+    Map<E, Object?> typedMap,
   ) =>
       OTelAPI.attributesOf<E>(typedMap);
 

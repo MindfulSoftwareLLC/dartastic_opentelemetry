@@ -36,7 +36,7 @@ void main() {
         name: 'int-counter',
         unit: 'items',
         description: 'An integer counter',
-      ) as Counter<int>;
+      );
 
       // Ensure the counter properties are set correctly
       expect(counter.name, equals('int-counter'));
@@ -60,7 +60,7 @@ void main() {
         name: 'double-counter',
         unit: 'seconds',
         description: 'A double counter',
-      ) as Counter<double>;
+      );
 
       // Ensure the counter properties are set correctly
       expect(counter.name, equals('double-counter'));
@@ -84,7 +84,7 @@ void main() {
         name: 'int-up-down-counter',
         unit: 'connections',
         description: 'An integer up-down counter',
-      ) as UpDownCounter<int>;
+      );
 
       // Ensure the counter properties are set correctly
       expect(counter.name, equals('int-up-down-counter'));
@@ -108,7 +108,7 @@ void main() {
         name: 'double-up-down-counter',
         unit: 'seconds',
         description: 'A double up-down counter',
-      ) as UpDownCounter<double>;
+      );
 
       // Ensure the counter properties are set correctly
       expect(counter.name, equals('double-up-down-counter'));
@@ -200,13 +200,13 @@ void main() {
 
     test('Metrics with attributes have correct generic types', () {
       // Create counters with different generic types
-      final intCounter = meter.createCounter<int>(
-          name: 'attr-int-counter', unit: 'items') as Counter<int>;
+      final intCounter =
+          meter.createCounter<int>(name: 'attr-int-counter', unit: 'items');
 
       final doubleCounter = meter.createCounter<double>(
         name: 'attr-double-counter',
         unit: 'seconds',
-      ) as Counter<double>;
+      );
 
       // Create attributes
       final attributes1 = {'service': 'api'}.toAttributes();

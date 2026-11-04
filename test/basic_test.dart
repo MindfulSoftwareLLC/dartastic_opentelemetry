@@ -13,7 +13,7 @@ void main() {
 
     final attrs = OTel.defaultResource!.attributes.toList();
     final serviceName = attrs.firstWhere((a) => a.key == 'service.name');
-    expect(serviceName.value, equals('test-service'));
+    expect(serviceName.value.unwrap(), equals('test-service'));
 
     await OTel.reset();
   });

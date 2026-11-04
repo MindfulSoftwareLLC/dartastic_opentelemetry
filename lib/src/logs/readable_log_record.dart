@@ -59,7 +59,10 @@ abstract class ReadWriteLogRecord implements ReadableLogRecord {
   set severityText(String? value);
 
   /// Sets the body of the log record.
-  set body(dynamic value);
+  ///
+  /// Converts raw values through [APILogger.bodyToAnyValue]. A null body is
+  /// absent; [AnyValueNull] represents an explicitly present empty value.
+  set body(Object? value);
 
   /// Sets the attributes of the log record.
   set attributes(Attributes? value);
@@ -102,7 +105,7 @@ class SDKLogRecord implements ReadWriteLogRecord {
   final Context? _context;
   Severity? _severityNumber;
   String? _severityText;
-  dynamic _body;
+  AnyValue? _body;
   Attributes? _attributes;
   String? _eventName;
   TraceId? _traceId;
@@ -141,7 +144,7 @@ class SDKLogRecord implements ReadWriteLogRecord {
     Context? context,
     Severity? severityNumber,
     String? severityText,
-    dynamic body,
+    Object? body,
     Attributes? attributes,
     String? eventName,
   })  : _instrumentationScope = instrumentationScope,
@@ -151,7 +154,7 @@ class SDKLogRecord implements ReadWriteLogRecord {
         _context = context,
         _severityNumber = severityNumber,
         _severityText = severityText,
-        _body = body,
+        _body = APILogger.bodyToAnyValue(body),
         _attributes = attributes,
         _eventName = eventName {
     // Extract trace context from Context if available
@@ -221,11 +224,11 @@ class SDKLogRecord implements ReadWriteLogRecord {
   }
 
   @override
-  dynamic get body => _body;
+  AnyValue? get body => _body;
 
   @override
-  set body(dynamic value) {
-    _body = value;
+  set body(Object? value) {
+    _body = APILogger.bodyToAnyValue(value);
   }
 
   @override

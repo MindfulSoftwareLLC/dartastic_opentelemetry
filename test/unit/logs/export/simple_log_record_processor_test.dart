@@ -40,7 +40,8 @@ void main() {
       await processor.onEmit(logRecord, null);
 
       expect(exporter.count, equals(1));
-      expect(exporter.exportedLogRecords.first.body, equals('Test message'));
+      expect(exporter.exportedLogRecords.first.body?.unwrap(),
+          equals('Test message'));
     });
 
     test('SimpleLogRecordProcessor exports multiple log records', () async {

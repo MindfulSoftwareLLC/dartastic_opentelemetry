@@ -70,7 +70,7 @@ class Exemplar {
     Attributes measurementAttrs,
     Attributes aggregationAttrs,
   ) {
-    final result = <Attribute<Object>>[];
+    final result = <Attribute>[];
 
     // Get the attribute keys that are in the measurement but not in the aggregation
     final aggregationKeys = aggregationAttrs.keys.toSet();

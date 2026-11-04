@@ -150,7 +150,7 @@ void main() {
       await provider.forceFlush();
 
       expect(memoryExporter.count, equals(1));
-      expect(memoryExporter.exportedLogRecords.first.body,
+      expect(memoryExporter.exportedLogRecords.first.body?.unwrap(),
           equals('Test log message'));
     });
 

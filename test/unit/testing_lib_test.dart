@@ -71,7 +71,7 @@ void main() {
       final found = harness.spans.findSpanByName('dup');
       expect(found, isNotNull);
       final attrs = {
-        for (final a in found!.attributes.toList()) a.key: a.value,
+        for (final a in found!.attributes.toList()) a.key: a.value.unwrap(),
       };
       expect(attrs['which'], 'last');
       // The other expected spans exist as well:
@@ -98,7 +98,7 @@ void main() {
 
       expect(harness.logs.records, hasLength(2));
       expect(
-        harness.logs.findRecordsBySeverity(Severity.WARN).single.body,
+        harness.logs.findRecordsBySeverity(Severity.WARN).single.body?.unwrap(),
         'hello-warn',
       );
     });

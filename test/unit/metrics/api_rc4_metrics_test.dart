@@ -79,7 +79,7 @@ void main() {
         advisory: const InstrumentAdvisory(
           explicitBucketBoundaries: [10.0, 20.0],
         ),
-      ) as Histogram<double>;
+      );
 
       histogram.record(5.0);
       histogram.record(15.0);
@@ -98,7 +98,7 @@ void main() {
           explicitBucketBoundaries: [10.0, 20.0],
           attributeKeys: ['k'],
         ),
-      ) as Histogram<double>;
+      );
 
       histogram.record(5.0);
       histogram.record(75.0);

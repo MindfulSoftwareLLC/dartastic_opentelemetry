@@ -68,8 +68,8 @@ void main() {
       final attr1 = attrList.firstWhere((attr) => attr.key == 'key1');
       final attr2 = attrList.firstWhere((attr) => attr.key == 'key2');
 
-      expect(attr1.value, equals('value1'));
-      expect(attr2.value, equals(42));
+      expect(attr1.value.unwrap(), equals('value1'));
+      expect(attr2.value.unwrap(), equals(42));
     });
 
     test('observeWithMap adds measurement with map attributes', () {
@@ -88,9 +88,9 @@ void main() {
       final attr2 = attrList.firstWhere((attr) => attr.key == 'key2');
       final attr3 = attrList.firstWhere((attr) => attr.key == 'key3');
 
-      expect(attr1.value, equals('value1'));
-      expect(attr2.value, equals(42));
-      expect(attr3.value, equals(true));
+      expect(attr1.value.unwrap(), equals('value1'));
+      expect(attr2.value.unwrap(), equals(42));
+      expect(attr3.value.unwrap(), equals(true));
     });
 
     test('multiple observe calls add multiple measurements', () {
@@ -110,7 +110,7 @@ void main() {
         equals('tag'),
       );
       expect(
-        intResult.measurements[2].attributes!.toList().first.value,
+        intResult.measurements[2].attributes!.toList().first.value.unwrap(),
         equals('value'),
       );
     });

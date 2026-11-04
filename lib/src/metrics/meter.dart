@@ -95,7 +95,7 @@ class Meter implements APIMeter {
   /// More information:
   /// https://opentelemetry.io/docs/specs/otel/metrics/api/#counter
   @override
-  APICounter<T> createCounter<T extends num>({
+  Counter<T> createCounter<T extends num>({
     required String name,
     String? unit,
     String? description,
@@ -126,7 +126,7 @@ class Meter implements APIMeter {
   /// More information:
   /// https://opentelemetry.io/docs/specs/otel/metrics/api/#updowncounter
   @override
-  APIUpDownCounter<T> createUpDownCounter<T extends num>({
+  UpDownCounter<T> createUpDownCounter<T extends num>({
     required String name,
     String? unit,
     String? description,
@@ -163,7 +163,7 @@ class Meter implements APIMeter {
   /// More information:
   /// https://opentelemetry.io/docs/specs/otel/metrics/api/#histogram
   @override
-  APIHistogram<T> createHistogram<T extends num>({
+  Histogram<T> createHistogram<T extends num>({
     required String name,
     String? unit,
     String? description,
@@ -201,7 +201,7 @@ class Meter implements APIMeter {
   /// More information:
   /// https://opentelemetry.io/docs/specs/otel/metrics/api/#gauge
   @override
-  APIGauge<T> createGauge<T extends num>({
+  Gauge<T> createGauge<T extends num>({
     required String name,
     String? unit,
     String? description,
@@ -496,7 +496,7 @@ class NoopMeter implements APIMeter {
   NoopMeter({required this.name, this.version, this.schemaUrl});
 
   @override
-  APICounter<T> createCounter<T extends num>({
+  NoopCounter<T> createCounter<T extends num>({
     required String name,
     String? unit,
     String? description,
@@ -511,7 +511,7 @@ class NoopMeter implements APIMeter {
   }
 
   @override
-  APIUpDownCounter<T> createUpDownCounter<T extends num>({
+  NoopUpDownCounter<T> createUpDownCounter<T extends num>({
     required String name,
     String? unit,
     String? description,
@@ -526,7 +526,7 @@ class NoopMeter implements APIMeter {
   }
 
   @override
-  APIHistogram<T> createHistogram<T extends num>({
+  NoopHistogram<T> createHistogram<T extends num>({
     required String name,
     String? unit,
     String? description,
@@ -549,7 +549,7 @@ class NoopMeter implements APIMeter {
   }
 
   @override
-  APIGauge<T> createGauge<T extends num>({
+  NoopGauge<T> createGauge<T extends num>({
     required String name,
     String? unit,
     String? description,
@@ -671,7 +671,7 @@ class NoopCounter<T extends num> implements APICounter<T> {
   /// @param value The measurement value (ignored)
   /// @param attributeMap Map of attribute names to values (ignored)
   @override
-  void addWithMap(T value, Map<String, Object> attributeMap) {
+  void addWithMap(T value, Map<String, Object?> attributeMap) {
     // No-op
   }
 
@@ -734,7 +734,7 @@ class NoopUpDownCounter<T extends num> implements APIUpDownCounter<T> {
   /// @param value The measurement value (ignored)
   /// @param attributeMap Map of attribute names to values (ignored)
   @override
-  void addWithMap(T value, Map<String, Object> attributeMap) {
+  void addWithMap(T value, Map<String, Object?> attributeMap) {
     // No-op
   }
 
@@ -805,7 +805,7 @@ class NoopHistogram<T extends num> implements APIHistogram<T> {
   /// @param value The measurement value (ignored)
   /// @param attributeMap Map of attribute names to values (ignored)
   @override
-  void recordWithMap(T value, Map<String, Object> attributeMap) {
+  void recordWithMap(T value, Map<String, Object?> attributeMap) {
     // No-op
   }
 
@@ -867,7 +867,7 @@ class NoopGauge<T extends num> implements APIGauge<T> {
   /// @param value The measurement value (ignored)
   /// @param attributeMap Map of attribute names to values (ignored)
   @override
-  void recordWithMap(T value, Map<String, Object> attributeMap) {
+  void recordWithMap(T value, Map<String, Object?> attributeMap) {
     // No-op
   }
 

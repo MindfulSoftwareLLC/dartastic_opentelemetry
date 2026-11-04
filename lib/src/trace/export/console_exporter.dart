@@ -58,7 +58,7 @@ class ConsoleExporter extends SpanExporter {
     if (attributes.isNotEmpty) {
       buffer.writeln('Attributes:');
       for (final attr in attributes) {
-        buffer.writeln('  ${attr.key}: ${attr.value}');
+        buffer.writeln('  ${attr.key}: ${attr.value.toNonOtlpString()}');
       }
     }
 
@@ -70,7 +70,7 @@ class ConsoleExporter extends SpanExporter {
         buffer.writeln('  ${event.timestamp.toIso8601String()}: ${event.name}');
         if (event.attributes != null) {
           for (final attr in event.attributes!.toList()) {
-            buffer.writeln('    ${attr.key}: ${attr.value}');
+            buffer.writeln('    ${attr.key}: ${attr.value.toNonOtlpString()}');
           }
         }
       }
@@ -85,7 +85,7 @@ class ConsoleExporter extends SpanExporter {
           '  -> Trace: ${link.spanContext.traceId}, Span: ${link.spanContext.spanId}',
         );
         for (final attr in link.attributes.toList()) {
-          buffer.writeln('    ${attr.key}: ${attr.value}');
+          buffer.writeln('    ${attr.key}: ${attr.value.toNonOtlpString()}');
         }
       }
     }
