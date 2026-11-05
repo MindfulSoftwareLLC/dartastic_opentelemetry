@@ -841,44 +841,23 @@ void main() {
       }
     });
 
-    test('extract with wrong number of parts logs debug', () {
-      // Create a string that is exactly 55 chars but has wrong structure
-      // 55 chars: "ab-cdefghijklmnopqrstuvwxyz0123456789ABCDEFG-12345-01" -> wrong parts
-      // Instead, use a 55-char string with too many dashes
-      // ignore: unused_local_variable
-      final traceparent =
-          '00-abcd1234abcd1234abcd1234abcd1234-abcd1234abcd1234-0';
-      // This is only 54 chars. Let me be precise.
-      // Format: VV-TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT-SSSSSSSSSSSSSSSS-FF
-      // = 2+1+32+1+16+1+2 = 55
-      // Let's create one with an extra dash to get 4+ parts but 55 chars:
-      // Actually, the length check comes first. If length != 55, it returns.
-      // To hit the parts check, we need exactly 55 chars but split differently.
-      // "00-abcdef1234567890abcdef1234567-890-00f067aa0ba902b7-01" is 56 chars.
-      // This is hard because the format is fixed at 55 chars.
-      // Instead let's test a traceparent with invalid hex chars that causes
-      // a parse error in _parseTraceparent.
+    test('extract with a non-hex trace ID logs debug', () {
       final badHexCarrier = {
         'traceparent':
             '00-ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ-00f067aa0ba902b7-01',
       };
 
       logOutput.clear();
-      propagator.extract(
+      final extracted = propagator.extract(
         OTel.context(),
         badHexCarrier,
         _MapGetter(badHexCarrier),
       );
 
-      // The 'Z' chars are valid hex? No, Z is not valid hex.
-      // Actually TraceId.fromString may accept it or throw.
-      // If it throws, we exercise the "Error parsing traceparent" path.
+      expect(extracted.spanContext, isNull);
       expect(
         logOutput.any(
-          (m) =>
-              m.contains('Error parsing traceparent') ||
-              m.contains('Invalid trace ID') ||
-              m.contains('Extracting traceparent'),
+          (m) => m.contains('Invalid trace ID, expected only 0-9 and a-f'),
         ),
         isTrue,
       );

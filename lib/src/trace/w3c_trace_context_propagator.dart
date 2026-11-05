@@ -29,11 +29,33 @@ class W3CTraceContextPropagator
   /// The standard header name for W3C trace state
   static const _tracestateHeader = 'tracestate';
 
-  /// The current version of the W3C Trace Context specification
+  /// The highest traceparent version this propagator understands, and the
+  /// version it emits. Per the spec's versioning rules, higher versions are
+  /// parsed using this version's field layout.
   static const _version = '00';
 
-  /// The length of a valid traceparent header value
-  static const _traceparentLength = 55; // 00-{32}-{16}-{2}
+  /// The version reserved as invalid by the specification.
+  static const _forbiddenVersion = 'ff';
+
+  /// The trace flags W3C Trace Context Level 2 defines. Other bits are
+  /// reserved, and W3C says vendors MUST set them to zero.
+  static const _definedFlags = TraceFlags.SAMPLED_FLAG | TraceFlags.RANDOM_FLAG;
+
+  static const _versionLength = 2;
+  static const _traceIdLength = 32;
+  static const _spanIdLength = 16;
+  static const _traceFlagsLength = 2;
+
+  /// Field offsets, applied to every version. The spec assumes future versions
+  /// will be additive to version 00, and on that basis defines the parse of a
+  /// higher version as reading these same positions.
+  static const _traceIdOffset = _versionLength + 1;
+  static const _spanIdOffset = _traceIdOffset + _traceIdLength + 1;
+  static const _traceFlagsOffset = _spanIdOffset + _spanIdLength + 1;
+
+  /// The exact length of a version 00 traceparent, and the minimum length of
+  /// any traceparent.
+  static const _traceparentLength = _traceFlagsOffset + _traceFlagsLength;
 
   @override
   Context extract(
@@ -103,7 +125,7 @@ class W3CTraceContextPropagator
     final traceparent = '$_version-'
         '${spanContext.traceId.hexString}-'
         '${spanContext.spanId.hexString}-'
-        '${spanContext.traceFlags}';
+        '${(spanContext.traceFlags.asByte & _definedFlags).toRadixString(16).padLeft(2, '0')}';
 
     setter.set(_traceparentHeader, traceparent);
 
@@ -131,89 +153,125 @@ class W3CTraceContextPropagator
   /// The traceparent format is: version-traceId-spanId-traceFlags
   /// Example: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
   ///
+  /// A version above [_version] may append further dash-delimited fields, which
+  /// are ignored. Versions up to [_version] must carry no trailing data. Every
+  /// field must be lowercase hex, and version `ff` is always invalid.
+  ///
   /// Returns null if the format is invalid.
   SpanContext? _parseTraceparent(String traceparent) {
-    // Basic validation
-    if (traceparent.length != _traceparentLength) {
+    if (traceparent.length < _traceparentLength) {
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-          'Invalid traceparent length: ${traceparent.length}, expected $_traceparentLength',
+          'Invalid traceparent length: ${traceparent.length}, expected at least $_traceparentLength',
         );
       }
       return null;
     }
 
-    final parts = traceparent.split('-');
-    if (parts.length != 4) {
+    if (traceparent[_traceIdOffset - 1] != '-' ||
+        traceparent[_spanIdOffset - 1] != '-' ||
+        traceparent[_traceFlagsOffset - 1] != '-') {
+      if (OTelLog.isDebug()) {
+        OTelLog.debug('Invalid traceparent format: misplaced delimiters');
+      }
+      return null;
+    }
+
+    // The API's hex parser accepts lowercase hex only, as the W3C grammar
+    // requires, and returns null rather than reporting an error: a malformed
+    // incoming header is not API misuse.
+    final version = traceparent.substring(0, _versionLength);
+    if (IdGenerator.hexToBytes(version) == null) {
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-          'Invalid traceparent format: expected 4 parts, got ${parts.length}',
+          'Invalid traceparent version, expected only 0-9 and a-f: $version',
         );
       }
       return null;
     }
 
-    final version = parts[0];
-    final traceIdHex = parts[1];
-    final spanIdHex = parts[2];
-    final traceFlagsHex = parts[3];
-
-    // Validate version (currently only 00 is supported)
-    if (version != _version) {
-      if (OTelLog.isDebug()) {
-        OTelLog.debug('Unsupported traceparent version: $version');
-      }
-      // Per spec, we should still try to parse if version is unknown
-      // but for now we'll reject it
-      return null;
-    }
-
-    // Validate trace ID length (32 hex chars = 16 bytes)
-    if (traceIdHex.length != 32) {
+    if (version == _forbiddenVersion) {
       if (OTelLog.isDebug()) {
         OTelLog.debug(
-          'Invalid trace ID length: ${traceIdHex.length}, expected 32',
+          'Invalid traceparent version: $_forbiddenVersion is reserved as invalid',
         );
       }
       return null;
     }
 
-    // Validate span ID length (16 hex chars = 8 bytes)
-    if (spanIdHex.length != 16) {
-      if (OTelLog.isDebug()) {
-        OTelLog.debug(
-          'Invalid span ID length: ${spanIdHex.length}, expected 16',
-        );
-      }
-      return null;
-    }
-
-    // Validate trace flags length (2 hex chars = 1 byte)
-    if (traceFlagsHex.length != 2) {
-      if (OTelLog.isDebug()) {
-        OTelLog.debug(
-          'Invalid trace flags length: ${traceFlagsHex.length}, expected 2',
-        );
-      }
-      return null;
-    }
-
-    try {
-      // Parse the components
-      final traceId = OTel.traceIdFrom(traceIdHex);
-      final spanId = OTel.spanIdFrom(spanIdHex);
-      // Null means the flags were not two lowercase hex digits. The W3C
-      // grammar is strict and the propagator MUST reject the header then
-      // (context/api-propagators.md).
-      final traceFlags = TraceFlags.fromString(traceFlagsHex);
-      if (traceFlags == null) {
+    // A known version has a closed grammar, so trailing data makes it
+    // malformed. A higher version may append dash-delimited fields, which this
+    // propagator must tolerate and ignore. Lowercase hex pairs order the same
+    // way as their values, so compareTo ranks versions.
+    if (version.compareTo(_version) <= 0) {
+      if (traceparent.length != _traceparentLength) {
         if (OTelLog.isDebug()) {
-          OTelLog.debug('Invalid trace flags: $traceFlagsHex');
+          OTelLog.debug(
+            'Version $version traceparent must be exactly $_traceparentLength characters, got ${traceparent.length}',
+          );
         }
         return null;
       }
+    } else if (traceparent.length > _traceparentLength &&
+        traceparent[_traceparentLength] != '-') {
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+          'Invalid traceparent: trace flags must end the header or be followed by a dash',
+        );
+      }
+      return null;
+    }
 
-      // Validate that trace ID and span ID are not all zeros
+    final traceIdHex = traceparent.substring(
+      _traceIdOffset,
+      _traceIdOffset + _traceIdLength,
+    );
+    final traceIdBytes = IdGenerator.hexToBytes(traceIdHex);
+    if (traceIdBytes == null) {
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+          'Invalid trace ID, expected only 0-9 and a-f: $traceIdHex',
+        );
+      }
+      return null;
+    }
+
+    final spanIdHex = traceparent.substring(
+      _spanIdOffset,
+      _spanIdOffset + _spanIdLength,
+    );
+    final spanIdBytes = IdGenerator.hexToBytes(spanIdHex);
+    if (spanIdBytes == null) {
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+          'Invalid span ID, expected only 0-9 and a-f: $spanIdHex',
+        );
+      }
+      return null;
+    }
+
+    // Any two lowercase hex digits are valid flags. Reserved bits are cleared
+    // below rather than rejecting the header; the random-trace-id bit is kept,
+    // since W3C Level 2 requires it to survive a continued trace.
+    final traceFlagsHex = traceparent.substring(
+      _traceFlagsOffset,
+      _traceFlagsOffset + _traceFlagsLength,
+    );
+    final traceFlags = TraceFlags.fromString(traceFlagsHex);
+    if (traceFlags == null) {
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+          'Invalid trace flags, expected only 0-9 and a-f: $traceFlagsHex',
+        );
+      }
+      return null;
+    }
+
+    // Header content can no longer fail past this point. The SDK factory can:
+    // it throws a StateError before OTel.initialize(), and extract must not
+    // throw on that, so the header is dropped instead.
+    try {
+      final traceId = OTel.traceIdOf(traceIdBytes);
       if (!traceId.isValid) {
         if (OTelLog.isDebug()) {
           OTelLog.debug('Invalid trace ID: all zeros');
@@ -221,6 +279,7 @@ class W3CTraceContextPropagator
         return null;
       }
 
+      final spanId = OTel.spanIdOf(spanIdBytes);
       if (!spanId.isValid) {
         if (OTelLog.isDebug()) {
           OTelLog.debug('Invalid span ID: all zeros');
@@ -232,10 +291,11 @@ class W3CTraceContextPropagator
       return OTel.spanContext(
         traceId: traceId,
         spanId: spanId,
-        traceFlags: traceFlags,
+        traceFlags: OTel.traceFlags(traceFlags.asByte & _definedFlags),
         isRemote: true,
       );
-    } catch (e) {
+      // ignore: avoid_catching_errors
+    } on StateError catch (e) {
       if (OTelLog.isDebug()) {
         OTelLog.debug('Error parsing traceparent: $e');
       }
