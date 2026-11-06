@@ -92,11 +92,10 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
   /// Records a measurement with this counter.
   ///
   /// This method increments the counter by the given value. The value must be
-  /// non-negative, or an ArgumentError will be thrown.
+  /// non-negative. Negative measurements are logged and dropped.
   ///
   /// @param value The amount to increment the counter by (must be non-negative)
   /// @param attributes Optional attributes to associate with this measurement
-  /// @throws ArgumentError if value is negative
   @override
   void add(T value, [Attributes? attributes]) {
     // First use the API implementation (no-op by default)
@@ -104,7 +103,10 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
 
     // Check for negative values
     if (value < 0) {
-      throw ArgumentError('Counter value must be non-negative');
+      if (OTelLog.isError()) {
+        OTelLog.error('Counter "$name": negative measurement $value dropped.');
+      }
+      return;
     }
 
     // Only record if enabled

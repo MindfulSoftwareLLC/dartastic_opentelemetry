@@ -21,6 +21,18 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.0-beta.18-wip]
 
+### Fixed
+
+- Counter and histogram instruments log and drop negative measurements, including
+  map helpers, without affecting collected values. This follows the non-negative
+  measurement expectation in `metrics/api.md` and the MUST NOT throw requirement
+  in `error-handling.md`
+  ([#322](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/322)).
+- `MetricPoint.histogram()` warns and returns an empty histogram on a type
+  mismatch, preserving its non-null contract and satisfying the MUST NOT throw
+  requirement in `error-handling.md`
+  ([#322](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/322)).
+
 ## [1.1.0-beta.17] - 2026-10-11
 
 The spec-compliance issues this release closes ([#106](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/106), 

@@ -225,7 +225,7 @@ void main() {
         expect(histValue.max, equals(200.0));
       });
 
-      test('throws StateError for non-histogram point', () {
+      test('returns an empty histogram for non-histogram point', () {
         final point = MetricPoint<int>(
           attributes: attrs,
           startTime: startTime,
@@ -233,7 +233,14 @@ void main() {
           value: 42,
         );
 
-        expect(point.histogram, throwsA(isA<StateError>()));
+        final histogram = point.histogram();
+        expect(histogram.count, 0);
+        expect(histogram.sum, 0);
+        expect(histogram.boundaries, isEmpty);
+        expect(histogram.bucketCounts, [0]);
+        expect(histogram.min, isNull);
+        expect(histogram.max, isNull);
+        expect(point.value, 42);
       });
     });
   });

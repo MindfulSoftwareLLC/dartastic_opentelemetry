@@ -98,10 +98,19 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
   @override
   bool get isHistogram => true;
 
+  /// Records a non-negative measurement. Negative values are logged and dropped.
   @override
   void record(T value, [Attributes? attributes]) {
     // First use the API implementation (no-op by default)
     _apiHistogram.record(value, attributes);
+
+    if (value < 0) {
+      if (OTelLog.isError()) {
+        OTelLog.error(
+            'Histogram "$name": negative measurement $value dropped.');
+      }
+      return;
+    }
 
     // Only record if enabled
     if (!isEnabled()) return;
