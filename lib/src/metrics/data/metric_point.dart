@@ -121,13 +121,26 @@ class MetricPoint<T> {
     }
   }
 
-  /// Gets this point as a histogram value. Will throw if this is not a histogram point.
+  /// Gets this point as a histogram value.
+  ///
+  /// For other point types, logs a warning and returns an empty histogram with
+  /// one zero-count bucket covering all values and no minimum or maximum.
   HistogramValue histogram() {
     if (value is! HistogramValue) {
-      throw StateError('This is not a histogram point');
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('MetricPoint.histogram: this is not a histogram point.');
+      }
+      return _emptyHistogram;
     }
     return value as HistogramValue;
   }
+
+  static final HistogramValue _emptyHistogram = HistogramValue(
+    sum: 0,
+    count: 0,
+    boundaries: const [],
+    bucketCounts: const [0],
+  );
 }
 
 /// Represents the value of a histogram metric point.
