@@ -2,13 +2,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
-    show OTelLog;
+    show AnyValue, OTelLog;
 import 'package:fixnum/fixnum.dart';
 
 import '../../../../proto/collector/metrics/v1/metrics_service.pb.dart';
 import '../../../../proto/common/v1/common.pb.dart' as common_proto;
 import '../../../../proto/metrics/v1/metrics.pb.dart' as proto;
 import '../../../../proto/resource/v1/resource.pb.dart' as resource_proto;
+import '../../../export/otlp_any_value.dart';
 import '../../../resource/resource.dart';
 import '../../data/exemplar.dart';
 import '../../data/metric.dart';
@@ -223,41 +224,8 @@ class MetricTransformer {
   }
 
   /// Creates a KeyValue proto from a key and value.
-  static common_proto.KeyValue _createKeyValue(String key, dynamic value) {
-    final keyValue = common_proto.KeyValue();
-    keyValue.key = key;
-
-    if (value is String) {
-      keyValue.value = common_proto.AnyValue(stringValue: value);
-    } else if (value is bool) {
-      keyValue.value = common_proto.AnyValue(boolValue: value);
-    } else if (value is int) {
-      keyValue.value = common_proto.AnyValue(intValue: Int64(value));
-    } else if (value is double) {
-      keyValue.value = common_proto.AnyValue(doubleValue: value);
-    } else if (value is List) {
-      final arrayValue = common_proto.ArrayValue();
-      for (final item in value) {
-        final anyValue = common_proto.AnyValue();
-        if (item is String) {
-          anyValue.stringValue = item;
-        } else if (item is bool) {
-          anyValue.boolValue = item;
-        } else if (item is int) {
-          anyValue.intValue = Int64(item);
-        } else if (item is double) {
-          anyValue.doubleValue = item;
-        }
-        arrayValue.values.add(anyValue);
-      }
-      keyValue.value = common_proto.AnyValue(arrayValue: arrayValue);
-    } else {
-      // Default to string representation for unsupported types
-      keyValue.value = common_proto.AnyValue(stringValue: value.toString());
-    }
-
-    return keyValue;
-  }
+  static common_proto.KeyValue _createKeyValue(String key, AnyValue value) =>
+      common_proto.KeyValue(key: key, value: otlpAnyValue(value));
 
   static List<proto.Exemplar> _transformExemplars(
       List<Exemplar>? exemplars, MetricsExemplarFilter exemplarFilter) {

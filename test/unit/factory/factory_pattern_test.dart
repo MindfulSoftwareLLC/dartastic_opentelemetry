@@ -55,19 +55,19 @@ void main() {
       // Test creating attributes through the factory
       final strAttr = OTel.attributeString('str.key', 'value');
       expect(strAttr.key, equals('str.key'));
-      expect(strAttr.value, equals('value'));
+      expect(strAttr.value.unwrap(), equals('value'));
 
       final boolAttr = OTel.attributeBool('bool.key', true);
       expect(boolAttr.key, equals('bool.key'));
-      expect(boolAttr.value, isTrue);
+      expect(boolAttr.value.unwrap(), isTrue);
 
       final intAttr = OTel.attributeInt('int.key', 42);
       expect(intAttr.key, equals('int.key'));
-      expect(intAttr.value, equals(42));
+      expect(intAttr.value.unwrap(), equals(42));
 
       final doubleAttr = OTel.attributeDouble('double.key', 3.14);
       expect(doubleAttr.key, equals('double.key'));
-      expect(doubleAttr.value, equals(3.14));
+      expect(doubleAttr.value.unwrap(), equals(3.14));
 
       // Create and test attributes collection
       final attrs = OTel.attributes([strAttr, intAttr]);

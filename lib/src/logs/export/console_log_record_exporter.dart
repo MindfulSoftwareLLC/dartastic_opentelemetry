@@ -63,7 +63,7 @@ class ConsoleLogRecordExporter implements LogRecordExporter {
 
     // Format body
     if (logRecord.body != null) {
-      buffer.write(logRecord.body);
+      buffer.write(logRecord.body!.toNonOtlpString());
     }
 
     // Format trace context
@@ -90,7 +90,7 @@ class ConsoleLogRecordExporter implements LogRecordExporter {
       final attrs = logRecord.attributes!.toList();
       for (var i = 0; i < attrs.length; i++) {
         if (i > 0) buffer.write(', ');
-        buffer.write('${attrs[i].key}=${attrs[i].value}');
+        buffer.write('${attrs[i].key}=${attrs[i].value.toNonOtlpString()}');
       }
       buffer.write('}');
     }
@@ -101,7 +101,7 @@ class ConsoleLogRecordExporter implements LogRecordExporter {
   String? _getResourceAttribute(Resource resource, String key) {
     for (final attr in resource.attributes.toList()) {
       if (attr.key == key) {
-        return attr.value.toString();
+        return attr.value.toNonOtlpString();
       }
     }
     return null;

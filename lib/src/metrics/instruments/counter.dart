@@ -122,7 +122,7 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
   /// @param value The amount to increment the counter by (must be non-negative)
   /// @param attributeMap Map of attribute names to values
   @override
-  void addWithMap(T value, Map<String, Object> attributeMap) {
+  void addWithMap(T value, Map<String, Object?> attributeMap) {
     // Just convert to Attributes and call add
     final attributes =
         attributeMap.isEmpty ? null : attributeMap.toAttributes();

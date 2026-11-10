@@ -7,6 +7,7 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
     show IdGenerator;
 import 'package:protobuf/protobuf.dart';
 
+import '../../proto/common/v1/common.pb.dart' show AnyValue, AnyValue_Value;
 import '../../proto/logs/v1/logs.pb.dart' show SeverityNumber;
 import '../../proto/metrics/v1/metrics.pb.dart' show AggregationTemporality;
 import '../../proto/trace/v1/trace.pb.dart'
@@ -36,8 +37,36 @@ import '../../proto/trace/v1/trace.pb.dart'
 /// wherever it appears (spans, span links, log records, metric exemplars)
 /// and int-encoding every enum field (span `kind`, status `code`, log
 /// `severityNumber`, metric `aggregationTemporality`).
-Object? otlpProto3JsonWithHexIds(GeneratedMessage request) =>
-    _fixupOtlpJson(request.toProto3Json());
+Object? otlpProto3JsonWithHexIds(GeneratedMessage request) {
+  final json = request.toProto3Json();
+  _restoreEmptyBytes(request, json);
+  return _fixupOtlpJson(json);
+}
+
+// protobuf's JSON writer skips empty Lists, including a present bytes oneof.
+// Restore presence using the message tree: JSON alone cannot distinguish an
+// empty byte sequence from an empty AnyValue. Never mutate the input message.
+void _restoreEmptyBytes(GeneratedMessage message, Object? json) {
+  if (json is! Map) return;
+  if (message is AnyValue &&
+      message.whichValue() == AnyValue_Value.bytesValue) {
+    if (message.bytesValue.isEmpty) json['bytesValue'] = '';
+    return;
+  }
+  for (final field in message.info_.fieldInfo.values) {
+    final childJson = json[field.name];
+    if (childJson == null) continue;
+    final child = message.getField(field.tagNumber);
+    if (child is GeneratedMessage) {
+      _restoreEmptyBytes(child, childJson);
+    } else if (child is List && childJson is List) {
+      for (var i = 0; i < child.length; i++) {
+        final item = child[i];
+        if (item is GeneratedMessage) _restoreEmptyBytes(item, childJson[i]);
+      }
+    }
+  }
+}
 
 const _idKeys = {'traceId', 'spanId', 'parentSpanId'};
 

@@ -3,8 +3,7 @@
 
 import 'dart:async';
 
-import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
-    show OTelLog;
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import '../../data/metric.dart';
 import '../../data/metric_data.dart';
 import '../../data/metric_point.dart';
@@ -220,15 +219,10 @@ class PrometheusExporter implements MetricExporter {
 
   /// Sanitizes a label value.
   String _sanitizeValue(dynamic value) {
-    // Handle AttributeValue objects by extracting the raw value
-    if (value.toString().startsWith('AttributeValue(') &&
-        value.toString().endsWith(')')) {
-      // Extract the value inside AttributeValue(...)
-      final rawValue = value.toString().substring(
-            'AttributeValue('.length,
-            value.toString().length - 1,
-          );
-      value = rawValue;
+    // Prometheus labels are strings. Follow common.md's non-OTLP mapping:
+    // JSON for collections, base64 for bytes, and an empty string for null.
+    if (value is Attribute) {
+      value = value.value.toNonOtlpString();
     }
 
     // Escape quotes, backslashes, and newlines

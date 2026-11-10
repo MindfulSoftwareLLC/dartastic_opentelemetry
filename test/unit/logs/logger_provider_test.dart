@@ -159,7 +159,8 @@ void main() {
         (a) => a.key == 'service.name',
         orElse: () => throw StateError('service.name not found'),
       );
-      expect(serviceName.value, equals('logger-provider-test-service'));
+      expect(
+          serviceName.value.unwrap(), equals('logger-provider-test-service'));
     });
   });
 }

@@ -160,8 +160,7 @@ void main() {
       final counter = meter.createUpDownCounter<int>(
         name: 'map-attributes-counter',
         unit: 'bytes',
-      ) as UpDownCounter<
-          int>; // Cast to implementation class to access addWithMap
+      );
 
       // Record using addWithMap
       counter.addWithMap(100, {'direction': 'up', 'operation': 'test'});
@@ -196,9 +195,7 @@ void main() {
     });
 
     test('UpDownCounter.getValue returns correct value', () {
-      final counter = meter.createUpDownCounter<int>(name: 'get-value-counter')
-          as UpDownCounter<
-              int>; // Cast to implementation class to access getValue
+      final counter = meter.createUpDownCounter<int>(name: 'get-value-counter');
 
       // Record values with different attributes
       final attrs1 = {'region': 'us-west'}.toAttributes();
@@ -215,8 +212,8 @@ void main() {
     });
 
     test('UpDownCounter collectMetrics respects enabled state', () {
-      final counter = meter.createUpDownCounter<int>(
-          name: 'collect-metrics-counter') as UpDownCounter<int>;
+      final counter =
+          meter.createUpDownCounter<int>(name: 'collect-metrics-counter');
 
       // Record a value
       counter.add(42);
@@ -238,7 +235,7 @@ void main() {
       counter.add(5);
       counter.add(-3);
 
-      final metric = (counter as UpDownCounter<int>).collectMetrics().single;
+      final metric = counter.collectMetrics().single;
       expect(metric.isMonotonic, isFalse);
       expect(
         MetricTransformer.transformMetric(metric).sum.isMonotonic,
@@ -254,7 +251,7 @@ void main() {
       final counter = meter.createCounter<int>(name: 'requests');
       counter.add(1);
 
-      final metric = (counter as Counter<int>).collectMetrics().single;
+      final metric = counter.collectMetrics().single;
       expect(metric.isMonotonic, isTrue);
       expect(
         MetricTransformer.transformMetric(metric).sum.isMonotonic,

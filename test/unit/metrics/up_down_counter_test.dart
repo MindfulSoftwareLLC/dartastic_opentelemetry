@@ -35,7 +35,7 @@ void main() {
         name: 'test-up-down-counter',
         unit: 'items',
         description: 'A test up-down counter',
-      ) as UpDownCounter<int>;
+      );
 
       // Verify initial value is 0
       expect(counter.getValue(), equals(0));
@@ -58,7 +58,7 @@ void main() {
       final counter = meter.createUpDownCounter<int>(
         name: 'attr-up-down-counter',
         unit: 'items',
-      ) as UpDownCounter<int>;
+      );
 
       // Create attributes
       final attributes1 = {'service': 'api'}.toAttributes();

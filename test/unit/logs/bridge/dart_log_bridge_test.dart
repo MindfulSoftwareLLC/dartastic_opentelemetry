@@ -82,8 +82,8 @@ void main() {
       bridge.log('Test message', level: 800); // INFO level
 
       expect(memoryExporter.count, equals(1));
-      expect(
-          memoryExporter.exportedLogRecords.first.body, equals('Test message'));
+      expect(memoryExporter.exportedLogRecords.first.body?.unwrap(),
+          equals('Test message'));
     });
 
     test('DartLogBridge.log does not emit when inactive', () {
@@ -197,7 +197,7 @@ void main() {
         (a) => a.key == 'sequence_number',
         orElse: () => throw StateError('sequence_number not found'),
       );
-      expect(seqAttr.value, equals(42));
+      expect(seqAttr.value.unwrap(), equals(42));
     });
 
     test('DartLogBridge uses logger name from log call when using provider',
@@ -247,7 +247,7 @@ void main() {
       // The print should have been captured
       expect(memoryExporter.count, equals(1));
       expect(
-        memoryExporter.exportedLogRecords.first.body,
+        memoryExporter.exportedLogRecords.first.body?.unwrap(),
         equals('Test print message'),
       );
     });

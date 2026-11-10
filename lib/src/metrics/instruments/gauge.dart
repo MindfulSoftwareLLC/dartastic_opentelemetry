@@ -77,7 +77,7 @@ class Gauge<T extends num> implements APIGauge<T>, SDKInstrument {
   }
 
   @override
-  void recordWithMap(T value, Map<String, Object> attributeMap) {
+  void recordWithMap(T value, Map<String, Object?> attributeMap) {
     // Just convert to Attributes and call record
     final attributes =
         attributeMap.isEmpty ? null : attributeMap.toAttributes();

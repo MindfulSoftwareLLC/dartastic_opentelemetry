@@ -215,9 +215,7 @@ void main() {
 
     test('Histogram.getValue returns sum of recorded values', () {
       final histogram =
-          meter.createHistogram<double>(name: 'get-value-histogram')
-              as Histogram<
-                  double>; // Cast to implementation class to access getValue
+          meter.createHistogram<double>(name: 'get-value-histogram');
 
       // Record values with different attributes
       final attrs1 = {'endpoint': '/api/users'}.toAttributes();
@@ -248,8 +246,7 @@ void main() {
       final histogram = meter.createHistogram<double>(
         name: 'map-attributes-histogram',
         unit: 'ms',
-      ) as Histogram<
-          double>; // Cast to implementation class to access recordWithMap
+      );
 
       // Record using recordWithMap
       histogram.recordWithMap(15.5, {'method': 'GET', 'status': 200});
@@ -285,8 +282,8 @@ void main() {
     });
 
     test('Histogram collectMetrics respects enabled state', () {
-      final histogram = meter.createHistogram<double>(
-          name: 'collect-metrics-histogram') as Histogram<double>;
+      final histogram =
+          meter.createHistogram<double>(name: 'collect-metrics-histogram');
 
       // Record a value
       histogram.record(42.5);
@@ -304,8 +301,8 @@ void main() {
     });
 
     test('Histogram collectPoints returns all points', () {
-      final histogram = meter.createHistogram<double>(
-          name: 'collect-points-histogram') as Histogram<double>;
+      final histogram =
+          meter.createHistogram<double>(name: 'collect-points-histogram');
 
       // Record values with different attributes
       final attrs1 = {'region': 'east'}.toAttributes();
@@ -335,8 +332,7 @@ void main() {
     });
 
     test('Histogram reset clears accumulated values', () async {
-      final histogram = meter.createHistogram<double>(name: 'reset-histogram')
-          as Histogram<double>;
+      final histogram = meter.createHistogram<double>(name: 'reset-histogram');
 
       // Record initial values
       histogram.record(10.0);

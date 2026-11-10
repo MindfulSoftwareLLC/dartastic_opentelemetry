@@ -62,7 +62,7 @@ void main() {
       expect(memoryExporter.count, equals(1));
 
       final logRecord = memoryExporter.exportedLogRecords.first;
-      expect(logRecord.body, equals('Test log message'));
+      expect(logRecord.body?.unwrap(), equals('Test log message'));
       expect(logRecord.severityNumber, equals(Severity.INFO));
       expect(logRecord.severityText, equals('INFO'));
       expect(logRecord.eventName, equals('test.event'));
@@ -78,7 +78,7 @@ void main() {
       expect(memoryExporter.count, equals(1));
       final logRecord = memoryExporter.exportedLogRecords.first;
       expect(logRecord.severityNumber, equals(Severity.TRACE));
-      expect(logRecord.body, equals('Trace message'));
+      expect(logRecord.body?.unwrap(), equals('Trace message'));
     });
 
     test('OTelLogger debug() emits DEBUG severity', () {
@@ -89,7 +89,7 @@ void main() {
       expect(memoryExporter.count, equals(1));
       final logRecord = memoryExporter.exportedLogRecords.first;
       expect(logRecord.severityNumber, equals(Severity.DEBUG));
-      expect(logRecord.body, equals('Debug message'));
+      expect(logRecord.body?.unwrap(), equals('Debug message'));
     });
 
     test('OTelLogger info() emits INFO severity', () {
@@ -100,7 +100,7 @@ void main() {
       expect(memoryExporter.count, equals(1));
       final logRecord = memoryExporter.exportedLogRecords.first;
       expect(logRecord.severityNumber, equals(Severity.INFO));
-      expect(logRecord.body, equals('Info message'));
+      expect(logRecord.body?.unwrap(), equals('Info message'));
     });
 
     test('OTelLogger warn() emits WARN severity', () {
@@ -111,7 +111,7 @@ void main() {
       expect(memoryExporter.count, equals(1));
       final logRecord = memoryExporter.exportedLogRecords.first;
       expect(logRecord.severityNumber, equals(Severity.WARN));
-      expect(logRecord.body, equals('Warning message'));
+      expect(logRecord.body?.unwrap(), equals('Warning message'));
     });
 
     test('OTelLogger error() emits ERROR severity', () {
@@ -122,7 +122,7 @@ void main() {
       expect(memoryExporter.count, equals(1));
       final logRecord = memoryExporter.exportedLogRecords.first;
       expect(logRecord.severityNumber, equals(Severity.ERROR));
-      expect(logRecord.body, equals('Error message'));
+      expect(logRecord.body?.unwrap(), equals('Error message'));
     });
 
     test('OTelLogger fatal() emits FATAL severity', () {
@@ -133,7 +133,7 @@ void main() {
       expect(memoryExporter.count, equals(1));
       final logRecord = memoryExporter.exportedLogRecords.first;
       expect(logRecord.severityNumber, equals(Severity.FATAL));
-      expect(logRecord.body, equals('Fatal message'));
+      expect(logRecord.body?.unwrap(), equals('Fatal message'));
     });
 
     test('OTelLogger convenience methods accept attributes', () {
@@ -227,7 +227,7 @@ void main() {
       final logRecord = memoryExporter.exportedLogRecords.first;
 
       // Body of the exported log matches what was emitted.
-      expect(logRecord.body, equals('Log within span'));
+      expect(logRecord.body?.unwrap(), equals('Log within span'));
 
       // Log record's trace context matches the active span's exactly —
       // not just "valid", but the same ids.

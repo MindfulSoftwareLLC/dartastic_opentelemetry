@@ -109,10 +109,10 @@ void main() {
       var foundCustomerId = false;
 
       for (var attr in filteredAttrs) {
-        if (attr.key == 'instance.id' && attr.value == '12345') {
+        if (attr.key == 'instance.id' && attr.value.unwrap() == '12345') {
           foundInstanceId = true;
         }
-        if (attr.key == 'customer.id' && attr.value == 'abc123') {
+        if (attr.key == 'customer.id' && attr.value.unwrap() == 'abc123') {
           foundCustomerId = true;
         }
       }
@@ -165,10 +165,10 @@ void main() {
       var foundExtra2 = false;
 
       for (var attr in filteredAttrs) {
-        if (attr.key == 'extra1' && attr.value == 'extraValue1') {
+        if (attr.key == 'extra1' && attr.value.unwrap() == 'extraValue1') {
           foundExtra1 = true;
         }
-        if (attr.key == 'extra2' && attr.value == 'extraValue2') {
+        if (attr.key == 'extra2' && attr.value.unwrap() == 'extraValue2') {
           foundExtra2 = true;
         }
       }
@@ -251,10 +251,10 @@ void main() {
       var foundKey2 = false;
 
       for (var attr in filteredAttrs) {
-        if (attr.key == 'key1' && attr.value == 'value1') {
+        if (attr.key == 'key1' && attr.value.unwrap() == 'value1') {
           foundKey1 = true;
         }
-        if (attr.key == 'key2' && attr.value == 'value2') {
+        if (attr.key == 'key2' && attr.value.unwrap() == 'value2') {
           foundKey2 = true;
         }
       }
@@ -319,30 +319,30 @@ void main() {
       var foundBoolArray = false;
 
       for (var attr in filteredAttrs) {
-        if (attr.key == 'double' && attr.value == 123.45) {
+        if (attr.key == 'double' && attr.value.unwrap() == 123.45) {
           foundDouble = true;
         }
-        if (attr.key == 'bool' && attr.value == true) {
+        if (attr.key == 'bool' && attr.value.unwrap() == true) {
           foundBool = true;
         }
         if (attr.key == 'stringArray' &&
-            attr.value is List &&
-            listEquals(attr.value as List, ['a', 'b', 'c'])) {
+            attr.value.unwrap() is List &&
+            listEquals(attr.value.unwrap() as List, ['a', 'b', 'c'])) {
           foundStringArray = true;
         }
         if (attr.key == 'intArray' &&
-            attr.value is List &&
-            listEquals(attr.value as List, [1, 2, 3])) {
+            attr.value.unwrap() is List &&
+            listEquals(attr.value.unwrap() as List, [1, 2, 3])) {
           foundIntArray = true;
         }
         if (attr.key == 'doubleArray' &&
-            attr.value is List &&
-            listEquals(attr.value as List, [1.1, 2.2, 3.3])) {
+            attr.value.unwrap() is List &&
+            listEquals(attr.value.unwrap() as List, [1.1, 2.2, 3.3])) {
           foundDoubleArray = true;
         }
         if (attr.key == 'boolArray' &&
-            attr.value is List &&
-            listEquals(attr.value as List, [true, false, true])) {
+            attr.value.unwrap() is List &&
+            listEquals(attr.value.unwrap() as List, [true, false, true])) {
           foundBoolArray = true;
         }
       }

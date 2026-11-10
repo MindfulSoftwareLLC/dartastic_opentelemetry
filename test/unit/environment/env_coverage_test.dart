@@ -1273,7 +1273,7 @@ void main() {
       final composite = CompositeResourceDetector([stringThrower, working]);
       final resource = await composite.detect();
       final attrs = resource.attributes.toMap();
-      expect(attrs['survived']?.value, equals('yes'));
+      expect(attrs['survived']?.value.unwrap(), equals('yes'));
     });
 
     test('CompositeResourceDetector with all string-throwing detectors',

@@ -21,6 +21,43 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.0-beta.18-wip]
 
+### Changed
+
+- Console span/event/link attributes and log bodies/attributes use the API's
+  non-OTLP encoder: nested values render as JSON, bytes as base64, and
+  non-finite numbers as strings. The debug JSON file exporter uses the same
+  JSON conversion, so NaN and Infinity no longer prevent export. Prometheus
+  reuses the encoder before applying label escaping. Requires the API
+  non-OTLP encoder follow-up to
+  [API #123](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/123)
+  ([#319](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/319)).
+
+- **BREAKING**: Migrate to API rc.5's full `AnyValue` hierarchy
+  ([API #123](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry_api/pull/123)).
+  The API dependency is now `>=1.0.0-rc.5 <1.0.0-rc.6`.
+  Remove type arguments from `Attribute<T>`; its `value` is now an `AnyValue`.
+  Read values with typed `Attributes` getters, pattern matching, or `unwrap()`.
+  SDK log bodies are `AnyValue?`; emitting or assigning a raw body still
+  converts it automatically. A null body means absent; `AnyValueNull()` means
+  an explicitly present empty value. Attribute map entry points, including
+  metric `addWithMap`, `recordWithMap`, and `observeWithMap`, accept
+  `Map<String, Object?>` through both SDK and API types. The semantic-key
+  helpers `OTel.attributesFromSemanticMap` and `OTel.attributesOf<E>` also
+  accept nullable values. Prometheus encodes collection labels as JSON,
+  bytes as base64, and null as an empty string
+  ([#319](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/319)).
+
+### Fixed
+
+- Preserve maps, nested and mixed arrays, bytes, and explicit null values in
+  OTLP span, log, and metric exports, including resource and scope attributes,
+  events, links, and exemplars. This satisfies common.md's MUST requirement
+  that attribute values support the full `AnyValue` hierarchy.
+  Directly constructed values exceeding the 32-level depth guard report once
+  per OTLP encoding or Prometheus label conversion, including when multiple
+  leaves are truncated
+  ([#319](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/319)).
+
 ## [1.1.0-beta.17] - 2026-10-11
 
 The spec-compliance issues this release closes ([#106](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/106), 

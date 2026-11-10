@@ -94,7 +94,7 @@ class OTelLogger implements APILogger {
     Context? context,
     Severity? severityNumber,
     String? severityText,
-    dynamic body,
+    Object? body,
     Attributes? attributes,
     String? eventName,
   }) {
@@ -162,7 +162,7 @@ class OTelLogger implements APILogger {
   /// @param body The log message body
   /// @param attributes Optional attributes
   /// @param eventName Optional event name
-  void trace(dynamic body, {Attributes? attributes, String? eventName}) {
+  void trace(Object? body, {Attributes? attributes, String? eventName}) {
     emit(
       severityNumber: Severity.TRACE,
       severityText: 'TRACE',
@@ -177,7 +177,7 @@ class OTelLogger implements APILogger {
   /// @param body The log message body
   /// @param attributes Optional attributes
   /// @param eventName Optional event name
-  void debug(dynamic body, {Attributes? attributes, String? eventName}) {
+  void debug(Object? body, {Attributes? attributes, String? eventName}) {
     emit(
       severityNumber: Severity.DEBUG,
       severityText: 'DEBUG',
@@ -192,7 +192,7 @@ class OTelLogger implements APILogger {
   /// @param body The log message body
   /// @param attributes Optional attributes
   /// @param eventName Optional event name
-  void info(dynamic body, {Attributes? attributes, String? eventName}) {
+  void info(Object? body, {Attributes? attributes, String? eventName}) {
     emit(
       severityNumber: Severity.INFO,
       severityText: 'INFO',
@@ -207,7 +207,7 @@ class OTelLogger implements APILogger {
   /// @param body The log message body
   /// @param attributes Optional attributes
   /// @param eventName Optional event name
-  void warn(dynamic body, {Attributes? attributes, String? eventName}) {
+  void warn(Object? body, {Attributes? attributes, String? eventName}) {
     emit(
       severityNumber: Severity.WARN,
       severityText: 'WARN',
@@ -222,7 +222,7 @@ class OTelLogger implements APILogger {
   /// @param body The log message body
   /// @param attributes Optional attributes
   /// @param eventName Optional event name
-  void error(dynamic body, {Attributes? attributes, String? eventName}) {
+  void error(Object? body, {Attributes? attributes, String? eventName}) {
     emit(
       severityNumber: Severity.ERROR,
       severityText: 'ERROR',
@@ -237,7 +237,7 @@ class OTelLogger implements APILogger {
   /// @param body The log message body
   /// @param attributes Optional attributes
   /// @param eventName Optional event name
-  void fatal(dynamic body, {Attributes? attributes, String? eventName}) {
+  void fatal(Object? body, {Attributes? attributes, String? eventName}) {
     emit(
       severityNumber: Severity.FATAL,
       severityText: 'FATAL',

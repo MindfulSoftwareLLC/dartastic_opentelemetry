@@ -103,14 +103,14 @@ void main() {
         (a) => a.key == 'custom.attr',
         orElse: () => throw StateError('custom.attr attribute not found'),
       );
-      expect(customAttr.value, equals('custom-value'));
+      expect(customAttr.value.unwrap(), equals('custom-value'));
 
       final envAttr = attrs.firstWhere(
         (a) => a.key == 'deployment.environment',
         orElse: () =>
             throw StateError('deployment.environment attribute not found'),
       );
-      expect(envAttr.value, equals('testing'));
+      expect(envAttr.value.unwrap(), equals('testing'));
     });
 
     test('initialize with detectPlatformResources=true detects platform',
@@ -199,36 +199,36 @@ void main() {
     test('attributeStringList creates list attribute', () {
       final attr = OTel.attributeStringList('k', ['a', 'b']);
       expect(attr.key, equals('k'));
-      expect(attr.value, equals(['a', 'b']));
-      expect(attr, isA<Attribute<List<String>>>());
+      expect(attr.value.unwrap(), equals(['a', 'b']));
+      expect(attr, isA<Attribute>());
     });
 
     test('attributeBoolList creates list attribute', () {
       final attr = OTel.attributeBoolList('k', [true, false]);
       expect(attr.key, equals('k'));
-      expect(attr.value, equals([true, false]));
-      expect(attr, isA<Attribute<List<bool>>>());
+      expect(attr.value.unwrap(), equals([true, false]));
+      expect(attr, isA<Attribute>());
     });
 
     test('attributeIntList creates list attribute', () {
       final attr = OTel.attributeIntList('k', [1, 2]);
       expect(attr.key, equals('k'));
-      expect(attr.value, equals([1, 2]));
-      expect(attr, isA<Attribute<List<int>>>());
+      expect(attr.value.unwrap(), equals([1, 2]));
+      expect(attr, isA<Attribute>());
     });
 
     test('attributeDoubleList creates list attribute', () {
       final attr = OTel.attributeDoubleList('k', [1.0, 2.0]);
       expect(attr.key, equals('k'));
-      expect(attr.value, equals([1.0, 2.0]));
-      expect(attr, isA<Attribute<List<double>>>());
+      expect(attr.value.unwrap(), equals([1.0, 2.0]));
+      expect(attr, isA<Attribute>());
     });
 
     test('attributeDouble creates attribute', () {
       final attr = OTel.attributeDouble('k', 1.5);
       expect(attr.key, equals('k'));
-      expect(attr.value, equals(1.5));
-      expect(attr, isA<Attribute<double>>());
+      expect(attr.value.unwrap(), equals(1.5));
+      expect(attr, isA<Attribute>());
     });
 
     test('createAttributes creates empty attributes', () {
@@ -301,10 +301,11 @@ void main() {
       final attrList = attrs.toList();
       expect(attrList.length, equals(2));
       expect(
-        attrList.any((a) => a.key == 'key1' && a.value == 'value1'),
+        attrList.any((a) => a.key == 'key1' && a.value.unwrap() == 'value1'),
         isTrue,
       );
-      expect(attrList.any((a) => a.key == 'key2' && a.value == 42), isTrue);
+      expect(attrList.any((a) => a.key == 'key2' && a.value.unwrap() == 42),
+          isTrue);
     });
 
     test('spanContextInvalid returns invalid context', () {
@@ -415,7 +416,7 @@ void main() {
         (a) => a.key == 'service.name',
         orElse: () => throw StateError('service.name attribute not found'),
       );
-      expect(serviceAttr.value, equals('second-service'));
+      expect(serviceAttr.value.unwrap(), equals('second-service'));
     });
   });
 

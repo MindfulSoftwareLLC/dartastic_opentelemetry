@@ -5,6 +5,7 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:fixnum/fixnum.dart';
 
 import '../../../../proto/opentelemetry_proto_dart.dart' as proto;
+import '../../../export/otlp_any_value.dart';
 import '../../../otel.dart';
 import '../../span.dart';
 
@@ -77,6 +78,10 @@ class OtlpSpanTransformer {
         final otlpScope = proto.InstrumentationScope()..name = scope.name;
         if (scope.version != null) {
           otlpScope.version = scope.version!;
+        }
+
+        if (scope.attributes != null) {
+          otlpScope.attributes.addAll(otlpAttributes(scope.attributes!));
         }
 
         // Transform all spans in this scope to OTLP format
@@ -251,66 +256,6 @@ class OtlpSpanTransformer {
 
   /// Convert attribute map to OTLP KeyValue list
   static List<proto.KeyValue> transformAttributeMap(Attributes attributes) {
-    final result = <proto.KeyValue>[];
-
-    attributes.toList().forEach((attr) {
-      final keyValue = proto.KeyValue()
-        ..key = attr.key
-        ..value = _transformAttributeValue(attr);
-
-      result.add(keyValue);
-    });
-
-    return result;
-  }
-
-  /// Convert AttributeValue to OTLP AnyValue
-  static proto.AnyValue _transformAttributeValue(Attribute attr) {
-    final anyValue = proto.AnyValue();
-
-    if (attr.value is String) {
-      anyValue.stringValue = attr.value as String;
-    } else if (attr.value is bool) {
-      anyValue.boolValue = attr.value as bool;
-    } else if (attr.value is int) {
-      anyValue.intValue = Int64(attr.value as int);
-    } else if (attr.value is double) {
-      anyValue.doubleValue = attr.value as double;
-    } else if (attr.value is List<String>) {
-      final arrayValue = proto.ArrayValue();
-      arrayValue.values.addAll(
-        (attr.value as List<String>).map(
-          (v) => proto.AnyValue()..stringValue = v,
-        ),
-      );
-      anyValue.arrayValue = arrayValue;
-    } else if (attr.value is List<bool>) {
-      final arrayValue = proto.ArrayValue();
-      arrayValue.values.addAll(
-        (attr.value as List<bool>).map((v) => proto.AnyValue()..boolValue = v),
-      );
-      anyValue.arrayValue = arrayValue;
-    } else if (attr.value is List<int>) {
-      final arrayValue = proto.ArrayValue();
-      arrayValue.values.addAll(
-        (attr.value as List<int>).map(
-          (v) => proto.AnyValue()..intValue = Int64(v),
-        ),
-      );
-      anyValue.arrayValue = arrayValue;
-    } else if (attr.value is List<double>) {
-      final arrayValue = proto.ArrayValue();
-      arrayValue.values.addAll(
-        (attr.value as List<double>).map(
-          (v) => proto.AnyValue()..doubleValue = v,
-        ),
-      );
-      anyValue.arrayValue = arrayValue;
-    } else {
-      // For any other type, convert to string
-      anyValue.stringValue = attr.value.toString();
-    }
-
-    return anyValue;
+    return otlpAttributes(attributes);
   }
 }

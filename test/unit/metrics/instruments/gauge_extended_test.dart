@@ -128,8 +128,7 @@ void main() {
       final gauge = meter.createGauge<double>(
         name: 'map-attributes-gauge',
         unit: 'celsius',
-      ) as Gauge<
-          double>; // Cast to implementation class to access recordWithMap
+      );
 
       // Record using recordWithMap
       gauge.recordWithMap(23.5, {'location': 'outside', 'sensor': 'primary'});
@@ -153,8 +152,9 @@ void main() {
     });
 
     test('Gauge.getValue returns most recent value', () {
-      final gauge = meter.createGauge<int>(name: 'get-value-gauge')
-          as Gauge<int>; // Cast to implementation class to access getValue
+      final gauge = meter.createGauge<int>(
+          name:
+              'get-value-gauge'); // Cast to implementation class to access getValue
 
       // Record values with different attributes
       final attrs1 = {'region': 'north'}.toAttributes();
@@ -224,8 +224,7 @@ void main() {
     });
 
     test('Gauge collectMetrics respects enabled state', () {
-      final gauge = meter.createGauge<double>(name: 'collect-metrics-gauge')
-          as Gauge<double>;
+      final gauge = meter.createGauge<double>(name: 'collect-metrics-gauge');
 
       // Record a value
       gauge.record(42.5);

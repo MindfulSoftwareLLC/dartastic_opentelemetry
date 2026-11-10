@@ -28,7 +28,7 @@ void main() {
         name: 'test-counter',
         unit: 'items',
         description: 'A test counter',
-      ) as Counter<int>;
+      );
     });
 
     tearDown(() async {

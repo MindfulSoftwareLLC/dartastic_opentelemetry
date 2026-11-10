@@ -68,10 +68,10 @@ void main() {
         );
 
         if (serviceName != null && serviceName.isNotEmpty) {
-          expect(serviceNameAttr.value, equals(serviceName));
+          expect(serviceNameAttr.value.unwrap(), equals(serviceName));
         } else {
           // Default service name should be set
-          expect(serviceNameAttr.value, isNotEmpty);
+          expect(serviceNameAttr.value.unwrap(), isNotEmpty);
         }
       },
     );
@@ -83,7 +83,7 @@ void main() {
       final attrs = OTel.defaultResource!.attributes.toList();
       final serviceNameAttr = attrs.firstWhere((a) => a.key == 'service.name');
 
-      expect(serviceNameAttr.value, equals('explicit-service'));
+      expect(serviceNameAttr.value.unwrap(), equals('explicit-service'));
     });
   });
 }

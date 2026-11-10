@@ -71,7 +71,7 @@ void main() {
 
       expect(memoryExporter.count, equals(1));
       expect(
-        memoryExporter.exportedLogRecords.first.body,
+        memoryExporter.exportedLogRecords.first.body?.unwrap(),
         equals('Test print message'),
       );
     });
@@ -149,7 +149,7 @@ void main() {
       expect(result, equals('async result'));
       expect(memoryExporter.count, equals(1));
       expect(
-        memoryExporter.exportedLogRecords.first.body,
+        memoryExporter.exportedLogRecords.first.body?.unwrap(),
         equals('Async print message'),
       );
     });
@@ -220,12 +220,12 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 100));
 
       expect(memoryExporter.count, equals(3));
-      expect(
-          memoryExporter.exportedLogRecords[0].body, equals('First message'));
-      expect(
-          memoryExporter.exportedLogRecords[1].body, equals('Second message'));
-      expect(
-          memoryExporter.exportedLogRecords[2].body, equals('Third message'));
+      expect(memoryExporter.exportedLogRecords[0].body?.unwrap(),
+          equals('First message'));
+      expect(memoryExporter.exportedLogRecords[1].body?.unwrap(),
+          equals('Second message'));
+      expect(memoryExporter.exportedLogRecords[2].body?.unwrap(),
+          equals('Third message'));
     });
 
     test('multiple separate runWithPrintInterception calls work', () async {

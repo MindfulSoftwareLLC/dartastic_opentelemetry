@@ -79,7 +79,7 @@ class UpDownCounter<T extends num>
   }
 
   @override
-  void addWithMap(T value, Map<String, Object> attributeMap) {
+  void addWithMap(T value, Map<String, Object?> attributeMap) {
     // Just convert to Attributes and call add
     final attributes =
         attributeMap.isEmpty ? null : attributeMap.toAttributes();
