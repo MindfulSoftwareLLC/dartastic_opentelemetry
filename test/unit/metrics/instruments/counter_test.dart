@@ -111,9 +111,10 @@ void main() {
       }
     });
 
-    test('throws when adding negative value', () {
+    test('drops negative values without throwing', () {
       // Assert
-      expect(() => counter.add(-1), throwsArgumentError);
+      expect(() => counter.add(-1), returnsNormally);
+      expect(counter.collectPoints(), isEmpty);
     });
 
     test('collects metrics', () {
