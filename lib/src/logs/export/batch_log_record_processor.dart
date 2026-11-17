@@ -306,25 +306,24 @@ class BatchLogRecordProcessor implements LogRecordProcessor {
     // Cancel the timer first
     _timer?.cancel();
 
-    // Export any remaining log records BEFORE setting _isShutdown
-    // so that forceFlush and _exportBatch will still work
-    while (_logQueue.isNotEmpty) {
-      await _exportBatchForShutdown();
-    }
     try {
-      await exporter.forceFlush();
-    } catch (e, stackTrace) {
-      OTelErrorHandling.report(e, stackTrace);
-    }
-
-    // Now mark as shutdown
-    _isShutdown = true;
-
-    // Shutdown the exporter
-    try {
-      await exporter.shutdown();
-    } catch (e, stackTrace) {
-      OTelErrorHandling.report(e, stackTrace);
+      // Drain before marking shutdown so final exports can still run.
+      while (_logQueue.isNotEmpty) {
+        await _exportBatchForShutdown();
+      }
+      try {
+        await exporter.forceFlush();
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
+      }
+    } finally {
+      // A deliberately throwing handler must not bypass exporter cleanup.
+      _isShutdown = true;
+      try {
+        await exporter.shutdown();
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
+      }
     }
   }
 

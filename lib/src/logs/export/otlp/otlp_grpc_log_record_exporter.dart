@@ -5,7 +5,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
-    show OTelLog;
+    show OTelErrorHandling, OTelLog;
 import 'package:grpc/grpc.dart';
 import 'package:meta/meta.dart';
 
@@ -99,14 +99,14 @@ class OtlpGrpcLogRecordExporter implements LogRecordExporter {
         await _channel!.shutdown();
         await Future<void>.delayed(const Duration(milliseconds: 100));
       } catch (e, stackTrace) {
-        ExportErrorScope.report(e, stackTrace);
+        OTelErrorHandling.report(e, stackTrace);
       }
 
       try {
         await _channel!.terminate();
         await Future<void>.delayed(const Duration(milliseconds: 100));
       } catch (e, stackTrace) {
-        ExportErrorScope.report(e, stackTrace);
+        OTelErrorHandling.report(e, stackTrace);
       }
 
       _channel = null;

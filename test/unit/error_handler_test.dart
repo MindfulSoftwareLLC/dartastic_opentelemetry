@@ -33,8 +33,11 @@ class _FailingSpanExporter implements SpanExporter {
       Error.throwWithStackTrace(error, stack);
   @override
   Future<void> forceFlush() async {}
+  int shutdowns = 0;
   @override
-  Future<void> shutdown() async {}
+  Future<void> shutdown() async {
+    shutdowns++;
+  }
 }
 
 class _FailingLogExporter implements LogRecordExporter {
@@ -50,8 +53,11 @@ class _FailingLogExporter implements LogRecordExporter {
 
   @override
   Future<void> forceFlush() async {}
+  int shutdowns = 0;
   @override
-  Future<void> shutdown() async {}
+  Future<void> shutdown() async {
+    shutdowns++;
+  }
 }
 
 class _FailingMetricExporter implements MetricExporter {
@@ -656,6 +662,40 @@ void main() {
                 requests++;
                 return Completer<http.Response>().future;
               }));
+    });
+  }
+  for (final signal in ['spans', 'logs']) {
+    test(
+        'batch $signal shutdown closes exporter when strict drain handler throws',
+        () async {
+      final strictError = StateError('strict shutdown');
+      OTel.setErrorHandler((e, st) {
+        errors.add(e);
+        throw strictError;
+      });
+      final spanExporter = _FailingSpanExporter(error, stack);
+      final logExporter = _FailingLogExporter(error: error);
+      late Future<void> Function() shutdown;
+      if (signal == 'spans') {
+        final processor = BatchSpanProcessor(spanExporter,
+            const BatchSpanProcessorConfig(scheduleDelay: Duration(hours: 1)));
+        await processor.onEnd(OTel.tracer().startSpan('final drain'));
+        shutdown = processor.shutdown;
+      } else {
+        final processor = BatchLogRecordProcessor(
+            logExporter,
+            const BatchLogRecordProcessorConfig(
+                scheduleDelay: Duration(hours: 1)));
+        await processor.onEmit(record(), null);
+        shutdown = processor.shutdown;
+      }
+      await expectLater(shutdown(), throwsA(same(strictError)));
+      expect(errors, [same(error)]);
+      expect(signal == 'spans' ? spanExporter.shutdowns : logExporter.shutdowns,
+          1);
+      await shutdown();
+      expect(signal == 'spans' ? spanExporter.shutdowns : logExporter.shutdowns,
+          1);
     });
   }
 }

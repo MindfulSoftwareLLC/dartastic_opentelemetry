@@ -10,6 +10,7 @@
 library;
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart'
     hide Server;
@@ -213,6 +214,50 @@ void main() {
           isA<GrpcError>()
               .having((e) => e.code, 'code', StatusCode.unavailable));
       expect(stacks.single, isNotNull);
+    });
+
+    test('invalid CA and transport failure are reported independently',
+        () async {
+      final directory =
+          await Directory.systemTemp.createTemp('otel-invalid-ca');
+      addTearDown(() => directory.delete(recursive: true));
+      final ca =
+          await File('${directory.path}/ca.pem').writeAsString('garbage PEM');
+      final socket = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      final port = socket.port;
+      await socket.close();
+      final errors = <Object>[];
+      final stacks = <StackTrace?>[];
+      OTel.setErrorHandler((error, stack) {
+        errors.add(error);
+        stacks.add(stack);
+      });
+      addTearDown(() => OTel.setErrorHandler(null));
+      final exporter =
+          OtlpGrpcLogRecordExporter(OtlpGrpcLogRecordExporterConfig(
+        endpoint: '127.0.0.1:$port',
+        insecure: false,
+        certificate: ca.path,
+        maxRetries: 0,
+        timeout: const Duration(seconds: 1),
+      ));
+      final processor = SimpleLogRecordProcessor(exporter);
+      addTearDown(processor.shutdown);
+      await processor.onEmit(
+          SDKLogRecord(
+            instrumentationScope: OTel.instrumentationScope(name: 'invalid-ca'),
+            body: 'test',
+          ),
+          null);
+      expect(errors, hasLength(2));
+      expect(errors.first, isA<TlsException>());
+      expect(
+          errors.last,
+          isA<GrpcError>().having((e) => e.code, 'code',
+              anyOf(StatusCode.unavailable, StatusCode.deadlineExceeded)));
+      expect(stacks, everyElement(isNotNull));
+      await processor.shutdown();
+      expect(errors, hasLength(2));
     });
 
     test('connection refused fails the export', () async {
