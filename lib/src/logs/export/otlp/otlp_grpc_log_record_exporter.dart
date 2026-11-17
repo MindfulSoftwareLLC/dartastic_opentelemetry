@@ -82,7 +82,7 @@ class OtlpGrpcLogRecordExporter implements LogRecordExporter {
         onBadCertificate: null,
       );
     } catch (e, stackTrace) {
-      ExportErrorScope.report(e, stackTrace);
+      OTelErrorHandling.report(e, stackTrace);
       return const ChannelCredentials.secure();
     }
   }
