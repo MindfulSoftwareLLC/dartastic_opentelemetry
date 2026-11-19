@@ -100,6 +100,7 @@ class PrometheusExporter implements MetricExporter {
       types['target_info'] = 'gauge';
     }
 
+    final families = <String, List<Metric>>{};
     for (final metric in data.metrics) {
       // A pull reader collects cumulative data. Do not misrepresent manually
       // supplied delta points as cumulative Prometheus counters/histograms.
@@ -120,27 +121,28 @@ class PrometheusExporter implements MetricExporter {
         }
         continue;
       }
-      if (previousType == null) {
-        types[name] = type;
-        // Add HELP comment
-        if (metric.description != null) {
-          buffer.writeln(
-            '# HELP $name ${_sanitizeComment(metric.description!)}',
-          );
+      types[name] = type;
+      families.putIfAbsent(name, () => []).add(metric);
+    }
+
+    // Keep all samples of a family together, with one HELP/TYPE pair.
+    for (final entry in families.entries) {
+      final name = entry.key;
+      final descriptions = entry.value
+          .map((metric) => metric.description)
+          .whereType<String>()
+          .where((description) => description.isNotEmpty)
+          .toList()
+        ..sort();
+      if (descriptions.isNotEmpty) {
+        buffer.writeln('# HELP $name ${_sanitizeComment(descriptions.first)}');
+      }
+      buffer.writeln('# TYPE $name ${types[name]}');
+      for (final metric in entry.value) {
+        for (final point in metric.points) {
+          _writeMetricPoint(buffer, metric, point);
         }
-
-        // Add TYPE comment
-        buffer.writeln(
-          '# TYPE $name $type',
-        );
       }
-
-      // Add metric data points
-      for (final point in metric.points) {
-        _writeMetricPoint(buffer, metric, point);
-      }
-
-      // Empty line between metrics
       buffer.writeln();
     }
 

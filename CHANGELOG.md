@@ -35,7 +35,11 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 - Prometheus histogram buckets accumulate disjoint bucket counts, as required
   by the Prometheus compatibility specification (MUST). Scrapes collect fresh
   cumulative data and expose one `target_info` resource metric. Empty exports
-  clear stale samples; non-finite numbers use Prometheus spellings
+  clear stale samples; non-finite numbers use Prometheus spellings. SDK metrics
+  preserve their meter scope, and same-name Prometheus families stay contiguous
+  with scope labels required by the compatibility specification (MUST).
+  Invalid programmatic ports are rejected before SDK initialization; scrape
+  and listener failures are logged at error level
   ([#323](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/323)).
 
 ### Changed
@@ -43,7 +47,8 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 - **BREAKING**: Monotonic Prometheus sums now use `_total` by default, as
   recommended by the Prometheus compatibility specification. Names already
   ending in `_total` remain unchanged. Update queries using unsuffixed names.
-  Non-monotonic sums remain gauges
+  Non-monotonic sums remain gauges. SDK samples now include `otel_scope_*`
+  labels, and `Meter.instrumentationScope` exposes the scope used for collection
   ([#323](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/323)).
 
 ## [1.1.0-beta.17] - 2026-10-11

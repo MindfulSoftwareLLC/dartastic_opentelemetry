@@ -111,6 +111,7 @@ class UpDownCounter<T extends num>
     final metric = Metric(
       name: name,
       description: description,
+      instrumentationScope: _meter.instrumentationScope,
       unit: unit,
       type: MetricType.sum,
       isMonotonic: _storage.isMonotonic,

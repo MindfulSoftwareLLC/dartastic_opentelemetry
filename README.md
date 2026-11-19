@@ -1136,13 +1136,23 @@ Initialization waits for binding; `OTel.shutdown()` closes the listener.
 Each scrape collects current measurements, including observable callbacks.
 `OTEL_METRIC_EXPORT_INTERVAL` does not control scraping. With `prometheus,otlp`,
 a separate pull reader runs alongside the periodic OTLP reader.
+
+**Known limitation:** readers share exemplar reservoirs. A Prometheus scrape
+collects and resets those reservoirs, but text 0.0.4 cannot expose exemplars.
+The OTLP reader therefore receives only exemplars recorded since the most
+recent collection by either reader. Use a single OTLP reader and expose
+Prometheus through an OpenTelemetry Collector when exemplar retention matters.
+Independent per-reader collection state requires a separate SDK change.
+
 `none`, `enableMetrics: false`, and `OTEL_SDK_DISABLED=true` prevent automatic
 listener installation. Explicit readers/exporters override exporter selection.
 
 `OTel.initialize(prometheusHost: '0.0.0.0', prometheusPort: 9464)` overrides
-these environment settings when Prometheus is selected. Empty settings use
-defaults; malformed or out-of-range ports warn and use 9464. Binding failures
-are logged and leave that reader inactive without failing initialization.
+these environment settings when Prometheus is selected. Empty environment
+settings use defaults; malformed or out-of-range environment ports warn and use
+9464. Programmatic ports outside 0 through 65535 throw before SDK initialization,
+even when Prometheus is not selected. Blank programmatic hosts use `localhost`.
+Binding failures are logged and leave that reader inactive without failing initialization.
 Inspect `reader.ready` for startup success and `reader.boundPort` for the actual
 port. For manual registration after SDK initialization:
 
@@ -1157,7 +1167,9 @@ and quality values, defaults to text when `Accept` is absent, and returns 406
 if that format is unacceptable. OpenMetrics and protobuf exposition are not
 implemented. Counters use `_total`, non-monotonic sums use gauge type, and
 histogram buckets are cumulative. Resource attributes appear in one
-`target_info` sample. `PrometheusExporter` remains available as a text serializer
+`target_info` sample. SDK metrics include `otel_scope_*` labels to distinguish
+instrumentation scopes; samples of each metric family are grouped together.
+`PrometheusExporter` remains available as a text serializer
 for applications supplying their own HTTP transport.
 See [example/prometheus_example.dart](example/prometheus_example.dart).
 

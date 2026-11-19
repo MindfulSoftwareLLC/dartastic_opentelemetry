@@ -112,6 +112,7 @@ class Gauge<T extends num> implements APIGauge<T>, SDKInstrument {
     final metric = Metric(
       name: name,
       description: description,
+      instrumentationScope: _meter.instrumentationScope,
       unit: unit,
       type: MetricType.gauge,
       points: points,

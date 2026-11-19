@@ -3,6 +3,9 @@
 
 import 'dart:io';
 
+import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
+    show OTelLog;
+
 /// Native HTTP transport for the Prometheus pull reader.
 class PrometheusServer {
   /// Whether this platform supports a scrape listener.
@@ -32,7 +35,10 @@ class PrometheusServer {
               'text/plain; version=0.0.4; charset=utf-8');
           request.response.write(body);
         }
-      } catch (_) {
+      } catch (error) {
+        if (OTelLog.isError()) {
+          OTelLog.error('Prometheus scrape failed: $error');
+        }
         request.response.statusCode = HttpStatus.internalServerError;
       } finally {
         try {
@@ -40,6 +46,10 @@ class PrometheusServer {
         } catch (_) {
           // A client may disconnect while collection is in progress.
         }
+      }
+    }, onError: (Object error) {
+      if (OTelLog.isError()) {
+        OTelLog.error('Prometheus listener error: $error');
       }
     });
   }

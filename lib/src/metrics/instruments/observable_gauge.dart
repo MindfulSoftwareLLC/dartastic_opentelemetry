@@ -194,6 +194,7 @@ class ObservableGauge<T extends num>
       Metric.gauge(
         name: name,
         description: description,
+        instrumentationScope: _meter.instrumentationScope,
         unit: unit,
         points: points,
       ),

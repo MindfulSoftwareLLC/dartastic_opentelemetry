@@ -339,6 +339,10 @@ class OTel {
     if (serviceVersion.isEmpty) {
       throw ArgumentError('serviceVersion must not be the empty string.');
     }
+    if (prometheusPort != null) {
+      RangeError.checkValueInInterval(
+          prometheusPort, 0, 65535, 'prometheusPort');
+    }
     final factoryFactory =
         oTelFactoryCreationFunction ?? otelSDKFactoryFactoryFunction;
     _defaultSampler = sampler ?? ParentBasedSampler(const AlwaysOnSampler());

@@ -7,6 +7,7 @@ library;
 import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart';
+import 'package:dartastic_opentelemetry/src/metrics/export/prometheus/prometheus_server_io.dart';
 import 'package:http/http.dart' as http;
 import 'package:test/test.dart';
 
@@ -64,21 +65,147 @@ void main() {
     expect(
         first.headers['content-type'], contains('text/plain; version=0.0.4'));
     expect(first.body, contains('# TYPE requests_total counter'));
-    expect(first.body, contains('requests_total{} 2'));
+    expect(first.body,
+        matches(r'requests_total\{[^}]*otel_scope_name=\"[^\"]+\"[^}]*\} 2'));
     expect(first.body, contains('# TYPE active gauge'));
-    expect(first.body, contains('active{} 2'));
-    expect(first.body, contains('latency_bucket{le="5"} 1'));
-    expect(first.body, contains('latency_bucket{le="10"} 2'));
-    expect(first.body, contains('latency_bucket{le="+Inf"} 3'));
-    expect(first.body, contains('latency_count{} 3'));
-    expect(first.body, contains('latency_sum{} 27.0'));
+    expect(first.body,
+        matches(r'active\{[^}]*otel_scope_name=\"[^\"]+\"[^}]*\} 2'));
+    expect(first.body, matches(r'latency_bucket\{[^}]*le="5"\} 1'));
+    expect(first.body, matches(r'latency_bucket\{[^}]*le="10"\} 2'));
+    expect(first.body, matches(r'latency_bucket\{[^}]*le="\+Inf"\} 3'));
+    expect(first.body,
+        matches(r'latency_count\{[^}]*otel_scope_name=\"[^\"]+\"[^}]*\} 3'));
+    expect(first.body,
+        matches(r'latency_sum\{[^}]*otel_scope_name=\"[^\"]+\"[^}]*\} 27.0'));
     expect(RegExp(r'^target_info\{', multiLine: true).allMatches(first.body),
         hasLength(1));
     expect(first.body, contains('service_name="scrape-test"'));
     counter.add(4);
     final second = await client.get(endpoint(reader));
-    expect(second.body, contains('requests_total{} 6'));
-    expect(second.body, contains('latency_count{} 3'));
+    expect(second.body,
+        matches(r'requests_total\{[^}]*otel_scope_name=\"[^\"]+\"[^}]*\} 6'));
+    expect(second.body,
+        matches(r'latency_count\{[^}]*otel_scope_name=\"[^\"]+\"[^}]*\} 3'));
+  });
+
+  test('same-name metrics retain scope and form one contiguous family',
+      () async {
+    final reader = await initialize();
+    final first = OTel.meterProvider().getMeter(
+        name: 'first',
+        version: '1',
+        schemaUrl: 'https://example.test/schema',
+        attributes: OTel.attributesFromMap({'component': 'test'}));
+    final second = OTel.meterProvider().getMeter(name: 'second', version: '2');
+    final attrs = OTel.attributesFromMap({'k': 'v'});
+    first.createCounter<int>(name: 'dup.count').add(1, attrs);
+    first.createCounter<int>(name: 'mid.count').add(1);
+    second
+        .createCounter<int>(name: 'dup.count', description: 'Duplicate count')
+        .add(2, attrs);
+    final body = (await client.get(endpoint(reader))).body;
+    final samples = body
+        .split('\n')
+        .where((line) => line.startsWith('dup_count_total{'))
+        .toList();
+    expect(samples, hasLength(2));
+    expect(samples[0], contains('otel_scope_name="first"'));
+    expect(samples[0], contains('otel_scope_version="1"'));
+    expect(samples[0],
+        contains('otel_scope_schema_url="https://example.test/schema"'));
+    expect(samples[0], contains('otel_scope_component="test"'));
+    expect(samples[0], endsWith(' 1'));
+    expect(samples[1], contains('otel_scope_name="second"'));
+    expect(samples[1], endsWith(' 2'));
+    expect(body, contains('# HELP dup_count_total Duplicate count'));
+    expect(
+        RegExp(r'^# TYPE dup_count_total ', multiLine: true).allMatches(body),
+        hasLength(1));
+    expect(body.indexOf(samples[1]),
+        lessThan(body.indexOf('# TYPE mid_count_total')));
+  });
+
+  test('all SDK instrument kinds propagate their meter scope', () async {
+    await initialize();
+    final meter =
+        OTel.meterProvider().getMeter(name: 'all-kinds', version: '3');
+    meter.createCounter<int>(name: 'counter').add(1);
+    meter.createUpDownCounter<int>(name: 'updown').add(-1);
+    meter.createGauge<int>(name: 'gauge').record(2);
+    meter.createHistogram<double>(name: 'histogram').record(3);
+    meter.createObservableCounter<int>(name: 'observable_counter', callbacks: [
+      (result) => result.observe(4),
+    ]);
+    meter.createObservableUpDownCounter<int>(
+        name: 'observable_updown',
+        callbacks: [
+          (result) => result.observe(-5),
+        ]);
+    meter.createObservableGauge<int>(name: 'observable_gauge', callbacks: [
+      (result) => result.observe(6),
+    ]);
+    final metrics = await OTel.meterProvider().collectAllMetrics();
+    expect(metrics.map((metric) => metric.name).toSet(), {
+      'counter',
+      'updown',
+      'gauge',
+      'histogram',
+      'observable_counter',
+      'observable_updown',
+      'observable_gauge',
+    });
+    for (final metric in metrics) {
+      expect(metric.instrumentationScope?.name, 'all-kinds',
+          reason: metric.name);
+      expect(metric.instrumentationScope?.version, '3', reason: metric.name);
+    }
+  });
+
+  test('invalid programmatic ports leave initialization retryable', () async {
+    for (final selection in ['prometheus', 'none']) {
+      EnvironmentService.testOverrides!['OTEL_METRICS_EXPORTER'] = selection;
+      for (final port in [-1, 65536, 70000]) {
+        await expectLater(
+            OTel.initialize(
+                prometheusPort: port, detectPlatformResources: false),
+            throwsRangeError);
+      }
+      await OTel.initialize(prometheusPort: 0, detectPlatformResources: false);
+      await OTel.reset();
+    }
+  });
+
+  test('blank programmatic host uses localhost', () async {
+    await OTel.initialize(
+        prometheusHost: '  ',
+        prometheusPort: 0,
+        detectPlatformResources: false);
+    final reader =
+        OTel.meterProvider().metricReaders.single as PrometheusMetricReader;
+    expect(reader.host, 'localhost');
+    expect(await reader.ready, isTrue);
+  });
+
+  test('failed scrapes return 500 and log at error level', () async {
+    final server = PrometheusServer();
+    final logs = <String>[];
+    final oldLog = OTelLog.logFunction;
+    final oldLevel = OTelLog.currentLevel;
+    OTelLog.logFunction = logs.add;
+    OTelLog.currentLevel = LogLevel.error;
+    try {
+      await server.start(
+          '127.0.0.1', 0, () async => throw StateError('scrape regression'));
+      final response = await client
+          .get(Uri.parse('http://127.0.0.1:${server.port}/metrics'));
+      expect(response.statusCode, 500);
+      expect(logs, contains(contains('Prometheus scrape failed:')));
+      expect(logs, contains(contains('scrape regression')));
+    } finally {
+      await server.close();
+      OTelLog.logFunction = oldLog;
+      OTelLog.currentLevel = oldLevel;
+    }
   });
 
   test('routes, methods and Accept negotiation', () async {
@@ -209,7 +336,10 @@ void main() {
         List.generate(8, (_) => client.get(endpoint(reader))));
     for (final response in responses) {
       expect(response.statusCode, 200);
-      expect(response.body, contains('parallel_total{} 17'));
+      expect(
+          response.body,
+          matches(
+              r'parallel_total\{[^}]*otel_scope_name=\"[^\"]+\"[^}]*\} 17'));
     }
   });
 
@@ -223,9 +353,9 @@ void main() {
     await reader.forceFlush();
     expect(observations, 0);
     expect((await client.get(endpoint(reader))).body,
-        contains('observations{} 1'));
+        matches(r'observations\{[^}]*otel_scope_name=\"[^\"]+\"[^}]*\} 1'));
     expect((await client.get(endpoint(reader))).body,
-        contains('observations{} 2'));
+        matches(r'observations\{[^}]*otel_scope_name=\"[^\"]+\"[^}]*\} 2'));
   });
 
   test('manual reader defaults and argument validation', () async {

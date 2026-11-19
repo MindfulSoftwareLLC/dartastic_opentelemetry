@@ -104,7 +104,8 @@ class MetricsConfiguration {
                     prometheusConfig ?? OTelEnv.getPrometheusConfig();
                 final host = prometheusHost ?? config.host;
                 meterProvider.addMetricReader(OTel.prometheusMetricReader(
-                  host: host == null || host.isEmpty ? 'localhost' : host,
+                  host:
+                      host == null || host.trim().isEmpty ? 'localhost' : host,
                   port: prometheusPort ?? config.port ?? 9464,
                 ));
                 hasPrometheusReader = true;
