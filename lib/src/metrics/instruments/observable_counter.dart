@@ -216,6 +216,7 @@ class ObservableCounter<T extends num>
       Metric.sum(
         name: name,
         description: description,
+        instrumentationScope: _meter.instrumentationScope,
         unit: unit,
         temporality: AggregationTemporality.cumulative,
         points: points,

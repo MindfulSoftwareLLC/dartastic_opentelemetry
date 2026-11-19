@@ -132,6 +132,9 @@ typedef MetricsEnvironmentValues = ({
   Duration? exportTimeout,
 });
 
+/// Raw Prometheus listener settings. Null values use exporter defaults.
+typedef PrometheusEnvironmentValues = ({String? host, int? port});
+
 /// Utility class for handling OpenTelemetry environment variables.
 ///
 /// This class provides methods for reading standard OpenTelemetry environment
@@ -140,6 +143,23 @@ typedef MetricsEnvironmentValues = ({
 /// OpenTelemetry standard environment variables:
 /// https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/
 class OTelEnv {
+  /// Reads Prometheus listener settings. Invalid ports are ignored.
+  /// Port zero requests an ephemeral port, useful for embedded servers/tests.
+  static PrometheusEnvironmentValues getPrometheusConfig() {
+    var host = _getEnv(otelExporterPrometheusHost);
+    if (host != null && host.trim().isEmpty) {
+      if (OTelLog.isWarn()) {
+        OTelLog.warn('OTelEnv: Blank $otelExporterPrometheusHost, ignoring.');
+      }
+      host = null;
+    }
+    return (
+      host: host,
+      port: getPositiveIntEnv(otelExporterPrometheusPort,
+          minInclusive: 0, maxInclusive: 65535),
+    );
+  }
+
   /// Initialize logging based on environment variables.
   ///
   /// This method reads the logging-related environment variables

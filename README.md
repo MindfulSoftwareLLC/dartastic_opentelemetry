@@ -1095,7 +1095,7 @@ Details worth knowing:
 
 #### Signal-Specific Configuration
 
-Per the OTel spec, the default exporter for every signal is `otlp` (HTTP/protobuf to `http://localhost:4318`). Each `OTEL_*_EXPORTER` env var accepts `otlp` (default), `console` (prints to stdout — useful for local debugging), `none` (skips processor/reader installation for that signal entirely), or a comma-separated list to enable multiple exporters at once (e.g. `OTEL_TRACES_EXPORTER=otlp,console`); `none` in a list wins, and unsupported values (`zipkin`, the deprecated `logging`, …) are ignored with a warning. (Zipkin exporters are deprecated in the OTel spec — removal scheduled December 2026 — and not required for new SDKs; if you need the Zipkin format, route OTLP through the collector's zipkin exporter.) `OTEL_METRICS_EXPORTER=prometheus` is recognized but not auto-wired yet (the SDK has no scrape server — tracked in #82); construct `PrometheusExporter` programmatically and serve `prometheusData`, or route OTLP through the collector's prometheus exporter. `OTEL_SDK_DISABLED=true` silences all three signals globally and overrides everything else.
+Per the OTel spec, the default exporter for every signal is `otlp` (HTTP/protobuf to `http://localhost:4318`). Each `OTEL_*_EXPORTER` env var accepts `otlp` (default), `console` (prints to stdout, useful for local debugging), `none` (skips processor/reader installation for that signal entirely), or a comma-separated list to enable multiple exporters at once (e.g. `OTEL_TRACES_EXPORTER=otlp,console`); `none` in a list wins, and unsupported values (`zipkin`, the deprecated `logging`, …) are ignored with a warning. (Zipkin exporters are deprecated in the OTel spec, removal scheduled December 2026, and not required for new SDKs; if you need the Zipkin format, route OTLP through the collector's zipkin exporter.) `OTEL_METRICS_EXPORTER=prometheus` installs a native HTTP pull reader serving fresh cumulative metrics at `GET /metrics`. Browser builds warn and ignore this selection, falling back to OTLP when no supported exporter remains. `OTEL_SDK_DISABLED=true` silences all three signals globally and overrides everything else.
 
 ##### Traces
 
@@ -1119,10 +1119,59 @@ Per the OTel spec, the default exporter for every signal is `otlp` (HTTP/protobu
 
 | Constant                              | Environment Variable                    | Description                                              | Default |
 |---------------------------------------|-----------------------------------------|----------------------------------------------------------|---------|
-| `otelMetricsExporter`                 | `OTEL_METRICS_EXPORTER`                 | Metrics exporter type (`otlp`, `console`, `none`)        | `otlp`  |
+| `otelMetricsExporter`                 | `OTEL_METRICS_EXPORTER`                 | Metrics exporter type (`otlp`, `console`, `prometheus`, `none`) | `otlp`  |
 | `otelExporterOtlpMetricsEndpoint`     | `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`   | Metrics-specific endpoint                                |         |
 | `otelExporterOtlpMetricsProtocol`     | `OTEL_EXPORTER_OTLP_METRICS_PROTOCOL`   | Metrics-specific protocol                                |         |
 | `otelExporterOtlpMetricsHeaders`      | `OTEL_EXPORTER_OTLP_METRICS_HEADERS`    | Metrics-specific headers                                 |         |
+
+##### Prometheus pull exporter (native Dart)
+
+| Constant | Environment Variable | Default | Description |
+|---|---|---|---|
+| `otelExporterPrometheusHost` | `OTEL_EXPORTER_PROMETHEUS_HOST` | `localhost` | Listener hostname or IP address |
+| `otelExporterPrometheusPort` | `OTEL_EXPORTER_PROMETHEUS_PORT` | `9464` | Listener port (0 through 65535); 0 requests a free port |
+
+Set `OTEL_METRICS_EXPORTER=prometheus` and call `await OTel.initialize()`.
+Initialization waits for binding; `OTel.shutdown()` closes the listener.
+Each scrape collects current measurements, including observable callbacks.
+`OTEL_METRIC_EXPORT_INTERVAL` does not control scraping. With `prometheus,otlp`,
+a separate pull reader runs alongside the periodic OTLP reader.
+
+**Known limitation:** readers share exemplar reservoirs. A Prometheus scrape
+collects and resets those reservoirs, but text 0.0.4 cannot expose exemplars.
+The OTLP reader therefore receives only exemplars recorded since the most
+recent collection by either reader. Use a single OTLP reader and expose
+Prometheus through an OpenTelemetry Collector when exemplar retention matters.
+Independent per-reader collection state requires a separate SDK change.
+
+`none`, `enableMetrics: false`, and `OTEL_SDK_DISABLED=true` prevent automatic
+listener installation. Explicit readers/exporters override exporter selection.
+
+`OTel.initialize(prometheusHost: '0.0.0.0', prometheusPort: 9464)` overrides
+these environment settings when Prometheus is selected. Empty environment
+settings use defaults; malformed or out-of-range environment ports warn and use
+9464. Programmatic ports outside 0 through 65535 throw before SDK initialization,
+even when Prometheus is not selected. Blank programmatic hosts use `localhost`.
+Binding failures are logged and leave that reader inactive without failing initialization.
+Inspect `reader.ready` for startup success and `reader.boundPort` for the actual
+port. For manual registration after SDK initialization:
+
+```dart
+final reader = OTel.prometheusMetricReader(host: '127.0.0.1', port: 9464);
+OTel.meterProvider().addMetricReader(reader);
+final listening = await reader.ready;
+```
+
+The endpoint supports Prometheus text 0.0.4. It negotiates `Accept` media ranges
+and quality values, defaults to text when `Accept` is absent, and returns 406
+if that format is unacceptable. OpenMetrics and protobuf exposition are not
+implemented. Counters use `_total`, non-monotonic sums use gauge type, and
+histogram buckets are cumulative. Resource attributes appear in one
+`target_info` sample. SDK metrics include `otel_scope_*` labels to distinguish
+instrumentation scopes; samples of each metric family are grouped together.
+`PrometheusExporter` remains available as a text serializer
+for applications supplying their own HTTP transport.
+See [example/prometheus_example.dart](example/prometheus_example.dart).
 
 ##### Logs
 

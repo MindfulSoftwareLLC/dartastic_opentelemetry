@@ -44,6 +44,15 @@ class Meter implements APIMeter {
       : _delegate = delegate,
         _provider = provider;
 
+  /// The instrumentation scope attached to metrics collected by this meter.
+  late final InstrumentationScope instrumentationScope =
+      OTelAPI.instrumentationScope(
+    name: name,
+    version: version ?? '',
+    schemaUrl: schemaUrl,
+    attributes: attributes,
+  );
+
   /// Gets the name of the instrumentation scope.
   ///
   /// This name uniquely identifies the instrumentation library, such as

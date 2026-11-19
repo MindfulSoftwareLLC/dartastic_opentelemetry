@@ -74,13 +74,17 @@ void main() {
       expect(composite.exporters, hasLength(2));
     });
 
-    test('prometheus warns and falls back to otlp', () async {
-      await initWith({'OTEL_METRICS_EXPORTER': 'prometheus'}, metrics: true);
-      final reader = OTel.meterProvider().metricReaders.single
-          as PeriodicExportingMetricReader;
-      expect(reader.exporter, isNot(isA<ConsoleMetricExporter>()));
-      expect(warnings.join('\n'), contains('prometheus'));
-      expect(warnings.join('\n'), contains('no usable exporter'));
+    test('prometheus installs a listening pull reader', () async {
+      await initWith({
+        'OTEL_METRICS_EXPORTER': 'prometheus',
+        'OTEL_EXPORTER_PROMETHEUS_HOST': '127.0.0.1',
+        'OTEL_EXPORTER_PROMETHEUS_PORT': '0',
+      }, metrics: true);
+      final reader =
+          OTel.meterProvider().metricReaders.single as PrometheusMetricReader;
+      expect(await reader.ready, isTrue);
+      expect(reader.boundPort, greaterThan(0));
+      expect(warnings.join('\n'), isNot(contains('no usable exporter')));
     });
 
     test('logging warns (deprecated) and falls back to otlp', () async {

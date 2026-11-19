@@ -16,6 +16,7 @@ import 'otlp/http/otlp_http_metric_exporter.dart';
 import 'otlp/http/otlp_http_metric_exporter_config.dart';
 import 'otlp/otlp_grpc_metric_exporter.dart';
 import 'otlp/otlp_grpc_metric_exporter_config.dart';
+import 'prometheus/prometheus_metric_reader.dart';
 
 /// Configuration for metrics exporters and readers.
 class MetricsConfiguration {
@@ -30,6 +31,9 @@ class MetricsConfiguration {
   ///
   /// An explicit [metricExporter] or [metricReader] always wins over the
   /// env-var selection so programmatic configuration is unsurprising.
+  /// Prometheus uses a separate pull reader; its listener starts on registration.
+  /// Await `PrometheusMetricReader.ready` for manual configuration. The
+  /// `prometheusHost` and `prometheusPort` arguments override environment values.
   ///
   /// When [endpoint] is null (or unset), the exporter default depends on the
   /// resolved protocol (issue #220): `OTel.defaultGrpcEndpoint` for gRPC,
@@ -43,6 +47,9 @@ class MetricsConfiguration {
     ExemplarFilter? exemplarFilter,
     OtlpEnvironmentValues? otlpConfig,
     List<String>? exporters,
+    PrometheusEnvironmentValues? prometheusConfig,
+    String? prometheusHost,
+    int? prometheusPort,
   }) {
     otlpConfig ??= OTelEnv.getOtlpConfig(signal: 'metrics');
     exporters ??= OTelEnv.getExporters(signal: 'metrics') ?? ['otlp'];
@@ -80,6 +87,7 @@ class MetricsConfiguration {
         return meterProvider;
       }
       final createdExporters = <MetricExporter>[];
+      var hasPrometheusReader = false;
       for (final name in exporters) {
         switch (name) {
           case 'otlp':
@@ -90,16 +98,21 @@ class MetricsConfiguration {
               createdExporters.add(created);
             }
           case 'prometheus':
-            // Recognized spec value, but not auto-wirable yet: the SDK has
-            // no scrape server, and an env-created PrometheusExporter would
-            // be unreachable by the app — a silent no-op. Honest support
-            // arrives with the scrape server (#82). Programmatic use of
-            // PrometheusExporter (app serves prometheusData) works today.
-            if (OTelLog.isWarn()) {
-              OTelLog.warn("OTEL_METRICS_EXPORTER value 'prometheus' is not "
-                  'supported yet (no scrape server; see issue #82). '
-                  'Construct PrometheusExporter programmatically and serve '
-                  'prometheusData, or route OTLP through the collector.');
+            if (PrometheusMetricReader.isSupported) {
+              if (!hasPrometheusReader) {
+                final config =
+                    prometheusConfig ?? OTelEnv.getPrometheusConfig();
+                final host = prometheusHost ?? config.host;
+                meterProvider.addMetricReader(OTel.prometheusMetricReader(
+                  host:
+                      host == null || host.trim().isEmpty ? 'localhost' : host,
+                  port: prometheusPort ?? config.port ?? 9464,
+                ));
+                hasPrometheusReader = true;
+              }
+            } else if (OTelLog.isWarn()) {
+              OTelLog.warn('Prometheus requires a dart:io HTTP server; '
+                  'ignoring prometheus on this platform.');
             }
           case 'logging':
             if (OTelLog.isWarn()) {
@@ -109,11 +122,12 @@ class MetricsConfiguration {
           default:
             if (OTelLog.isWarn()) {
               OTelLog.warn("OTEL_METRICS_EXPORTER value '$name' is not "
-                  'supported; ignoring. Supported: otlp, console, none.');
+                  'supported; ignoring. Supported: otlp, console, prometheus, none.');
             }
         }
       }
       if (createdExporters.isEmpty) {
+        if (hasPrometheusReader) return meterProvider;
         if (OTelLog.isWarn()) {
           OTelLog.warn('OTEL_METRICS_EXPORTER produced no usable exporter; '
               'falling back to the default otlp exporter.');

@@ -165,6 +165,7 @@ class Counter<T extends num> implements APICounter<T>, SDKInstrument {
     final metric = Metric(
       name: name,
       description: description,
+      instrumentationScope: _meter.instrumentationScope,
       unit: unit,
       type: MetricType.sum,
       isMonotonic: _storage.isMonotonic,

@@ -39,11 +39,11 @@ void main() {
       expect(result, isTrue);
 
       final exportData = exporter.prometheusData;
-      expect(exportData, contains('# HELP test_counter A test counter'));
-      expect(exportData, contains('# TYPE test_counter counter'));
+      expect(exportData, contains('# HELP test_counter_total A test counter'));
+      expect(exportData, contains('# TYPE test_counter_total counter'));
       expect(
         exportData,
-        contains('test_counter{label1="value1",label2="value2"} 42.0'),
+        contains('test_counter_total{label1="value1",label2="value2"} 42.0'),
       );
     });
 
@@ -77,7 +77,7 @@ void main() {
 
     test('exports a histogram metric correctly', () async {
       final boundaries = [0.0, 5.0, 10.0, 25.0, 50.0, 75.0, 100.0];
-      final bucketCounts = [0, 2, 5, 15, 23, 28, 30];
+      final bucketCounts = [0, 2, 3, 10, 8, 5, 2, 0];
 
       final metric = Metric(
         name: 'test_histogram',
@@ -177,14 +177,14 @@ void main() {
       expect(
         exportData,
         contains(
-          '# HELP test_metric_name Description with \\\\ backslash and \\n newline',
+          '# HELP test_metric_name_total Description with \\\\ backslash and \\n newline',
         ),
       );
-      expect(exportData, contains('# TYPE test_metric_name counter'));
+      expect(exportData, contains('# TYPE test_metric_name_total counter'));
       expect(
         exportData,
         contains(
-          'test_metric_name{label_with_special_chars="value with \\"quotes\\" and \\\\ backslash"} 10.0',
+          'test_metric_name_total{label_with_special_chars="value with \\"quotes\\" and \\\\ backslash"} 10.0',
         ),
       );
     });
@@ -226,9 +226,9 @@ void main() {
       expect(result, isTrue);
 
       final exportData = exporter.prometheusData;
-      expect(exportData, contains('# HELP counter_1 First counter'));
-      expect(exportData, contains('# TYPE counter_1 counter'));
-      expect(exportData, contains('counter_1{service="api"} 100.0'));
+      expect(exportData, contains('# HELP counter_1_total First counter'));
+      expect(exportData, contains('# TYPE counter_1_total counter'));
+      expect(exportData, contains('counter_1_total{service="api"} 100.0'));
 
       expect(exportData, contains('# HELP gauge_1 First gauge'));
       expect(exportData, contains('# TYPE gauge_1 gauge'));
@@ -257,8 +257,9 @@ void main() {
 
       final exportData = exporter.prometheusData;
       expect(exportData, isNot(contains('# HELP no_description_metric')));
-      expect(exportData, contains('# TYPE no_description_metric counter'));
-      expect(exportData, contains('no_description_metric{} 5.0'));
+      expect(
+          exportData, contains('# TYPE no_description_metric_total counter'));
+      expect(exportData, contains('no_description_metric_total{} 5.0'));
     });
 
     test('refuses to export after shutdown', () async {

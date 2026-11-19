@@ -305,7 +305,7 @@ const String otelExporterOtlpTracesClientCertificate =
 
 /// Exporter to use for metrics.
 ///
-/// Known values: "otlp", "prometheus", "none"
+/// Known values: "otlp", "console", "prometheus" (native only), "none"
 ///
 /// Type: Enum (case-insensitive, comma-separated)
 /// Default: "otlp"
@@ -674,6 +674,7 @@ const String otelExporterPrometheusHost = 'OTEL_EXPORTER_PROMETHEUS_HOST';
 ///
 /// Type: Integer
 /// Default: 9464
+/// Accepted range: 0 through 65535. Zero requests an available port.
 const String otelExporterPrometheusPort = 'OTEL_EXPORTER_PROMETHEUS_PORT';
 
 // =============================================================================

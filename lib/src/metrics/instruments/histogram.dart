@@ -143,6 +143,7 @@ class Histogram<T extends num> implements APIHistogram<T>, SDKInstrument {
     final metric = Metric(
       name: name,
       description: description,
+      instrumentationScope: _meter.instrumentationScope,
       unit: unit,
       type: MetricType.histogram,
       points: points,

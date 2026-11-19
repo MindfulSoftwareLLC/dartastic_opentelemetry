@@ -18,6 +18,7 @@ void main(List<String> args) {
       '  otlp [signal]    - Get OTLP config for signal (traces, metrics, logs, or general)',
     );
     print('  headers [signal] - Get parsed headers for signal');
+    print('  prometheus       - Get Prometheus listener config');
     return;
   }
 
@@ -25,6 +26,10 @@ void main(List<String> args) {
 
   try {
     switch (operation) {
+      case 'prometheus':
+        final config = OTelEnv.getPrometheusConfig();
+        print(jsonEncode({'host': config.host, 'port': config.port}));
+        break;
       case 'service':
         _printServiceConfig();
         break;

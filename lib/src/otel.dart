@@ -37,6 +37,16 @@ import '../dartastic_opentelemetry.dart';
 /// The values must be valid Attribute types (String, bool, int, double, or
 /// List\<String>, List\<bool>, List\<int> or List\<double>).
 class OTel {
+  /// Creates a Prometheus pull reader after SDK initialization.
+  /// Register it with `OTel.meterProvider().addMetricReader(reader)` and await
+  /// `reader.ready`. Port zero selects an available port; see `boundPort`.
+  static PrometheusMetricReader prometheusMetricReader({
+    String host = 'localhost',
+    int port = 9464,
+  }) =>
+      (_getAndCacheOtelFactory() as OTelSDKFactory)
+          .prometheusMetricReader(host: host, port: port);
+
   static OTelSDKFactory? _otelFactory;
   static Sampler? _defaultSampler;
   static TimeProvider? _defaultTimeProvider;
@@ -134,6 +144,10 @@ class OTel {
   /// @param spanKind Default span kind (default: SpanKind.server)
   /// @param metricExporter Custom metric exporter for metrics
   /// @param metricReader Custom metric reader for metrics
+  /// @param prometheusHost Listener host when Prometheus is selected. Overrides
+  ///   OTEL_EXPORTER_PROMETHEUS_HOST; defaults to localhost.
+  /// @param prometheusPort Listener port when Prometheus is selected. Overrides
+  ///   OTEL_EXPORTER_PROMETHEUS_PORT; defaults to 9464. Zero selects a free port.
   /// @param exemplarFilter Custom exemplar filter for metrics
   /// @param enableMetrics Whether to enable metrics collection (default: true)
   /// @param enableLogs Whether to enable logs collection and auto-configure exporter (default: true).
@@ -170,6 +184,8 @@ class OTel {
     SpanKind spanKind = SpanKind.server,
     MetricExporter? metricExporter,
     MetricReader? metricReader,
+    String? prometheusHost,
+    int? prometheusPort,
     ExemplarFilter? exemplarFilter,
     bool enableMetrics = true,
     bool enableLogs = true,
@@ -238,6 +254,15 @@ class OTel {
     final logsExporters = enableLogs && !sdkDisabled
         ? (OTelEnv.getExporters(signal: 'logs') ?? ['otlp'])
         : <String>[];
+    final prometheusConfig = enableMetrics &&
+            !sdkDisabled &&
+            metricReader == null &&
+            metricExporter == null &&
+            metricsExporters.contains('prometheus') &&
+            !metricsExporters.contains('none') &&
+            PrometheusMetricReader.isSupported
+        ? OTelEnv.getPrometheusConfig()
+        : (host: null, port: null);
     final blrpConfig =
         enableLogs && !sdkDisabled ? OTelEnv.getBlrpConfig() : emptyBlrp;
     final bspConfig = !sdkDisabled ? OTelEnv.getBspConfig() : emptyBsp;
@@ -313,6 +338,10 @@ class OTel {
     }
     if (serviceVersion.isEmpty) {
       throw ArgumentError('serviceVersion must not be the empty string.');
+    }
+    if (prometheusPort != null) {
+      RangeError.checkValueInInterval(
+          prometheusPort, 0, 65535, 'prometheusPort');
     }
     final factoryFactory =
         oTelFactoryCreationFunction ?? otelSDKFactoryFactoryFunction;
@@ -397,7 +426,7 @@ class OTel {
     }
 
     if (enableMetrics && !sdkDisabled) {
-      MetricsConfiguration.configureMeterProvider(
+      final provider = MetricsConfiguration.configureMeterProvider(
         endpoint: endpoint,
         secure: explicitSecure,
         metricExporter: metricExporter,
@@ -406,7 +435,14 @@ class OTel {
         exemplarFilter: exemplarFilter,
         otlpConfig: otlpMetricsConfig,
         exporters: metricsExporters,
+        prometheusConfig: prometheusConfig,
+        prometheusHost: prometheusHost,
+        prometheusPort: prometheusPort,
       );
+      for (final reader
+          in provider.metricReaders.whereType<PrometheusMetricReader>()) {
+        await reader.ready;
+      }
     }
 
     if (enableLogs && !sdkDisabled) {

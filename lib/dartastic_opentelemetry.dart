@@ -48,6 +48,8 @@ export 'src/metrics/export/otlp/http/otlp_http_metric_exporter_config.dart';
 export 'src/metrics/export/otlp/otlp_grpc_metric_exporter.dart';
 export 'src/metrics/export/otlp/otlp_grpc_metric_exporter_config.dart';
 export 'src/metrics/export/prometheus/prometheus_exporter.dart';
+export 'src/metrics/export/prometheus/prometheus_metric_reader.dart'
+    hide PrometheusMetricReaderCreate;
 export 'src/metrics/instruments/base_instrument.dart';
 export 'src/metrics/instruments/counter.dart';
 export 'src/metrics/instruments/gauge.dart';

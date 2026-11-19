@@ -3,6 +3,7 @@
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
 import '../logs/logger_provider.dart';
+import '../metrics/export/prometheus/prometheus_metric_reader.dart';
 import '../metrics/meter_provider.dart';
 import '../resource/resource.dart';
 import '../trace/tracer_provider.dart';
@@ -55,6 +56,13 @@ class OTelSDKFactory extends OTelAPIFactory {
 
   @override
   bool get isAPIFactory => false;
+
+  /// Creates a pull reader whose listener starts when registered.
+  PrometheusMetricReader prometheusMetricReader({
+    String host = 'localhost',
+    int port = 9464,
+  }) =>
+      PrometheusMetricReaderCreate.create(host: host, port: port);
 
   /// Creates a new Resource with the specified attributes and schema URL.
   ///
