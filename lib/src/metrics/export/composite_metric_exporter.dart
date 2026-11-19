@@ -4,6 +4,7 @@
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
     show OTelLog;
 
+import '../../export/export_error_scope.dart';
 import '../data/metric_data.dart';
 import '../metric_exporter.dart';
 
@@ -54,17 +55,18 @@ class CompositeMetricExporter implements MetricExporter {
 
     var success = true;
     for (final exporter in _exporters) {
-      try {
-        final result = await exporter.export(data);
-        success = success && result;
-      } catch (e) {
-        if (OTelLog.isLogExport()) {
-          OTelLog.logExport(
-            'CompositeMetricExporter: Export failed for $exporter: $e',
-          );
+      await ExportErrorScope.run((scope) async {
+        try {
+          final result = await exporter.export(data);
+          if (!result) {
+            throw StateError('CompositeMetricExporter: export failed');
+          }
+          success = success && result;
+        } catch (e, stackTrace) {
+          scope.reportIfNeeded(e, stackTrace);
+          success = false;
         }
-        success = false;
-      }
+      });
     }
 
     return success;
@@ -85,12 +87,18 @@ class CompositeMetricExporter implements MetricExporter {
 
     var success = true;
     for (final exporter in _exporters) {
-      try {
-        final result = await exporter.forceFlush();
-        success = success && result;
-      } catch (e) {
-        success = false;
-      }
+      await ExportErrorScope.run((scope) async {
+        try {
+          final result = await exporter.forceFlush();
+          if (!result) {
+            throw StateError('CompositeMetricExporter: forceFlush failed');
+          }
+          success = success && result;
+        } catch (e, stackTrace) {
+          scope.reportIfNeeded(e, stackTrace);
+          success = false;
+        }
+      });
     }
 
     return success;
@@ -111,12 +119,18 @@ class CompositeMetricExporter implements MetricExporter {
     _shutdown = true;
     var success = true;
     for (final exporter in _exporters) {
-      try {
-        final result = await exporter.shutdown();
-        success = success && result;
-      } catch (e) {
-        success = false;
-      }
+      await ExportErrorScope.run((scope) async {
+        try {
+          final result = await exporter.shutdown();
+          if (!result) {
+            throw StateError('CompositeMetricExporter: shutdown failed');
+          }
+          success = success && result;
+        } catch (e, stackTrace) {
+          scope.reportIfNeeded(e, stackTrace);
+          success = false;
+        }
+      });
     }
 
     return success;

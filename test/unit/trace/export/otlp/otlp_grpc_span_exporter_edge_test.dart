@@ -684,32 +684,45 @@ void main() {
     //    Exercises wasShutdownDuringRetry with attempts > 0
     //    and GrpcError catch with wasShutdownDuringRetry
     // -----------------------------------------------------------------------
-    test('shutdown during retry stops retrying', () async {
+    test('shutdown during retry reports original gRPC failure once', () async {
       final service = AlwaysUnavailableTraceService();
       final server = Server.create(services: [service]);
       await server.serve(port: 0);
-      final port = server.port!;
-
-      // Use higher maxRetries so the export loop runs longer
-      final exporter = _createExporter(port, maxRetries: 10);
-      final span = _createTestSpan(name: 'shutdown-during-retry-span');
-
-      // Start the export - it will keep retrying due to UNAVAILABLE
-      final exportFuture = exporter.export([span]).catchError((Object e) {
-        // Errors expected during shutdown
+      addTearDown(server.shutdown);
+      final errors = <Object>[];
+      final stacks = <StackTrace?>[];
+      OTel.setErrorHandler((error, stack) {
+        errors.add(error);
+        stacks.add(stack);
       });
-
-      // Wait for at least one retry attempt, then shut down
-      await Future<void>.delayed(const Duration(milliseconds: 200));
+      addTearDown(() => OTel.setErrorHandler(null));
+      final retrying = Completer<void>();
+      OTelLog.logFunction = (message) {
+        if (message.contains('Retrying export after') &&
+            !retrying.isCompleted) {
+          retrying.complete();
+        }
+      };
+      final exporter = OtlpGrpcSpanExporter(OtlpGrpcExporterConfig(
+        endpoint: 'http://localhost:${server.port}',
+        insecure: true,
+        maxRetries: 3,
+        baseDelay: const Duration(milliseconds: 100),
+        maxDelay: const Duration(milliseconds: 100),
+      ));
+      addTearDown(exporter.shutdown);
+      final pending = SimpleSpanProcessor(exporter)
+          .onEnd(OTel.tracer().startSpan('shutdown during retry'));
+      await retrying.future;
       await exporter.shutdown();
-
-      // Wait for the export to finish
-      await exportFuture;
-
-      // The export should either have been suppressed or errored
-      // (shutdown-interrupted StateError is suppressed by export())
-      // Either way it should not hang
-      await server.shutdown();
+      await pending;
+      expect(service.callCount, 1);
+      expect(errors, hasLength(1));
+      expect(
+          errors.single,
+          isA<GrpcError>()
+              .having((e) => e.code, 'code', StatusCode.unavailable));
+      expect(stacks.single, isNotNull);
     });
 
     // -----------------------------------------------------------------------
@@ -834,8 +847,7 @@ void main() {
     // 15. Generic error with shutdown during retry
     //     Exercises wasShutdownDuringRetry in the generic catch block
     // -----------------------------------------------------------------------
-    test('generic error with shutdown during retry throws StateError',
-        () async {
+    test('generic error with shutdown during retry finishes', () async {
       final service = GenericThrowTraceService();
       final server = Server.create(services: [service]);
       await server.serve(port: 0);
@@ -857,8 +869,7 @@ void main() {
 
       await exportFuture;
 
-      // The error should have been suppressed (StateError with 'shut down during')
-      // or no error at all since export() catches StateError with 'shut down during'
+      // Shutdown stops retrying and leaves the original failure with the caller.
 
       await server.shutdown();
     });

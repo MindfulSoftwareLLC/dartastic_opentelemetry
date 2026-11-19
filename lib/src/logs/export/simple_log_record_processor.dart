@@ -3,6 +3,7 @@
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 
+import '../../export/export_error_scope.dart';
 import '../log_record_processor.dart';
 import '../readable_log_record.dart';
 import 'log_record_exporter.dart';
@@ -35,16 +36,19 @@ class SimpleLogRecordProcessor implements LogRecordProcessor {
       return;
     }
 
-    try {
-      final result = await exporter.export([logRecord]);
-      if (result == ExportResult.failure && OTelLog.isError()) {
-        OTelLog.error('SimpleLogRecordProcessor: Export failed');
+    await ExportErrorScope.run((scope) async {
+      ExportResult result;
+      try {
+        result = await exporter.export([logRecord]);
+      } catch (e, stackTrace) {
+        scope.reportIfNeeded(e, stackTrace);
+        return;
       }
-    } catch (e) {
-      if (OTelLog.isError()) {
-        OTelLog.error('SimpleLogRecordProcessor: Error exporting log: $e');
+      if (result == ExportResult.failure) {
+        scope.reportIfNeeded(
+            StateError('SimpleLogRecordProcessor: Export failed'));
       }
-    }
+    });
   }
 
   @override
@@ -64,7 +68,11 @@ class SimpleLogRecordProcessor implements LogRecordProcessor {
       return;
     }
 
-    await exporter.forceFlush();
+    try {
+      await exporter.forceFlush();
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
+    }
   }
 
   @override
@@ -79,6 +87,10 @@ class SimpleLogRecordProcessor implements LogRecordProcessor {
     _isShutdown = true;
 
     // Shutdown the exporter
-    await exporter.shutdown();
+    try {
+      await exporter.shutdown();
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
+    }
   }
 }

@@ -21,6 +21,14 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [1.1.0-beta.18-wip]
 
+### Fixed
+
+- Added `OTel.setErrorHandler` to customize SDK error handling. Exporter,
+  processor, metric reader, and resource detector failures now use the shared
+  API/SDK handler, including when diagnostic logging is disabled. This meets
+  the MUST in `error-handling.md`, Configuring Error Handlers
+  ([#320](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/320) by @harshitt13).
+
 ## [1.1.0-beta.17] - 2026-10-11
 
 The spec-compliance issues this release closes ([#106](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/issues/106), 

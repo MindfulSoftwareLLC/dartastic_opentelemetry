@@ -5,6 +5,8 @@ import 'dart:async';
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
     show OTelLog;
+
+import '../../../export/export_error_scope.dart';
 import '../../data/metric.dart';
 import '../../data/metric_data.dart';
 import '../../data/metric_point.dart';
@@ -83,10 +85,8 @@ class PrometheusExporter implements MetricExporter {
         OTelLog.logExport('PrometheusExporter: Export successful');
       }
       return true;
-    } catch (e) {
-      if (OTelLog.isLogExport()) {
-        OTelLog.logExport('PrometheusExporter: Export failed: $e');
-      }
+    } catch (e, stackTrace) {
+      ExportErrorScope.report(e, stackTrace);
       return false;
     }
   }

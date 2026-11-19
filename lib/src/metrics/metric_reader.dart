@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
     show OTelLog;
 
+import '../export/export_error_scope.dart';
 import 'data/metric_data.dart';
 import 'meter_provider.dart';
 import 'metric_exporter.dart';
@@ -91,26 +92,24 @@ class PeriodicExportingMetricReader extends MetricReader {
   Future<void> _collectAndExport() async {
     if (meterProvider == null) return;
 
-    try {
-      // Collect metrics
-      final data = await collect();
+    await ExportErrorScope.run((scope) async {
+      try {
+        // Collect metrics
+        final data = await collect();
 
-      // Export metrics
-      if (data.metrics.isNotEmpty) {
-        final exportFuture = _exporter.export(data);
+        // Export metrics
+        if (data.metrics.isNotEmpty) {
+          final exportFuture = _exporter.export(data);
 
-        // Apply timeout to export
-        await exportFuture.timeout(
-          _timeout,
-          onTimeout: () {
-            print('Metric export timed out after $_timeout');
-            return false;
-          },
-        );
+          final success = await exportFuture.timeout(_timeout);
+          if (!success) {
+            throw StateError('PeriodicExportingMetricReader: Export failed');
+          }
+        }
+      } catch (e, stackTrace) {
+        scope.reportIfNeeded(e, stackTrace);
       }
-    } catch (e) {
-      print('Error during metric collection/export: $e');
-    }
+    });
   }
 
   @override
@@ -142,14 +141,16 @@ class PeriodicExportingMetricReader extends MetricReader {
 
   @override
   Future<bool> forceFlush() async {
-    try {
-      // Collect and export immediately
-      await _collectAndExport();
-      return await _exporter.forceFlush();
-    } catch (e) {
-      print('Error during forceFlush: $e');
-      return false;
-    }
+    // Collect and export immediately. Handler exceptions propagate.
+    await _collectAndExport();
+    return ExportErrorScope.run((scope) async {
+      try {
+        return await _exporter.forceFlush();
+      } catch (e, stackTrace) {
+        scope.reportIfNeeded(e, stackTrace);
+        return false;
+      }
+    });
   }
 
   @override
@@ -157,13 +158,18 @@ class PeriodicExportingMetricReader extends MetricReader {
     _timer?.cancel();
     _timer = null;
 
+    var result = false;
     try {
-      // Perform one final collection and export
       await _collectAndExport();
-      return await _exporter.shutdown();
-    } catch (e) {
-      print('Error during shutdown: $e');
-      return false;
+    } finally {
+      await ExportErrorScope.run((scope) async {
+        try {
+          result = await _exporter.shutdown();
+        } catch (e, stackTrace) {
+          scope.reportIfNeeded(e, stackTrace);
+        }
+      });
     }
+    return result;
   }
 }

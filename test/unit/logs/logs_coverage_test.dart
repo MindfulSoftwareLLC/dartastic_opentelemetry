@@ -541,7 +541,8 @@ void main() {
         await processor.forceFlush();
 
         expect(
-          logOutput.any((m) => m.contains('Error exporting batch')),
+          logOutput.any((m) =>
+              m.contains('[ERROR]') && m.contains('Exception: export threw')),
           isTrue,
           reason: 'Should log the export error',
         );
@@ -598,7 +599,8 @@ void main() {
         await processor.forceFlush();
 
         expect(
-          logOutput.any((m) => m.contains('Export timed out')),
+          logOutput.any(
+              (m) => m.contains('[ERROR]') && m.contains('TimeoutException')),
           isTrue,
           reason: 'Should log that export timed out',
         );
@@ -712,8 +714,8 @@ void main() {
       await processor.shutdown();
 
       expect(
-        logOutput
-            .any((m) => m.contains('Error exporting batch during shutdown')),
+        logOutput.any((m) =>
+            m.contains('[ERROR]') && m.contains('Exception: export threw')),
         isTrue,
         reason: 'Should log error during shutdown export',
       );
@@ -738,7 +740,8 @@ void main() {
       await processor.shutdown();
 
       expect(
-        logOutput.any((m) => m.contains('Export timed out during shutdown')),
+        logOutput.any(
+            (m) => m.contains('[ERROR]') && m.contains('TimeoutException')),
         isTrue,
         reason: 'Should log timeout during shutdown export',
       );
@@ -1187,12 +1190,11 @@ void main() {
       final result = await exporter.export([logRecord]);
       expect(result, equals(ExportResult.failure));
 
-      // Connection refused triggers either an HTTP error or unexpected error log
+      // The default handler logs the original transport error or timeout.
       expect(
         logOutput.any((m) =>
-            m.contains('error during export') ||
-            m.contains('Export request failed') ||
-            m.contains('Unexpected error')),
+            m.contains('[ERROR]') &&
+            (m.contains('ClientException') || m.contains('TimeoutException'))),
         isTrue,
         reason: 'Should log an error for connection refused',
       );

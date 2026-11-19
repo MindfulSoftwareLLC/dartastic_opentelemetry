@@ -170,29 +170,21 @@ class OtlpHttpSpanExporter implements SpanExporter {
       });
     }
 
-    try {
-      final response = await _client
-          .post(Uri.parse(endpointUrl), headers: headers, body: bodyBytes)
-          .timeout(_config.timeout);
+    final response = await _client
+        .post(Uri.parse(endpointUrl), headers: headers, body: bodyBytes)
+        .timeout(_config.timeout);
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        if (OTelLog.isDebug()) {
-          OTelLog.debug(
-            'OtlpHttpSpanExporter: Export request completed successfully',
-          );
-        }
-      } else {
-        final errorMessage =
-            'OtlpHttpSpanExporter: Export request failed with status code ${response.statusCode}';
-        if (OTelLog.isError()) OTelLog.error(errorMessage);
-        throw OtlpHttpException(errorMessage, response.statusCode);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+          'OtlpHttpSpanExporter: Export request completed successfully',
+        );
       }
-    } catch (e, stackTrace) {
-      if (OTelLog.isError()) {
-        OTelLog.error('OtlpHttpSpanExporter: Export request failed: $e');
-        OTelLog.error('Stack trace: $stackTrace');
-      }
-      rethrow;
+    } else {
+      final errorMessage =
+          'OtlpHttpSpanExporter: Export request failed with status code ${response.statusCode}';
+
+      throw OtlpHttpException(errorMessage, response.statusCode);
     }
   }
 
@@ -253,6 +245,8 @@ class OtlpHttpSpanExporter implements SpanExporter {
       );
     }
 
+    Object? lastError;
+    StackTrace? lastStack;
     var attempts = 0;
     final maxAttempts = _config.maxRetries + 1; // Initial attempt + retries
 
@@ -263,6 +257,8 @@ class OtlpHttpSpanExporter implements SpanExporter {
       try {
         // Only check for shutdown on retry attempts to ensure in-progress exports can complete
         if (wasShutdownDuringRetry && attempts > 0) {
+          final error = lastError;
+          if (error != null) Error.throwWithStackTrace(error, lastStack!);
           if (OTelLog.isDebug()) {
             OTelLog.debug(
               'OtlpHttpSpanExporter: Export interrupted by shutdown',
@@ -277,19 +273,11 @@ class OtlpHttpSpanExporter implements SpanExporter {
         }
         return;
       } on http.ClientException catch (e, stackTrace) {
-        if (OTelLog.isError()) {
-          OTelLog.error('OtlpHttpSpanExporter: HTTP error during export: $e');
-        }
-        if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
-
+        lastError = e;
+        lastStack = stackTrace;
         // Check if the exporter was shut down while we were waiting
         if (wasShutdownDuringRetry) {
-          if (OTelLog.isError()) {
-            OTelLog.error(
-              'OtlpHttpSpanExporter: Export interrupted by shutdown',
-            );
-          }
-          throw StateError('Exporter was shut down during export');
+          rethrow;
         }
 
         // Handle status code-based retries
@@ -297,20 +285,10 @@ class OtlpHttpSpanExporter implements SpanExporter {
             _retryableStatusCodes.contains(e.statusCode);
 
         if (!shouldRetry) {
-          if (OTelLog.isError()) {
-            OTelLog.error(
-              'OtlpHttpSpanExporter: Non-retryable HTTP error, stopping retry attempts',
-            );
-          }
           rethrow;
         }
 
         if (attempts >= maxAttempts - 1) {
-          if (OTelLog.isError()) {
-            OTelLog.error(
-              'OtlpHttpSpanExporter: Max attempts reached ($attempts out of $maxAttempts), giving up',
-            );
-          }
           rethrow;
         }
 
@@ -323,16 +301,11 @@ class OtlpHttpSpanExporter implements SpanExporter {
         await Future<void>.delayed(delay);
         attempts++;
       } catch (e, stackTrace) {
-        if (OTelLog.isError()) {
-          OTelLog.error(
-            'OtlpHttpSpanExporter: Unexpected error during export: $e',
-          );
-        }
-        if (OTelLog.isError()) OTelLog.error('Stack trace: $stackTrace');
-
+        lastError = e;
+        lastStack = stackTrace;
         // Check if we should stop retrying due to shutdown
         if (wasShutdownDuringRetry) {
-          throw StateError('Exporter was shut down during export');
+          rethrow;
         }
 
         if (attempts >= maxAttempts - 1) {
@@ -378,10 +351,8 @@ class OtlpHttpSpanExporter implements SpanExporter {
         if (OTelLog.isDebug()) {
           OTelLog.debug('OtlpHttpSpanExporter: All pending exports completed');
         }
-      } catch (e) {
-        if (OTelLog.isError()) {
-          OTelLog.error('OtlpHttpSpanExporter: Error during force flush: $e');
-        }
+      } catch (_) {
+        // The export future delivers its error to the caller/processor.
       }
     } else {
       if (OTelLog.isDebug()) {
@@ -412,36 +383,34 @@ class OtlpHttpSpanExporter implements SpanExporter {
 
     // Wait for pending exports but don't start any new ones
     // Use a timeout to prevent hanging if exports take too long
-    if (pendingExportsCopy.isNotEmpty) {
-      if (OTelLog.isDebug()) {
-        OTelLog.debug(
-          'OtlpHttpSpanExporter: Waiting for ${pendingExportsCopy.length} pending exports with timeout',
-        );
-      }
-      try {
-        // Use a generous timeout but don't wait forever
-        await Future.wait(pendingExportsCopy).timeout(
-          const Duration(seconds: 10),
-          onTimeout: () {
-            if (OTelLog.isDebug()) {
-              OTelLog.debug(
-                'OtlpHttpSpanExporter: Timeout waiting for exports to complete',
-              );
-            }
-            return Future.value([]);
-          },
-        );
-      } catch (e) {
+    try {
+      if (pendingExportsCopy.isNotEmpty) {
         if (OTelLog.isDebug()) {
           OTelLog.debug(
-            'OtlpHttpSpanExporter: Error during shutdown while waiting for exports: $e',
+            'OtlpHttpSpanExporter: Waiting for ${pendingExportsCopy.length} pending exports with timeout',
           );
         }
+        try {
+          // Use a generous timeout but don't wait forever
+          await Future.wait(pendingExportsCopy).timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              if (OTelLog.isDebug()) {
+                OTelLog.debug(
+                  'OtlpHttpSpanExporter: Timeout waiting for exports to complete',
+                );
+              }
+              return Future.value([]);
+            },
+          );
+        } catch (_) {
+          // The export future delivers its error to the caller/processor.
+        }
       }
+    } finally {
+      // Close the HTTP client even when a custom error handler throws.
+      _client.close();
     }
-
-    // Close the HTTP client to release resources
-    _client.close();
 
     if (OTelLog.isDebug()) {
       OTelLog.debug('OtlpHttpSpanExporter: Shutdown complete');

@@ -205,7 +205,10 @@ void main() {
           [_ThrowingDetector(), ProcessResourceDetector()]);
       final resource = await composite.detect();
       expect(resource.attributes.length, greaterThan(0));
-      expect(logOutput.any((m) => m.contains('Error in resource detector')),
+      expect(
+          logOutput.any((m) =>
+              m.contains('[ERROR]') &&
+              m.contains('Exception: detector failure')),
           isTrue);
     });
   });

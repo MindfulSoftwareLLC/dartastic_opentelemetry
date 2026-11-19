@@ -8,6 +8,7 @@ import 'package:meta/meta.dart';
 
 import '../../../../dartastic_opentelemetry.dart';
 import '../../../../proto/collector/metrics/v1/metrics_service.pbgrpc.dart';
+import '../../../export/export_error_scope.dart';
 import '../../../export/otlp_user_agent.dart';
 import '../../../trace/export/otlp/certificate_utils_io.dart';
 import 'metric_transformer.dart';
@@ -63,12 +64,8 @@ class OtlpGrpcMetricExporter implements MetricExporter {
         authority: null,
         onBadCertificate: null,
       );
-    } catch (e) {
-      if (OTelLog.isError()) {
-        OTelLog.error(
-          'OtlpGrpcMetricExporter: Failed to load certificates: $e',
-        );
-      }
+    } catch (e, stackTrace) {
+      ExportErrorScope.report(e, stackTrace);
       // Fall back to default secure credentials on error
       return const ChannelCredentials.secure();
     }
@@ -162,10 +159,7 @@ class OtlpGrpcMetricExporter implements MetricExporter {
       }
       return true;
     } catch (e, stackTrace) {
-      if (OTelLog.isLogExport()) {
-        OTelLog.logExport('OtlpGrpcMetricExporter: Export failed: $e');
-        OTelLog.logExport('Stack trace: $stackTrace');
-      }
+      ExportErrorScope.report(e, stackTrace);
       return false;
     }
   }
@@ -203,10 +197,8 @@ class OtlpGrpcMetricExporter implements MetricExporter {
         OTelLog.logExport('OtlpGrpcMetricExporter: Channel shutdown completed');
       }
       return true;
-    } catch (e) {
-      if (OTelLog.isLogExport()) {
-        OTelLog.logExport('OtlpGrpcMetricExporter: Shutdown failed: $e');
-      }
+    } catch (e, stackTrace) {
+      ExportErrorScope.report(e, stackTrace);
       return false;
     }
   }

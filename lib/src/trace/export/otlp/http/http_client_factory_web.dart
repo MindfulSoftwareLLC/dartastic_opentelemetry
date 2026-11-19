@@ -10,7 +10,7 @@
 // on this code path.
 
 import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
-    show OTelLog;
+    show OTelErrorHandling;
 import 'package:http/browser_client.dart';
 import 'package:http/http.dart' as http;
 
@@ -25,13 +25,12 @@ http.Client createOtlpHttpClient({
   String? clientKey,
   String? clientCertificate,
 }) {
-  if ((certificate != null || clientKey != null || clientCertificate != null) &&
-      OTelLog.isError()) {
-    OTelLog.error(
+  if (certificate != null || clientKey != null || clientCertificate != null) {
+    OTelErrorHandling.report(UnsupportedError(
       '$exporterName: certificate / clientKey / clientCertificate '
       'configuration is ignored on web — the browser handles TLS. '
       'Use the IO build for custom CA roots or mTLS.',
-    );
+    ));
   }
   return BrowserClient();
 }

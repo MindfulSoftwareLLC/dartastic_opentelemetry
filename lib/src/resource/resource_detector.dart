@@ -93,9 +93,9 @@ class CompositeResourceDetector implements ResourceDetector {
       try {
         final resource = await detector.detect();
         result = result.merge(resource);
-      } catch (e) {
+      } catch (e, stackTrace) {
         // Log error but continue with other detectors
-        if (OTelLog.isError()) OTelLog.error('Error in resource detector: $e');
+        OTelErrorHandling.report(e, stackTrace);
       }
     }
 
@@ -118,18 +118,16 @@ class PlatformResourceDetector {
     if (!const bool.fromEnvironment('dart.library.js_interop')) {
       try {
         detectors.addAll([ProcessResourceDetector(), HostResourceDetector()]);
-      } catch (e) {
-        if (OTelLog.isError()) {
-          OTelLog.error('Error adding native detectors: $e');
-        }
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
       }
     }
     // For web platforms
     else {
       try {
         detectors.add(WebResourceDetector());
-      } catch (e) {
-        if (OTelLog.isError()) OTelLog.error('Error adding web detector: $e');
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
       }
     }
 

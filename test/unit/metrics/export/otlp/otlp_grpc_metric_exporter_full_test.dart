@@ -330,25 +330,23 @@ void main() {
     });
 
     // 12
-    test('export failure logs error when export logging enabled', () async {
-      final logMessages = <String>[];
-      OTelLog.exportLogFunction = logMessages.add;
-      OTelLog.enableTraceLogging();
-
+    test('export failure reaches custom handler with logging disabled',
+        () async {
+      final errors = <Object>[];
+      final stacks = <StackTrace?>[];
+      OTelLog.logFunction = null;
+      OTelLog.exportLogFunction = null;
+      OTel.setErrorHandler((error, stack) {
+        errors.add(error);
+        stacks.add(stack);
+      });
       mockService.errorCode = StatusCode.internal;
-
       final exporter = _createExporter(port);
-      final data = _createTestMetricData();
-
-      await exporter.export(data);
-
-      // Should log the failure
-      expect(
-        logMessages.any((msg) => msg.contains('Export failed')),
-        isTrue,
-        reason: 'Expected export failure log message',
-      );
-
+      expect(await exporter.export(_createTestMetricData()), isFalse);
+      expect(errors, [
+        isA<GrpcError>().having((e) => e.code, 'code', StatusCode.internal)
+      ]);
+      expect(stacks.single, isNotNull);
       await exporter.shutdown();
     });
 

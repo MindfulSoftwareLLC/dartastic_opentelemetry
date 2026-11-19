@@ -10,6 +10,7 @@
 library;
 
 import 'dart:async';
+import 'dart:io';
 
 import 'package:dartastic_opentelemetry/dartastic_opentelemetry.dart'
     hide Server;
@@ -171,6 +172,92 @@ void main() {
 
       await exporter.shutdown();
       await server.shutdown();
+    });
+
+    test('shutdown during backoff reports the original gRPC error once',
+        () async {
+      final service = _AlwaysUnavailableLogsService();
+      final server = Server.create(services: [service]);
+      await server.serve(port: 0);
+      addTearDown(server.shutdown);
+      final errors = <Object>[];
+      final stacks = <StackTrace?>[];
+      OTel.setErrorHandler((error, stack) {
+        errors.add(error);
+        stacks.add(stack);
+      });
+      addTearDown(() => OTel.setErrorHandler(null));
+      final retrying = Completer<void>();
+      OTelLog.currentLevel = LogLevel.debug;
+      OTelLog.logFunction = (message) {
+        if (message.contains('Retrying after') && !retrying.isCompleted) {
+          retrying.complete();
+        }
+      };
+      final exporter =
+          OtlpGrpcLogRecordExporter(OtlpGrpcLogRecordExporterConfig(
+        endpoint: 'localhost:${server.port}',
+        insecure: true,
+        maxRetries: 1,
+        baseDelay: const Duration(milliseconds: 100),
+        maxDelay: const Duration(milliseconds: 100),
+      ));
+      addTearDown(exporter.shutdown);
+      final pending = exporter.export([record('shutdown')]);
+      await retrying.future;
+      await exporter.shutdown();
+      expect(await pending, ExportResult.failure);
+      expect(service.callCount, 1);
+      expect(errors, hasLength(1));
+      expect(
+          errors.single,
+          isA<GrpcError>()
+              .having((e) => e.code, 'code', StatusCode.unavailable));
+      expect(stacks.single, isNotNull);
+    });
+
+    test('invalid CA and transport failure are reported independently',
+        () async {
+      final directory =
+          await Directory.systemTemp.createTemp('otel-invalid-ca');
+      addTearDown(() => directory.delete(recursive: true));
+      final ca =
+          await File('${directory.path}/ca.pem').writeAsString('garbage PEM');
+      final socket = await ServerSocket.bind(InternetAddress.loopbackIPv4, 0);
+      final port = socket.port;
+      await socket.close();
+      final errors = <Object>[];
+      final stacks = <StackTrace?>[];
+      OTel.setErrorHandler((error, stack) {
+        errors.add(error);
+        stacks.add(stack);
+      });
+      addTearDown(() => OTel.setErrorHandler(null));
+      final exporter =
+          OtlpGrpcLogRecordExporter(OtlpGrpcLogRecordExporterConfig(
+        endpoint: '127.0.0.1:$port',
+        insecure: false,
+        certificate: ca.path,
+        maxRetries: 0,
+        timeout: const Duration(seconds: 1),
+      ));
+      final processor = SimpleLogRecordProcessor(exporter);
+      addTearDown(processor.shutdown);
+      await processor.onEmit(
+          SDKLogRecord(
+            instrumentationScope: OTel.instrumentationScope(name: 'invalid-ca'),
+            body: 'test',
+          ),
+          null);
+      expect(errors, hasLength(2));
+      expect(errors.first, isA<TlsException>());
+      expect(
+          errors.last,
+          isA<GrpcError>().having((e) => e.code, 'code',
+              anyOf(StatusCode.unavailable, StatusCode.deadlineExceeded)));
+      expect(stacks, everyElement(isNotNull));
+      await processor.shutdown();
+      expect(errors, hasLength(2));
     });
 
     test('connection refused fails the export', () async {

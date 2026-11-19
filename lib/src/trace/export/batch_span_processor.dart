@@ -210,8 +210,8 @@ class BatchSpanProcessor implements SpanProcessor {
         // last-resort guard so an unexpected failure can never become an
         // unhandled async error inside a periodic timer.
         // coverage:ignore-start
-      } catch (e) {
-        if (OTelLog.isError()) OTelLog.error('Error in batch export timer: $e');
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
       }
       // coverage:ignore-end
     });
@@ -291,10 +291,8 @@ class BatchSpanProcessor implements SpanProcessor {
     try {
       await exporter.export(spansToExport).timeout(_config.exportTimeout);
       return true;
-    } catch (e) {
-      if (OTelLog.isError()) {
-        OTelLog.error('Error exporting batch of spans: $e');
-      }
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
       // Bail out — don't loop forever on a broken exporter.
       return false;
     }
@@ -327,16 +325,17 @@ class BatchSpanProcessor implements SpanProcessor {
     // Stop the periodic timer first so it can't race with our drain.
     _timer?.cancel();
 
-    // Drain queued spans BEFORE setting `_isShutdown` — otherwise the
-    // `_isShutdown` early-return inside `_exportBatch` would skip them.
-    // `_drainQueue` calls `_exportSingleBatch` directly so it's
-    // unaffected by the flag in any case, but the ordering keeps the
-    // behavior obvious.
-    await _drainQueue();
-
-    _isShutdown = true;
-
-    // Shutdown the exporter
-    await exporter.shutdown();
+    try {
+      // Drain before marking shutdown so final exports can still run.
+      await _drainQueue();
+    } finally {
+      // A deliberately throwing handler must not bypass exporter cleanup.
+      _isShutdown = true;
+      try {
+        await exporter.shutdown();
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
+      }
+    }
   }
 }

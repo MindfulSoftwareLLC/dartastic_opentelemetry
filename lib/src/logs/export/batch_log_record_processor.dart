@@ -8,6 +8,7 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart';
 import 'package:synchronized/synchronized.dart';
 
 import '../../environment/otel_env.dart';
+import '../../export/export_error_scope.dart';
 import '../log_record_processor.dart';
 import '../readable_log_record.dart';
 import 'log_record_exporter.dart';
@@ -202,14 +203,7 @@ class BatchLogRecordProcessor implements LogRecordProcessor {
       [BatchLogRecordProcessorConfig? config])
       : _config = config ?? const BatchLogRecordProcessorConfig() {
     _timer = Timer.periodic(_config.scheduleDelay, (_) async {
-      try {
-        await _exportBatch();
-      } catch (e) {
-        if (OTelLog.isError()) {
-          OTelLog.error(
-              'BatchLogRecordProcessor: Error in batch export timer: $e');
-        }
-      }
+      await _exportBatch();
     });
   }
 
@@ -271,25 +265,18 @@ class BatchLogRecordProcessor implements LogRecordProcessor {
           'BatchLogRecordProcessor: Exporting ${logsToExport.length} log records');
     }
 
-    try {
-      final result = await exporter.export(logsToExport).timeout(
-        _config.exportTimeout,
-        onTimeout: () {
-          if (OTelLog.isError()) {
-            OTelLog.error('BatchLogRecordProcessor: Export timed out');
-          }
-          return ExportResult.failure;
-        },
-      );
+    await ExportErrorScope.run((scope) async {
+      try {
+        final result =
+            await exporter.export(logsToExport).timeout(_config.exportTimeout);
 
-      if (result == ExportResult.failure && OTelLog.isError()) {
-        OTelLog.error('BatchLogRecordProcessor: Export failed');
+        if (result == ExportResult.failure) {
+          throw StateError('BatchLogRecordProcessor: Export failed');
+        }
+      } catch (e, stackTrace) {
+        scope.reportIfNeeded(e, stackTrace);
       }
-    } catch (e) {
-      if (OTelLog.isError()) {
-        OTelLog.error('BatchLogRecordProcessor: Error exporting batch: $e');
-      }
-    }
+    });
   }
 
   @override
@@ -303,7 +290,11 @@ class BatchLogRecordProcessor implements LogRecordProcessor {
       await _exportBatch();
     }
 
-    await exporter.forceFlush();
+    try {
+      await exporter.forceFlush();
+    } catch (e, stackTrace) {
+      OTelErrorHandling.report(e, stackTrace);
+    }
   }
 
   @override
@@ -315,18 +306,25 @@ class BatchLogRecordProcessor implements LogRecordProcessor {
     // Cancel the timer first
     _timer?.cancel();
 
-    // Export any remaining log records BEFORE setting _isShutdown
-    // so that forceFlush and _exportBatch will still work
-    while (_logQueue.isNotEmpty) {
-      await _exportBatchForShutdown();
+    try {
+      // Drain before marking shutdown so final exports can still run.
+      while (_logQueue.isNotEmpty) {
+        await _exportBatchForShutdown();
+      }
+      try {
+        await exporter.forceFlush();
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
+      }
+    } finally {
+      // A deliberately throwing handler must not bypass exporter cleanup.
+      _isShutdown = true;
+      try {
+        await exporter.shutdown();
+      } catch (e, stackTrace) {
+        OTelErrorHandling.report(e, stackTrace);
+      }
     }
-    await exporter.forceFlush();
-
-    // Now mark as shutdown
-    _isShutdown = true;
-
-    // Shutdown the exporter
-    await exporter.shutdown();
   }
 
   /// Internal export batch method for shutdown that doesn't check _isShutdown.
@@ -348,22 +346,17 @@ class BatchLogRecordProcessor implements LogRecordProcessor {
       return;
     }
 
-    try {
-      await exporter.export(logsToExport).timeout(
-        _config.exportTimeout,
-        onTimeout: () {
-          if (OTelLog.isError()) {
-            OTelLog.error(
-                'BatchLogRecordProcessor: Export timed out during shutdown');
-          }
-          return ExportResult.failure;
-        },
-      );
-    } catch (e) {
-      if (OTelLog.isError()) {
-        OTelLog.error(
-            'BatchLogRecordProcessor: Error exporting batch during shutdown: $e');
+    await ExportErrorScope.run((scope) async {
+      try {
+        final result =
+            await exporter.export(logsToExport).timeout(_config.exportTimeout);
+        if (result == ExportResult.failure) {
+          throw StateError(
+              'BatchLogRecordProcessor: Export failed during shutdown');
+        }
+      } catch (e, stackTrace) {
+        scope.reportIfNeeded(e, stackTrace);
       }
-    }
+    });
   }
 }

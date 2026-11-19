@@ -10,6 +10,7 @@ import 'package:dartastic_opentelemetry_api/dartastic_opentelemetry_api.dart'
     show OTelLog;
 import 'package:http/http.dart' as http;
 
+import '../../../../export/export_error_scope.dart';
 import '../../../../export/otlp_http_exception.dart';
 import '../../../../export/otlp_http_protocol.dart';
 import '../../../../export/otlp_json.dart';
@@ -148,33 +149,25 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
       });
     }
 
-    try {
-      final response = await _client
-          .post(
-            Uri.parse(endpointUrl),
-            headers: headers,
-            body: bodyBytes,
-          )
-          .timeout(_config.timeout);
+    final response = await _client
+        .post(
+          Uri.parse(endpointUrl),
+          headers: headers,
+          body: bodyBytes,
+        )
+        .timeout(_config.timeout);
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        if (OTelLog.isDebug()) {
-          OTelLog.debug(
-              'OtlpHttpLogRecordExporter: Export request completed successfully');
-        }
-        return ExportResult.success;
-      } else {
-        final errorMessage =
-            'OtlpHttpLogRecordExporter: Export request failed with status code ${response.statusCode}';
-        if (OTelLog.isError()) OTelLog.error(errorMessage);
-        throw OtlpHttpException(errorMessage, response.statusCode);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+            'OtlpHttpLogRecordExporter: Export request completed successfully');
       }
-    } catch (e, stackTrace) {
-      if (OTelLog.isError()) {
-        OTelLog.error('OtlpHttpLogRecordExporter: Export request failed: $e');
-        OTelLog.error('Stack trace: $stackTrace');
-      }
-      rethrow;
+      return ExportResult.success;
+    } else {
+      final errorMessage =
+          'OtlpHttpLogRecordExporter: Export request failed with status code ${response.statusCode}';
+
+      throw OtlpHttpException(errorMessage, response.statusCode);
     }
   }
 
@@ -196,7 +189,7 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
           'OtlpHttpLogRecordExporter: Beginning export of ${logRecords.length} log records');
     }
 
-    final exportFuture = _export(logRecords);
+    final exportFuture = _exportWithErrorHandling(logRecords);
     _pendingExports.add(exportFuture);
 
     try {
@@ -206,19 +199,24 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
             'OtlpHttpLogRecordExporter: Export completed with result: $result');
       }
       return result;
-    } catch (e) {
+    } finally {
+      _pendingExports.remove(exportFuture);
+    }
+  }
+
+  Future<ExportResult> _exportWithErrorHandling(
+      List<ReadableLogRecord> logRecords) async {
+    try {
+      return await _export(logRecords);
+    } catch (e, stackTrace) {
       if (_isShutdown &&
           e is StateError &&
           e.message.contains('shut down during')) {
-        if (OTelLog.isDebug()) {
-          OTelLog.debug(
-              'OtlpHttpLogRecordExporter: Export was interrupted by shutdown');
-        }
-        return ExportResult.failure;
+        ExportErrorScope.suppress();
+      } else {
+        ExportErrorScope.report(e, stackTrace);
       }
       return ExportResult.failure;
-    } finally {
-      _pendingExports.remove(exportFuture);
     }
   }
 
@@ -232,6 +230,8 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
           'OtlpHttpLogRecordExporter: Attempting to export ${logRecords.length} log records to ${_config.endpoint}');
     }
 
+    Object? lastError;
+    StackTrace? lastStack;
     var attempts = 0;
     final maxAttempts = _config.maxRetries + 1;
 
@@ -240,6 +240,8 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
 
       try {
         if (wasShutdownDuringRetry && attempts > 0) {
+          final error = lastError;
+          if (error != null) Error.throwWithStackTrace(error, lastStack!);
           if (OTelLog.isDebug()) {
             OTelLog.debug(
                 'OtlpHttpLogRecordExporter: Export interrupted by shutdown');
@@ -249,33 +251,21 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
 
         return await _tryExport(logRecords);
       } on http.ClientException catch (e, stackTrace) {
-        if (OTelLog.isError()) {
-          OTelLog.error(
-              'OtlpHttpLogRecordExporter: HTTP error during export: $e');
-          OTelLog.error('Stack trace: $stackTrace');
-        }
-
+        lastError = e;
+        lastStack = stackTrace;
         if (wasShutdownDuringRetry) {
-          return ExportResult.failure;
+          rethrow;
         }
 
         final shouldRetry = e is OtlpHttpException &&
             _retryableStatusCodes.contains(e.statusCode);
 
         if (!shouldRetry) {
-          if (OTelLog.isError()) {
-            OTelLog.error(
-                'OtlpHttpLogRecordExporter: Non-retryable HTTP error, stopping retry attempts');
-          }
-          return ExportResult.failure;
+          rethrow;
         }
 
         if (attempts >= maxAttempts - 1) {
-          if (OTelLog.isError()) {
-            OTelLog.error(
-                'OtlpHttpLogRecordExporter: Max attempts reached, giving up');
-          }
-          return ExportResult.failure;
+          rethrow;
         }
 
         final delay = _calculateJitteredDelay(attempts);
@@ -286,18 +276,14 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
         await Future<void>.delayed(delay);
         attempts++;
       } catch (e, stackTrace) {
-        if (OTelLog.isError()) {
-          OTelLog.error(
-              'OtlpHttpLogRecordExporter: Unexpected error during export: $e');
-          OTelLog.error('Stack trace: $stackTrace');
-        }
-
+        lastError = e;
+        lastStack = stackTrace;
         if (wasShutdownDuringRetry) {
-          return ExportResult.failure;
+          rethrow;
         }
 
         if (attempts >= maxAttempts - 1) {
-          return ExportResult.failure;
+          rethrow;
         }
 
         final delay = _calculateJitteredDelay(attempts);
@@ -327,17 +313,11 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
         OTelLog.debug(
             'OtlpHttpLogRecordExporter: Waiting for ${_pendingExports.length} pending exports');
       }
-      try {
-        await Future.wait(_pendingExports);
-        if (OTelLog.isDebug()) {
-          OTelLog.debug(
-              'OtlpHttpLogRecordExporter: All pending exports completed');
-        }
-      } catch (e) {
-        if (OTelLog.isError()) {
-          OTelLog.error(
-              'OtlpHttpLogRecordExporter: Error during force flush: $e');
-        }
+
+      await Future.wait(_pendingExports);
+      if (OTelLog.isDebug()) {
+        OTelLog.debug(
+            'OtlpHttpLogRecordExporter: All pending exports completed');
       }
     }
   }
@@ -355,12 +335,13 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
 
     final pendingExportsCopy = List<Future<void>>.of(_pendingExports);
 
-    if (pendingExportsCopy.isNotEmpty) {
-      if (OTelLog.isDebug()) {
-        OTelLog.debug(
-            'OtlpHttpLogRecordExporter: Waiting for ${pendingExportsCopy.length} pending exports');
-      }
-      try {
+    try {
+      if (pendingExportsCopy.isNotEmpty) {
+        if (OTelLog.isDebug()) {
+          OTelLog.debug(
+              'OtlpHttpLogRecordExporter: Waiting for ${pendingExportsCopy.length} pending exports');
+        }
+
         await Future.wait(pendingExportsCopy)
             .timeout(const Duration(seconds: 10), onTimeout: () {
           if (OTelLog.isDebug()) {
@@ -369,14 +350,10 @@ class OtlpHttpLogRecordExporter implements LogRecordExporter {
           }
           return Future.value([]);
         });
-      } catch (e) {
-        if (OTelLog.isDebug()) {
-          OTelLog.debug('OtlpHttpLogRecordExporter: Error during shutdown: $e');
-        }
       }
+    } finally {
+      _client.close();
     }
-
-    _client.close();
 
     if (OTelLog.isDebug()) {
       OTelLog.debug('OtlpHttpLogRecordExporter: Shutdown complete');
