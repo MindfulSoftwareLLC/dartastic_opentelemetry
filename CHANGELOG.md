@@ -23,20 +23,11 @@ Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Added `OTel.setErrorHandler(OTelErrorHandler? handler)` and routed exporter,
-  processor, metric reader, and resource detector failures through the shared
-  API/SDK handler, as required by the MUST in the specification's
-  `error-handling.md`, Configuring Error Handlers
+- Added `OTel.setErrorHandler` to customize SDK error handling. Exporter,
+  processor, metric reader, and resource detector failures now use the shared
+  API/SDK handler, including when diagnostic logging is disabled. This meets
+  the MUST in `error-handling.md`, Configuring Error Handlers
   ([#320](https://github.com/MindfulSoftwareLLC/dartastic_opentelemetry/pull/320) by @harshitt13).
-  Set the handler before or after `OTel.initialize()`; it receives errors and
-  available stack traces even with diagnostic logging disabled. A no-op handler
-  suppresses error diagnostics, and `null` restores the factory's default handler.
-  OTLP retry failures are reported once after retries finish or shutdown
-  interrupts them. If the processor or reader times out first, it reports that
-  timeout and suppresses late export errors. Existing span exporter exception
-  contracts remain unchanged. Batch processors close exporters even when a
-  strict handler throws during shutdown; certificate and channel-cleanup errors
-  are reported separately from export failures.
 
 ## [1.1.0-beta.17] - 2026-10-11
 
