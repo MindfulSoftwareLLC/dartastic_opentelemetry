@@ -359,6 +359,53 @@ void main() {
         );
       });
 
+      test('resource schema URL goes on ResourceMetrics', () {
+        final resource = OTel.resource(
+          Attributes.of({'service.name': 'schema-service'}),
+          'https://opentelemetry.io/schemas/1.29.0',
+        );
+        final data = MetricData(
+          resource: resource,
+          metrics: [gauge('m.schema', 5.0)],
+        );
+
+        final request = MetricTransformer.transformMetrics(data);
+
+        expect(
+          request.resourceMetrics.first.schemaUrl,
+          equals('https://opentelemetry.io/schemas/1.29.0'),
+        );
+      });
+
+      test('fallback resource schema URL goes on ResourceMetrics', () {
+        final fallback = OTel.resource(
+          Attributes.of({'service.name': 'fallback-service'}),
+          'https://opentelemetry.io/schemas/1.29.0',
+        );
+        final data = MetricData(metrics: [gauge('m.fallback.schema', 6.0)]);
+
+        final request = MetricTransformer.transformMetrics(
+          data,
+          fallbackResource: fallback,
+        );
+
+        expect(
+          request.resourceMetrics.first.schemaUrl,
+          equals('https://opentelemetry.io/schemas/1.29.0'),
+        );
+      });
+
+      test('a resource without a schema URL leaves it unset', () {
+        final data = MetricData(
+          resource: OTel.resource(Attributes.of({'service.name': 's'})),
+          metrics: [gauge('m.no.schema', 7.0)],
+        );
+
+        final request = MetricTransformer.transformMetrics(data);
+
+        expect(request.resourceMetrics.first.hasSchemaUrl(), isFalse);
+      });
+
       test('empty metrics still produce the resource/scope envelope', () {
         final data = MetricData(
           resource: OTel.resource(Attributes.of({'service.name': 's'})),
