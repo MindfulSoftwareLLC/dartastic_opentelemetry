@@ -210,5 +210,64 @@ void main() {
       expect(link.attributes.first.key, equals('link.key'));
       expect(link.attributes.first.value.stringValue, equals('link.value'));
     });
+
+    group('schema URL', () {
+      const resourceSchema = 'https://opentelemetry.io/schemas/1.29.0';
+      const scopeSchema = 'https://opentelemetry.io/schemas/1.30.0';
+      const otherScopeSchema = 'https://opentelemetry.io/schemas/1.31.0';
+
+      test('resource schema URL goes on ResourceSpans, not ScopeSpans', () {
+        OTel.tracerProvider().resource = OTel.resource(
+          OTel.attributesFromMap({'service.name': 'test-service'}),
+          resourceSchema,
+        );
+        final span = createTestSpan(name: 'resource-schema-span');
+
+        final request = OtlpSpanTransformer.transformSpans([span]);
+        final resourceSpans = request.resourceSpans.first;
+
+        expect(resourceSpans.schemaUrl, equals(resourceSchema));
+        expect(resourceSpans.scopeSpans.first.hasSchemaUrl(), isFalse,
+            reason: 'ScopeSpans.schema_url describes the scope');
+      });
+
+      test('scope schema URL goes on ScopeSpans, not ResourceSpans', () {
+        final span = OTel.tracerProvider()
+            .getTracer('schema-tracer',
+                version: '1.0.0', schemaUrl: scopeSchema)
+            .startSpan('scope-schema-span')
+          ..end();
+
+        final request = OtlpSpanTransformer.transformSpans([span]);
+        final resourceSpans = request.resourceSpans.first;
+
+        expect(resourceSpans.scopeSpans.first.schemaUrl, equals(scopeSchema));
+        expect(resourceSpans.hasSchemaUrl(), isFalse,
+            reason: 'ResourceSpans.schema_url describes the resource');
+      });
+
+      test('scopes that differ only by schema URL are separate ScopeSpans', () {
+        // Each tracer comes from its own provider, so this exercises only the
+        // transformer's scope grouping, not how a provider caches tracers.
+        final spanA = OTel.addTracerProvider('schema-provider-a')
+            .getTracer('same-tracer', version: '1.0.0', schemaUrl: scopeSchema)
+            .startSpan('span-a')
+          ..end();
+        final spanB = OTel.addTracerProvider('schema-provider-b')
+            .getTracer('same-tracer',
+                version: '1.0.0', schemaUrl: otherScopeSchema)
+            .startSpan('span-b')
+          ..end();
+
+        final request = OtlpSpanTransformer.transformSpans([spanA, spanB]);
+        final scopeSpans = request.resourceSpans.single.scopeSpans;
+
+        expect(scopeSpans, hasLength(2));
+        expect(
+          {for (final s in scopeSpans) s.schemaUrl: s.spans.single.name},
+          equals({scopeSchema: 'span-a', otherScopeSchema: 'span-b'}),
+        );
+      });
+    });
   });
 }

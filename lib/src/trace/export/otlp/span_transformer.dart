@@ -66,6 +66,9 @@ class OtlpSpanTransformer {
 
       // Create ResourceSpans
       final resourceSpan = proto.ResourceSpans()..resource = protoResource;
+      if (resource?.schemaUrl != null) {
+        resourceSpan.schemaUrl = resource!.schemaUrl!;
+      }
 
       // Process each instrumentation scope group
       for (final scopeEntry in scopeGroups.entries) {
@@ -90,6 +93,10 @@ class OtlpSpanTransformer {
           ..scope = otlpScope
           ..spans.addAll(otlpSpans);
 
+        if (scope.schemaUrl != null) {
+          otlpScopeSpans.schemaUrl = scope.schemaUrl!;
+        }
+
         resourceSpan.scopeSpans.add(otlpScopeSpans);
       }
 
@@ -112,7 +119,7 @@ class OtlpSpanTransformer {
   /// Creates a key for grouping spans by instrumentation scope
   static String _instrumentationKey(Span span) {
     final scope = span.instrumentationScope;
-    return '${scope.name}:${scope.version ?? ''}';
+    return '${scope.name}:${scope.version ?? ''}:${scope.schemaUrl ?? ''}';
   }
 
   /// Convert a single span to OTLP Span

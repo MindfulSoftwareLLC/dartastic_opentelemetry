@@ -40,6 +40,10 @@ class MetricTransformer {
     final resourceMetrics = proto.ResourceMetrics();
 
     final effectiveResource = data.resource ?? fallbackResource;
+
+    if (effectiveResource?.schemaUrl != null) {
+      resourceMetrics.schemaUrl = effectiveResource!.schemaUrl!;
+    }
     resourceMetrics.resource = effectiveResource != null
         ? transformResource(effectiveResource)
         : resource_proto.Resource();
